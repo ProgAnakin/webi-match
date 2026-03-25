@@ -57,7 +57,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
         <motion.img
           src={webidooLogo}
           alt="Webidoo Store"
-          className="mb-4 h-36 w-auto"
+          className="mb-4 h-52 w-auto"
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
           transition={{ duration: 0.6, delay: 0.1 }}
