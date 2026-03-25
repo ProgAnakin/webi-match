@@ -14,7 +14,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
   const handleStart = () => {
     const trimmed = email.trim();
     if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setError("Por favor, insira um email válido.");
+      setError("Per favore, inserisci un'email valida.");
       return;
     }
     onStart(trimmed);
@@ -52,7 +52,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
             <span className="text-foreground"> MATCH</span>
           </h1>
           <p className="text-lg text-muted-foreground">
-            Encontre seu gadget perfeito! 🎯
+            Trova il tuo gadget perfetto! 🎯
           </p>
         </motion.div>
 
@@ -65,7 +65,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
         >
           <input
             type="email"
-            placeholder="Seu melhor email 📧"
+            placeholder="La tua email migliore 📧"
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
@@ -89,7 +89,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1 }}
         >
-          🚀 COMEÇAR JOGO!
+          🚀 INIZIA IL GIOCO!
         </motion.button>
 
         <motion.p
@@ -98,7 +98,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           animate={{ opacity: 0.6 }}
           transition={{ delay: 1.2 }}
         >
-          Responda 8 perguntas rápidas e descubra o match perfeito
+          Rispondi a 8 domande veloci e scopri il match perfetto
         </motion.p>
       </motion.div>
     </div>

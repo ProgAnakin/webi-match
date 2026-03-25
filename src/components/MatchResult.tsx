@@ -62,7 +62,7 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
           >
             🎉 {matchPercent}%
           </motion.p>
-          <p className="mt-1 text-xl font-semibold text-foreground">MATCH PERFEITO!</p>
+          <p className="mt-1 text-xl font-semibold text-foreground">MATCH PERFETTO!</p>
         </motion.div>
 
         {/* Product card */}
@@ -96,7 +96,7 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
           transition={{ delay: 1 }}
         >
           <p className="text-center text-sm font-semibold text-muted-foreground">
-            ❓ Perguntas mais feitas
+            ❓ Domande più frequenti
           </p>
           {product.faq.map((item, i) => (
             <div key={i} className="rounded-xl border border-border bg-card p-3">
@@ -116,7 +116,7 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2 }}
         >
-          🎁 Receber Guia Exclusivo GRÁTIS!
+          🎁 Ricevi la Guida Esclusiva GRATIS!
         </motion.button>
 
         <motion.p
@@ -125,7 +125,7 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
           animate={{ opacity: 0.6 }}
           transition={{ delay: 1.4 }}
         >
-          📧 Vídeo explicativo + Manual + FAQ + Desconto exclusivo
+          📧 Video esplicativo + Manuale + FAQ + Sconto esclusivo
         </motion.p>
       </motion.div>
     </div>
