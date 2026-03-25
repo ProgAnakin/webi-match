@@ -63,7 +63,7 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
         </button>
         <button
           onClick={() => handleSwipe("right")}
-          className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-green-500 text-2xl transition-transform active:scale-90"
+          className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-success text-2xl transition-transform active:scale-90"
         >
           ✅
         </button>

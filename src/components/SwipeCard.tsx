@@ -38,10 +38,10 @@ const SwipeCard = ({ question, onSwipe, currentIndex, total }: SwipeCardProps) =
 
       {/* YES overlay */}
       <motion.div
-        className="pointer-events-none absolute right-6 top-8 z-20 rounded-xl border-4 border-green-500 px-4 py-2"
+        className="pointer-events-none absolute right-6 top-8 z-20 rounded-xl border-4 border-success px-4 py-2"
         style={{ opacity: yesOpacity, rotate: 15 }}
       >
-        <span className="text-3xl font-bold text-green-500">SIM ✅</span>
+        <span className="text-3xl font-bold text-success">SIM ✅</span>
       </motion.div>
 
       {/* Card */}
