@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import webidooLogo from "@/assets/webidoo-logo.png";
 
 interface WelcomeScreenProps {
   onStart: (email: string) => void;
@@ -52,7 +53,17 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
-        {/* Logo / Title */}
+        {/* Logo */}
+        <motion.img
+          src={webidooLogo}
+          alt="Webidoo Store"
+          className="mb-2 h-16 w-auto"
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        />
+
+        {/* Title */}
         <motion.div
           className="text-center"
           initial={{ scale: 0.8 }}
