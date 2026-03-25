@@ -5,11 +5,9 @@ import type { Question } from "@/data/questions";
 interface SwipeCardProps {
   question: Question;
   onSwipe: (direction: "left" | "right") => void;
-  currentIndex: number;
-  total: number;
 }
 
-const SwipeCard = ({ question, onSwipe, currentIndex, total }: SwipeCardProps) => {
+const SwipeCard = ({ question, onSwipe }: SwipeCardProps) => {
   const [exitX, setExitX] = useState(0);
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
@@ -27,21 +25,21 @@ const SwipeCard = ({ question, onSwipe, currentIndex, total }: SwipeCardProps) =
   };
 
   return (
-    <div className="relative flex h-[420px] w-full max-w-sm items-center justify-center">
+    <div className="relative flex h-[380px] w-full max-w-sm items-center justify-center">
       {/* NO overlay */}
       <motion.div
-        className="pointer-events-none absolute left-6 top-8 z-20 rounded-xl border-4 border-destructive px-4 py-2"
+        className="pointer-events-none absolute left-4 top-6 z-20 rounded-2xl border-4 border-destructive/80 bg-destructive/10 px-5 py-2 backdrop-blur-sm"
         style={{ opacity: noOpacity, rotate: -15 }}
       >
-        <span className="text-3xl font-bold text-destructive">NÃO ❌</span>
+        <span className="text-2xl font-bold text-destructive">NÃO</span>
       </motion.div>
 
       {/* YES overlay */}
       <motion.div
-        className="pointer-events-none absolute right-6 top-8 z-20 rounded-xl border-4 border-success px-4 py-2"
+        className="pointer-events-none absolute right-4 top-6 z-20 rounded-2xl border-4 border-success/80 bg-success/10 px-5 py-2 backdrop-blur-sm"
         style={{ opacity: yesOpacity, rotate: 15 }}
       >
-        <span className="text-3xl font-bold text-success">SIM ✅</span>
+        <span className="text-2xl font-bold text-success">SIM</span>
       </motion.div>
 
       {/* Card */}
@@ -57,23 +55,6 @@ const SwipeCard = ({ question, onSwipe, currentIndex, total }: SwipeCardProps) =
         exit={{ x: exitX, opacity: 0, rotate: exitX > 0 ? 20 : -20, transition: { duration: 0.3 } }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
       >
-        {/* Progress */}
-        <div className="absolute left-6 right-6 top-6">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>{currentIndex + 1}/{total}</span>
-            <div className="flex gap-1.5">
-              {Array.from({ length: total }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-1.5 w-6 rounded-full transition-colors ${
-                    i <= currentIndex ? "gradient-primary" : "bg-muted"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* Emoji */}
         <motion.div
           className="mb-6 text-[120px] leading-none"
