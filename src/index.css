@@ -6,43 +6,43 @@
 
 @layer base {
   :root {
-    --background: 220 20% 8%;
+    --background: 230 55% 18%;
     --foreground: 0 0% 98%;
 
-    --card: 220 15% 13%;
+    --card: 230 50% 22%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 220 15% 13%;
+    --popover: 230 50% 22%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 16 100% 60%;
+    --primary: 27 92% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 15% 18%;
+    --secondary: 230 45% 26%;
     --secondary-foreground: 0 0% 90%;
 
-    --muted: 220 12% 20%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 230 40% 28%;
+    --muted-foreground: 230 20% 60%;
 
-    --accent: 340 85% 60%;
+    --accent: 230 65% 35%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 16 100% 60%;
+    --border: 230 40% 28%;
+    --input: 230 40% 28%;
+    --ring: 27 92% 55%;
     --success: 145 80% 42%;
     --success-foreground: 0 0% 100%;
 
     --radius: 1rem;
 
     /* Custom tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(16, 100%, 60%), hsl(340, 85%, 60%));
-    --gradient-card: linear-gradient(145deg, hsl(220, 15%, 15%), hsl(220, 15%, 10%));
+    --gradient-primary: linear-gradient(135deg, hsl(27, 92%, 55%), hsl(16, 100%, 50%));
+    --gradient-card: linear-gradient(145deg, hsl(230, 50%, 24%), hsl(230, 55%, 16%));
     --gradient-success: linear-gradient(135deg, hsl(145, 80%, 45%), hsl(160, 90%, 40%));
-    --shadow-glow: 0 0 40px hsl(16 100% 60% / 0.3);
+    --shadow-glow: 0 0 40px hsl(27 92% 55% / 0.3);
     --shadow-card: 0 20px 60px hsl(0 0% 0% / 0.4);
     --font-display: 'Space Grotesk', sans-serif;
 
