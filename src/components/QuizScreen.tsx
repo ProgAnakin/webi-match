@@ -27,7 +27,9 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
     }
   }, [currentIndex, answers, onComplete]);
 
-  const question = questions[currentIndex];
+  const question = questions[Math.min(currentIndex, questions.length - 1)];
+
+  if (!question) return null;
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center px-6">
