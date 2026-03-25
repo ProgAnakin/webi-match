@@ -14,7 +14,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
   const handleStart = () => {
     const trimmed = email.trim();
     if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setError("Por favor, insira um email válido.");
+      setError("Per favore, inserisci un'email valida.");
       return;
     }
     onStart(trimmed);
