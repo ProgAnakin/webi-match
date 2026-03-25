@@ -31,7 +31,7 @@ const SwipeCard = ({ question, onSwipe }: SwipeCardProps) => {
         className="pointer-events-none absolute left-4 top-6 z-20 rounded-2xl border-4 border-destructive/80 bg-destructive/10 px-5 py-2 backdrop-blur-sm"
         style={{ opacity: noOpacity, rotate: -15 }}
       >
-        <span className="text-2xl font-bold text-destructive">NÃO</span>
+        <span className="text-2xl font-bold text-destructive">NO</span>
       </motion.div>
 
       {/* YES overlay */}
