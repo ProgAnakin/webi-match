@@ -57,7 +57,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
         <motion.img
           src={webidooLogo}
           alt="Webidoo Store"
-          className="mb-2 h-16 w-auto"
+          className="mb-4 h-36 w-auto"
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
           transition={{ duration: 0.6, delay: 0.1 }}
@@ -70,29 +70,13 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           animate={{ scale: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <h1 className="mb-2 text-5xl font-bold tracking-tight">
-            <span className="text-gradient">Webi</span>
-            <span className="text-foreground"> Match</span>
+          <h1 className="mb-2 text-5xl font-bold uppercase tracking-widest">
+            <span className="text-gradient">WEBI</span>
+            <span className="text-foreground"> MATCH</span>
           </h1>
           <p className="text-lg text-muted-foreground">
             Encontre seu gadget perfeito! 🎯
           </p>
-        </motion.div>
-
-        {/* Swipe hint */}
-        <motion.div
-          className="flex items-center gap-6 text-muted-foreground"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          <span className="flex items-center gap-1 text-sm">
-            ❌ <span>Swipe Left</span>
-          </span>
-          <span className="text-2xl">👆</span>
-          <span className="flex items-center gap-1 text-sm">
-            <span>Swipe Right</span> ✅
-          </span>
         </motion.div>
 
         {/* Email input */}
