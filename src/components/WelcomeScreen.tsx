@@ -65,7 +65,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
         >
           <input
             type="email"
-            placeholder="Seu melhor email 📧"
+            placeholder="La tua email migliore 📧"
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
