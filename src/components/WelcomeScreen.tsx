@@ -52,7 +52,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
             <span className="text-foreground"> MATCH</span>
           </h1>
           <p className="text-lg text-muted-foreground">
-            Encontre seu gadget perfeito! 🎯
+            Trova il tuo gadget perfetto! 🎯
           </p>
         </motion.div>
 
