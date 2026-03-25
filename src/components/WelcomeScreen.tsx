@@ -89,7 +89,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1 }}
         >
-          🚀 COMEÇAR JOGO!
+          🚀 INIZIA IL GIOCO!
         </motion.button>
 
         <motion.p
