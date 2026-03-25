@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import webidooLogo from "@/assets/webidoo-logo.png";
+import DiscoveryBackground from "./DiscoveryBackground";
 
 interface WelcomeScreenProps {
   onStart: (email: string) => void;
@@ -21,31 +22,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-8">
-      {/* Floating emojis background */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {["⚽️", "🎵", "📸", "🎮", "✈️", "🧘", "📹", "🏠"].map((emoji, i) => (
-          <motion.div
-            key={i}
-            className="absolute text-4xl opacity-20"
-            style={{
-              left: `${10 + (i * 12) % 80}%`,
-              top: `${15 + (i * 17) % 60}%`,
-            }}
-            animate={{
-              y: [0, -20, 0],
-              rotate: [0, 10, -10, 0],
-            }}
-            transition={{
-              duration: 3 + i * 0.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: i * 0.3,
-            }}
-          >
-            {emoji}
-          </motion.div>
-        ))}
-      </div>
+      <DiscoveryBackground />
 
       <motion.div
         className="relative z-10 flex w-full max-w-md flex-col items-center gap-8"
