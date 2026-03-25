@@ -1,16 +1,73 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import WelcomeScreen from "@/components/WelcomeScreen";
+import QuizScreen from "@/components/QuizScreen";
+import MatchResult from "@/components/MatchResult";
+import SuccessScreen from "@/components/SuccessScreen";
+import { getMatchedProduct, type Product } from "@/data/products";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+type Screen = "welcome" | "quiz" | "result" | "success";
+
+const Index = () => {
+  const [screen, setScreen] = useState<Screen>("welcome");
+  const [email, setEmail] = useState("");
+  const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
+  const [matchPercent, setMatchPercent] = useState(0);
+
+  const handleStart = (userEmail: string) => {
+    setEmail(userEmail);
+    setScreen("quiz");
+  };
+
+  const handleQuizComplete = (answers: Record<number, boolean>) => {
+    const { product, matchPercent: pct } = getMatchedProduct(answers);
+    setMatchedProduct(product);
+    setMatchPercent(pct);
+    setScreen("result");
+  };
+
+  const handleClaim = () => {
+    // In production, this would trigger the email via backend
+    setScreen("success");
+  };
+
+  const handleRestart = () => {
+    setEmail("");
+    setMatchedProduct(null);
+    setMatchPercent(0);
+    setScreen("welcome");
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="relative min-h-screen overflow-auto bg-background">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={screen}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {screen === "welcome" && <WelcomeScreen onStart={handleStart} />}
+          {screen === "quiz" && <QuizScreen onComplete={handleQuizComplete} />}
+          {screen === "result" && matchedProduct && (
+            <MatchResult
+              product={matchedProduct}
+              matchPercent={matchPercent}
+              onClaim={handleClaim}
+            />
+          )}
+          {screen === "success" && matchedProduct && (
+            <SuccessScreen
+              email={email}
+              productName={matchedProduct.name}
+              onRestart={handleRestart}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
