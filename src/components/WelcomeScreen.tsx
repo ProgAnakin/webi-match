@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import webidooLogo from "@/assets/webidoo-logo.png";
 
 interface WelcomeScreenProps {
   onStart: (email: string) => void;
