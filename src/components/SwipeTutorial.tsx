@@ -46,7 +46,7 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
             >
-              {step === 0 ? "← Swipe para NÃO" : "Swipe para SIM →"}
+              {step === 0 ? "← Swipe per NO" : "Swipe per SÌ →"}
             </motion.p>
 
             {/* Hand icon */}

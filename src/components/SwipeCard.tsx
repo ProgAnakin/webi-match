@@ -39,7 +39,7 @@ const SwipeCard = ({ question, onSwipe }: SwipeCardProps) => {
         className="pointer-events-none absolute right-4 top-6 z-20 rounded-2xl border-4 border-success/80 bg-success/10 px-5 py-2 backdrop-blur-sm"
         style={{ opacity: yesOpacity, rotate: 15 }}
       >
-        <span className="text-2xl font-bold text-success">SIM</span>
+        <span className="text-2xl font-bold text-success">SÌ</span>
       </motion.div>
 
       {/* Card */}

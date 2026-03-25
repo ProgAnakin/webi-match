@@ -98,7 +98,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           animate={{ opacity: 0.6 }}
           transition={{ delay: 1.2 }}
         >
-          Responda 8 perguntas rápidas e descubra o match perfeito
+          Rispondi a 8 domande veloci e scopri il match perfetto
         </motion.p>
       </motion.div>
     </div>

@@ -24,9 +24,9 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
         </motion.div>
 
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Email Enviado!</h2>
+          <h2 className="text-3xl font-bold text-foreground">Email Inviata!</h2>
           <p className="mt-3 text-muted-foreground">
-            O guia exclusivo do <span className="font-semibold text-gradient">{productName}</span> foi enviado para:
+            La guida esclusiva del <span className="font-semibold text-gradient">{productName}</span> è stata inviata a:
           </p>
           <p className="mt-2 rounded-xl bg-card px-4 py-2 font-mono text-sm text-foreground">
             {email}
@@ -34,12 +34,12 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
         </div>
 
         <div className="w-full space-y-3 rounded-2xl border border-border bg-card p-5">
-          <p className="text-sm font-semibold text-foreground">📦 O que vais receber:</p>
+          <p className="text-sm font-semibold text-foreground">📦 Cosa riceverai:</p>
           <div className="space-y-2 text-left text-sm text-muted-foreground">
-            <p>🎬 Vídeo explicativo de 30 segundos</p>
-            <p>📖 Manual completo do produto</p>
-            <p>❓ 3 perguntas mais feitas (FAQ)</p>
-            <p>🏷️ Desconto exclusivo Webidoo!</p>
+            <p>🎬 Video esplicativo di 30 secondi</p>
+            <p>📖 Manuale completo del prodotto</p>
+            <p>❓ 3 domande più frequenti (FAQ)</p>
+            <p>🏷️ Sconto esclusivo Webidoo!</p>
           </div>
         </div>
 
@@ -48,7 +48,7 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           className="w-full rounded-2xl border-2 border-border px-8 py-4 text-lg font-semibold text-foreground transition-colors hover:bg-card active:scale-95"
           whileTap={{ scale: 0.97 }}
         >
-          🔄 Jogar Novamente
+          🔄 Gioca di Nuovo
         </motion.button>
       </motion.div>
     </div>
