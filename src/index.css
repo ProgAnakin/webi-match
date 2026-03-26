@@ -65,7 +65,8 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-display);
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
