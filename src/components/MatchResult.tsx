@@ -62,13 +62,13 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
 
   // Generate confetti particles
   const confettiParticles = useMemo(() =>
-    Array.from({ length: 40 }, (_, i) => ({
+    Array.from({ length: 80 }, (_, i) => ({
       id: i,
-      delay: Math.random() * 3,
-      duration: 2 + Math.random() * 2,
+      delay: Math.random() * 4,
+      duration: 1.5 + Math.random() * 2.5,
       left: `${Math.random() * 100}%`,
       color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-      size: 6 + Math.random() * 8,
+      size: 5 + Math.random() * 12,
     })), []);
 
   const stars = Array.from({ length: 5 }, (_, i) =>
