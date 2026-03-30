@@ -275,7 +275,7 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
           animate={{ opacity: 0.6 }}
           transition={{ delay: 1.4 }}
         >
-          📧 Clicca per ricevere tutto nella tua email
+          👆 Premi sul tasto sopra per ricevere tutto nella tua mail
         </motion.p>
       </motion.div>
     </div>
