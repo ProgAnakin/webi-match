@@ -1,5 +1,5 @@
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import envelopeImg from "@/assets/webidoo-envelope.png";
 
 interface SuccessScreenProps {
@@ -8,38 +8,45 @@ interface SuccessScreenProps {
   onRestart: () => void;
 }
 
-// Floating particle for celebration
-const FloatingParticle = ({ delay, x, size, color }: {
-  delay: number; x: string; size: number; color: string;
-}) => (
+// Paper plane / letter that flies into the envelope
+const FlyingLetter = ({ delay, startX, startY }: { delay: number; startX: number; startY: number }) => (
   <motion.div
-    className="absolute rounded-full"
-    style={{ left: x, bottom: "-10%", width: size, height: size, backgroundColor: color }}
-    animate={{ y: [0, -800], opacity: [0, 1, 1, 0], scale: [0.5, 1, 0.8] }}
-    transition={{ duration: 4 + Math.random() * 3, repeat: Infinity, delay, ease: "easeOut" }}
-  />
+    className="pointer-events-none absolute"
+    style={{ left: startX, top: startY }}
+    initial={{ opacity: 0, scale: 0.7 }}
+    animate={{
+      opacity: [0, 1, 1, 0],
+      x: [0, (50 - startX / 4), (50 - startX / 4) * 1.5],
+      y: [0, -60, -120 + startY / 3],
+      scale: [0.7, 0.9, 0.3],
+      rotate: [0, -5, 10],
+    }}
+    transition={{
+      duration: 3,
+      repeat: Infinity,
+      delay,
+      ease: "easeInOut",
+      repeatDelay: 2,
+    }}
+  >
+    {/* SVG paper/document icon */}
+    <svg width="28" height="34" viewBox="0 0 28 34" fill="none">
+      <rect x="2" y="2" width="24" height="30" rx="3" fill="hsl(var(--card))" stroke="hsl(var(--border))" strokeWidth="1.5" />
+      <line x1="7" y1="10" x2="21" y2="10" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+      <line x1="7" y1="15" x2="18" y2="15" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" strokeLinecap="round" opacity="0.3" />
+      <line x1="7" y1="20" x2="15" y2="20" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" strokeLinecap="round" opacity="0.2" />
+      {/* Small fold corner */}
+      <path d="M20 2 L24 2 L24 6 Z" fill="hsl(var(--muted))" />
+    </svg>
+  </motion.div>
 );
 
-const PARTICLE_COLORS = [
-  "hsl(var(--primary))", "#FFD93D", "#6BCB77", "#4D96FF",
-  "#FF6EC7", "#845EC2", "#FFC75F", "#00C9A7",
-];
-
 const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) => {
-  const particles = useMemo(() =>
-    Array.from({ length: 30 }, (_, i) => ({
-      id: i,
-      delay: Math.random() * 5,
-      x: `${Math.random() * 100}%`,
-      size: 4 + Math.random() * 8,
-      color: PARTICLE_COLORS[i % PARTICLE_COLORS.length],
-    })), []);
-
   const checkScale = useMotionValue(0);
   const checkOpacity = useTransform(checkScale, [0, 1], [0, 1]);
 
   useEffect(() => {
-    animate(checkScale, 1, { type: "spring", stiffness: 200, damping: 15, delay: 0.5 });
+    animate(checkScale, 1, { type: "spring", stiffness: 200, damping: 15, delay: 1.5 });
   }, []);
 
   const benefits = [
@@ -49,24 +56,41 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
     { icon: "🏷️", title: "Sconto", desc: "Offerta esclusiva" },
   ];
 
+  // Letters flying from different positions toward the center envelope
+  const letters = [
+    { delay: 0, startX: 40, startY: 500 },
+    { delay: 2.5, startX: 300, startY: 550 },
+    { delay: 5, startX: 150, startY: 600 },
+    { delay: 7.5, startX: 60, startY: 480 },
+    { delay: 10, startX: 280, startY: 520 },
+  ];
+
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-12">
-      {/* Floating particles background */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {particles.map((p) => (
-          <FloatingParticle key={p.id} {...p} />
-        ))}
-      </div>
-
-      {/* Radial glow */}
-      <motion.div
+      {/* Subtle radial glow - professional, no particles */}
+      <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background: "radial-gradient(circle at 50% 40%, hsl(var(--primary) / 0.15) 0%, transparent 60%)",
+          background: "radial-gradient(ellipse at 50% 35%, hsl(var(--primary) / 0.08) 0%, transparent 55%)",
         }}
-        animate={{ opacity: [0.5, 1, 0.5] }}
-        transition={{ duration: 3, repeat: Infinity }}
       />
+
+      {/* Subtle grid pattern for depth */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px),
+                            linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`,
+          backgroundSize: "40px 40px",
+        }}
+      />
+
+      {/* Flying letters animation toward envelope */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {letters.map((l, i) => (
+          <FlyingLetter key={i} {...l} />
+        ))}
+      </div>
 
       <motion.div
         className="relative z-10 flex w-full max-w-md flex-col items-center gap-6"
@@ -74,44 +98,67 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 150, damping: 20 }}
       >
-        {/* Custom envelope icon with success check */}
-        <motion.div
-          className="relative"
-          initial={{ scale: 0, rotate: -20 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
-        >
-          <motion.img
-            src={envelopeImg}
-            alt="Email inviata"
-            width={160}
-            height={160}
-            className="drop-shadow-2xl"
-            animate={{ y: [0, -8, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          />
-          {/* Success checkmark badge */}
+        {/* Envelope with paper entering animation */}
+        <div className="relative flex flex-col items-center">
+          {/* Paper sliding into envelope */}
           <motion.div
-            className="absolute -bottom-2 -right-2 flex h-12 w-12 items-center justify-center rounded-full bg-green-500 shadow-lg"
-            style={{ scale: checkScale, opacity: checkOpacity }}
+            className="absolute z-10"
+            style={{ top: -20 }}
+            initial={{ y: -80, opacity: 1, scale: 1 }}
+            animate={{ y: [- 80, -40, 0, 10], opacity: [1, 1, 1, 0], scale: [1, 0.95, 0.85, 0.6] }}
+            transition={{ duration: 1.8, delay: 0.3, ease: "easeInOut" }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <motion.path
-                d="M5 13l4 4L19 7"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.5, delay: 0.8 }}
-              />
+            <svg width="80" height="100" viewBox="0 0 80 100" fill="none">
+              <rect x="5" y="5" width="70" height="90" rx="6" fill="hsl(var(--card))" stroke="hsl(var(--border))" strokeWidth="2" />
+              <line x1="18" y1="25" x2="62" y2="25" stroke="hsl(var(--muted-foreground))" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+              <line x1="18" y1="35" x2="55" y2="35" stroke="hsl(var(--muted-foreground))" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+              <line x1="18" y1="45" x2="48" y2="45" stroke="hsl(var(--muted-foreground))" strokeWidth="2" strokeLinecap="round" opacity="0.3" />
+              <line x1="18" y1="55" x2="42" y2="55" stroke="hsl(var(--muted-foreground))" strokeWidth="2" strokeLinecap="round" opacity="0.2" />
+              <path d="M58 5 L70 5 L70 17 Z" fill="hsl(var(--muted))" />
             </svg>
           </motion.div>
-        </motion.div>
+
+          {/* Envelope image */}
+          <motion.div
+            className="relative"
+            initial={{ scale: 0, rotate: -15 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+          >
+            <img
+              src={envelopeImg}
+              alt="Email inviata"
+              width={160}
+              height={160}
+              className="drop-shadow-2xl"
+            />
+            {/* Success checkmark badge */}
+            <motion.div
+              className="absolute -bottom-2 -right-2 flex h-12 w-12 items-center justify-center rounded-full shadow-lg"
+              style={{
+                scale: checkScale,
+                opacity: checkOpacity,
+                backgroundColor: "hsl(142, 71%, 45%)",
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <motion.path
+                  d="M5 13l4 4L19 7"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.5, delay: 1.8 }}
+                />
+              </svg>
+            </motion.div>
+          </motion.div>
+        </div>
 
         {/* Title & subtitle */}
         <motion.div
           className="text-center"
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.6 }}
         >
           <h2 className="text-3xl font-bold text-foreground">Email Inviata! ✨</h2>
           <p className="mt-2 text-muted-foreground">
@@ -124,7 +171,7 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           className="w-full overflow-hidden rounded-2xl border border-border bg-card/80 backdrop-blur-sm"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.7 }}
         >
           <div className="gradient-primary px-4 py-2">
             <p className="text-center text-xs font-semibold uppercase tracking-widest text-primary-foreground">
@@ -141,7 +188,7 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           className="grid w-full grid-cols-2 gap-3"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
+          transition={{ delay: 0.9 }}
         >
           {benefits.map((item, i) => (
             <motion.div
@@ -149,7 +196,7 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
               className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.8 + i * 0.1 }}
+              transition={{ delay: 1 + i * 0.1 }}
               whileHover={{ scale: 1.05, y: -2 }}
             >
               <span className="text-2xl">{item.icon}</span>
@@ -164,9 +211,9 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           className="text-center text-sm text-muted-foreground"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
+          transition={{ delay: 1.2 }}
         >
-          Controlla la tua casella di posta per scoprire tutto! 📬
+          Controlla la tua casella di posta per scoprire tutto!
         </motion.p>
 
         {/* Restart button */}
@@ -177,7 +224,7 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           whileTap={{ scale: 0.97 }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.1 }}
+          transition={{ delay: 1.3 }}
         >
           🔄 Gioca di Nuovo
         </motion.button>
