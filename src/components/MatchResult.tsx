@@ -266,7 +266,7 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2 }}
         >
-          🔍 Pra che serve isso?
+          🔍 A cosa serve?
         </motion.button>
 
         <motion.p
