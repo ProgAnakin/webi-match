@@ -1,6 +1,5 @@
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useEffect } from "react";
-import envelopeImg from "@/assets/webidoo-envelope.png";
 
 interface SuccessScreenProps {
   email: string;
@@ -8,45 +7,77 @@ interface SuccessScreenProps {
   onRestart: () => void;
 }
 
-// Paper plane / letter that flies into the envelope
-const FlyingLetter = ({ delay, startX, startY }: { delay: number; startX: number; startY: number }) => (
-  <motion.div
-    className="pointer-events-none absolute"
-    style={{ left: startX, top: startY }}
-    initial={{ opacity: 0, scale: 0.7 }}
-    animate={{
-      opacity: [0, 1, 1, 0],
-      x: [0, (50 - startX / 4), (50 - startX / 4) * 1.5],
-      y: [0, -60, -120 + startY / 3],
-      scale: [0.7, 0.9, 0.3],
-      rotate: [0, -5, 10],
-    }}
-    transition={{
-      duration: 3,
-      repeat: Infinity,
-      delay,
-      ease: "easeInOut",
-      repeatDelay: 2,
-    }}
-  >
-    {/* SVG paper/document icon */}
-    <svg width="28" height="34" viewBox="0 0 28 34" fill="none">
-      <rect x="2" y="2" width="24" height="30" rx="3" fill="hsl(var(--card))" stroke="hsl(var(--border))" strokeWidth="1.5" />
-      <line x1="7" y1="10" x2="21" y2="10" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-      <line x1="7" y1="15" x2="18" y2="15" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" strokeLinecap="round" opacity="0.3" />
-      <line x1="7" y1="20" x2="15" y2="20" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" strokeLinecap="round" opacity="0.2" />
-      {/* Small fold corner */}
-      <path d="M20 2 L24 2 L24 6 Z" fill="hsl(var(--muted))" />
-    </svg>
-  </motion.div>
+// Paper airplane SVG component
+const PaperAirplane = () => (
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <path
+      d="M4 4L28 16L4 28V18L20 16L4 14V4Z"
+      fill="hsl(var(--primary))"
+      stroke="hsl(var(--primary))"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+  </svg>
 );
+
+// Envelope SVG component
+const EnvelopeIcon = () => (
+  <svg width="120" height="90" viewBox="0 0 120 90" fill="none">
+    {/* Envelope body */}
+    <rect x="4" y="10" width="112" height="76" rx="8" fill="hsl(var(--card))" stroke="hsl(var(--border))" strokeWidth="2.5" />
+    {/* Envelope flap */}
+    <path d="M4 18 L60 55 L116 18" stroke="hsl(var(--border))" strokeWidth="2.5" strokeLinejoin="round" fill="hsl(var(--card))" />
+    {/* Inner flap shadow */}
+    <path d="M4 18 L60 55 L116 18" stroke="hsl(var(--muted-foreground))" strokeWidth="1" strokeLinejoin="round" fill="none" opacity="0.15" />
+    {/* Seal circle */}
+    <circle cx="60" cy="58" r="12" fill="hsl(var(--primary))" opacity="0.9" />
+    <path d="M54 58L58 62L66 54" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+// Flying paper airplane that loops toward the envelope
+const FlyingAirplane = ({ delay, id }: { delay: number; id: number }) => {
+  // Different start positions for variety
+  const paths = [
+    { startX: -60, startY: -100, midX: 80, midY: -60 },
+    { startX: 400, startY: -80, midX: 200, midY: -50 },
+    { startX: -80, startY: 80, midX: 100, midY: 20 },
+    { startX: 420, startY: 60, midX: 220, midY: 10 },
+  ];
+  const p = paths[id % paths.length];
+
+  return (
+    <motion.div
+      className="pointer-events-none absolute"
+      style={{ left: "50%", top: "50%", marginLeft: -16, marginTop: -40 }}
+      initial={{ x: p.startX, y: p.startY, opacity: 0, rotate: 0, scale: 0.8 }}
+      animate={{
+        x: [p.startX, p.midX, 0],
+        y: [p.startY, p.midY, 0],
+        opacity: [0, 1, 1, 0],
+        rotate: [p.startX > 200 ? 180 : -30, p.startX > 200 ? 120 : 10, p.startX > 200 ? 90 : 30],
+        scale: [0.8, 1, 0.3],
+      }}
+      transition={{
+        duration: 2.5,
+        delay,
+        repeat: Infinity,
+        repeatDelay: 6,
+        ease: "easeInOut",
+        times: [0, 0.6, 1],
+      }}
+    >
+      <PaperAirplane />
+    </motion.div>
+  );
+};
 
 const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) => {
   const checkScale = useMotionValue(0);
   const checkOpacity = useTransform(checkScale, [0, 1], [0, 1]);
 
   useEffect(() => {
-    animate(checkScale, 1, { type: "spring", stiffness: 200, damping: 15, delay: 1.5 });
+    animate(checkScale, 1, { type: "spring", stiffness: 200, damping: 15, delay: 2 });
   }, []);
 
   const benefits = [
@@ -56,26 +87,15 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
     { icon: "🏷️", title: "Sconto", desc: "Offerta esclusiva" },
   ];
 
-  // Letters flying from different positions toward the center envelope
-  const letters = [
-    { delay: 0, startX: 40, startY: 500 },
-    { delay: 2.5, startX: 300, startY: 550 },
-    { delay: 5, startX: 150, startY: 600 },
-    { delay: 7.5, startX: 60, startY: 480 },
-    { delay: 10, startX: 280, startY: 520 },
-  ];
-
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-12">
-      {/* Subtle radial glow - professional, no particles */}
+      {/* Subtle background */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background: "radial-gradient(ellipse at 50% 35%, hsl(var(--primary) / 0.08) 0%, transparent 55%)",
         }}
       />
-
-      {/* Subtle grid pattern for depth */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.03]"
         style={{
@@ -85,75 +105,40 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
         }}
       />
 
-      {/* Flying letters animation toward envelope */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {letters.map((l, i) => (
-          <FlyingLetter key={i} {...l} />
-        ))}
-      </div>
-
       <motion.div
         className="relative z-10 flex w-full max-w-md flex-col items-center gap-6"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 150, damping: 20 }}
       >
-        {/* Envelope with paper entering animation */}
-        <div className="relative flex flex-col items-center">
-          {/* Paper sliding into envelope */}
-          <motion.div
-            className="absolute z-10"
-            style={{ top: -20 }}
-            initial={{ y: -80, opacity: 1, scale: 1 }}
-            animate={{ y: [- 80, -40, 0, 10], opacity: [1, 1, 1, 0], scale: [1, 0.95, 0.85, 0.6] }}
-            transition={{ duration: 1.8, delay: 0.3, ease: "easeInOut" }}
-          >
-            <svg width="80" height="100" viewBox="0 0 80 100" fill="none">
-              <rect x="5" y="5" width="70" height="90" rx="6" fill="hsl(var(--card))" stroke="hsl(var(--border))" strokeWidth="2" />
-              <line x1="18" y1="25" x2="62" y2="25" stroke="hsl(var(--muted-foreground))" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
-              <line x1="18" y1="35" x2="55" y2="35" stroke="hsl(var(--muted-foreground))" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
-              <line x1="18" y1="45" x2="48" y2="45" stroke="hsl(var(--muted-foreground))" strokeWidth="2" strokeLinecap="round" opacity="0.3" />
-              <line x1="18" y1="55" x2="42" y2="55" stroke="hsl(var(--muted-foreground))" strokeWidth="2" strokeLinecap="round" opacity="0.2" />
-              <path d="M58 5 L70 5 L70 17 Z" fill="hsl(var(--muted))" />
-            </svg>
-          </motion.div>
+        {/* Envelope area with flying airplanes */}
+        <div className="relative flex items-center justify-center" style={{ width: 200, height: 160 }}>
+          {/* Flying paper airplanes */}
+          <FlyingAirplane delay={0.5} id={0} />
+          <FlyingAirplane delay={3} id={1} />
+          <FlyingAirplane delay={5.5} id={2} />
+          <FlyingAirplane delay={8} id={3} />
 
-          {/* Envelope image */}
+          {/* Main envelope */}
           <motion.div
-            className="relative"
-            initial={{ scale: 0, rotate: -15 }}
+            initial={{ scale: 0, rotate: -10 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+            className="relative"
           >
-            <img
-              src={envelopeImg}
-              alt="Email inviata"
-              width={160}
-              height={160}
-              className="drop-shadow-2xl"
-            />
-            {/* Success checkmark badge */}
+            <EnvelopeIcon />
+
+            {/* Subtle pulse ring around envelope */}
             <motion.div
-              className="absolute -bottom-2 -right-2 flex h-12 w-12 items-center justify-center rounded-full shadow-lg"
-              style={{
-                scale: checkScale,
-                opacity: checkOpacity,
-                backgroundColor: "hsl(142, 71%, 45%)",
-              }}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <motion.path
-                  d="M5 13l4 4L19 7"
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 0.5, delay: 1.8 }}
-                />
-              </svg>
-            </motion.div>
+              className="absolute inset-0 rounded-2xl"
+              style={{ border: "2px solid hsl(var(--primary))" }}
+              animate={{ scale: [1, 1.3, 1.5], opacity: [0.4, 0.1, 0] }}
+              transition={{ duration: 2.5, repeat: Infinity, delay: 1.5 }}
+            />
           </motion.div>
         </div>
 
-        {/* Title & subtitle */}
+        {/* Title */}
         <motion.div
           className="text-center"
           initial={{ opacity: 0, y: 15 }}
@@ -166,7 +151,7 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           </p>
         </motion.div>
 
-        {/* Email display card */}
+        {/* Email card */}
         <motion.div
           className="w-full overflow-hidden rounded-2xl border border-border bg-card/80 backdrop-blur-sm"
           initial={{ opacity: 0, scale: 0.9 }}
@@ -206,7 +191,6 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           ))}
         </motion.div>
 
-        {/* Info text */}
         <motion.p
           className="text-center text-sm text-muted-foreground"
           initial={{ opacity: 0 }}
@@ -216,7 +200,6 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           Controlla la tua casella di posta per scoprire tutto!
         </motion.p>
 
-        {/* Restart button */}
         <motion.button
           onClick={onRestart}
           className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-4 text-lg font-bold text-primary-foreground transition-transform active:scale-95"
