@@ -75,12 +75,22 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
     i < Math.round(product.rating) ? "⭐" : "☆"
   );
 
-  // Determine ring color based on percentage
+  // Determine ring/badge color based on percentage
   const ringColor = matchPercent >= 90
-    ? "hsl(var(--primary))"
+    ? "#6BCB77"
     : matchPercent >= 80
       ? "#FFD93D"
-      : "#4D96FF";
+      : matchPercent >= 65
+        ? "#FF8066"
+        : "#4D96FF";
+
+  const badgeBg = matchPercent >= 90
+    ? "bg-green-500"
+    : matchPercent >= 80
+      ? "bg-yellow-400 text-gray-900"
+      : matchPercent >= 65
+        ? "bg-orange-400 text-gray-900"
+        : "bg-blue-500";
 
   const circumference = 2 * Math.PI * 54;
   const strokeDashoffset = circumference - (circumference * animatedPercent) / 100;
