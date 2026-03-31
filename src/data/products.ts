@@ -19,7 +19,7 @@ export const products: Product[] = [
     rating: 4.8,
     description: "Caffè di qualità ovunque tu sia. Macchina da caffè espresso elettrica portatile con ricarica USB-C, batteria da 7500mAh e pressione a 15 bar per un espresso perfetto in pochi minuti.",
     videoUrl: "#",
-    tags: ["travel", "fitness", "wellness"],
+    tags: ["travel", "fitness", "wellness", "camera", "gaming"],
     faq: [
       { q: "Quante tazze posso fare con una carica?", a: "Fino a 5 espressi caldi con acqua a temperatura ambiente o oltre 200 con acqua calda." },
       { q: "Funziona con cialde o caffè macinato?", a: "Entrambi! Puoi scegliere il tuo metodo preferito." },
@@ -34,7 +34,7 @@ export const products: Product[] = [
     rating: 4.9,
     description: "Asciugacapelli ad alta velocità con motore brushless da 105.000 giri/min, tecnologia a 200 milioni di ioni negativi e controllo termico intelligente. Solo 407g per un'asciugatura ultra-rapida.",
     videoUrl: "#",
-    tags: ["wellness", "productivity"],
+    tags: ["wellness", "productivity", "audio", "communication"],
     faq: [
       { q: "È sicuro per capelli fragili?", a: "Sì! Il controllo termico rileva la temperatura 50 volte al secondo per proteggere i capelli." },
       { q: "Cosa include la confezione?", a: "Asciugacapelli + ugello standard magnetico + ugello diffusore magnetico + manuale." },
