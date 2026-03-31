@@ -19,7 +19,7 @@ export const products: Product[] = [
     rating: 4.8,
     description: "Caffè di qualità ovunque tu sia. Macchina da caffè espresso elettrica portatile con ricarica USB-C, batteria da 7500mAh e pressione a 15 bar per un espresso perfetto in pochi minuti.",
     videoUrl: "#",
-    tags: ["travel", "fitness", "wellness"],
+    tags: ["travel", "fitness", "wellness", "camera", "gaming"],
     faq: [
       { q: "Quante tazze posso fare con una carica?", a: "Fino a 5 espressi caldi con acqua a temperatura ambiente o oltre 200 con acqua calda." },
       { q: "Funziona con cialde o caffè macinato?", a: "Entrambi! Puoi scegliere il tuo metodo preferito." },
