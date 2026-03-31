@@ -134,7 +134,8 @@ export function getMatchedProduct(answers: Record<number, boolean>): { product: 
   });
 
   const totalTags = activeTags.length || 1;
-  const matchPercent = Math.min(98, Math.max(72, Math.round((bestScore / totalTags) * 100 + Math.random() * 10)));
+  const rawPercent = Math.round((bestScore / totalTags) * 100);
+  const matchPercent = Math.min(98, Math.max(45, rawPercent));
 
   return { product: bestProduct, matchPercent };
 }
