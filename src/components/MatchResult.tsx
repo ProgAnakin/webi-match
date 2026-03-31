@@ -212,7 +212,7 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
             )}
             {/* Floating badge */}
             <motion.div
-              className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground shadow-lg"
+              className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-bold text-white shadow-lg ${badgeBg}`}
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", delay: 1 }}
