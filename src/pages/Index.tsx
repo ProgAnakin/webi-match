@@ -5,6 +5,7 @@ import QuizScreen from "@/components/QuizScreen";
 import MatchResult from "@/components/MatchResult";
 import SuccessScreen from "@/components/SuccessScreen";
 import { getMatchedProduct, type Product } from "@/data/products";
+import { supabase } from "@/integrations/supabase/client";
 
 type Screen = "welcome" | "quiz" | "result" | "success";
 
@@ -13,6 +14,7 @@ const Index = () => {
   const [email, setEmail] = useState("");
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
   const [matchPercent, setMatchPercent] = useState(0);
+  const [quizAnswers, setQuizAnswers] = useState<Record<number, boolean>>({});
 
   const handleStart = (userEmail: string) => {
     setEmail(userEmail);
@@ -23,11 +25,26 @@ const Index = () => {
     const { product, matchPercent: pct } = getMatchedProduct(answers);
     setMatchedProduct(product);
     setMatchPercent(pct);
+    setQuizAnswers(answers);
     setScreen("result");
   };
 
-  const handleClaim = () => {
-    // In production, this would trigger the email via backend
+  const handleClaim = async () => {
+    if (!matchedProduct) return;
+
+    // Save quiz session to database for analytics
+    try {
+      await supabase.from("quiz_sessions").insert({
+        email,
+        answers: quizAnswers,
+        matched_product_id: matchedProduct.id,
+        match_percent: matchPercent,
+        email_sent: false,
+      });
+    } catch (error) {
+      console.error("Error saving quiz session:", error);
+    }
+
     setScreen("success");
   };
 
@@ -35,6 +52,7 @@ const Index = () => {
     setEmail("");
     setMatchedProduct(null);
     setMatchPercent(0);
+    setQuizAnswers({});
     setScreen("welcome");
   };
 
