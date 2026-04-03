@@ -6,6 +6,7 @@ import MatchResult from "@/components/MatchResult";
 import SuccessScreen from "@/components/SuccessScreen";
 import { getMatchedProduct, type Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
+import { useInactivityReset } from "@/hooks/useInactivityReset";
 
 type Screen = "welcome" | "quiz" | "result" | "success";
 
@@ -15,6 +16,7 @@ const Index = () => {
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
   const [matchPercent, setMatchPercent] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, boolean>>({});
+  const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState<number | null>(null);
 
   const handleStart = (userEmail: string) => {
     setEmail(userEmail);
@@ -53,11 +55,48 @@ const Index = () => {
     setMatchedProduct(null);
     setMatchPercent(0);
     setQuizAnswers({});
+    setInactivitySecondsLeft(null);
     setScreen("welcome");
   };
 
+  useInactivityReset({
+    enabled: screen !== "welcome",
+    onWarn: (seconds) => setInactivitySecondsLeft(seconds),
+    onReset: handleRestart,
+  });
+
   return (
     <div className="relative min-h-screen overflow-auto bg-background">
+      <AnimatePresence>
+        {inactivitySecondsLeft !== null && (
+          <motion.div
+            key="inactivity-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          >
+            <div className="mx-6 rounded-2xl bg-white p-8 text-center shadow-2xl max-w-sm w-full">
+              <div className="mb-4 text-5xl">⏱️</div>
+              <h2 className="mb-2 text-xl font-bold text-gray-900">Sei ancora lì?</h2>
+              <p className="mb-6 text-gray-500 text-sm">
+                Torno alla schermata iniziale tra
+              </p>
+              <div className="mb-6 flex items-center justify-center">
+                <span className="text-6xl font-bold text-rose-500">{inactivitySecondsLeft}</span>
+                <span className="ml-2 text-2xl text-gray-400">s</span>
+              </div>
+              <button
+                onClick={handleRestart}
+                className="w-full rounded-xl bg-rose-500 px-6 py-3 font-semibold text-white active:bg-rose-600"
+              >
+                Ricomincia
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         <motion.div
           key={screen}
