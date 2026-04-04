@@ -1,8 +1,10 @@
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useEffect } from "react";
+import { useSound } from "@/hooks/useSound";
 
 interface SuccessScreenProps {
   email: string;
+  userName: string;
   productName: string;
   onRestart: () => void;
 }
@@ -72,12 +74,15 @@ const FlyingAirplane = ({ delay, id }: { delay: number; id: number }) => {
   );
 };
 
-const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) => {
+const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScreenProps) => {
   const checkScale = useMotionValue(0);
   const checkOpacity = useTransform(checkScale, [0, 1], [0, 1]);
+  const { play } = useSound();
 
   useEffect(() => {
-    animate(checkScale, 1, { type: "spring", stiffness: 200, damping: 15, delay: 2 });
+    animate(checkScale, 1, { type: "spring", stiffness: 200, damping: 15, delay: 0.5 });
+    const t = setTimeout(() => play("success"), 400);
+    return () => clearTimeout(t);
   }, []);
 
   const benefits = [
@@ -145,7 +150,9 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <h2 className="text-3xl font-bold text-foreground">Complimenti! 🎉</h2>
+          <h2 className="text-3xl font-bold text-foreground">
+            {userName ? `Perfetto, ${userName}! 🎉` : "Complimenti! 🎉"}
+          </h2>
           <p className="mt-1 text-lg font-semibold text-gradient">{productName}</p>
           <p className="mt-2 text-sm text-muted-foreground">
             Il tuo pacchetto esclusivo è in arrivo a:

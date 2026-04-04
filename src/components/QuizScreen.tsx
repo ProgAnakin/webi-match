@@ -5,6 +5,7 @@ import SwipeCard from "./SwipeCard";
 import SwipeTutorial from "./SwipeTutorial";
 import QuizBackground from "./QuizBackground";
 import { questions } from "@/data/questions";
+import { useSound } from "@/hooks/useSound";
 
 interface QuizScreenProps {
   onComplete: (answers: Record<number, boolean>) => void;
@@ -14,8 +15,10 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, boolean>>({});
   const [showTutorial, setShowTutorial] = useState(true);
+  const { play } = useSound();
 
   const handleSwipe = useCallback((direction: "left" | "right") => {
+    play(direction === "right" ? "swipe_yes" : "swipe_no");
     const question = questions[currentIndex];
     const newAnswers = { ...answers, [question.id]: direction === "right" };
     setAnswers(newAnswers);

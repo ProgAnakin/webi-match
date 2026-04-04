@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import WelcomeScreen from "@/components/WelcomeScreen";
+import WelcomeScreen, { type UserInfo } from "@/components/WelcomeScreen";
 import QuizScreen from "@/components/QuizScreen";
 import MatchResult from "@/components/MatchResult";
 import SuccessScreen from "@/components/SuccessScreen";
@@ -13,14 +13,14 @@ type Screen = "welcome" | "quiz" | "result" | "success";
 
 const Index = () => {
   const [screen, setScreen] = useState<Screen>("welcome");
-  const [email, setEmail] = useState("");
+  const [user, setUser] = useState<UserInfo>({ nome: "", cognome: "", email: "" });
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
   const [matchPercent, setMatchPercent] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, boolean>>({});
   const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState<number | null>(null);
 
-  const handleStart = (userEmail: string) => {
-    setEmail(userEmail);
+  const handleStart = (userInfo: UserInfo) => {
+    setUser(userInfo);
     setScreen("quiz");
   };
 
@@ -34,25 +34,25 @@ const Index = () => {
 
   const handleClaim = async () => {
     if (!matchedProduct) return;
-
-    // Save quiz session to database for analytics
     try {
       await supabase.from("quiz_sessions").insert({
-        email,
+        email: user.email,
         answers: quizAnswers,
         matched_product_id: matchedProduct.id,
         match_percent: matchPercent,
         email_sent: false,
+        // @ts-ignore — columns added via migration; gracefully ignored if not yet applied
+        nome: user.nome,
+        cognome: user.cognome,
       });
     } catch (error) {
       console.error("Error saving quiz session:", error);
     }
-
     setScreen("success");
   };
 
   const handleRestart = () => {
-    setEmail("");
+    setUser({ nome: "", cognome: "", email: "" });
     setMatchedProduct(null);
     setMatchPercent(0);
     setQuizAnswers({});
@@ -61,7 +61,6 @@ const Index = () => {
   };
 
   useWakeLock();
-
   useInactivityReset({
     enabled: screen !== "welcome",
     onWarn: (seconds) => setInactivitySecondsLeft(seconds),
@@ -82,9 +81,7 @@ const Index = () => {
             <div className="mx-6 rounded-2xl bg-white p-8 text-center shadow-2xl max-w-sm w-full">
               <div className="mb-4 text-5xl">⏱️</div>
               <h2 className="mb-2 text-xl font-bold text-gray-900">Sei ancora lì?</h2>
-              <p className="mb-6 text-gray-500 text-sm">
-                Torno alla schermata iniziale tra
-              </p>
+              <p className="mb-6 text-gray-500 text-sm">Torno alla schermata iniziale tra</p>
               <div className="mb-6 flex items-center justify-center">
                 <span className="text-6xl font-bold text-rose-500">{inactivitySecondsLeft}</span>
                 <span className="ml-2 text-2xl text-gray-400">s</span>
@@ -114,12 +111,14 @@ const Index = () => {
             <MatchResult
               product={matchedProduct}
               matchPercent={matchPercent}
+              userName={user.nome}
               onClaim={handleClaim}
             />
           )}
           {screen === "success" && matchedProduct && (
             <SuccessScreen
-              email={email}
+              email={user.email}
+              userName={`${user.nome} ${user.cognome}`}
               productName={matchedProduct.name}
               onRestart={handleRestart}
             />
