@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "framer-motion";
 
 // SVG line-art gadgets as path data
@@ -113,7 +114,7 @@ const particles = Array.from({ length: 35 }, (_, i) => ({
   duration: 3 + Math.random() * 5,
 }));
 
-const DiscoveryBackground = () => {
+const DiscoveryBackground = memo(() => {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
       {/* Gradient orbs */}
@@ -224,6 +225,6 @@ const DiscoveryBackground = () => {
       />
     </div>
   );
-};
+});
 
 export default DiscoveryBackground;
