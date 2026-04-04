@@ -1,6 +1,8 @@
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
 import type { Product } from "@/data/products";
+import { useMatchSound } from "@/hooks/useMatchSound";
+import { useDevicePerformance } from "@/hooks/useDevicePerformance";
 
 interface MatchResultProps {
   product: Product;
@@ -33,6 +35,8 @@ const ConfettiParticle = ({ delay, duration, left, color, size, rotateDeg, xOffs
 const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
   const [displayPercent, setDisplayPercent] = useState(0);
   const [isScanning, setIsScanning] = useState(true);
+  const { play: playSound } = useMatchSound();
+  const tier = useDevicePerformance();
 
   // Motion value for the ring — bypasses React re-renders entirely (no flicker)
   const ringMotionValue = useMotionValue(0);
@@ -46,8 +50,8 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
   useEffect(() => {
     let frame: number;
     const timeout = setTimeout(() => {
-      // Phase 1 — slot machine: only the number changes, ring stays hidden at 0
-      const slotDuration = 1200;
+      // Phase 1 — slot machine: shorter on low-end devices to reduce rAF load
+      const slotDuration = tier === "low" ? 600 : tier === "mid" ? 900 : 1200;
       const slotStart = performance.now();
 
       const runSlot = (now: number) => {
@@ -58,6 +62,7 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
           // Phase 2 — smooth count: number + ring animate together via motion value
           setIsScanning(false);
           setDisplayPercent(0);
+          playSound();
 
           // Animate ring via motion value — GPU-accelerated, zero React re-renders
           animate(ringMotionValue, matchPercent, {
@@ -83,9 +88,12 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
     return () => { cancelAnimationFrame(frame); clearTimeout(timeout); };
   }, [matchPercent]);
 
+  // Adapt particle count to device tier
+  const particleCount = tier === "high" ? 55 : tier === "mid" ? 28 : 12;
+
   // Pre-compute all random values once — never recalculated on re-render
   const confettiParticles = useMemo<ConfettiData[]>(() =>
-    Array.from({ length: 55 }, (_, i) => ({
+    Array.from({ length: particleCount }, (_, i) => ({
       id: i,
       delay: Math.random() * 4,
       duration: 1.8 + Math.random() * 2,
@@ -94,7 +102,7 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
       size: 5 + Math.random() * 10,
       rotateDeg: 360 * (Math.random() > 0.5 ? 1 : -1),
       xOffset: (Math.random() - 0.5) * 100,
-    })), []);
+    })), [particleCount]);
 
   const stars = useMemo(() =>
     Array.from({ length: 5 }, (_, i) => i < Math.round(product.rating) ? "⭐" : "☆"),
@@ -118,28 +126,30 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
         {confettiParticles.map((p) => <ConfettiParticle key={p.id} {...p} />)}
       </div>
 
-      {/* Entrance burst */}
-      <motion.div
-        className="pointer-events-none absolute inset-0 flex items-center justify-center"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ delay: 0.6, duration: 0.4 }}
-      >
-        {CONFETTI_COLORS.slice(0, 10).map((color, i) => (
-          <motion.div
-            key={i}
-            className="absolute h-2 w-2 rounded-full"
-            style={{ backgroundColor: color }}
-            initial={{ scale: 0, x: 0, y: 0 }}
-            animate={{
-              scale: [0, 1.5, 0],
-              x: Math.cos((i * 36 * Math.PI) / 180) * 140,
-              y: Math.sin((i * 36 * Math.PI) / 180) * 140,
-            }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
-          />
-        ))}
-      </motion.div>
+      {/* Entrance burst — skipped on low-end devices */}
+      {tier !== "low" && (
+        <motion.div
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ delay: 0.6, duration: 0.4 }}
+        >
+          {CONFETTI_COLORS.slice(0, tier === "mid" ? 6 : 10).map((color, i) => (
+            <motion.div
+              key={i}
+              className="absolute h-2 w-2 rounded-full"
+              style={{ backgroundColor: color }}
+              initial={{ scale: 0, x: 0, y: 0 }}
+              animate={{
+                scale: [0, 1.5, 0],
+                x: Math.cos((i * 36 * Math.PI) / 180) * 140,
+                y: Math.sin((i * 36 * Math.PI) / 180) * 140,
+              }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+            />
+          ))}
+        </motion.div>
+      )}
 
       {/* Main content — single entrance, no nested competing springs */}
       <motion.div
