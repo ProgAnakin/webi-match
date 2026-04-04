@@ -44,20 +44,46 @@ const CONFETTI_COLORS = [
 
 const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
   const [animatedPercent, setAnimatedPercent] = useState(0);
+  const [isScanning, setIsScanning] = useState(true);
 
-  // Animate percentage counter
+  // Dramatic 3-phase animation: slot machine → slow approach → snap to final
   useEffect(() => {
     let frame: number;
-    const start = performance.now();
-    const duration = 1500;
-    const animate = (now: number) => {
-      const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setAnimatedPercent(Math.round(eased * matchPercent));
-      if (progress < 1) frame = requestAnimationFrame(animate);
+    let timeout: ReturnType<typeof setTimeout>;
+
+    // Phase 1 — slot machine: random numbers for 1.2s
+    const slotDuration = 1200;
+    const slotStart = performance.now();
+    const runSlot = (now: number) => {
+      const elapsed = now - slotStart;
+      if (elapsed < slotDuration) {
+        setAnimatedPercent(Math.floor(Math.random() * 99) + 1);
+        frame = requestAnimationFrame(runSlot);
+      } else {
+        setIsScanning(false);
+        // Phase 2 — slow count up to final value over 1.8s
+        const countStart = performance.now();
+        const countDuration = 1800;
+        const runCount = (now2: number) => {
+          const progress = Math.min((now2 - countStart) / countDuration, 1);
+          // Ease out cubic: fast start, dramatic slow finish
+          const eased = 1 - Math.pow(1 - progress, 3);
+          setAnimatedPercent(Math.round(eased * matchPercent));
+          if (progress < 1) frame = requestAnimationFrame(runCount);
+        };
+        frame = requestAnimationFrame(runCount);
+      }
     };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
+
+    // Start after 0.8s so the card entrance animation completes first
+    timeout = setTimeout(() => {
+      frame = requestAnimationFrame(runSlot);
+    }, 800);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timeout);
+    };
   }, [matchPercent]);
 
   // Generate confetti particles
@@ -173,9 +199,15 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
             />
           </svg>
           <div className="absolute flex flex-col items-center">
-            <span className="text-4xl font-bold text-gradient">{animatedPercent}%</span>
+            <span
+              className={`text-4xl font-bold tabular-nums transition-colors duration-150 ${
+                isScanning ? "text-muted-foreground" : "text-gradient"
+              }`}
+            >
+              {animatedPercent}%
+            </span>
             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              match
+              {isScanning ? "analisi..." : "match"}
             </span>
           </div>
         </motion.div>
@@ -210,15 +242,17 @@ const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
                 <span className="text-xs font-medium">Immagine prodotto</span>
               </div>
             )}
-            {/* Floating badge */}
-            <motion.div
-              className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-bold text-white shadow-lg ${badgeBg}`}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", delay: 1 }}
-            >
-              {animatedPercent}% Match
-            </motion.div>
+            {/* Floating badge — only shown after scanning phase */}
+            {!isScanning && (
+              <motion.div
+                className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-bold text-white shadow-lg ${badgeBg}`}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 15 }}
+              >
+                {animatedPercent}% Match
+              </motion.div>
+            )}
           </div>
 
           <div className="p-6">
