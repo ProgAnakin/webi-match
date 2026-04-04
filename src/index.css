@@ -130,28 +130,14 @@
   80%     { transform: translate(50px,  28px) scale(0.93); }
 }
 
-/* Emojis float from bottom to top.
-   Negative animation-delay = already mid-flight at page load (no stuck-at-bottom). */
-@keyframes wb-emoji-float {
-  from { transform: translateY(0);      opacity: 0;   }
-  8%   {                                opacity: 0.75; }
-  88%  {                                opacity: 0.65; }
-  to   { transform: translateY(-115vh); opacity: 0;   }
-}
-
-/* Gentle left-right sway (stacked on top of the Y float via separate div) */
-@keyframes wb-sway-l { 0%,100% { transform: translateX(0px);  } 50% { transform: translateX(-16px); } }
-@keyframes wb-sway-r { 0%,100% { transform: translateX(0px);  } 50% { transform: translateX( 16px); } }
-@keyframes wb-sway-s { 0%,100% { transform: translateX(0px);  } 50% { transform: translateX(-10px); } }
-
-/* Game indicator — large ✕ / ♥ breathing in corners */
-@keyframes wb-breathe-l {
-  0%,100% { opacity: 0.05; transform: scale(1)    rotate(-12deg); }
-  50%     { opacity: 0.09; transform: scale(1.05) rotate(-12deg); }
-}
-@keyframes wb-breathe-r {
-  0%,100% { opacity: 0.05; transform: scale(1)    rotate(12deg); }
-  50%     { opacity: 0.09; transform: scale(1.05) rotate(12deg); }
+/* Product icon silhouettes — appear, hold, disappear.
+   Negative delay = already mid-cycle at page load → icons visible immediately,
+   distributed across their fade-in/out cycle from the first frame. */
+@keyframes wb-icon-appear {
+  0%, 100% { opacity: 0;    transform: scale(0.82); }
+  18%      { opacity: 0.24; transform: scale(1);    }
+  50%      { opacity: 0.18; transform: scale(1);    }
+  82%      { opacity: 0.24; transform: scale(1);    }
 }
 
 /* Slow scanline */
