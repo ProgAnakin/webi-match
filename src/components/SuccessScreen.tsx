@@ -151,7 +151,7 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
           transition={{ delay: 0.6 }}
         >
           <h2 className="text-3xl font-bold text-foreground">
-            {userName ? `Perfetto, ${userName}! 🎉` : "Complimenti! 🎉"}
+            {userName ? `Perfetto, ${userName}!` : "Complimenti!"}
           </h2>
           <p className="mt-1 text-lg font-semibold text-gradient">{productName}</p>
           <p className="mt-2 text-sm text-muted-foreground">

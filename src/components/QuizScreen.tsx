@@ -15,9 +15,11 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, boolean>>({});
   const [showTutorial, setShowTutorial] = useState(true);
+  const [exitDirection, setExitDirection] = useState<"left" | "right" | undefined>(undefined);
   const { play } = useSound();
 
   const handleSwipe = useCallback((direction: "left" | "right") => {
+    setExitDirection(direction);
     play(direction === "right" ? "swipe_yes" : "swipe_no");
     const question = questions[currentIndex];
     const newAnswers = { ...answers, [question.id]: direction === "right" };
@@ -26,7 +28,10 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
     if (currentIndex + 1 >= questions.length) {
       setTimeout(() => onComplete(newAnswers), 300);
     } else {
-      setTimeout(() => setCurrentIndex((i) => i + 1), 300);
+      setTimeout(() => {
+        setExitDirection(undefined);
+        setCurrentIndex((i) => i + 1);
+      }, 300);
     }
   }, [currentIndex, answers, onComplete]);
 
@@ -70,6 +75,7 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
           key={currentIndex}
           question={question}
           onSwipe={handleSwipe}
+          exitDirection={exitDirection}
         />
       </AnimatePresence>
 
