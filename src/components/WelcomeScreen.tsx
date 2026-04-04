@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle2, XCircle } from "lucide-react";
 import webidooLogo from "@/assets/webidoo-logo.png";
 import DiscoveryBackground from "./DiscoveryBackground";
 
@@ -7,17 +8,20 @@ interface WelcomeScreenProps {
   onStart: (email: string) => void;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
+  const [touched, setTouched] = useState(false);
+
+  const isValid = EMAIL_REGEX.test(email.trim());
+  const showError = touched && email.trim().length > 0 && !isValid;
+  const showSuccess = email.trim().length > 0 && isValid;
 
   const handleStart = () => {
-    const trimmed = email.trim();
-    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setError("Per favore, inserisci un'email valida.");
-      return;
-    }
-    onStart(trimmed);
+    setTouched(true);
+    if (!isValid) return;
+    onStart(email.trim());
   };
 
   return (
@@ -58,25 +62,67 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
 
         {/* Email input */}
         <motion.div
-          className="w-full space-y-3"
+          className="w-full space-y-2"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
         >
-          <input
-            type="email"
-            placeholder="La tua email migliore 📧"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setError("");
-            }}
-            onKeyDown={(e) => e.key === "Enter" && handleStart()}
-            className="w-full rounded-2xl border border-border bg-card px-6 py-4 text-center text-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          {error && (
-            <p className="text-center text-sm text-destructive">{error}</p>
-          )}
+          <div className="relative">
+            <input
+              type="email"
+              placeholder="La tua email migliore 📧"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setTouched(true);
+              }}
+              onBlur={() => setTouched(true)}
+              onKeyDown={(e) => e.key === "Enter" && handleStart()}
+              className={`w-full rounded-2xl border bg-card px-6 py-4 pr-14 text-center text-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-colors ${
+                showSuccess
+                  ? "border-green-500 focus:ring-green-400"
+                  : showError
+                  ? "border-destructive focus:ring-destructive"
+                  : "border-border focus:ring-primary"
+              }`}
+            />
+            <AnimatePresence mode="wait">
+              {showSuccess && (
+                <motion.span
+                  key="check"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500"
+                >
+                  <CheckCircle2 className="h-6 w-6" />
+                </motion.span>
+              )}
+              {showError && (
+                <motion.span
+                  key="error"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-destructive"
+                >
+                  <XCircle className="h-6 w-6" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
+          <AnimatePresence>
+            {showError && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="text-center text-sm text-destructive"
+              >
+                Per favore, inserisci un'email valida.
+              </motion.p>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         {/* Start button */}

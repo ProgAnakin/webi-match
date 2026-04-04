@@ -81,10 +81,10 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
   }, []);
 
   const benefits = [
-    { icon: "🎬", title: "Video 30s", desc: "Video esplicativo" },
-    { icon: "📖", title: "Manuale", desc: "Guida completa" },
-    { icon: "❓", title: "FAQ", desc: "Domande frequenti" },
-    { icon: "🏷️", title: "Sconto", desc: "Offerta esclusiva" },
+    { icon: "🎬", title: "Video esclusivo", desc: "Il consulente ti spiega tutto in 30 secondi", highlight: false },
+    { icon: "📖", title: "Manuale completo", desc: "Guida passo-passo per iniziare subito", highlight: false },
+    { icon: "❓", title: "FAQ", desc: "Risposte alle domande più frequenti", highlight: false },
+    { icon: "🏷️", title: "Sconto speciale", desc: "Riservato solo a chi ha giocato oggi!", highlight: true },
   ];
 
   return (
@@ -145,9 +145,10 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <h2 className="text-3xl font-bold text-foreground">Email Inviata! ✨</h2>
-          <p className="mt-2 text-muted-foreground">
-            La guida esclusiva del <span className="font-semibold text-gradient">{productName}</span> è stata inviata a:
+          <h2 className="text-3xl font-bold text-foreground">Complimenti! 🎉</h2>
+          <p className="mt-1 text-lg font-semibold text-gradient">{productName}</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Il tuo pacchetto esclusivo è in arrivo a:
           </p>
         </motion.div>
 
@@ -178,26 +179,32 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           {benefits.map((item, i) => (
             <motion.div
               key={i}
-              className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm"
+              className={`flex flex-col items-center gap-1 rounded-2xl border p-4 backdrop-blur-sm ${
+                item.highlight
+                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                  : "border-border bg-card/60"
+              }`}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 1 + i * 0.1 }}
               whileHover={{ scale: 1.05, y: -2 }}
             >
               <span className="text-2xl">{item.icon}</span>
-              <span className="text-xs font-bold text-foreground">{item.title}</span>
-              <span className="text-[10px] text-muted-foreground">{item.desc}</span>
+              <span className={`text-xs font-bold ${item.highlight ? "text-primary" : "text-foreground"}`}>
+                {item.title}
+              </span>
+              <span className="text-center text-[10px] text-muted-foreground">{item.desc}</span>
             </motion.div>
           ))}
         </motion.div>
 
         <motion.p
-          className="text-center text-sm text-muted-foreground"
+          className="text-center text-xs text-muted-foreground"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
         >
-          Controlla la tua casella di posta per scoprire tutto!
+          Non vedi l'email? Controlla anche la cartella <span className="font-semibold">spam</span>.
         </motion.p>
 
         <motion.button
