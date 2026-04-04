@@ -1,8 +1,9 @@
-import { useState, useCallback } from "react";
-import { motion } from "framer-motion";
+import { useState, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, XCircle } from "lucide-react";
 import webidooLogo from "@/assets/webidoo-logo.png";
 import DiscoveryBackground from "./DiscoveryBackground";
+import AdminPinOverlay from "./AdminPinOverlay";
 import { useSound } from "@/hooks/useSound";
 
 export interface UserInfo {
@@ -140,9 +141,33 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   );
 };
 
-const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => (
+const LOGO_TAPS_REQUIRED = 6;
+
+const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
+  const [showPin, setShowPin] = useState(false);
+  const tapCount = useRef(0);
+  const tapTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const handleLogoTap = useCallback(() => {
+    tapCount.current += 1;
+    clearTimeout(tapTimer.current);
+    if (tapCount.current >= LOGO_TAPS_REQUIRED) {
+      tapCount.current = 0;
+      setShowPin(true);
+    } else {
+      // Reset counter if no new tap within 2 seconds
+      tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000);
+    }
+  }, []);
+
+  return (
   <div className="flex min-h-screen flex-col items-center justify-center px-6 py-8">
     <DiscoveryBackground />
+
+    {/* Admin PIN overlay */}
+    <AnimatePresence>
+      {showPin && <AdminPinOverlay onClose={() => setShowPin(false)} />}
+    </AnimatePresence>
 
     <motion.div
       className="relative z-10 flex w-full max-w-md flex-col items-center gap-6"
@@ -150,11 +175,12 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => (
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, ease: "easeOut" }}
     >
-      {/* Logo */}
+      {/* Logo — tap 6× to open staff PIN */}
       <motion.img
         src={webidooLogo}
         alt="Webidoo Store"
         className="h-44 w-auto"
+        onClick={handleLogoTap}
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.1 }}
@@ -180,6 +206,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => (
       <WelcomeForm onStart={onStart} />
     </motion.div>
   </div>
-);
+  );
+};
 
 export default WelcomeScreen;
