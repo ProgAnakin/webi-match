@@ -7,6 +7,7 @@ import SuccessScreen from "@/components/SuccessScreen";
 import { getMatchedProduct, type Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import { useInactivityReset } from "@/hooks/useInactivityReset";
+import { useWakeLock } from "@/hooks/useWakeLock";
 
 type Screen = "welcome" | "quiz" | "result" | "success";
 
@@ -58,6 +59,8 @@ const Index = () => {
     setInactivitySecondsLeft(null);
     setScreen("welcome");
   };
+
+  useWakeLock();
 
   useInactivityReset({
     enabled: screen !== "welcome",

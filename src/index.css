@@ -60,16 +60,46 @@
 @layer base {
   * {
     @apply border-border;
+    /* Prevent double-tap zoom on all interactive elements */
+    touch-action: manipulation;
+    /* Remove tap highlight flash on iOS */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    /* Fill the entire viewport including safe areas (notch/home bar on iPad) */
+    height: -webkit-fill-available;
+    /* Prevent elastic overscroll bounce (iOS rubber-band effect) */
+    overscroll-behavior: none;
   }
 
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-display);
+    /* Use dynamic viewport height so content fits regardless of iPad size */
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
     overflow-x: hidden;
     overflow-y: auto;
+    /* Prevent text selection (kiosk mode — no copy/paste) */
     -webkit-user-select: none;
     user-select: none;
+    /* Prevent long-press context menu on iOS */
     -webkit-touch-callout: none;
+    /* Prevent overscroll bounce */
+    overscroll-behavior: none;
+    /* Respect safe areas for all iPad sizes (notch, home bar) */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Allow text selection only inside input fields */
+  input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+    touch-action: auto;
   }
 }
 
