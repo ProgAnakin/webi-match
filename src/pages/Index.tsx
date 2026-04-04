@@ -45,8 +45,8 @@ const Index = () => {
         nome: user.nome,
         cognome: user.cognome,
       });
-    } catch (error) {
-      console.error("Error saving quiz session:", error);
+    } catch {
+      // Silently fail — data loss is non-critical; the user flow continues
     }
     setScreen("success");
   };

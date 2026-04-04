@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogOut, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,15 +53,25 @@ const StatCard = ({ label, value, sub }: { label: string; value: string | number
 );
 
 // ─── Login ────────────────────────────────────────────────────────────────────
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 5 * 60 * 1000; // 5 minutes
+
 const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   // Generic error — never expose internal Supabase messages to the UI
   const [error, setError] = useState("");
+  const [attempts, setAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+
+  const isLocked = lockedUntil !== null && Date.now() < lockedUntil;
+  const lockSecondsLeft = isLocked ? Math.ceil((lockedUntil! - Date.now()) / 1000) : 0;
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) return;
+    if (isLocked) return;
+
     setLoading(true);
     setError("");
 
@@ -73,9 +83,18 @@ const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
     setLoading(false);
 
     if (authError) {
-      // Generic message — do not expose whether email exists or not
-      setError("Credenziali non valide. Riprova.");
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      if (newAttempts >= MAX_ATTEMPTS) {
+        setLockedUntil(Date.now() + LOCKOUT_MS);
+        setAttempts(0);
+        setError(`Troppi tentativi. Riprova tra 5 minuti.`);
+      } else {
+        // Generic message — do not expose whether email exists or not
+        setError(`Credenziali non valide. Riprova. (${MAX_ATTEMPTS - newAttempts} tentativi rimasti)`);
+      }
     } else {
+      setAttempts(0);
       onLogin();
     }
   };
@@ -127,10 +146,10 @@ const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
 
         <button
           onClick={handleLogin}
-          disabled={loading || !email.trim() || !password.trim()}
+          disabled={loading || isLocked || !email.trim() || !password.trim()}
           className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-4 text-lg font-bold text-primary-foreground active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? "Accesso in corso…" : "Accedi"}
+          {loading ? "Accesso in corso…" : isLocked ? `Bloccato — ${lockSecondsLeft}s` : "Accedi"}
         </button>
       </motion.div>
     </div>
@@ -138,30 +157,37 @@ const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
 };
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
+const FETCH_LIMIT = 500; // cap rows to prevent accidental DoS
+const REFRESH_DEBOUNCE_MS = 3000; // minimum ms between manual refreshes
+
 const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
   const [sessions, setSessions] = useState<QuizSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const lastFetchRef = useRef<number>(0);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async (isManual = false) => {
+    // Debounce manual refreshes to prevent hammering Supabase
+    if (isManual && Date.now() - lastFetchRef.current < REFRESH_DEBOUNCE_MS) return;
+    lastFetchRef.current = Date.now();
+
     setLoading(true);
     setHasError(false);
     const { data, error } = await supabase
       .from("quiz_sessions")
       .select("id, email, matched_product_id, match_percent, created_at")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(FETCH_LIMIT);
 
     if (error) {
-      // Log tecnico — non esposto all'utente
-      console.error("[Stats] fetch error:", error.code);
       setHasError(true);
     } else {
       setSessions((data ?? []) as QuizSession[]);
     }
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -219,7 +245,7 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={fetchData}
+              onClick={() => fetchData(true)}
               className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95"
             >
               <RefreshCw className="h-3 w-3" />
@@ -244,7 +270,7 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
             <p className="text-sm text-destructive">
               Impossibile caricare i dati. Riprova o contatta l'amministratore.
             </p>
-            <button onClick={fetchData} className="mt-3 text-xs text-primary underline">
+            <button onClick={() => fetchData(true)} className="mt-3 text-xs text-primary underline">
               Riprova
             </button>
           </div>
