@@ -47,14 +47,14 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
               Domanda {currentIndex + 1} di {questions.length}
             </span>
             <span className="text-sm font-bold text-primary">
-              {Math.round(((currentIndex + 1) / questions.length) * 100)}%
+              {Math.round((currentIndex / questions.length) * 100)}%
             </span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
             <motion.div
               className="h-full rounded-full gradient-primary"
-              initial={{ width: `${(currentIndex / questions.length) * 100}%` }}
-              animate={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+              initial={{ width: `${((currentIndex - 1) / questions.length) * 100}%` }}
+              animate={{ width: `${(currentIndex / questions.length) * 100}%` }}
               transition={{ duration: 0.4, ease: "easeOut" }}
             />
           </div>
