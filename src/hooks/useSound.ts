@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 /**
  * Unified sound system — Web Audio API, singleton AudioContext.
  * All sounds are synthesized (no files). Professional & delicate:
@@ -14,16 +16,42 @@
 // ─── Singleton AudioContext ───────────────────────────────────────────────────
 // Reused across all calls — avoids per-sound creation overhead and iOS limits.
 let _ctx: AudioContext | null = null;
+let _unlocked = false;
 
 function getCtx(): AudioContext | null {
   try {
     if (!_ctx || _ctx.state === "closed") {
       _ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
-    if (_ctx.state === "suspended") _ctx.resume();
+    if (_ctx.state === "suspended") {
+      _ctx.resume(); // async, best-effort — real unlock happens via unlockAudio()
+    }
     return _ctx;
   } catch {
     return null;
+  }
+}
+
+/**
+ * iOS/Safari requires AudioContext to be created AND a buffer played
+ * inside the first user-gesture call stack. We call this once on the
+ * first touchstart/mousedown so subsequent sounds work reliably.
+ */
+function unlockAudio() {
+  if (_unlocked) return;
+  _unlocked = true;
+  const ctx = getCtx();
+  if (!ctx) return;
+  try {
+    // Play an inaudible 1-sample buffer — forces the context to "running".
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    src.disconnect();
+  } catch {
+    // Ignore — older browsers may not support this pattern
   }
 }
 
@@ -105,6 +133,18 @@ function playSuccess() {
 export type SoundType = "swipe_yes" | "swipe_no" | "start" | "match" | "success";
 
 export function useSound() {
+  // Register the one-time unlock on the first user gesture.
+  // useEffect runs client-side only; { once: true } auto-removes the listener.
+  useEffect(() => {
+    const handle = () => unlockAudio();
+    window.addEventListener("touchstart", handle, { once: true, passive: true });
+    window.addEventListener("mousedown",  handle, { once: true, passive: true });
+    return () => {
+      window.removeEventListener("touchstart", handle);
+      window.removeEventListener("mousedown",  handle);
+    };
+  }, []);
+
   const play = (sound: SoundType) => {
     try {
       switch (sound) {

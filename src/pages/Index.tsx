@@ -63,8 +63,9 @@ const Index = () => {
   useWakeLock();
   const { dismiss } = useInactivityReset({
     enabled: screen !== "welcome",
-    onWarn: (seconds) => setInactivitySecondsLeft(seconds),
-    onReset: handleRestart,
+    onWarn:    (seconds) => setInactivitySecondsLeft(seconds),
+    onReset:   handleRestart,
+    onDismiss: () => setInactivitySecondsLeft(null), // hides frozen overlay when activity detected
   });
 
   // User tapped "still here" (backdrop or button) → hide overlay + restart 45s timer
