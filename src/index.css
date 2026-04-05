@@ -140,37 +140,6 @@
   82%      { opacity: 0.24; transform: scale(1);    }
 }
 
-/* ── Quiz background animations ─────────────────────────────────────────────
-   Three float variants for variety; qb-ring for the expanding circle.
-   Only transform + opacity — GPU compositor, no layout cost.
-──────────────────────────────────────────────────────────────────────────── */
-
-/* Gentle upward drift + opacity pulse */
-@keyframes qb-float-a {
-  0%, 100% { transform: translateY(0px);          opacity: 0.18; }
-  50%      { transform: translateY(-18px);         opacity: 0.30; }
-}
-
-/* Downward drift + slight clockwise tilt */
-@keyframes qb-float-b {
-  0%, 100% { transform: translateY(0px)  rotate(0deg);  opacity: 0.14; }
-  50%      { transform: translateY(16px) rotate(6deg);  opacity: 0.26; }
-}
-
-/* Side-to-side pendulum */
-@keyframes qb-float-c {
-  0%, 100% { transform: translateX(0px)   rotate(0deg);   opacity: 0.16; }
-  33%      { transform: translateX(-12px) rotate(-5deg);  opacity: 0.26; }
-  66%      { transform: translateX(12px)  rotate(5deg);   opacity: 0.20; }
-}
-
-/* Expanding ring from centre — div is positioned at 50%/46% with fixed size,
-   scale animates from near-zero to 1 with a translate(-50%,-50%) origin fix */
-@keyframes qb-ring {
-  0%   { transform: translate(-50%, -50%) scale(0.15); opacity: 0.32; }
-  100% { transform: translate(-50%, -50%) scale(1);    opacity: 0;    }
-}
-
 /* Slow scanline */
 @keyframes wb-scanline {
   from { transform: translateY(-4px);  }
