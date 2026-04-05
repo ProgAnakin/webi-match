@@ -52,6 +52,12 @@ const ICONS: { x: number; y: number; dur: number; delay: string; product: Produc
   { x: 53, y: 70, dur: 13, delay: "-7s",  product: "airtag",      size: 34 },
   { x: 70, y: 76, dur: 11, delay: "-4s",  product: "massageGun",  size: 40 },
   { x: 86, y: 68, dur: 10, delay: "-2s",  product: "miniSpeaker", size: 38 },
+  // Extra row at the very bottom — fills empty space on tall/wide screens
+  { x: 10, y: 86, dur: 11, delay: "-6s",  product: "airtag",      size: 34 },
+  { x: 30, y: 90, dur:  9, delay: "-3s",  product: "smartwatch",  size: 36 },
+  { x: 52, y: 85, dur: 12, delay: "-8s",  product: "headphones",  size: 38 },
+  { x: 72, y: 89, dur: 10, delay: "-1s",  product: "projector",   size: 40 },
+  { x: 88, y: 83, dur: 11, delay: "-5s",  product: "powerbank",   size: 34 },
 ];
 
 const ORANGE = "hsla(27,92%,70%,1)";
@@ -62,11 +68,16 @@ const DiscoveryBackground = memo(() => (
     className="pointer-events-none absolute inset-0 overflow-hidden"
     style={{ zIndex: 0 }}
   >
-    {/* ── Colour orbs — warm atmosphere ────────────────────────── */}
-    <div style={{ position:"absolute", left:"-8%", top:"-5%", width:480, height:480, borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,55%,0.85) 0%,transparent 70%)", filter:"blur(60px)", opacity:0.20, animation:"wb-orb-a 19s ease-in-out infinite", willChange:"transform" }} />
-    <div style={{ position:"absolute", right:"-10%", top:"0", width:420, height:420, borderRadius:"50%", background:"radial-gradient(circle,hsla(16,100%,50%,0.85) 0%,transparent 70%)", filter:"blur(70px)", opacity:0.16, animation:"wb-orb-b 23s ease-in-out infinite", willChange:"transform" }} />
-    <div style={{ position:"absolute", right:"-6%", bottom:"4%", width:360, height:360, borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,62%,0.85) 0%,transparent 70%)", filter:"blur(65px)", opacity:0.13, animation:"wb-orb-c 21s ease-in-out infinite", willChange:"transform" }} />
-    <div style={{ position:"absolute", left:"-5%", bottom:"6%", width:340, height:340, borderRadius:"50%", background:"radial-gradient(circle,hsla(230,60%,55%,0.85) 0%,transparent 70%)", filter:"blur(70px)", opacity:0.10, animation:"wb-orb-d 26s ease-in-out infinite", willChange:"transform" }} />
+    {/* ── Colour orbs — warm atmosphere ─────────────────────────────────
+        Sizes use max(fixed_px, vw) so on large screens (MacBook/desktop)
+        the orbs grow to fill the viewport; phones stay at the fixed_px floor.
+        A 5th centered bottom orb fills the gap that corners leave on wide screens. */}
+    <div style={{ position:"absolute", left:"-8%", top:"-5%", width:"max(480px,35vw)", height:"max(480px,35vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,55%,0.85) 0%,transparent 70%)", filter:"blur(max(60px,5vw))", opacity:0.20, animation:"wb-orb-a 19s ease-in-out infinite", willChange:"transform" }} />
+    <div style={{ position:"absolute", right:"-10%", top:"0", width:"max(420px,30vw)", height:"max(420px,30vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(16,100%,50%,0.85) 0%,transparent 70%)", filter:"blur(max(70px,5.5vw))", opacity:0.16, animation:"wb-orb-b 23s ease-in-out infinite", willChange:"transform" }} />
+    <div style={{ position:"absolute", right:"-6%", bottom:"4%", width:"max(360px,28vw)", height:"max(360px,28vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,62%,0.85) 0%,transparent 70%)", filter:"blur(max(65px,5vw))", opacity:0.13, animation:"wb-orb-c 21s ease-in-out infinite", willChange:"transform" }} />
+    <div style={{ position:"absolute", left:"-5%", bottom:"6%", width:"max(340px,26vw)", height:"max(340px,26vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(230,60%,55%,0.85) 0%,transparent 70%)", filter:"blur(max(70px,5.5vw))", opacity:0.10, animation:"wb-orb-d 26s ease-in-out infinite", willChange:"transform" }} />
+    {/* 5th orb — centre-bottom, fills the horizontal gap on MacBook */}
+    <div style={{ position:"absolute", left:"50%", bottom:"-8%", width:"max(400px,30vw)", height:"max(400px,30vw)", marginLeft:"max(-200px,-15vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,58%,0.85) 0%,transparent 70%)", filter:"blur(max(70px,5.5vw))", opacity:0.11, animation:"wb-orb-a 22s ease-in-out 8s infinite", willChange:"transform" }} />
 
     {/* ── Product icon silhouettes ──────────────────────────────── */}
     {ICONS.map((icon, i) => (
