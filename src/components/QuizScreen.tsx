@@ -42,7 +42,7 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center px-6">
       {/* Themed background */}
-      <QuizBackground category={question.category} />
+      <QuizBackground emoji={question.emoji} category={question.category} />
 
       {/* Tutorial overlay */}
       {showTutorial && <SwipeTutorial onDismiss={() => setShowTutorial(false)} />}
