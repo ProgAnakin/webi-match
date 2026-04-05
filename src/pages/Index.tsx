@@ -61,11 +61,17 @@ const Index = () => {
   };
 
   useWakeLock();
-  useInactivityReset({
+  const { dismiss } = useInactivityReset({
     enabled: screen !== "welcome",
     onWarn: (seconds) => setInactivitySecondsLeft(seconds),
     onReset: handleRestart,
   });
+
+  // User tapped "still here" (backdrop or button) → hide overlay + restart 45s timer
+  const handleDismiss = () => {
+    setInactivitySecondsLeft(null);
+    dismiss();
+  };
 
   return (
     <div className="relative min-h-screen overflow-auto bg-background">
@@ -77,8 +83,13 @@ const Index = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            onClick={handleDismiss}
           >
-            <div className="mx-6 rounded-2xl bg-white p-8 text-center shadow-2xl max-w-sm w-full">
+            {/* Stop propagation so clicks inside the card don't trigger backdrop dismiss */}
+            <div
+              className="mx-6 rounded-2xl bg-white p-8 text-center shadow-2xl max-w-sm w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="mb-4 text-5xl">⏱️</div>
               <h2 className="mb-2 text-xl font-bold text-gray-900">Sei ancora lì?</h2>
               <p className="mb-6 text-gray-500 text-sm">Torno alla schermata iniziale tra</p>
@@ -87,8 +98,14 @@ const Index = () => {
                 <span className="ml-2 text-2xl text-gray-400">s</span>
               </div>
               <button
+                onClick={handleDismiss}
+                className="w-full rounded-xl bg-primary px-6 py-3 font-semibold text-white active:opacity-90 mb-3"
+              >
+                Sono ancora qui!
+              </button>
+              <button
                 onClick={handleRestart}
-                className="w-full rounded-xl bg-rose-500 px-6 py-3 font-semibold text-white active:bg-rose-600"
+                className="w-full rounded-xl bg-gray-100 px-6 py-3 font-semibold text-gray-600 active:bg-gray-200"
               >
                 Ricomincia
               </button>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 
-const INACTIVITY_TIMEOUT = 45_000; // 45s senza tocco → mostra avviso
-const WARNING_DURATION = 10_000;   // 10s di conto alla rovescia prima del reset
+const INACTIVITY_TIMEOUT = 45_000; // 45s without touch → show warning
+const WARNING_DURATION  = 10_000;  // 10s countdown before reset
 
 interface UseInactivityResetOptions {
   enabled: boolean;
@@ -10,64 +10,80 @@ interface UseInactivityResetOptions {
 }
 
 export function useInactivityReset({ enabled, onWarn, onReset }: UseInactivityResetOptions) {
-  const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const countdownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isWarningActive = useRef(false);
+  // Refs for callbacks — updated every render but never in dependency arrays.
+  // This is the key fix: inline handlers like `(s) => setState(s)` are new
+  // objects on every render; putting them in deps makes useEffect re-run and
+  // restart the 45-second timer every second during the countdown.
+  const onWarnRef  = useRef(onWarn);
+  const onResetRef = useRef(onReset);
+  onWarnRef.current  = onWarn;
+  onResetRef.current = onReset;
 
-  const clearTimers = useCallback(() => {
-    if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
-    if (countdownTimer.current) clearInterval(countdownTimer.current);
-    inactivityTimer.current = null;
-    countdownTimer.current = null;
-  }, []);
+  // arm() is defined inside the effect but exposed via this ref so dismiss()
+  // can call it without being coupled to the effect lifecycle.
+  const armRef = useRef<() => void>(() => {});
 
-  const startCountdown = useCallback(() => {
-    isWarningActive.current = true;
-    let secondsLeft = Math.round(WARNING_DURATION / 1000);
-    onWarn(secondsLeft);
-
-    countdownTimer.current = setInterval(() => {
-      secondsLeft -= 1;
-      if (secondsLeft <= 0) {
-        clearTimers();
-        isWarningActive.current = false;
-        onReset();
-      } else {
-        onWarn(secondsLeft);
-      }
-    }, 1000);
-  }, [onWarn, onReset, clearTimers]);
-
-  const resetTimer = useCallback(() => {
-    if (!enabled) return;
-    clearTimers();
-    isWarningActive.current = false;
-    inactivityTimer.current = setTimeout(startCountdown, INACTIVITY_TIMEOUT);
-  }, [enabled, clearTimers, startCountdown]);
-
-  // Reinicia o timer a cada interação do utilizador
   useEffect(() => {
     if (!enabled) {
-      clearTimers();
+      armRef.current = () => {};
       return;
     }
 
-    const events = ["touchstart", "touchmove", "mousedown", "mousemove", "keydown", "scroll"];
-    const handleActivity = () => {
-      if (isWarningActive.current) {
-        // Utilizador voltou durante o avviso — cancella e ricomincia
-        clearTimers();
-        isWarningActive.current = false;
-      }
-      resetTimer();
+    let inactivityTimer: ReturnType<typeof setTimeout>  | null = null;
+    let countdownTimer:  ReturnType<typeof setInterval> | null = null;
+    let isWarning = false;
+
+    const clearAll = () => {
+      if (inactivityTimer) { clearTimeout(inactivityTimer);  inactivityTimer = null; }
+      if (countdownTimer)  { clearInterval(countdownTimer);  countdownTimer  = null; }
     };
 
-    events.forEach((e) => window.addEventListener(e, handleActivity, { passive: true }));
-    resetTimer(); // inicia ao montar
+    const startCountdown = () => {
+      isWarning = true;
+      let secondsLeft = Math.round(WARNING_DURATION / 1000);
+      onWarnRef.current(secondsLeft);
+
+      countdownTimer = setInterval(() => {
+        secondsLeft -= 1;
+        if (secondsLeft <= 0) {
+          clearAll();
+          isWarning = false;
+          onResetRef.current();
+        } else {
+          onWarnRef.current(secondsLeft);
+        }
+      }, 1000);
+    };
+
+    const arm = () => {
+      clearAll();
+      isWarning = false;
+      inactivityTimer = setTimeout(startCountdown, INACTIVITY_TIMEOUT);
+    };
+
+    // expose arm so dismiss() can call it from outside the effect
+    armRef.current = arm;
+
+    const handleActivity = () => {
+      if (isWarning) { clearAll(); isWarning = false; }
+      arm();
+    };
+
+    const EVENTS = ["touchstart", "touchmove", "mousedown", "mousemove", "keydown", "scroll"] as const;
+    EVENTS.forEach(e => window.addEventListener(e, handleActivity, { passive: true }));
+    arm(); // start on mount
 
     return () => {
-      events.forEach((e) => window.removeEventListener(e, handleActivity));
-      clearTimers();
+      EVENTS.forEach(e => window.removeEventListener(e, handleActivity));
+      clearAll();
+      armRef.current = () => {};
     };
-  }, [enabled, resetTimer, clearTimers]);
+  }, [enabled]); // only re-run when enabled changes
+
+  // dismiss(): user tapped "still here" → hide overlay + restart 45s timer
+  const dismiss = useCallback(() => {
+    armRef.current();
+  }, []);
+
+  return { dismiss };
 }
