@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import WelcomeScreen, { type UserInfo } from "@/components/WelcomeScreen";
 import QuizScreen from "@/components/QuizScreen";
@@ -18,6 +18,23 @@ const Index = () => {
   const [matchPercent, setMatchPercent] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, boolean>>({});
   const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState<number | null>(null);
+  // Active product IDs fetched from Supabase — null means "not loaded yet" (uses full catalogue)
+  const [activeProductIds, setActiveProductIds] = useState<Set<string> | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("product_settings")
+      .select("product_id, active")
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const active = new Set(
+            data.filter((r) => r.active !== false).map((r) => r.product_id),
+          );
+          setActiveProductIds(active);
+        }
+        // On error or empty table → leave null → getMatchedProduct uses all products
+      });
+  }, []);
 
   const handleStart = (userInfo: UserInfo) => {
     setUser(userInfo);
@@ -25,7 +42,7 @@ const Index = () => {
   };
 
   const handleQuizComplete = (answers: Record<number, boolean>) => {
-    const { product, matchPercent: pct } = getMatchedProduct(answers);
+    const { product, matchPercent: pct } = getMatchedProduct(answers, activeProductIds ?? undefined);
     setMatchedProduct(product);
     setMatchPercent(pct);
     setQuizAnswers(answers);

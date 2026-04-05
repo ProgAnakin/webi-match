@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      product_settings: {
+        Row: {
+          product_id: string
+          active: boolean
+          updated_at: string
+        }
+        Insert: {
+          product_id: string
+          active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          product_id?: string
+          active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       quiz_sessions: {
         Row: {
           answers: Json

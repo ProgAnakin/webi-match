@@ -162,29 +162,43 @@ export const products: Product[] = [
     ],
   },
 ];
-export function getMatchedProduct(answers: Record<number, boolean>): { product: Product; matchPercent: number } {
-  const activeTags: string[] = [];
-  const tagMap: Record<number, string> = {
-    1: "fitness",
-    2: "audio",
-    3: "productivity",
-    4: "camera",
-    5: "travel",
-    6: "gaming",
-    7: "communication",
-    8: "wellness",
-  };
+const TAG_MAP: Record<number, string> = {
+  1: "fitness",
+  2: "audio",
+  3: "productivity",
+  4: "camera",
+  5: "travel",
+  6: "gaming",
+  7: "communication",
+  8: "wellness",
+};
 
+/**
+ * Returns the best-matching product for a set of quiz answers.
+ * @param answers       Map of questionId → boolean (yes/no)
+ * @param activeIds     Optional set of active product IDs from Supabase.
+ *                      When provided, only products in the set are considered.
+ *                      Falls back to the full catalogue if the set is empty or undefined.
+ */
+export function getMatchedProduct(
+  answers: Record<number, boolean>,
+  activeIds?: Set<string>,
+): { product: Product; matchPercent: number } {
+  // Use only active products; fall back to full catalogue if none are configured
+  const pool =
+    activeIds && activeIds.size > 0
+      ? products.filter((p) => activeIds.has(p.id))
+      : products;
+
+  const activeTags: string[] = [];
   Object.entries(answers).forEach(([qId, answered]) => {
-    if (answered && tagMap[Number(qId)]) {
-      activeTags.push(tagMap[Number(qId)]);
-    }
+    if (answered && TAG_MAP[Number(qId)]) activeTags.push(TAG_MAP[Number(qId)]);
   });
 
-  let bestProduct = products[0];
+  let bestProduct = pool[0];
   let bestScore = 0;
 
-  products.forEach((product) => {
+  pool.forEach((product) => {
     const score = product.tags.filter((tag) => activeTags.includes(tag)).length;
     if (score > bestScore) {
       bestScore = score;
