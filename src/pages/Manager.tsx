@@ -46,12 +46,25 @@ const ManagerDashboard = ({ onLogout }: { onLogout: () => void }) => {
       .from("product_settings")
       .upsert({ product_id: productId, active: next, updated_at: new Date().toISOString() });
 
-    setSavingId(null);
     if (error) {
+      setSavingId(null);
       // Rollback on failure
       setSettings((prev) => ({ ...prev, [productId]: current }));
       setSaveError("Errore nel salvataggio. Verifica la connessione e riprova.");
+      return;
     }
+
+    // Write audit log entry (fire-and-forget — never blocks the UI)
+    supabase.auth.getUser().then(({ data }) => {
+      supabase.from("manager_audit_log").insert({
+        user_id: data.user?.id ?? null,
+        user_email: data.user?.email ?? null,
+        product_id: productId,
+        new_active: next,
+      });
+    });
+
+    setSavingId(null);
   };
 
   const handleLogout = async () => {
