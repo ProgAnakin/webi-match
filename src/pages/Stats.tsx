@@ -56,6 +56,9 @@ const StatCard = ({ label, value, sub }: { label: string; value: string | number
 // ─── Login ────────────────────────────────────────────────────────────────────
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 5 * 60 * 1000; // 5 minutes
+// sessionStorage keys — survive component remount but clear on tab close
+const SS_ATTEMPTS = "wb_login_attempts";
+const SS_LOCKED_UNTIL = "wb_locked_until";
 
 const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
   const [email, setEmail] = useState("");
@@ -63,11 +66,36 @@ const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
   const [loading, setLoading] = useState(false);
   // Generic error — never expose internal Supabase messages to the UI
   const [error, setError] = useState("");
-  const [attempts, setAttempts] = useState(0);
-  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+
+  // Persist attempts/lockout in sessionStorage so a page refresh won't reset them
+  const [attempts, setAttempts] = useState<number>(() => {
+    return parseInt(sessionStorage.getItem(SS_ATTEMPTS) ?? "0", 10);
+  });
+  const [lockedUntil, setLockedUntil] = useState<number | null>(() => {
+    const v = sessionStorage.getItem(SS_LOCKED_UNTIL);
+    return v ? parseInt(v, 10) : null;
+  });
 
   const isLocked = lockedUntil !== null && Date.now() < lockedUntil;
   const lockSecondsLeft = isLocked ? Math.ceil((lockedUntil! - Date.now()) / 1000) : 0;
+
+  // Countdown ticker so the button label stays live
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!isLocked) return;
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [isLocked]);
+
+  const persistAttempts = (n: number) => {
+    setAttempts(n);
+    sessionStorage.setItem(SS_ATTEMPTS, String(n));
+  };
+  const persistLockout = (until: number | null) => {
+    setLockedUntil(until);
+    if (until) sessionStorage.setItem(SS_LOCKED_UNTIL, String(until));
+    else sessionStorage.removeItem(SS_LOCKED_UNTIL);
+  };
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) return;
@@ -85,17 +113,18 @@ const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
 
     if (authError) {
       const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
+      persistAttempts(newAttempts);
       if (newAttempts >= MAX_ATTEMPTS) {
-        setLockedUntil(Date.now() + LOCKOUT_MS);
-        setAttempts(0);
-        setError(`Troppi tentativi. Riprova tra 5 minuti.`);
+        persistLockout(Date.now() + LOCKOUT_MS);
+        persistAttempts(0);
+        setError("Troppi tentativi. Riprova tra 5 minuti.");
       } else {
         // Generic message — do not expose whether email exists or not
         setError(`Credenziali non valide. Riprova. (${MAX_ATTEMPTS - newAttempts} tentativi rimasti)`);
       }
     } else {
-      setAttempts(0);
+      persistAttempts(0);
+      persistLockout(null);
       onLogin();
     }
   };
@@ -160,6 +189,8 @@ const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 const FETCH_LIMIT = 500; // cap rows to prevent accidental DoS
 const REFRESH_DEBOUNCE_MS = 3000; // minimum ms between manual refreshes
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 min idle → auto-logout
+const IDLE_EVENTS = ["mousedown", "touchstart", "keydown", "scroll"] as const;
 
 const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
   const navigate = useNavigate();
@@ -167,6 +198,24 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const lastFetchRef = useRef<number>(0);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-logout after 30 min idle — protects manager sessions on shared kiosks
+  useEffect(() => {
+    const reset = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(async () => {
+        await supabase.auth.signOut();
+        onLogout();
+      }, IDLE_TIMEOUT_MS);
+    };
+    reset();
+    IDLE_EVENTS.forEach((ev) => window.addEventListener(ev, reset, { passive: true }));
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      IDLE_EVENTS.forEach((ev) => window.removeEventListener(ev, reset));
+    };
+  }, [onLogout]);
 
   const fetchData = useCallback(async (isManual = false) => {
     // Debounce manual refreshes to prevent hammering Supabase

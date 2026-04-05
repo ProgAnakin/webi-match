@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BarChart2, LogOut, Power, PowerOff, RotateCcw } from "lucide-react";
@@ -9,6 +9,31 @@ import { products } from "@/data/products";
 /** product_id → active boolean, loaded from Supabase */
 type SettingsMap = Record<string, boolean>;
 
+// Logout automático após 30 minutos de inatividade para proteger sessões abertas em kiosks
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+const IDLE_EVENTS = ["mousedown", "touchstart", "keydown", "scroll"] as const;
+
+function useIdleLogout(onLogout: () => void) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const reset = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(async () => {
+        await supabase.auth.signOut();
+        onLogout();
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    reset(); // arm on mount
+    IDLE_EVENTS.forEach((ev) => window.addEventListener(ev, reset, { passive: true }));
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      IDLE_EVENTS.forEach((ev) => window.removeEventListener(ev, reset));
+    };
+  }, [onLogout]);
+}
+
 // ─── Manager Dashboard ────────────────────────────────────────────────────────
 const ManagerDashboard = ({ onLogout }: { onLogout: () => void }) => {
   const navigate = useNavigate();
@@ -16,6 +41,8 @@ const ManagerDashboard = ({ onLogout }: { onLogout: () => void }) => {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  useIdleLogout(onLogout);
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);

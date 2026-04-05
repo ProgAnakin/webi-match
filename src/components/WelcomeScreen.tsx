@@ -17,6 +17,16 @@ interface WelcomeScreenProps {
 }
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+// Allow letters (including accented), hyphens, apostrophes, and spaces
+const NAME_REGEX = /^[\p{L}\s'\-]{2,100}$/u;
+
+/** Strips control characters and collapses multiple spaces. Max 100 chars. */
+function sanitizeName(value: string): string {
+  return value
+    .replace(/[^\p{L}\s'\-]/gu, "") // remove anything not a letter/space/hyphen/apostrophe
+    .replace(/\s{2,}/g, " ")         // collapse repeated spaces
+    .slice(0, 100);
+}
 
 // Separate inner form component so its re-renders never touch DiscoveryBackground
 const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
@@ -28,8 +38,8 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const { play } = useSound();
 
   const isEmailValid = EMAIL_REGEX.test(email.trim());
-  const isNomeValid = nome.trim().length >= 2;
-  const isCognomeValid = cognome.trim().length >= 2;
+  const isNomeValid = NAME_REGEX.test(nome.trim());
+  const isCognomeValid = NAME_REGEX.test(cognome.trim());
   const isFormValid = isNomeValid && isCognomeValid && isEmailValid;
 
   const showEmailError = emailTouched && email.trim().length > 0 && !isEmailValid;
@@ -38,12 +48,12 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const showCognomeError = submitted && !isCognomeValid;
 
   const handleNome = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNome(e.target.value);
+    setNome(sanitizeName(e.target.value));
     setSubmitted(false);
   }, []);
 
   const handleCognome = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setCognome(e.target.value);
+    setCognome(sanitizeName(e.target.value));
     setSubmitted(false);
   }, []);
 
@@ -57,7 +67,8 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
     setEmailTouched(true);
     if (!isFormValid) return;
     play("start");
-    onStart({ nome: nome.trim(), cognome: cognome.trim(), email: email.trim() });
+    // Trim final whitespace — sanitizeName already removed invalid chars
+    onStart({ nome: nome.trim(), cognome: cognome.trim(), email: email.trim().toLowerCase() });
   }, [isFormValid, nome, cognome, email, play, onStart]);
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
