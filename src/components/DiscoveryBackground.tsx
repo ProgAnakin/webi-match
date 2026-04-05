@@ -5,9 +5,10 @@ import { memo } from "react";
  * that appear and disappear via opacity animation — like a constellation
  * of gadgets waiting to be matched.
  *
- * No float/translate → elements stay at fixed positions on screen.
- * Negative animation-delay = icons start mid-cycle, immediately visible.
- * All @keyframes in index.css → reliable on iOS Safari.
+ * Responsive sizing strategy:
+ *   - Orbs use max(fixed_px, X_vw) so they stay proportional on large screens
+ *   - Icon SVGs use max(fixed_px, size/8 vmin) to scale up above iPad size
+ *   - All @keyframes in index.css → reliable on iOS Safari
  */
 
 // ── Product SVG paths (viewBox 0 0 48 48, stroke-only) ──────────────────────
@@ -62,13 +63,46 @@ const DiscoveryBackground = memo(() => (
     className="pointer-events-none absolute inset-0 overflow-hidden"
     style={{ zIndex: 0 }}
   >
-    {/* ── Colour orbs — warm atmosphere ────────────────────────── */}
-    <div style={{ position:"absolute", left:"-8%", top:"-5%", width:480, height:480, borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,55%,0.85) 0%,transparent 70%)", filter:"blur(60px)", opacity:0.20, animation:"wb-orb-a 19s ease-in-out infinite", willChange:"transform" }} />
-    <div style={{ position:"absolute", right:"-10%", top:"0", width:420, height:420, borderRadius:"50%", background:"radial-gradient(circle,hsla(16,100%,50%,0.85) 0%,transparent 70%)", filter:"blur(70px)", opacity:0.16, animation:"wb-orb-b 23s ease-in-out infinite", willChange:"transform" }} />
-    <div style={{ position:"absolute", right:"-6%", bottom:"4%", width:360, height:360, borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,62%,0.85) 0%,transparent 70%)", filter:"blur(65px)", opacity:0.13, animation:"wb-orb-c 21s ease-in-out infinite", willChange:"transform" }} />
-    <div style={{ position:"absolute", left:"-5%", bottom:"6%", width:340, height:340, borderRadius:"50%", background:"radial-gradient(circle,hsla(230,60%,55%,0.85) 0%,transparent 70%)", filter:"blur(70px)", opacity:0.10, animation:"wb-orb-d 26s ease-in-out infinite", willChange:"transform" }} />
+    {/* ── Colour orbs — warm atmosphere ─────────────────────────────
+        Sizes use max(fixed_px, vw) so they scale up on MacBook/desktop
+        while staying at the fixed_px floor on phones and small tablets. */}
+    <div style={{
+      position: "absolute", left: "-8%", top: "-5%",
+      width:  "max(480px, 35vw)", height: "max(480px, 35vw)",
+      borderRadius: "50%",
+      background: "radial-gradient(circle,hsla(27,92%,55%,0.85) 0%,transparent 70%)",
+      filter: "blur(max(60px, 4.5vw))", opacity: 0.20,
+      animation: "wb-orb-a 19s ease-in-out infinite", willChange: "transform",
+    }} />
+    <div style={{
+      position: "absolute", right: "-10%", top: "0",
+      width:  "max(420px, 30vw)", height: "max(420px, 30vw)",
+      borderRadius: "50%",
+      background: "radial-gradient(circle,hsla(16,100%,50%,0.85) 0%,transparent 70%)",
+      filter: "blur(max(70px, 5vw))", opacity: 0.16,
+      animation: "wb-orb-b 23s ease-in-out infinite", willChange: "transform",
+    }} />
+    <div style={{
+      position: "absolute", right: "-6%", bottom: "4%",
+      width:  "max(360px, 26vw)", height: "max(360px, 26vw)",
+      borderRadius: "50%",
+      background: "radial-gradient(circle,hsla(27,92%,62%,0.85) 0%,transparent 70%)",
+      filter: "blur(max(65px, 4.5vw))", opacity: 0.13,
+      animation: "wb-orb-c 21s ease-in-out infinite", willChange: "transform",
+    }} />
+    <div style={{
+      position: "absolute", left: "-5%", bottom: "6%",
+      width:  "max(340px, 25vw)", height: "max(340px, 25vw)",
+      borderRadius: "50%",
+      background: "radial-gradient(circle,hsla(230,60%,55%,0.85) 0%,transparent 70%)",
+      filter: "blur(max(70px, 5vw))", opacity: 0.10,
+      animation: "wb-orb-d 26s ease-in-out infinite", willChange: "transform",
+    }} />
 
-    {/* ── Product icon silhouettes ──────────────────────────────── */}
+    {/* ── Product icon silhouettes ──────────────────────────────────
+        SVG width/height use max(fixed_px, size/8 vmin) so icons stay
+        at their designed pixel size on phones but grow proportionally
+        on iPads and MacBook screens. */}
     {ICONS.map((icon, i) => (
       <div
         key={i}
@@ -81,11 +115,13 @@ const DiscoveryBackground = memo(() => (
         }}
       >
         <svg
-          width={icon.size}
-          height={icon.size}
           viewBox="0 0 48 48"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          style={{
+            width:  `max(${icon.size}px, ${(icon.size / 8).toFixed(1)}vmin)`,
+            height: `max(${icon.size}px, ${(icon.size / 8).toFixed(1)}vmin)`,
+          }}
         >
           <path
             d={PRODUCTS[icon.product]}
@@ -99,7 +135,11 @@ const DiscoveryBackground = memo(() => (
     ))}
 
     {/* ── Slow scanline ─────────────────────────────────────────── */}
-    <div style={{ position:"absolute", left:0, right:0, top:0, height:2, background:"linear-gradient(90deg,transparent,hsla(27,92%,55%,0.4),transparent)", opacity:0.06, animation:"wb-scanline 12s linear infinite", willChange:"transform" }} />
+    <div style={{
+      position: "absolute", left: 0, right: 0, top: 0, height: 2,
+      background: "linear-gradient(90deg,transparent,hsla(27,92%,55%,0.4),transparent)",
+      opacity: 0.06, animation: "wb-scanline 12s linear infinite", willChange: "transform",
+    }} />
   </div>
 ));
 
