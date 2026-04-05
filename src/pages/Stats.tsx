@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, RefreshCw } from "lucide-react";
+import { LogOut, RefreshCw, Package } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import type { Session } from "@supabase/supabase-js";
@@ -161,6 +162,7 @@ const FETCH_LIMIT = 500; // cap rows to prevent accidental DoS
 const REFRESH_DEBOUNCE_MS = 3000; // minimum ms between manual refreshes
 
 const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<QuizSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -250,6 +252,13 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
             >
               <RefreshCw className="h-3 w-3" />
               Aggiorna
+            </button>
+            <button
+              onClick={() => navigate("/manager")}
+              className="flex items-center gap-1 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary active:scale-95"
+            >
+              <Package className="h-3 w-3" />
+              Catalogo
             </button>
             <button
               onClick={handleLogout}
