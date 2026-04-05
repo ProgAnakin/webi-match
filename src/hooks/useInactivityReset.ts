@@ -7,20 +7,20 @@ interface UseInactivityResetOptions {
   enabled: boolean;
   onWarn: (secondsLeft: number) => void;
   onReset: () => void;
+  /** Called when a user interaction cancels the warning (before the reset fires).
+   *  Use this to hide the overlay without restarting the whole flow. */
+  onDismiss?: () => void;
 }
 
-export function useInactivityReset({ enabled, onWarn, onReset }: UseInactivityResetOptions) {
-  // Refs for callbacks — updated every render but never in dependency arrays.
-  // This is the key fix: inline handlers like `(s) => setState(s)` are new
-  // objects on every render; putting them in deps makes useEffect re-run and
-  // restart the 45-second timer every second during the countdown.
-  const onWarnRef  = useRef(onWarn);
-  const onResetRef = useRef(onReset);
-  onWarnRef.current  = onWarn;
-  onResetRef.current = onReset;
+export function useInactivityReset({ enabled, onWarn, onReset, onDismiss }: UseInactivityResetOptions) {
+  const onWarnRef    = useRef(onWarn);
+  const onResetRef   = useRef(onReset);
+  const onDismissRef = useRef(onDismiss);
+  onWarnRef.current    = onWarn;
+  onResetRef.current   = onReset;
+  onDismissRef.current = onDismiss;
 
-  // arm() is defined inside the effect but exposed via this ref so dismiss()
-  // can call it without being coupled to the effect lifecycle.
+  // arm() is defined inside the effect but exposed so dismiss() can call it.
   const armRef = useRef<() => void>(() => {});
 
   useEffect(() => {
@@ -61,26 +61,36 @@ export function useInactivityReset({ enabled, onWarn, onReset }: UseInactivityRe
       inactivityTimer = setTimeout(startCountdown, INACTIVITY_TIMEOUT);
     };
 
-    // expose arm so dismiss() can call it from outside the effect
     armRef.current = arm;
 
     const handleActivity = () => {
-      if (isWarning) { clearAll(); isWarning = false; }
+      if (isWarning) {
+        // Countdown was running — user came back. Stop it and notify parent
+        // so the overlay disappears (without this call, it stays frozen on screen).
+        clearAll();
+        isWarning = false;
+        onDismissRef.current?.();
+      }
       arm();
     };
 
-    const EVENTS = ["touchstart", "touchmove", "mousedown", "mousemove", "keydown", "scroll"] as const;
+    // touchstart / touchmove cover all iPad interactions.
+    // mousedown / keydown / scroll cover desktop testing.
+    // mousemove intentionally omitted: hovering alone shouldn't cancel the timer
+    // (on the kiosk iPad there is no mouse; on desktop it caused the overlay to
+    // freeze rather than dismiss because it fired handleActivity without clicking).
+    const EVENTS = ["touchstart", "touchmove", "mousedown", "keydown", "scroll"] as const;
     EVENTS.forEach(e => window.addEventListener(e, handleActivity, { passive: true }));
-    arm(); // start on mount
+    arm();
 
     return () => {
       EVENTS.forEach(e => window.removeEventListener(e, handleActivity));
       clearAll();
       armRef.current = () => {};
     };
-  }, [enabled]); // only re-run when enabled changes
+  }, [enabled]);
 
-  // dismiss(): user tapped "still here" → hide overlay + restart 45s timer
+  /** Call this to dismiss the overlay manually (e.g. "Sono ancora qui!" button). */
   const dismiss = useCallback(() => {
     armRef.current();
   }, []);
