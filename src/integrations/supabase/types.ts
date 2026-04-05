@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      manager_audit_log: {
+        Row: {
+          id: string
+          user_id: string | null
+          user_email: string | null
+          product_id: string
+          new_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          user_email?: string | null
+          product_id: string
+          new_active: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          user_email?: string | null
+          product_id?: string
+          new_active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       product_settings: {
         Row: {
           product_id: string

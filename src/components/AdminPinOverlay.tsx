@@ -1,9 +1,13 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-// Change this to update the staff PIN
-const STAFF_PIN = "0123";
+// PIN is loaded from the VITE_STAFF_PIN environment variable set in Vercel.
+// To rotate it: change the env var in Vercel → redeploy. Never hardcode it here.
+const STAFF_PIN = import.meta.env.VITE_STAFF_PIN as string | undefined;
+
+const MAX_ATTEMPTS = 3;
+const LOCKOUT_MS = 2 * 60 * 1000; // 2 minutes
 
 const KEYS = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
 
@@ -14,9 +18,35 @@ interface AdminPinOverlayProps {
 const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
   const [pin, setPin] = useState("");
   const [shake, setShake] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(0);
   const navigate = useNavigate();
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const isLocked = lockedUntil !== null && Date.now() < lockedUntil;
+
+  // Countdown ticker while locked
+  useEffect(() => {
+    if (!lockedUntil) return;
+    const tick = () => {
+      const left = Math.ceil((lockedUntil - Date.now()) / 1000);
+      if (left <= 0) {
+        setLockedUntil(null);
+        setSecondsLeft(0);
+        if (timerRef.current) clearInterval(timerRef.current);
+      } else {
+        setSecondsLeft(left);
+      }
+    };
+    tick();
+    timerRef.current = setInterval(tick, 500);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [lockedUntil]);
 
   const handleKey = useCallback((key: string) => {
+    if (isLocked) return;
+
     if (key === "⌫") {
       setPin((p) => p.slice(0, -1));
       return;
@@ -27,16 +57,26 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
     setPin(next);
 
     if (next.length === 4) {
-      if (next === STAFF_PIN) {
-        // Small delay so the last dot fills before navigating
+      if (STAFF_PIN && next === STAFF_PIN) {
+        // Correct — clear lockout state and navigate after dot fills
+        setAttempts(0);
         setTimeout(() => navigate("/stats"), 300);
       } else {
-        // Wrong PIN — shake and clear
+        // Wrong PIN
+        const newAttempts = attempts + 1;
+        setAttempts(newAttempts);
         setShake(true);
-        setTimeout(() => { setShake(false); setPin(""); }, 600);
+        setTimeout(() => {
+          setShake(false);
+          setPin("");
+          if (newAttempts >= MAX_ATTEMPTS) {
+            setLockedUntil(Date.now() + LOCKOUT_MS);
+            setAttempts(0);
+          }
+        }, 600);
       }
     }
-  }, [pin, navigate]);
+  }, [pin, navigate, attempts, isLocked]);
 
   return (
     <motion.div
@@ -60,6 +100,20 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
           <p className="mt-1 text-xs text-muted-foreground">Inserisci il PIN per accedere</p>
         </div>
 
+        {/* Locked banner */}
+        <AnimatePresence>
+          {isLocked && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-center text-xs text-destructive"
+            >
+              Troppi tentativi. Riprova tra <strong>{secondsLeft}s</strong>.
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* PIN dots */}
         <motion.div
           className="mb-8 flex justify-center gap-4"
@@ -80,7 +134,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
         </motion.div>
 
         {/* Numeric keypad */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className={`grid grid-cols-3 gap-3 ${isLocked ? "pointer-events-none opacity-40" : ""}`}>
           {KEYS.map((key, i) => (
             key === "" ? (
               <div key={i} />
