@@ -165,9 +165,11 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
 };
 
 // ─── Store Badge ──────────────────────────────────────────────────────────────
-const StoreBadge = ({ onTap }: { onTap: () => void }) => {
+const StoreBadge = ({ onTap, refreshKey }: { onTap: () => void; refreshKey: number }) => {
   const storeId = getStoredStoreId();
   const store = storeId ? getStoreById(storeId) : null;
+  // refreshKey is used to force re-render when store changes (see WelcomeScreen)
+  void refreshKey;
 
   return (
     <button
@@ -190,6 +192,7 @@ const LOGO_TAPS_REQUIRED = 6;
 const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
   const { t } = useLang();
   const [showPin, setShowPin] = useState(false);
+  const [storeBadgeKey, setStoreBadgeKey] = useState(0);
   const tapCount = useRef(0);
   const tapTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -215,12 +218,23 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
 
       {/* Store badge — bottom-left, tapping opens staff PIN */}
       <div className="absolute bottom-4 left-4 z-10">
-        <StoreBadge onTap={() => setShowPin(true)} />
+        <StoreBadge
+          onTap={() => setShowPin(true)}
+          refreshKey={storeBadgeKey}
+        />
       </div>
 
       {/* Admin PIN overlay */}
       <AnimatePresence>
-        {showPin && <AdminPinOverlay onClose={() => setShowPin(false)} />}
+        {showPin && (
+          <AdminPinOverlay
+            onClose={() => {
+              setShowPin(false);
+              // Bump key so StoreBadge re-reads localStorage after store change
+              setStoreBadgeKey((k) => k + 1);
+            }}
+          />
+        )}
       </AnimatePresence>
 
       <motion.div
