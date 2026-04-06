@@ -94,9 +94,7 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
       xOffset: (Math.random() - 0.5) * 100,
     })), [particleCount]);
 
-  const stars = useMemo(() =>
-    Array.from({ length: 5 }, (_, i) => i < Math.round(product.rating) ? "⭐" : "☆"),
-    [product.rating]);
+  const starCount = Math.round(product.rating);
 
   const ringColor = matchPercent >= 90 ? "#6BCB77"
     : matchPercent >= 80 ? "#FFD93D"
@@ -216,13 +214,26 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
         >
           <div className="relative flex h-52 items-center justify-center bg-secondary/50 overflow-hidden">
             {product.image ? (
-              <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <span className="text-6xl">📦</span>
-                <span className="text-xs font-medium">{t.result.productImageAlt}</span>
-              </div>
-            )}
+              <img
+                src={product.image}
+                alt={product.name}
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  // Hide broken image and show emoji fallback
+                  const target = e.currentTarget;
+                  target.style.display = "none";
+                  const fallback = target.nextElementSibling as HTMLElement | null;
+                  if (fallback) fallback.style.display = "flex";
+                }}
+              />
+            ) : null}
+            <div
+              className="flex flex-col items-center gap-2 text-muted-foreground"
+              style={{ display: product.image ? "none" : "flex" }}
+            >
+              <span className="text-6xl">📦</span>
+              <span className="text-xs font-medium">{t.result.productImageAlt}</span>
+            </div>
             {!isScanning && (
               <motion.div
                 className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-bold text-white shadow-lg ${badgeBg}`}
@@ -239,7 +250,15 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
             <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{product.description}</p>
             <div className="mt-3 flex items-center justify-between">
               <span className="text-2xl font-bold text-gradient">{product.price}</span>
-              <span>{stars.join("")}</span>
+              <span className="flex items-center gap-0.5">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill={i < starCount ? "#FFD700" : "none"}
+                    stroke={i < starCount ? "#FFD700" : "hsl(var(--muted-foreground))"} strokeWidth="1.5">
+                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                  </svg>
+                ))}
+                <span className="ml-1 text-xs text-muted-foreground">{product.rating}</span>
+              </span>
             </div>
           </div>
         </motion.div>
