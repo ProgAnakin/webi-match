@@ -5,6 +5,8 @@ import webidooLogo from "@/assets/webidoo-logo.png";
 import DiscoveryBackground from "./DiscoveryBackground";
 import AdminPinOverlay from "./AdminPinOverlay";
 import { useSound } from "@/hooks/useSound";
+import { useLang } from "@/i18n/LanguageContext";
+import { LANGUAGES } from "@/i18n/translations";
 
 export interface UserInfo {
   nome: string;
@@ -17,19 +19,41 @@ interface WelcomeScreenProps {
 }
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-// Allow letters (including accented), hyphens, apostrophes, and spaces
 const NAME_REGEX = /^[\p{L}\s'\-]{2,100}$/u;
 
-/** Strips control characters and collapses multiple spaces. Max 100 chars. */
 function sanitizeName(value: string): string {
   return value
-    .replace(/[^\p{L}\s'\-]/gu, "") // remove anything not a letter/space/hyphen/apostrophe
-    .replace(/\s{2,}/g, " ")         // collapse repeated spaces
+    .replace(/[^\p{L}\s'\-]/gu, "")
+    .replace(/\s{2,}/g, " ")
     .slice(0, 100);
 }
 
-// Separate inner form component so its re-renders never touch DiscoveryBackground
+// ─── Language Selector ────────────────────────────────────────────────────────
+const LanguageSelector = () => {
+  const { lang, setLang } = useLang();
+  return (
+    <div className="flex items-center gap-1.5">
+      {LANGUAGES.map(({ code, flag, label }) => (
+        <button
+          key={code}
+          onClick={() => setLang(code)}
+          className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${
+            lang === code
+              ? "bg-primary text-primary-foreground shadow-sm scale-105"
+              : "bg-card/80 text-muted-foreground border border-border/60 hover:bg-card"
+          }`}
+        >
+          <span>{flag}</span>
+          <span>{label}</span>
+        </button>
+      ))}
+    </div>
+  );
+};
+
+// ─── Welcome Form ─────────────────────────────────────────────────────────────
 const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
+  const { t } = useLang();
   const [nome, setNome] = useState("");
   const [cognome, setCognome] = useState("");
   const [email, setEmail] = useState("");
@@ -67,7 +91,6 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
     setEmailTouched(true);
     if (!isFormValid) return;
     play("start");
-    // Trim final whitespace — sanitizeName already removed invalid chars
     onStart({ nome: nome.trim(), cognome: cognome.trim(), email: email.trim().toLowerCase() });
   }, [isFormValid, nome, cognome, email, play, onStart]);
 
@@ -78,11 +101,9 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const nomeClass = `w-full rounded-2xl border bg-card px-4 py-4 text-center text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
     showNomeError ? "border-destructive focus:ring-destructive" : isNomeValid ? "border-green-500 focus:ring-green-400" : "border-border focus:ring-primary"
   }`;
-
   const cognomeClass = `w-full rounded-2xl border bg-card px-4 py-4 text-center text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
     showCognomeError ? "border-destructive focus:ring-destructive" : isCognomeValid ? "border-green-500 focus:ring-green-400" : "border-border focus:ring-primary"
   }`;
-
   const emailClass = `w-full rounded-2xl border bg-card px-6 py-4 pr-14 text-center text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
     showEmailOk ? "border-green-500 focus:ring-green-400" : showEmailError ? "border-destructive focus:ring-destructive" : "border-border focus:ring-primary"
   }`;
@@ -92,33 +113,27 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
       {/* Nome + Cognome */}
       <div className="flex gap-3">
         <div className="flex-1">
-          <input type="text" placeholder="Nome" value={nome}
-            onChange={handleNome} onKeyDown={onKeyDown}
-            className={nomeClass}
-          />
+          <input type="text" placeholder={t.welcome.firstName} value={nome}
+            onChange={handleNome} onKeyDown={onKeyDown} className={nomeClass} />
           {showNomeError && (
-            <p className="mt-1 text-center text-xs text-destructive">Inserisci il nome</p>
+            <p className="mt-1 text-center text-xs text-destructive">{t.welcome.firstNameError}</p>
           )}
         </div>
         <div className="flex-1">
-          <input type="text" placeholder="Cognome" value={cognome}
-            onChange={handleCognome} onKeyDown={onKeyDown}
-            className={cognomeClass}
-          />
+          <input type="text" placeholder={t.welcome.lastName} value={cognome}
+            onChange={handleCognome} onKeyDown={onKeyDown} className={cognomeClass} />
           {showCognomeError && (
-            <p className="mt-1 text-center text-xs text-destructive">Inserisci il cognome</p>
+            <p className="mt-1 text-center text-xs text-destructive">{t.welcome.lastNameError}</p>
           )}
         </div>
       </div>
 
       {/* Email */}
       <div className="relative">
-        <input type="email" placeholder="La tua email migliore 📧"
+        <input type="email" placeholder={t.welcome.emailPlaceholder}
           value={email} onChange={handleEmail}
           onBlur={() => setEmailTouched(true)}
-          onKeyDown={onKeyDown}
-          className={emailClass}
-        />
+          onKeyDown={onKeyDown} className={emailClass} />
         {showEmailOk && (
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500">
             <CheckCircle2 className="h-5 w-5" />
@@ -131,9 +146,7 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
         )}
       </div>
       {showEmailError && (
-        <p className="text-center text-xs text-destructive">
-          Per favore, inserisci un'email valida.
-        </p>
+        <p className="text-center text-xs text-destructive">{t.welcome.emailError}</p>
       )}
 
       {/* CTA */}
@@ -142,19 +155,19 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
         className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-5 text-xl font-bold text-primary-foreground active:scale-95"
         whileTap={{ scale: 0.97 }}
       >
-        🚀 INIZIA IL GIOCO!
+        {t.welcome.cta}
       </motion.button>
 
-      <p className="text-center text-xs text-muted-foreground/60">
-        Rispondi a 8 domande veloci e scopri il tuo match perfetto
-      </p>
+      <p className="text-center text-xs text-muted-foreground/60">{t.welcome.subtitle}</p>
     </div>
   );
 };
 
+// ─── Welcome Screen ────────────────────────────────────────────────────────────
 const LOGO_TAPS_REQUIRED = 6;
 
 const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
+  const { t } = useLang();
   const [showPin, setShowPin] = useState(false);
   const tapCount = useRef(0);
   const tapTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -166,57 +179,59 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
       tapCount.current = 0;
       setShowPin(true);
     } else {
-      // Reset counter if no new tap within 2 seconds
       tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000);
     }
   }, []);
 
   return (
-  <div className="flex min-h-screen flex-col items-center justify-center px-6 py-8">
-    <DiscoveryBackground />
+    <div className="flex min-h-screen flex-col items-center justify-center px-6 py-8">
+      <DiscoveryBackground />
 
-    {/* Admin PIN overlay */}
-    <AnimatePresence>
-      {showPin && <AdminPinOverlay onClose={() => setShowPin(false)} />}
-    </AnimatePresence>
+      {/* Language selector — top-right, above background */}
+      <div className="absolute top-4 right-4 z-10">
+        <LanguageSelector />
+      </div>
 
-    <motion.div
-      className="relative z-10 flex w-full max-w-md flex-col items-center gap-6"
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, ease: "easeOut" }}
-    >
-      {/* Logo — tap 6× to open staff PIN */}
-      <motion.img
-        src={webidooLogo}
-        alt="Webidoo Store"
-        className="h-44 w-auto"
-        onClick={handleLogoTap}
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-      />
+      {/* Admin PIN overlay */}
+      <AnimatePresence>
+        {showPin && <AdminPinOverlay onClose={() => setShowPin(false)} />}
+      </AnimatePresence>
 
-      {/* Title */}
       <motion.div
-        className="text-center"
-        initial={{ opacity: 0, y: 10 }}
+        className="relative z-10 flex w-full max-w-md flex-col items-center gap-6"
+        initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
       >
-        <h1 className="mb-1 text-5xl font-bold uppercase tracking-widest">
-          <span className="text-gradient">WEBI</span>
-          <span className="text-foreground"> MATCH</span>
-        </h1>
-        <p className="text-base text-muted-foreground">
-          Trova il tuo gadget perfetto! 🎯
-        </p>
-      </motion.div>
+        {/* Logo — tap 6× to open staff PIN */}
+        <motion.img
+          src={webidooLogo}
+          alt="Webidoo Store"
+          className="h-44 w-auto"
+          onClick={handleLogoTap}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        />
 
-      {/* Form — isolated component, its re-renders stay local */}
-      <WelcomeForm onStart={onStart} />
-    </motion.div>
-  </div>
+        {/* Title */}
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <h1 className="mb-1 text-5xl font-bold uppercase tracking-widest">
+            <span className="text-gradient">WEBI</span>
+            <span className="text-foreground"> MATCH</span>
+          </h1>
+          <p className="text-base text-muted-foreground">{t.welcome.tagline}</p>
+        </motion.div>
+
+        {/* Form */}
+        <WelcomeForm onStart={onStart} />
+      </motion.div>
+    </div>
   );
 };
 

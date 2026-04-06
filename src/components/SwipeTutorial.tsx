@@ -1,7 +1,9 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useLang } from "@/i18n/LanguageContext";
 
 const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
+  const { t } = useLang();
   const [step, setStep] = useState(0); // 0=left, 1=right, 2=done
 
   useEffect(() => {
@@ -21,12 +23,9 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {/* Overlay */}
           <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
 
-          {/* Hand animation */}
           <motion.div className="relative z-10 flex flex-col items-center gap-6">
-            {/* Fake card */}
             <motion.div
               className="gradient-card shadow-card flex h-32 w-56 items-center justify-center rounded-2xl border border-border"
               animate={{
@@ -38,7 +37,6 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
               <span className="text-5xl">{step === 0 ? "❌" : "✅"}</span>
             </motion.div>
 
-            {/* Label */}
             <motion.p
               key={step}
               className="text-lg font-semibold text-foreground"
@@ -46,15 +44,12 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
             >
-              {step === 0 ? "← Swipe per NO" : "Swipe per SÌ →"}
+              {step === 0 ? t.tutorial.no : t.tutorial.yes}
             </motion.p>
 
-            {/* Hand icon */}
             <motion.div
               className="text-4xl"
-              animate={{
-                x: step === 0 ? [0, -80, 0] : [0, 80, 0],
-              }}
+              animate={{ x: step === 0 ? [0, -80, 0] : [0, 80, 0] }}
               transition={{ duration: 1.2, ease: "easeInOut" }}
             >
               👆

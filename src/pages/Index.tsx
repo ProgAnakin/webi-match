@@ -8,10 +8,12 @@ import { getMatchedProduct, type Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import { useInactivityReset } from "@/hooks/useInactivityReset";
 import { useWakeLock } from "@/hooks/useWakeLock";
+import { useLang } from "@/i18n/LanguageContext";
 
 type Screen = "welcome" | "quiz" | "result" | "success";
 
 const Index = () => {
+  const { t } = useLang();
   const [screen, setScreen] = useState<Screen>("welcome");
   const [user, setUser] = useState<UserInfo>({ nome: "", cognome: "", email: "" });
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
@@ -109,8 +111,8 @@ const Index = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-4 text-5xl">⏱️</div>
-              <h2 className="mb-2 text-xl font-bold text-gray-900">Sei ancora lì?</h2>
-              <p className="mb-6 text-gray-500 text-sm">Torno alla schermata iniziale tra</p>
+              <h2 className="mb-2 text-xl font-bold text-gray-900">{t.inactivity.title}</h2>
+              <p className="mb-6 text-gray-500 text-sm">{t.inactivity.countdown}</p>
               <div className="mb-6 flex items-center justify-center">
                 <span className="text-6xl font-bold text-rose-500">{inactivitySecondsLeft}</span>
                 <span className="ml-2 text-2xl text-gray-400">s</span>
@@ -119,13 +121,13 @@ const Index = () => {
                 onClick={handleDismiss}
                 className="w-full rounded-xl bg-primary px-6 py-3 font-semibold text-white active:opacity-90 mb-3"
               >
-                Sono ancora qui!
+                {t.inactivity.dismiss}
               </button>
               <button
                 onClick={handleRestart}
                 className="w-full rounded-xl bg-gray-100 px-6 py-3 font-semibold text-gray-600 active:bg-gray-200"
               >
-                Ricomincia
+                {t.inactivity.restart}
               </button>
             </div>
           </motion.div>

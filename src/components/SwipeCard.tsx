@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import type { Question } from "@/data/questions";
+import { useLang } from "@/i18n/LanguageContext";
 
 interface SwipeCardProps {
   question: Question;
@@ -9,6 +10,7 @@ interface SwipeCardProps {
 }
 
 const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
+  const { t } = useLang();
   const [exitX, setExitX] = useState(0);
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
@@ -39,7 +41,7 @@ const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
         style={{ opacity: noOpacity, rotate: -15 }}
       >
         <span className="text-2xl font-bold text-destructive">✕</span>
-        <span className="text-2xl font-bold text-destructive">NO</span>
+        <span className="text-2xl font-bold text-destructive">{t.swipe.no}</span>
       </motion.div>
 
       {/* YES overlay */}
@@ -47,7 +49,7 @@ const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
         className="pointer-events-none absolute right-4 top-6 z-20 flex items-center gap-2 rounded-2xl border-4 border-success/80 bg-success/10 px-5 py-2 backdrop-blur-sm"
         style={{ opacity: yesOpacity, rotate: 15 }}
       >
-        <span className="text-2xl font-bold text-success">SÌ</span>
+        <span className="text-2xl font-bold text-success">{t.swipe.yes}</span>
         <span className="text-2xl font-bold text-success">✓</span>
       </motion.div>
 
@@ -73,9 +75,9 @@ const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
           {question.emoji}
         </motion.div>
 
-        {/* Question text */}
+        {/* Question text — translated */}
         <h2 className="text-center text-2xl font-bold text-foreground">
-          {question.text}
+          {t.questions[question.id] ?? question.text}
         </h2>
       </motion.div>
     </div>

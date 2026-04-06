@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import type { Product } from "@/data/products";
 import { useSound } from "@/hooks/useSound";
 import { useDevicePerformance } from "@/hooks/useDevicePerformance";
+import { useLang } from "@/i18n/LanguageContext";
 
 interface MatchResultProps {
   product: Product;
@@ -33,6 +34,7 @@ const ConfettiParticle = ({ delay, duration, left, color, size, rotateDeg, xOffs
 );
 
 const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultProps) => {
+  const { t } = useLang();
   const [displayPercent, setDisplayPercent] = useState(0);
   const [isScanning, setIsScanning] = useState(true);
   const { play } = useSound();
@@ -145,7 +147,7 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
           transition={{ delay: 0.2, duration: 0.4 }}
         >
           <p className="text-base text-muted-foreground">
-            {userName ? `${userName},` : ""} il tuo gadget ideale è...
+            {t.result.gadgetIntro(userName)}
           </p>
         </motion.div>
 
@@ -188,7 +190,7 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
               {displayPercent}%
             </span>
             <span className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              {isScanning ? "analisi..." : "match"}
+              {isScanning ? t.result.scanning : t.result.match}
             </span>
           </div>
         </motion.div>
@@ -201,7 +203,7 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
           transition={{ delay: 0.35, duration: 0.4, ease: "easeOut" }}
         >
           <h2 className="text-2xl font-bold tracking-wide text-foreground">
-            🎉 MATCH PERFETTO!
+            {t.result.perfectMatch}
           </h2>
         </motion.div>
 
@@ -218,7 +220,7 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
             ) : (
               <div className="flex flex-col items-center gap-2 text-muted-foreground">
                 <span className="text-6xl">📦</span>
-                <span className="text-xs font-medium">Immagine prodotto</span>
+                <span className="text-xs font-medium">{t.result.productImageAlt}</span>
               </div>
             )}
             {!isScanning && (
@@ -250,9 +252,9 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
           transition={{ delay: 0.6, duration: 0.4 }}
         >
           {[
-            { icon: "🎥", label: "Video 30s" },
-            { icon: "📖", label: "Manuale" },
-            { icon: "💰", label: "Sconto VIP" },
+            { icon: "🎥", label: t.result.video },
+            { icon: "📖", label: t.result.manual },
+            { icon: "💰", label: t.result.discount },
           ].map((item, i) => (
             <div key={i} className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-border bg-card/80 p-3">
               <span className="text-xl">{item.icon}</span>
@@ -270,7 +272,7 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.75, duration: 0.4 }}
         >
-          🎁 Voglio riceverlo!
+          {t.result.cta}
         </motion.button>
 
         <motion.p
@@ -279,7 +281,7 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
           animate={{ opacity: 0.6 }}
           transition={{ delay: 0.9 }}
         >
-          Ricevi video, manuale, FAQ e sconto esclusivo via email
+          {t.result.emailSubtitle}
         </motion.p>
       </motion.div>
     </div>

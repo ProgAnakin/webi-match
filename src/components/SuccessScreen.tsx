@@ -1,6 +1,7 @@
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useEffect } from "react";
 import { useSound } from "@/hooks/useSound";
+import { useLang } from "@/i18n/LanguageContext";
 
 interface SuccessScreenProps {
   email: string;
@@ -78,18 +79,19 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
   const checkScale = useMotionValue(0);
   const checkOpacity = useTransform(checkScale, [0, 1], [0, 1]);
   const { play } = useSound();
+  const { t } = useLang();
 
   useEffect(() => {
     animate(checkScale, 1, { type: "spring", stiffness: 200, damping: 15, delay: 0.5 });
-    const t = setTimeout(() => play("success"), 400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => play("success"), 400);
+    return () => clearTimeout(timer);
   }, []);
 
   const benefits = [
-    { icon: "🎬", title: "Video esclusivo", desc: "Il consulente ti spiega tutto in 30 secondi", highlight: false },
-    { icon: "📖", title: "Manuale completo", desc: "Guida passo-passo per iniziare subito", highlight: false },
-    { icon: "❓", title: "FAQ", desc: "Risposte alle domande più frequenti", highlight: false },
-    { icon: "🏷️", title: "Sconto speciale", desc: "Riservato solo a chi ha giocato oggi!", highlight: true },
+    { icon: "🎬", title: t.success.benefits.video.title, desc: t.success.benefits.video.desc, highlight: false },
+    { icon: "📖", title: t.success.benefits.manual.title, desc: t.success.benefits.manual.desc, highlight: false },
+    { icon: "❓", title: t.success.benefits.faq.title, desc: t.success.benefits.faq.desc, highlight: false },
+    { icon: "🏷️", title: t.success.benefits.discount.title, desc: t.success.benefits.discount.desc, highlight: true },
   ];
 
   return (
@@ -151,11 +153,11 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
           transition={{ delay: 0.6 }}
         >
           <h2 className="text-3xl font-bold text-foreground">
-            {userName ? `Perfetto, ${userName}!` : "Complimenti!"}
+            {userName ? t.success.title(userName) : t.success.titleNoName}
           </h2>
           <p className="mt-1 text-lg font-semibold text-gradient">{productName}</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Il tuo pacchetto esclusivo è in arrivo a:
+            {t.success.productOnWay}
           </p>
         </motion.div>
 
@@ -168,7 +170,7 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
         >
           <div className="gradient-primary px-4 py-2">
             <p className="text-center text-xs font-semibold uppercase tracking-widest text-primary-foreground">
-              Destinatario
+              {t.success.recipient}
             </p>
           </div>
           <div className="px-4 py-3">
@@ -211,7 +213,7 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
         >
-          Non vedi l'email? Controlla anche la cartella <span className="font-semibold">spam</span>.
+          {t.success.spamNote}
         </motion.p>
 
         <motion.button
@@ -223,7 +225,7 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.3 }}
         >
-          🔄 Gioca di Nuovo
+          {t.success.restart}
         </motion.button>
       </motion.div>
     </div>
