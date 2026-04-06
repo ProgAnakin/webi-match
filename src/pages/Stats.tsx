@@ -426,7 +426,7 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
     setLoading(true); setHasError(false);
     const { data, error } = await supabase
       .from("quiz_sessions")
-      .select("*")
+      .select("id, email, matched_product_id, match_percent, created_at, store_id")
       .order("created_at", { ascending: false })
       .limit(FETCH_LIMIT);
     if (error) setHasError(true);
