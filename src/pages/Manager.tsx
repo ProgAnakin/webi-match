@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BarChart2, LogOut, MapPin, Power, PowerOff, RotateCcw, Search, X } from "lucide-react";
+import { BarChart2, Home, LogOut, MapPin, Power, PowerOff, RotateCcw, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import { STORES, getStoredStoreId, setStoredStoreId, getStoreById } from "@/data/stores";
@@ -230,6 +230,13 @@ const ManagerDashboard = ({ onLogout }: { onLogout: () => void }) => {
             >
               <LogOut className="h-3 w-3" />
               Esci
+            </button>
+            <button
+              onClick={() => { supabase.auth.signOut(); navigate("/"); }}
+              className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95"
+            >
+              <Home className="h-3 w-3" />
+              Quiz
             </button>
           </div>
         </motion.div>

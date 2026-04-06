@@ -85,16 +85,11 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
   const handleSelectStore = (storeId: string) => {
     setStoredStoreId(storeId);
     setCurrentStoreId(storeId);
-    navigate("/stats");
-  };
-
-  const handleContinueWithoutChanging = () => {
-    navigate("/stats");
+    // Don't navigate yet — let the user choose what to do next
   };
 
   // ─── Store selection step ────────────────────────────────────────────────────
   if (step === "store") {
-    const current = STORES.find((s) => s.id === currentStoreId);
     return (
       <motion.div
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md"
@@ -109,7 +104,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
           exit={{ scale: 0.85, opacity: 0, y: 20 }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
         >
-          <div className="mb-6 text-center">
+          <div className="mb-5 text-center">
             <div className="mb-2 text-4xl">📍</div>
             <h2 className="text-lg font-bold text-foreground">Seleziona la Sede</h2>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -117,14 +112,15 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
             </p>
           </div>
 
-          <div className="space-y-2.5">
+          {/* Store list */}
+          <div className="space-y-2">
             {STORES.map((store) => {
               const isActive = store.id === currentStoreId;
               return (
                 <motion.button
                   key={store.id}
                   onClick={() => handleSelectStore(store.id)}
-                  className={`w-full rounded-2xl border px-5 py-4 text-left transition-all active:scale-95 ${
+                  className={`w-full rounded-2xl border px-5 py-3.5 text-left transition-all active:scale-95 ${
                     isActive
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border bg-secondary text-foreground hover:border-primary/40"
@@ -134,7 +130,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold">{store.name}</span>
                     {isActive && (
-                      <span className="text-xs font-bold text-primary">✓ Attuale</span>
+                      <span className="text-xs font-bold text-primary">✓</span>
                     )}
                   </div>
                 </motion.button>
@@ -142,14 +138,24 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
             })}
           </div>
 
-          {currentStoreId && (
-            <button
-              onClick={handleContinueWithoutChanging}
-              className="mt-5 w-full text-center text-sm text-muted-foreground underline underline-offset-2"
+          {/* Action buttons */}
+          <div className="mt-5 space-y-2.5">
+            <motion.button
+              onClick={() => { onClose(); }}
+              disabled={!currentStoreId}
+              className="gradient-primary shadow-glow w-full rounded-2xl px-6 py-3.5 text-sm font-bold text-primary-foreground active:scale-95 disabled:opacity-40"
+              whileTap={{ scale: 0.97 }}
             >
-              Continua senza cambiare
-            </button>
-          )}
+              ✓ Salva sede e torna al quiz
+            </motion.button>
+            <motion.button
+              onClick={() => navigate("/stats")}
+              className="w-full rounded-2xl border border-border bg-secondary px-6 py-3.5 text-sm font-semibold text-foreground active:scale-95"
+              whileTap={{ scale: 0.97 }}
+            >
+              📊 Vai ad Analytics / Manager
+            </motion.button>
+          </div>
         </motion.div>
       </motion.div>
     );
