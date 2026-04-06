@@ -7,6 +7,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
+import { STORES, getStoreById } from "@/data/stores";
 import type { Session } from "@supabase/supabase-js";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -16,6 +17,7 @@ interface QuizSession {
   matched_product_id: string;
   match_percent: number;
   created_at: string;
+  store_id: string | null;
 }
 interface DayCount { day: string; date: string; count: number; }
 interface ProductStat { id: string; name: string; count: number; percent: number; }
@@ -31,12 +33,18 @@ function formatDate(iso: string) {
   });
 }
 
+function storeName(id: string | null): string {
+  if (!id) return "—";
+  return getStoreById(id)?.shortName ?? id;
+}
+
 function exportCSV(sessions: QuizSession[], fromDate?: string, toDate?: string) {
-  const header = ["Email", "Prodotto", "Match %", "Data"];
+  const header = ["Email", "Prodotto", "Match %", "Sede", "Data"];
   const rows = sessions.map((s) => [
     `"${s.email.replace(/"/g, '""')}"`,
     `"${productName(s.matched_product_id).replace(/"/g, '""')}"`,
     s.match_percent,
+    `"${storeName(s.store_id)}"`,
     `"${new Date(s.created_at).toLocaleString("it-IT")}"`,
   ]);
   const csv = [header, ...rows].map((r) => r.join(";")).join("\n");
@@ -378,9 +386,10 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
   const lastFetchRef = useRef<number>(0);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Date filter state
+  // Date + store filter state
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [filterStore, setFilterStore] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   // 2FA state
@@ -417,7 +426,7 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
     setLoading(true); setHasError(false);
     const { data, error } = await supabase
       .from("quiz_sessions")
-      .select("id, email, matched_product_id, match_percent, created_at")
+      .select("id, email, matched_product_id, match_percent, created_at, store_id")
       .order("created_at", { ascending: false })
       .limit(FETCH_LIMIT);
     if (error) setHasError(true);
@@ -432,15 +441,16 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
     onLogout();
   };
 
-  // Filter sessions by date range
+  // Filter sessions by date range + store
   const filteredSessions = sessions.filter((s) => {
     const d = s.created_at.slice(0, 10);
     if (dateFrom && d < dateFrom) return false;
     if (dateTo && d > dateTo) return false;
+    if (filterStore && s.store_id !== filterStore) return false;
     return true;
   });
 
-  const isFiltered = dateFrom !== "" || dateTo !== "";
+  const isFiltered = dateFrom !== "" || dateTo !== "" || filterStore !== null;
 
   // KPI — computed from filtered sessions
   const total = filteredSessions.length;
@@ -551,15 +561,45 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
                       className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
                   </div>
                 </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5">Sede</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setFilterStore(null)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                        filterStore === null
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      Tutte
+                    </button>
+                    {STORES.map((store) => (
+                      <button
+                        key={store.id}
+                        onClick={() => setFilterStore(filterStore === store.id ? null : store.id)}
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                          filterStore === store.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {store.shortName}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 {isFiltered && (
-                  <button onClick={() => { setDateFrom(""); setDateTo(""); }}
-                    className="text-xs text-primary underline underline-offset-2">
-                    Rimuovi filtro
+                  <button
+                    onClick={() => { setDateFrom(""); setDateTo(""); setFilterStore(null); }}
+                    className="text-xs text-primary underline underline-offset-2"
+                  >
+                    Rimuovi tutti i filtri
                   </button>
                 )}
                 {isFiltered && (
                   <p className="text-xs text-muted-foreground">
-                    {filteredSessions.length} sessioni nel periodo selezionato
+                    {filteredSessions.length} sessioni nel periodo / sede selezionati
                   </p>
                 )}
               </div>
@@ -663,6 +703,9 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
                       <div className="overflow-hidden">
                         <p className="truncate font-medium text-foreground">{s.email}</p>
                         <p className="truncate text-xs text-muted-foreground">{productName(s.matched_product_id)}</p>
+                        {s.store_id && (
+                          <p className="text-[10px] text-primary/70 mt-0.5">📍 {storeName(s.store_id)}</p>
+                        )}
                       </div>
                       <div className="ml-3 shrink-0 text-right">
                         <p className="font-bold text-primary">{s.match_percent}%</p>

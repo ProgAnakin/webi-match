@@ -7,6 +7,7 @@ import AdminPinOverlay from "./AdminPinOverlay";
 import { useSound } from "@/hooks/useSound";
 import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";
+import { getStoredStoreId, getStoreById } from "@/data/stores";
 
 export interface UserInfo {
   nome: string;
@@ -163,6 +164,26 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   );
 };
 
+// ─── Store Badge ──────────────────────────────────────────────────────────────
+const StoreBadge = ({ onTap }: { onTap: () => void }) => {
+  const storeId = getStoredStoreId();
+  const store = storeId ? getStoreById(storeId) : null;
+
+  return (
+    <button
+      onClick={onTap}
+      className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/70 px-3 py-1.5 text-xs backdrop-blur-sm transition-colors hover:bg-card"
+    >
+      <span className="text-base">📍</span>
+      {store ? (
+        <span className="font-medium text-foreground">{store.shortName}</span>
+      ) : (
+        <span className="font-medium text-amber-500">Sede non configurata</span>
+      )}
+    </button>
+  );
+};
+
 // ─── Welcome Screen ────────────────────────────────────────────────────────────
 const LOGO_TAPS_REQUIRED = 6;
 
@@ -190,6 +211,11 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
       {/* Language selector — top-right, above background */}
       <div className="absolute top-4 right-4 z-10">
         <LanguageSelector />
+      </div>
+
+      {/* Store badge — bottom-left, tapping opens staff PIN */}
+      <div className="absolute bottom-4 left-4 z-10">
+        <StoreBadge onTap={() => setShowPin(true)} />
       </div>
 
       {/* Admin PIN overlay */}
