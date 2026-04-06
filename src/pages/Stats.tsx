@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LogOut, RefreshCw, Package, Download, Shield, ShieldCheck,
-  X, Calendar, ChevronDown, ChevronUp,
+  X, Calendar, ChevronDown, ChevronUp, Home,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -533,6 +533,10 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
             <button onClick={handleLogout}
               className="flex items-center gap-1 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive active:scale-95">
               <LogOut className="h-3 w-3" /> Esci
+            </button>
+            <button onClick={() => { supabase.auth.signOut(); navigate("/"); }}
+              className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
+              <Home className="h-3 w-3" /> Quiz
             </button>
           </div>
         </motion.div>
