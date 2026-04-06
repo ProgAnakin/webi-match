@@ -1,45 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 115">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 110">
   <defs>
-    <linearGradient id="flame-g" x1="40%" y1="100%" x2="60%" y2="0%">
-      <stop offset="0%" stop-color="#CC1800"/>
-      <stop offset="45%" stop-color="#FF4500"/>
-      <stop offset="100%" stop-color="#FF9000"/>
+    <linearGradient id="flame-g" x1="45%" y1="100%" x2="55%" y2="0%">
+      <stop offset="0%"   stop-color="#CC1500"/>
+      <stop offset="40%"  stop-color="#FF4500"/>
+      <stop offset="100%" stop-color="#FF9200"/>
     </linearGradient>
     <linearGradient id="chevron-g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF8000"/>
+      <stop offset="0%"   stop-color="#FF8800"/>
       <stop offset="100%" stop-color="#FF2800"/>
     </linearGradient>
   </defs>
 
   <!-- Outer heart — solid white fill -->
-  <path d="M50 103
-           C50 103 10 76 10 50
-           C10 34 21 23 35 23
-           C42 23 48 27 50 33
-           C52 27 58 23 65 23
-           C79 23 90 34 90 50
-           C90 76 50 103 50 103Z"
+  <path d="M50 100
+           C50 100 10 74 10 48
+           C10 32 21 22 35 22
+           C42 22 48 26 50 32
+           C52 26 58 22 65 22
+           C79 22 90 32 90 48
+           C90 74 50 100 50 100Z"
         fill="white"/>
 
-  <!-- Inner heart — subtle outline only -->
-  <path d="M50 93
-           C50 93 20 70 20 51
-           C20 39 28 31 38 31
-           C44 31 49 35 50 39
-           C51 35 56 31 62 31
-           C72 31 80 39 80 51
-           C80 70 50 93 50 93Z"
-        fill="none" stroke="#e0e0e0" stroke-width="1.5"/>
+  <!-- Inner heart — light gray stroke only -->
+  <path d="M50 89
+           C50 89 21 67 21 49
+           C21 38 29 30 39 30
+           C45 30 50 34 50 39
+           C50 34 55 30 61 30
+           C71 30 79 38 79 49
+           C79 67 50 89 50 89Z"
+        fill="none" stroke="#d8d8d8" stroke-width="1.2"/>
 
-  <!-- Flame -->
-  <path d="M50 2
-           C49 7 44 13 46 19
-           C42 15 43 22 50 24
-           C57 22 58 15 54 19
-           C56 13 51 7 50 2Z"
+  <!-- Flame — realistic fire shape sitting on top of heart -->
+  <path d="M50 3
+           C49 8 43 13 43 19
+           C40 15 41 23 46 25
+           C43 21 46 28 50 28
+           C54 28 57 21 54 25
+           C59 23 60 15 57 19
+           C57 13 51 8 50 3Z"
         fill="url(#flame-g)"/>
 
-  <!-- Downward chevron (rounded top corners, pointed bottom) -->
-  <path d="M33 54 Q33 51 36 51 L64 51 Q67 51 67 54 L52 72 Q50 75 48 72 Z"
+  <!-- Downward chevron — rounded corners, soft tip -->
+  <path d="M32 53 Q32 50 35 50 L65 50 Q68 50 68 53 L52 71 Q50 74 48 71 Z"
         fill="url(#chevron-g)"/>
 </svg>
