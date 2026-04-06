@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BarChart2, LogOut, Power, PowerOff, RotateCcw } from "lucide-react";
+import { BarChart2, LogOut, Power, PowerOff, RotateCcw, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 
@@ -41,8 +41,13 @@ const ManagerDashboard = ({ onLogout }: { onLogout: () => void }) => {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [filterTag, setFilterTag] = useState<string | null>(null);
 
   useIdleLogout(onLogout);
+
+  // Collect unique tags from all products
+  const allTags = Array.from(new Set(products.flatMap((p) => p.tags))).sort();
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -99,12 +104,18 @@ const ManagerDashboard = ({ onLogout }: { onLogout: () => void }) => {
     onLogout();
   };
 
-  // Sort: active first, then paused
+  // Sort: active first, then paused; then apply search + tag filter
   const sortedProducts = [...products].sort((a, b) => {
     const aOn = settings[a.id] !== false;
     const bOn = settings[b.id] !== false;
     if (aOn === bOn) return 0;
     return aOn ? -1 : 1;
+  });
+
+  const filteredProducts = sortedProducts.filter((p) => {
+    const matchSearch = search === "" || p.name.toLowerCase().includes(search.toLowerCase());
+    const matchTag = filterTag === null || p.tags.includes(filterTag);
+    return matchSearch && matchTag;
   });
 
   const activeCount = products.filter((p) => settings[p.id] !== false).length;
@@ -176,12 +187,58 @@ const ManagerDashboard = ({ onLogout }: { onLogout: () => void }) => {
           immediato: la prossima sessione del quiz userà già la lista aggiornata.
         </motion.div>
 
+        {/* Search + tag filter */}
+        {!loading && (
+          <div className="space-y-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Cerca prodotto…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-xl border border-border bg-card pl-9 pr-9 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              {search && (
+                <button onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <button onClick={() => setFilterTag(null)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  filterTag === null
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}>
+                Tutti
+              </button>
+              {allTags.map((tag) => (
+                <button key={tag} onClick={() => setFilterTag(filterTag === tag ? null : tag)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
+                    filterTag === tag
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}>
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Product list */}
         {loading ? (
           <div className="py-20 text-center text-muted-foreground">Caricamento prodotti…</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="py-12 text-center text-muted-foreground text-sm">
+            Nessun prodotto trovato per "{search || filterTag}".
+          </div>
         ) : (
           <div className="space-y-3">
-            {sortedProducts.map((product, i) => {
+            {filteredProducts.map((product, i) => {
               const isActive = settings[product.id] !== false;
               const isSaving = savingId === product.id;
 
