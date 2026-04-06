@@ -6,12 +6,14 @@ import SwipeTutorial from "./SwipeTutorial";
 import QuizBackground from "./QuizBackground";
 import { questions } from "@/data/questions";
 import { useSound } from "@/hooks/useSound";
+import { useLang } from "@/i18n/LanguageContext";
 
 interface QuizScreenProps {
   onComplete: (answers: Record<number, boolean>) => void;
 }
 
 const QuizScreen = ({ onComplete }: QuizScreenProps) => {
+  const { t } = useLang();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, boolean>>({});
   const [showTutorial, setShowTutorial] = useState(true);
@@ -52,7 +54,7 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
         <div className="mx-auto flex max-w-sm flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-foreground">
-              Domanda {currentIndex + 1} di {questions.length}
+              {t.quiz.questionOf(currentIndex + 1, questions.length)}
             </span>
             <span className="text-sm font-bold text-primary">
               {Math.round((currentIndex / questions.length) * 100)}%
