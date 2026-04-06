@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useInactivityReset } from "@/hooks/useInactivityReset";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { useLang } from "@/i18n/LanguageContext";
+import { getStoredStoreId } from "@/data/stores";
 
 type Screen = "welcome" | "quiz" | "result" | "success";
 
@@ -24,9 +25,11 @@ const Index = () => {
   const [activeProductIds, setActiveProductIds] = useState<Set<string> | null>(null);
 
   useEffect(() => {
+    const storeId = getStoredStoreId() ?? "corso-vercelli";
     supabase
       .from("product_settings")
       .select("product_id, active")
+      .eq("store_id", storeId)
       .then(({ data }) => {
         if (data && data.length > 0) {
           const active = new Set(
@@ -63,6 +66,7 @@ const Index = () => {
         // @ts-ignore — columns added via migration; gracefully ignored if not yet applied
         nome: user.nome,
         cognome: user.cognome,
+        store_id: getStoredStoreId(),
       });
     } catch {
       // Silently fail — data loss is non-critical; the user flow continues
