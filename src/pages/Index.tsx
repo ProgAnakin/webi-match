@@ -56,21 +56,30 @@ const Index = () => {
 
   const handleClaim = async () => {
     if (!matchedProduct) return;
-    try {
-      await supabase.from("quiz_sessions").insert({
-        email: user.email,
-        answers: quizAnswers,
-        matched_product_id: matchedProduct.id,
-        match_percent: matchPercent,
-        email_sent: false,
-        // @ts-ignore — columns added via migration; gracefully ignored if not yet applied
-        nome: user.nome,
-        cognome: user.cognome,
-        store_id: getStoredStoreId(),
-      });
-    } catch {
-      // Silently fail — data loss is non-critical; the user flow continues
+
+    const payload = {
+      email: user.email,
+      answers: quizAnswers,
+      matched_product_id: matchedProduct.id,
+      match_percent: matchPercent,
+      email_sent: false,
+      // @ts-ignore — columns added via migration; gracefully ignored if not yet applied
+      nome: user.nome,
+      cognome: user.cognome,
+      store_id: getStoredStoreId(),
+    };
+
+    // Retry up to 2 times with exponential backoff before giving up.
+    // The user flow continues regardless — session data is non-blocking.
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 500 * 2 ** (attempt - 1)));
+      const { error } = await supabase.from("quiz_sessions").insert(payload);
+      if (!error) { lastError = null; break; }
+      lastError = error;
     }
+    if (lastError) console.error("[webi-match] quiz_sessions insert failed:", lastError);
+
     setScreen("success");
   };
 

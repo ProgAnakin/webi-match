@@ -1,7 +1,8 @@
 import { useEffect, useRef, useCallback } from "react";
+import { INACTIVITY_TIMEOUT_MS, WARNING_DURATION_MS } from "@/config/timings";
 
-const INACTIVITY_TIMEOUT = 45_000; // 45s without touch → show warning
-const WARNING_DURATION  = 10_000;  // 10s countdown before reset
+const INACTIVITY_TIMEOUT = INACTIVITY_TIMEOUT_MS;
+const WARNING_DURATION   = WARNING_DURATION_MS;
 
 interface UseInactivityResetOptions {
   enabled: boolean;

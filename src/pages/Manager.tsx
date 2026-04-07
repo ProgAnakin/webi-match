@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BarChart2, Home, LogOut, MapPin, Power, PowerOff, RotateCcw, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ADMIN_IDLE_TIMEOUT_MS } from "@/config/timings";
 import { products } from "@/data/products";
 import { STORES, getStoredStoreId, setStoredStoreId, getStoreById } from "@/data/stores";
 
@@ -10,8 +11,8 @@ import { STORES, getStoredStoreId, setStoredStoreId, getStoreById } from "@/data
 /** product_id → active boolean, loaded from Supabase */
 type SettingsMap = Record<string, boolean>;
 
-// Logout automático após 30 minutos de inatividade para proteger sessões abertas em kiosks
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+// Logout automático após inatividade — duração centralizada em src/config/timings.ts
+const IDLE_TIMEOUT_MS = ADMIN_IDLE_TIMEOUT_MS;
 const IDLE_EVENTS = ["mousedown", "touchstart", "keydown", "scroll"] as const;
 
 function useIdleLogout(onLogout: () => void) {

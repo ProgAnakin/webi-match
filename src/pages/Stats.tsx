@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ADMIN_IDLE_TIMEOUT_MS } from "@/config/timings";
 import {
   LogOut, RefreshCw, Package, Download, Shield, ShieldCheck,
   X, Calendar, ChevronDown, ChevronUp, Home,
@@ -375,7 +376,7 @@ const MfaSetupModal = ({ onClose, onEnabled }: { onClose: () => void; onEnabled:
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 const FETCH_LIMIT = 500;
 const REFRESH_DEBOUNCE_MS = 3000;
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+const IDLE_TIMEOUT_MS = ADMIN_IDLE_TIMEOUT_MS;
 const IDLE_EVENTS = ["mousedown", "touchstart", "keydown", "scroll"] as const;
 
 const Dashboard = ({ onLogout }: { onLogout: () => void }) => {

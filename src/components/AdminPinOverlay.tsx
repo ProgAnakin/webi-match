@@ -2,10 +2,10 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { STORES, setStoredStoreId, getStoredStoreId } from "@/data/stores";
+import { supabase } from "@/integrations/supabase/client";
 
-// PIN is loaded from the VITE_STAFF_PIN environment variable set in Vercel.
-// To rotate it: change the env var in Vercel → redeploy. Never hardcode it here.
-const STAFF_PIN = import.meta.env.VITE_STAFF_PIN as string | undefined;
+// PIN validation happens server-side via Supabase RPC (verify_staff_pin).
+// The PIN value is never loaded into the client bundle.
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_MS = 2 * 60 * 1000; // 2 minutes
@@ -25,6 +25,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
   const [attempts, setAttempts] = useState(0);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
+  const [verifying, setVerifying] = useState(false);
   const [currentStoreId, setCurrentStoreId] = useState<string | null>(getStoredStoreId);
   const navigate = useNavigate();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -49,8 +50,8 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [lockedUntil]);
 
-  const handleKey = useCallback((key: string) => {
-    if (isLocked) return;
+  const handleKey = useCallback(async (key: string) => {
+    if (isLocked || verifying) return;
 
     if (key === "⌫") {
       setPin((p) => p.slice(0, -1));
@@ -62,9 +63,12 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
     setPin(next);
 
     if (next.length === 4) {
-      if (STAFF_PIN && next === STAFF_PIN) {
+      setVerifying(true);
+      const { data: valid, error } = await supabase.rpc("verify_staff_pin", { pin_input: next });
+      setVerifying(false);
+
+      if (!error && valid === true) {
         setAttempts(0);
-        // After PIN: go to store selector
         setTimeout(() => setStep("store"), 300);
       } else {
         const newAttempts = attempts + 1;
@@ -80,7 +84,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
         }, 600);
       }
     }
-  }, [pin, attempts, isLocked]);
+  }, [pin, attempts, isLocked, verifying]);
 
   const handleSelectStore = (storeId: string) => {
     setStoredStoreId(storeId);
@@ -217,8 +221,13 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
           ))}
         </motion.div>
 
+        {/* Verifying indicator */}
+        {verifying && (
+          <p className="mb-3 text-center text-xs text-muted-foreground animate-pulse">Verifica in corso…</p>
+        )}
+
         {/* Numeric keypad */}
-        <div className={`grid grid-cols-3 gap-3 ${isLocked ? "pointer-events-none opacity-40" : ""}`}>
+        <div className={`grid grid-cols-3 gap-3 ${isLocked || verifying ? "pointer-events-none opacity-40" : ""}`}>
           {KEYS.map((key, i) => (
             key === "" ? (
               <div key={i} />
