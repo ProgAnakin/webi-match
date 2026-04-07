@@ -73,10 +73,8 @@ const StatCard = ({ label, value, sub }: { label: string; value: string | number
 );
 
 // ─── Login ────────────────────────────────────────────────────────────────────
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_MS = 5 * 60 * 1000;
-const SS_ATTEMPTS = "wb_login_attempts";
-const SS_LOCKED_UNTIL = "wb_locked_until";
+// Rate limiting is enforced server-side via check_login_rate_limit RPC.
+// sessionStorage is no longer used for lockout (it was bypassable via DevTools).
 
 const LoginForm = ({
   onLoginSuccess,
@@ -89,47 +87,54 @@ const LoginForm = ({
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [attempts, setAttempts] = useState<number>(() =>
-    parseInt(sessionStorage.getItem(SS_ATTEMPTS) ?? "0", 10)
-  );
-  const [lockedUntil, setLockedUntil] = useState<number | null>(() => {
-    const v = sessionStorage.getItem(SS_LOCKED_UNTIL);
-    return v ? parseInt(v, 10) : null;
-  });
-  const isLocked = lockedUntil !== null && Date.now() < lockedUntil;
-  const lockSecondsLeft = isLocked ? Math.ceil((lockedUntil! - Date.now()) / 1000) : 0;
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (!isLocked) return;
-    const id = setInterval(() => setTick((t) => t + 1), 1000);
-    return () => clearInterval(id);
-  }, [isLocked]);
+  // Server-driven lockout state
+  const [lockedSeconds, setLockedSeconds] = useState(0);
+  const lockCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const persist = (n: number, until: number | null) => {
-    setAttempts(n); sessionStorage.setItem(SS_ATTEMPTS, String(n));
-    setLockedUntil(until);
-    if (until) sessionStorage.setItem(SS_LOCKED_UNTIL, String(until));
-    else sessionStorage.removeItem(SS_LOCKED_UNTIL);
-  };
+  const isLocked = lockedSeconds > 0;
+
+  useEffect(() => {
+    if (lockedSeconds <= 0) return;
+    if (lockCountdownRef.current) clearInterval(lockCountdownRef.current);
+    lockCountdownRef.current = setInterval(() => {
+      setLockedSeconds((s) => {
+        if (s <= 1) { clearInterval(lockCountdownRef.current!); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+    return () => { if (lockCountdownRef.current) clearInterval(lockCountdownRef.current); };
+  }, [lockedSeconds]);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim() || isLocked) return;
     setLoading(true); setError("");
+
+    // Check server-side rate limit before attempting login
+    const { data: limitData } = await supabase.rpc("check_login_rate_limit", {
+      p_email: email.trim().toLowerCase(),
+    });
+    const limit = limitData as { locked: boolean; locked_seconds: number } | null;
+    if (limit?.locked) {
+      setLockedSeconds(limit.locked_seconds);
+      setLoading(false);
+      setError("Troppi tentativi. Riprova tra qualche minuto.");
+      return;
+    }
+
     const { error: authError } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(), password,
     });
+
+    // Record attempt server-side (non-blocking)
+    supabase.rpc("record_login_attempt", {
+      p_email: email.trim().toLowerCase(),
+      p_success: !authError,
+    });
+
     setLoading(false);
     if (authError) {
-      const n = attempts + 1;
-      if (n >= MAX_ATTEMPTS) {
-        persist(0, Date.now() + LOCKOUT_MS);
-        setError("Troppi tentativi. Riprova tra 5 minuti.");
-      } else {
-        persist(n, null);
-        setError(`Credenziali non valide. Riprova. (${MAX_ATTEMPTS - n} tentativi rimasti)`);
-      }
+      setError("Credenziali non valide.");
     } else {
-      persist(0, null);
       // Check if user has 2FA enrolled and needs to verify
       const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (aal?.nextLevel === "aal2" && aal?.currentLevel !== "aal2") {
@@ -166,7 +171,7 @@ const LoginForm = ({
         <button onClick={handleLogin}
           disabled={loading || isLocked || !email.trim() || !password.trim()}
           className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-4 text-lg font-bold text-primary-foreground active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-          {loading ? "Accesso in corso…" : isLocked ? `Bloccato — ${lockSecondsLeft}s` : "Accedi"}
+          {loading ? "Accesso in corso…" : isLocked ? `Bloccato — ${lockedSeconds}s` : "Accedi"}
         </button>
       </motion.div>
     </div>
@@ -733,38 +738,56 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
                 <h2 className="mb-4 font-bold text-foreground">🔽 Funil de abandono</h2>
                 {[
-                  { label: "Quiz avviati", value: funnel.started, color: "bg-blue-500" },
-                  { label: "Risultato mostrato", value: funnel.resultShown, color: "bg-orange-500" },
-                  { label: "Reclamati (claim)", value: funnel.claimed, color: "bg-green-500" },
+                  { label: "Quiz avviati",        value: funnel.started,    color: "bg-blue-500"   },
+                  { label: "Risultato mostrato",  value: funnel.resultShown, color: "bg-orange-500" },
+                  { label: "Reclamati (claim)",   value: funnel.claimed,    color: "bg-green-500"  },
                 ].map(({ label, value, color }, i, arr) => {
-                  const pct = arr[0].value ? Math.round((value / arr[0].value) * 100) : 0;
-                  const dropoff = i > 0 ? arr[i - 1].value - value : 0;
+                  const pctOfTotal  = arr[0].value ? Math.round((value / arr[0].value) * 100) : 0;
+                  const pctOfPrev   = i > 0 && arr[i - 1].value
+                    ? Math.round((value / arr[i - 1].value) * 100) : null;
+                  const dropoff     = i > 0 ? arr[i - 1].value - value : 0;
                   return (
-                    <div key={label} className="mb-3">
+                    <div key={label} className="mb-4">
                       <div className="mb-1 flex items-center justify-between text-xs">
                         <span className="font-medium text-foreground">{label}</span>
-                        <span className="text-muted-foreground">
+                        <div className="flex items-center gap-2 text-right">
                           <span className="font-semibold text-foreground">{value}</span>
-                          {" "}({pct}%)
-                          {dropoff > 0 && <span className="ml-1 text-destructive">−{dropoff} abbandonati</span>}
-                        </span>
+                          {pctOfPrev !== null && (
+                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                              pctOfPrev >= 70 ? "bg-green-500/15 text-green-600"
+                              : pctOfPrev >= 40 ? "bg-orange-500/15 text-orange-600"
+                              : "bg-destructive/15 text-destructive"
+                            }`}>
+                              {pctOfPrev}% dal passo prec.
+                            </span>
+                          )}
+                          {dropoff > 0 && (
+                            <span className="text-muted-foreground">−{dropoff} usciti</span>
+                          )}
+                        </div>
                       </div>
                       <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                         <motion.div
                           className={`h-full rounded-full ${color}`}
                           initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
+                          animate={{ width: `${pctOfTotal}%` }}
                           transition={{ duration: 0.6, delay: 0.1 * i }}
                         />
                       </div>
+                      <p className="mt-0.5 text-right text-[10px] text-muted-foreground">{pctOfTotal}% del totale avviati</p>
                     </div>
                   );
                 })}
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Tasso di conversione finale: <span className="font-semibold text-foreground">
+                <div className="mt-3 flex items-center justify-between rounded-xl bg-muted/50 px-4 py-2.5">
+                  <span className="text-xs text-muted-foreground">Conversione finale (avviati → claim)</span>
+                  <span className={`text-sm font-bold ${
+                    funnel.started && (funnel.claimed / funnel.started) >= 0.5 ? "text-green-600"
+                    : funnel.started && (funnel.claimed / funnel.started) >= 0.25 ? "text-orange-500"
+                    : "text-destructive"
+                  }`}>
                     {funnel.started ? Math.round((funnel.claimed / funnel.started) * 100) : 0}%
                   </span>
-                </p>
+                </div>
               </motion.div>
             )}
 

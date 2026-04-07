@@ -7,4 +7,4 @@ export const INACTIVITY_TIMEOUT_MS = 45_000;
 export const WARNING_DURATION_MS = 10_000;
 
 /** Admin pages (Stats / Manager): ms idle before auto-logout */
-export const ADMIN_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+export const ADMIN_IDLE_TIMEOUT_MS = 10 * 60 * 1000;
