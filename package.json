@@ -1,7 +1,8 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "webi-match",
+  "description": "Interactive product-matching kiosk experience for Webidoo retail stores — swipe-based quiz, real-time analytics, multi-store management.",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
