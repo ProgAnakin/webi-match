@@ -36,12 +36,12 @@ CREATE OR REPLACE FUNCTION public.verify_staff_pin(pin_input text)
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = extensions, public
 AS $$
 DECLARE
   stored_hash text;
 BEGIN
-  SELECT value INTO stored_hash FROM app_config WHERE key = 'staff_pin_hash';
+  SELECT value INTO stored_hash FROM public.app_config WHERE key = 'staff_pin_hash';
   IF stored_hash IS NULL THEN
     RETURN false; -- no PIN configured yet
   END IF;
