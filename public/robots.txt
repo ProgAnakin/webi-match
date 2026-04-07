@@ -1,14 +1,18 @@
+User-agent: *
+Disallow: /stats
+
 User-agent: Googlebot
 Allow: /
+Disallow: /stats
 
 User-agent: Bingbot
 Allow: /
+Disallow: /stats
 
 User-agent: Twitterbot
 Allow: /
+Disallow: /stats
 
 User-agent: facebookexternalhit
 Allow: /
-
-User-agent: *
-Allow: /
+Disallow: /stats

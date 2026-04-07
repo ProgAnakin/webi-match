@@ -5,17 +5,24 @@ import SwipeCard from "./SwipeCard";
 import SwipeTutorial from "./SwipeTutorial";
 import QuizBackground from "./QuizBackground";
 import { questions } from "@/data/questions";
+import { useSound } from "@/hooks/useSound";
+import { useLang } from "@/i18n/LanguageContext";
 
 interface QuizScreenProps {
   onComplete: (answers: Record<number, boolean>) => void;
 }
 
 const QuizScreen = ({ onComplete }: QuizScreenProps) => {
+  const { t } = useLang();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, boolean>>({});
   const [showTutorial, setShowTutorial] = useState(true);
+  const [exitDirection, setExitDirection] = useState<"left" | "right" | undefined>(undefined);
+  const { play } = useSound();
 
   const handleSwipe = useCallback((direction: "left" | "right") => {
+    setExitDirection(direction);
+    play(direction === "right" ? "swipe_yes" : "swipe_no");
     const question = questions[currentIndex];
     const newAnswers = { ...answers, [question.id]: direction === "right" };
     setAnswers(newAnswers);
@@ -23,7 +30,10 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
     if (currentIndex + 1 >= questions.length) {
       setTimeout(() => onComplete(newAnswers), 300);
     } else {
-      setTimeout(() => setCurrentIndex((i) => i + 1), 300);
+      setTimeout(() => {
+        setExitDirection(undefined);
+        setCurrentIndex((i) => i + 1);
+      }, 300);
     }
   }, [currentIndex, answers, onComplete]);
 
@@ -40,25 +50,23 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
       {showTutorial && <SwipeTutorial onDismiss={() => setShowTutorial(false)} />}
 
       {/* Top progress bar */}
-      <div className="absolute left-0 right-0 top-0 px-6 pt-6">
-        <div className="mx-auto flex max-w-sm items-center gap-3">
-          <span className="text-xs font-medium text-muted-foreground">
-            {currentIndex + 1} / {questions.length}
-          </span>
-          <div className="flex flex-1 gap-1">
-            {Array.from({ length: questions.length }).map((_, i) => (
-              <motion.div
-                key={i}
-                className="h-1 flex-1 overflow-hidden rounded-full bg-muted"
-              >
-                <motion.div
-                  className="h-full rounded-full gradient-primary"
-                  initial={{ width: i < currentIndex ? "100%" : "0%" }}
-                  animate={{ width: i <= currentIndex ? "100%" : "0%" }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
-                />
-              </motion.div>
-            ))}
+      <div className="absolute left-0 right-0 top-0 px-6 pt-8">
+        <div className="mx-auto flex max-w-sm flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-foreground">
+              {t.quiz.questionOf(currentIndex + 1, questions.length)}
+            </span>
+            <span className="text-sm font-bold text-primary">
+              {Math.round((currentIndex / questions.length) * 100)}%
+            </span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <motion.div
+              className="h-full rounded-full gradient-primary"
+              initial={{ width: `${((currentIndex - 1) / questions.length) * 100}%` }}
+              animate={{ width: `${(currentIndex / questions.length) * 100}%` }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+            />
           </div>
         </div>
       </div>
@@ -69,6 +77,7 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
           key={currentIndex}
           question={question}
           onSwipe={handleSwipe}
+          exitDirection={exitDirection}
         />
       </AnimatePresence>
 

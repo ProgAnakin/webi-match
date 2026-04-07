@@ -1,8 +1,11 @@
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useEffect } from "react";
+import { useSound } from "@/hooks/useSound";
+import { useLang } from "@/i18n/LanguageContext";
 
 interface SuccessScreenProps {
   email: string;
+  userName: string;
   productName: string;
   onRestart: () => void;
 }
@@ -72,19 +75,23 @@ const FlyingAirplane = ({ delay, id }: { delay: number; id: number }) => {
   );
 };
 
-const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) => {
+const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScreenProps) => {
   const checkScale = useMotionValue(0);
   const checkOpacity = useTransform(checkScale, [0, 1], [0, 1]);
+  const { play } = useSound();
+  const { t } = useLang();
 
   useEffect(() => {
-    animate(checkScale, 1, { type: "spring", stiffness: 200, damping: 15, delay: 2 });
+    animate(checkScale, 1, { type: "spring", stiffness: 200, damping: 15, delay: 0.5 });
+    const timer = setTimeout(() => play("success"), 400);
+    return () => clearTimeout(timer);
   }, []);
 
   const benefits = [
-    { icon: "🎬", title: "Video 30s", desc: "Video esplicativo" },
-    { icon: "📖", title: "Manuale", desc: "Guida completa" },
-    { icon: "❓", title: "FAQ", desc: "Domande frequenti" },
-    { icon: "🏷️", title: "Sconto", desc: "Offerta esclusiva" },
+    { icon: "🎬", title: t.success.benefits.video.title, desc: t.success.benefits.video.desc, highlight: false },
+    { icon: "📖", title: t.success.benefits.manual.title, desc: t.success.benefits.manual.desc, highlight: false },
+    { icon: "❓", title: t.success.benefits.faq.title, desc: t.success.benefits.faq.desc, highlight: false },
+    { icon: "🏷️", title: t.success.benefits.discount.title, desc: t.success.benefits.discount.desc, highlight: true },
   ];
 
   return (
@@ -145,9 +152,12 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <h2 className="text-3xl font-bold text-foreground">Email Inviata! ✨</h2>
-          <p className="mt-2 text-muted-foreground">
-            La guida esclusiva del <span className="font-semibold text-gradient">{productName}</span> è stata inviata a:
+          <h2 className="text-3xl font-bold text-foreground">
+            {userName ? t.success.title(userName) : t.success.titleNoName}
+          </h2>
+          <p className="mt-1 text-lg font-semibold text-gradient">{productName}</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {t.success.productOnWay}
           </p>
         </motion.div>
 
@@ -160,7 +170,7 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
         >
           <div className="gradient-primary px-4 py-2">
             <p className="text-center text-xs font-semibold uppercase tracking-widest text-primary-foreground">
-              Destinatario
+              {t.success.recipient}
             </p>
           </div>
           <div className="px-4 py-3">
@@ -178,26 +188,32 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           {benefits.map((item, i) => (
             <motion.div
               key={i}
-              className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm"
+              className={`flex flex-col items-center gap-1 rounded-2xl border p-4 backdrop-blur-sm ${
+                item.highlight
+                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                  : "border-border bg-card/60"
+              }`}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 1 + i * 0.1 }}
               whileHover={{ scale: 1.05, y: -2 }}
             >
               <span className="text-2xl">{item.icon}</span>
-              <span className="text-xs font-bold text-foreground">{item.title}</span>
-              <span className="text-[10px] text-muted-foreground">{item.desc}</span>
+              <span className={`text-xs font-bold ${item.highlight ? "text-primary" : "text-foreground"}`}>
+                {item.title}
+              </span>
+              <span className="text-center text-[10px] text-muted-foreground">{item.desc}</span>
             </motion.div>
           ))}
         </motion.div>
 
         <motion.p
-          className="text-center text-sm text-muted-foreground"
+          className="text-center text-xs text-muted-foreground"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
         >
-          Controlla la tua casella di posta per scoprire tutto!
+          {t.success.spamNote}
         </motion.p>
 
         <motion.button
@@ -209,7 +225,7 @@ const SuccessScreen = ({ email, productName, onRestart }: SuccessScreenProps) =>
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.3 }}
         >
-          🔄 Gioca di Nuovo
+          {t.success.restart}
         </motion.button>
       </motion.div>
     </div>
