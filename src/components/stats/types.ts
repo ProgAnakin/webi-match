@@ -52,6 +52,19 @@ export function storeName(id: string | null): string {
   return getStoreById(id)?.shortName ?? id;
 }
 
+/**
+ * Sanitize a string for safe CSV embedding.
+ * - Escapes double quotes (RFC 4180)
+ * - Strips CR/LF to prevent row injection
+ * - Prefixes formula-triggering characters (=, +, -, @, |, %) with a tab
+ *   to neutralise spreadsheet formula injection (OWASP CSV injection)
+ */
+function csvSafe(value: string): string {
+  const stripped = value.replace(/[\r\n]/g, " ");
+  const escaped = stripped.replace(/"/g, '""');
+  return /^[=+\-@|%]/.test(escaped) ? `\t${escaped}` : escaped;
+}
+
 export function exportCSV(
   sessions: QuizSession[],
   fromDate?: string,
@@ -59,10 +72,10 @@ export function exportCSV(
 ): void {
   const header = ["Email", "Prodotto", "Match %", "Sede", "Data"];
   const rows = sessions.map((s) => [
-    `"${s.email.replace(/"/g, '""')}"`,
-    `"${productName(s.matched_product_id).replace(/"/g, '""')}"`,
+    `"${csvSafe(s.email)}"`,
+    `"${csvSafe(productName(s.matched_product_id))}"`,
     s.match_percent,
-    `"${storeName(s.store_id)}"`,
+    `"${csvSafe(storeName(s.store_id))}"`,
     `"${new Date(s.created_at).toLocaleString("it-IT")}"`,
   ]);
   const csv = [header, ...rows].map((r) => r.join(";")).join("\n");
