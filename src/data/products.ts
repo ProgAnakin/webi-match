@@ -1,3 +1,8 @@
+// Match percentage bounds — avoids demoralizing scores (<45%) and unrealistic perfect scores (100%).
+// 98% cap preserves the sense that there's always a "better" match to explore.
+const MATCH_MIN = 45;
+const MATCH_MAX = 98;
+
 export interface Product {
   id: string;
   name: string;
@@ -208,7 +213,7 @@ export function getMatchedProduct(
 
   const totalTags = activeTags.length || 1;
   const rawPercent = Math.round((bestScore / totalTags) * 100);
-  const matchPercent = Math.min(98, Math.max(45, rawPercent));
+  const matchPercent = Math.min(MATCH_MAX, Math.max(MATCH_MIN, rawPercent));
 
   return { product: bestProduct, matchPercent };
 }
