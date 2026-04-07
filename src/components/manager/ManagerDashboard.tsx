@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BarChart2, Home, LogOut, MapPin, Power, PowerOff, RotateCcw, Search, X } from "lucide-react";
+import { BarChart2, Home, LogOut, MapPin, Power, PowerOff, RotateCcw, Search, X, Undo2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import { getStoredStoreId, setStoredStoreId, getStoreById } from "@/data/stores";
@@ -10,6 +10,8 @@ import { StoreSelectorModal } from "./StoreSelectorModal";
 
 /** product_id → active boolean, loaded from Supabase */
 type SettingsMap = Record<string, boolean>;
+
+interface UndoEntry { productId: string; restoredValue: boolean; }
 
 interface ManagerDashboardProps {
   onLogout: () => void;
@@ -27,6 +29,9 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     () => getStoredStoreId() ?? "corso-vercelli"
   );
   const [showStoreModal, setShowStoreModal] = useState(false);
+  // Undo last toggle — auto-dismisses after 8 s
+  const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentStore = getStoreById(storeId);
 
@@ -50,35 +55,55 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
-  const toggleProduct = async (productId: string) => {
+  /** Core upsert — does NOT create an undo entry. Used by both toggleProduct and handleUndo. */
+  const saveProductActive = async (productId: string, targetActive: boolean) => {
     const current = settings[productId] ?? true;
-    const next = !current;
-
-    setSettings((prev) => ({ ...prev, [productId]: next }));
+    setSettings((prev) => ({ ...prev, [productId]: targetActive }));
     setSavingId(productId);
     setSaveError(null);
 
     const { error } = await supabase
       .from("product_settings")
-      .upsert({ product_id: productId, store_id: storeId, active: next, updated_at: new Date().toISOString() });
+      .upsert({ product_id: productId, store_id: storeId, active: targetActive, updated_at: new Date().toISOString() });
 
     if (error) {
       setSavingId(null);
       setSettings((prev) => ({ ...prev, [productId]: current }));
       setSaveError("Errore nel salvataggio. Verifica la connessione e riprova.");
-      return;
+      return false;
     }
 
     supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) return; // session expired — skip audit log rather than write a null-author entry
       supabase.from("manager_audit_log").insert({
-        user_id: data.user?.id ?? null,
-        user_email: data.user?.email ?? null,
+        user_id: data.user.id,
+        user_email: data.user.email,
         product_id: productId,
-        new_active: next,
+        new_active: targetActive,
       });
     });
 
     setSavingId(null);
+    return true;
+  };
+
+  const toggleProduct = async (productId: string) => {
+    const current = settings[productId] ?? true;
+    const ok = await saveProductActive(productId, !current);
+    if (!ok) return;
+
+    // Arm 8-second undo window
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setUndoEntry({ productId, restoredValue: current });
+    undoTimerRef.current = setTimeout(() => setUndoEntry(null), 8000);
+  };
+
+  const handleUndo = async () => {
+    if (!undoEntry) return;
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    const entry = undoEntry;
+    setUndoEntry(null);
+    await saveProductActive(entry.productId, entry.restoredValue);
   };
 
   const handleLogout = async () => {
@@ -284,6 +309,28 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             }}
             onClose={() => setShowStoreModal(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Undo toast — fixed bottom, auto-dismisses after 8 s */}
+      <AnimatePresence>
+        {undoEntry && (
+          <motion.div
+            className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-border bg-card px-5 py-3.5 shadow-2xl"
+            initial={{ opacity: 0, y: 24, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.95 }}
+          >
+            <span className="text-sm text-foreground">
+              Modifica salvata.
+            </span>
+            <button
+              onClick={handleUndo}
+              className="flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary active:scale-95"
+            >
+              <Undo2 className="h-3.5 w-3.5" /> Annulla
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

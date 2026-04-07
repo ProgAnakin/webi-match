@@ -54,6 +54,20 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Confetti palette — drives MatchResult confetti via CSS variables */
+    --confetti-1:  27  92% 55%;   /* primary orange          */
+    --confetti-2:  27  92% 72%;   /* primary orange light    */
+    --confetti-3:  145 80% 42%;   /* success green           */
+    --confetti-4:  145 80% 62%;   /* success green light     */
+    --confetti-5:  0   84% 60%;   /* destructive red         */
+    --confetti-6:  210 80% 62%;   /* sky blue                */
+    --confetti-7:  280 65% 62%;   /* purple                  */
+    --confetti-8:  330 75% 62%;   /* pink                    */
+    --confetti-9:  50  90% 55%;   /* yellow                  */
+    --confetti-10: 185 70% 48%;   /* teal                    */
+    --confetti-11: 300 60% 58%;   /* magenta                 */
+    --confetti-12: 15  88% 58%;   /* orange-red              */
   }
 }
 

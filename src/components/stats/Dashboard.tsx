@@ -37,8 +37,17 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
 
   const [hasMfa, setHasMfa] = useState(false);
   const [showMfaModal, setShowMfaModal] = useState(false);
+  // GDPR export confirmation — true while awaiting user confirmation
+  const [confirmExport, setConfirmExport] = useState(false);
 
   useIdleLogout(onLogout);
+
+  /** Opens GDPR confirmation banner before downloading the CSV. */
+  const handleExportRequest = () => setConfirmExport(true);
+  const handleExportConfirm = () => {
+    setConfirmExport(false);
+    exportCSV(filteredSessions, dateFrom || undefined, dateTo || undefined);
+  };
 
   useEffect(() => {
     supabase.auth.mfa.listFactors().then(({ data }) => {
@@ -148,7 +157,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
               {isFiltered ? "Filtro attivo" : "Filtra"}
               {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </button>
-            <button onClick={() => exportCSV(filteredSessions, dateFrom || undefined, dateTo || undefined)}
+            <button onClick={handleExportRequest}
               disabled={filteredSessions.length === 0}
               className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95 disabled:opacity-40">
               <Download className="h-3 w-3" /> CSV
@@ -391,7 +400,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-bold text-foreground">🕐 Ultime sessioni</h2>
                 {filteredSessions.length > 0 && (
-                  <button onClick={() => exportCSV(filteredSessions, dateFrom || undefined, dateTo || undefined)}
+                  <button onClick={handleExportRequest}
                     className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-muted-foreground active:scale-95">
                     <Download className="h-3 w-3" /> Esporta CSV
                   </button>
@@ -445,6 +454,44 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             onClose={() => setShowMfaModal(false)}
             onEnabled={() => setHasMfa(true)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* GDPR export confirmation */}
+      <AnimatePresence>
+        {confirmExport && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={(e) => e.target === e.currentTarget && setConfirmExport(false)}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-2xl"
+              initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }}
+            >
+              <p className="text-sm font-bold text-foreground mb-2">⚠️ Dati personali — GDPR</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mb-5">
+                Il file contiene <strong className="text-foreground">indirizzi email</strong> dei clienti.
+                Tratta questi dati in conformità al GDPR: non condividere il file, non conservarlo più del necessario
+                e cancellalo dopo l'uso.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmExport(false)}
+                  className="flex-1 rounded-xl border border-border bg-muted px-4 py-2.5 text-sm text-muted-foreground active:scale-95"
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={handleExportConfirm}
+                  className="flex-1 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-semibold text-primary active:scale-95"
+                >
+                  <Download className="inline h-3.5 w-3.5 mr-1.5" />
+                  Scarica CSV
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
