@@ -13,6 +13,17 @@ import { getStoredStoreId } from "@/data/stores";
 
 type Screen = "welcome" | "quiz" | "result" | "success";
 
+// Fire-and-forget funnel event — never blocks the user flow.
+function trackFunnel(funnelKey: string, eventType: "quiz_started" | "result_shown" | "claimed") {
+  supabase.from("quiz_funnel_events").insert({
+    funnel_key: funnelKey,
+    event_type: eventType,
+    store_id: getStoredStoreId(),
+  }).then(({ error }) => {
+    if (error) console.error("[webi-match] funnel event failed:", eventType, error);
+  });
+}
+
 const Index = () => {
   const { t } = useLang();
   const [screen, setScreen] = useState<Screen>("welcome");
@@ -21,6 +32,8 @@ const Index = () => {
   const [matchPercent, setMatchPercent] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, boolean>>({});
   const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState<number | null>(null);
+  // Funnel key — generated once per quiz session to link events together
+  const [funnelKey, setFunnelKey] = useState(() => crypto.randomUUID());
   // Active product IDs fetched from Supabase — null means "not loaded yet" (uses full catalogue)
   const [activeProductIds, setActiveProductIds] = useState<Set<string> | null>(null);
 
@@ -43,6 +56,7 @@ const Index = () => {
 
   const handleStart = (userInfo: UserInfo) => {
     setUser(userInfo);
+    trackFunnel(funnelKey, "quiz_started");
     setScreen("quiz");
   };
 
@@ -51,6 +65,7 @@ const Index = () => {
     setMatchedProduct(product);
     setMatchPercent(pct);
     setQuizAnswers(answers);
+    trackFunnel(funnelKey, "result_shown");
     setScreen("result");
   };
 
@@ -80,6 +95,7 @@ const Index = () => {
     }
     if (lastError) console.error("[webi-match] quiz_sessions insert failed:", lastError);
 
+    trackFunnel(funnelKey, "claimed");
     setScreen("success");
   };
 
@@ -89,6 +105,8 @@ const Index = () => {
     setMatchPercent(0);
     setQuizAnswers({});
     setInactivitySecondsLeft(null);
+    // New funnel key for the next session
+    setFunnelKey(crypto.randomUUID());
     setScreen("welcome");
   };
 
