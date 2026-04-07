@@ -4,13 +4,21 @@ import { useNavigate } from "react-router-dom";
 import { STORES, setStoredStoreId, getStoredStoreId } from "@/data/stores";
 import { supabase } from "@/integrations/supabase/client";
 
-// PIN validation happens server-side via Supabase RPC (verify_staff_pin).
-// The PIN value is never loaded into the client bundle.
-
-const MAX_ATTEMPTS = 3;
-const LOCKOUT_MS = 2 * 60 * 1000; // 2 minutes
+// PIN validation is server-side via Supabase RPC (verify_staff_pin).
+// Lockout + attempt logging are also managed server-side.
 
 const KEYS = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
+
+// Persistent device ID — used server-side to track lockout per device.
+function getClientId(): string {
+  const key = "wb_client_id";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
 
 type Step = "pin" | "store";
 
@@ -22,33 +30,31 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
   const [step, setStep] = useState<Step>("pin");
   const [pin, setPin] = useState("");
   const [shake, setShake] = useState(false);
-  const [attempts, setAttempts] = useState(0);
-  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState(0);
   const [verifying, setVerifying] = useState(false);
+  // Lockout managed by server response
+  const [lockedSeconds, setLockedSeconds] = useState(0);
   const [currentStoreId, setCurrentStoreId] = useState<string | null>(getStoredStoreId);
+  const [savedStoreId, setSavedStoreId] = useState<string | null>(null); // for visual confirmation
   const navigate = useNavigate();
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lockCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const isLocked = lockedUntil !== null && Date.now() < lockedUntil;
+  const isLocked = lockedSeconds > 0;
 
-  // Countdown ticker while locked
+  // Client-side countdown driven by server-side locked_seconds
   useEffect(() => {
-    if (!lockedUntil) return;
-    const tick = () => {
-      const left = Math.ceil((lockedUntil - Date.now()) / 1000);
-      if (left <= 0) {
-        setLockedUntil(null);
-        setSecondsLeft(0);
-        if (timerRef.current) clearInterval(timerRef.current);
-      } else {
-        setSecondsLeft(left);
-      }
-    };
-    tick();
-    timerRef.current = setInterval(tick, 500);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [lockedUntil]);
+    if (lockedSeconds <= 0) return;
+    if (lockCountdownRef.current) clearInterval(lockCountdownRef.current);
+    lockCountdownRef.current = setInterval(() => {
+      setLockedSeconds((s) => {
+        if (s <= 1) {
+          clearInterval(lockCountdownRef.current!);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => { if (lockCountdownRef.current) clearInterval(lockCountdownRef.current); };
+  }, [lockedSeconds]);
 
   const handleKey = useCallback(async (key: string) => {
     if (isLocked || verifying) return;
@@ -64,32 +70,37 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
 
     if (next.length === 4) {
       setVerifying(true);
-      const { data: valid, error } = await supabase.rpc("verify_staff_pin", { pin_input: next });
+      const { data, error } = await supabase.rpc("verify_staff_pin", {
+        pin_input: next,
+        client_id: getClientId(),
+      });
       setVerifying(false);
 
-      if (!error && valid === true) {
-        setAttempts(0);
+      // data is JSON: { valid: boolean, locked_seconds: number }
+      const result = data as { valid: boolean; locked_seconds: number } | null;
+
+      if (!error && result?.valid === true) {
         setTimeout(() => setStep("store"), 300);
       } else {
-        const newAttempts = attempts + 1;
-        setAttempts(newAttempts);
+        // If server returned a lockout, apply it
+        if (result?.locked_seconds && result.locked_seconds > 0) {
+          setLockedSeconds(result.locked_seconds);
+        }
         setShake(true);
         setTimeout(() => {
           setShake(false);
           setPin("");
-          if (newAttempts >= MAX_ATTEMPTS) {
-            setLockedUntil(Date.now() + LOCKOUT_MS);
-            setAttempts(0);
-          }
         }, 600);
       }
     }
-  }, [pin, attempts, isLocked, verifying]);
+  }, [pin, isLocked, verifying]);
 
   const handleSelectStore = (storeId: string) => {
     setStoredStoreId(storeId);
     setCurrentStoreId(storeId);
-    // Don't navigate yet — let the user choose what to do next
+    setSavedStoreId(storeId); // triggers visual confirmation
+    // Brief flash, then clear
+    setTimeout(() => setSavedStoreId(null), 1500);
   };
 
   // ─── Store selection step ────────────────────────────────────────────────────
@@ -120,6 +131,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
           <div className="space-y-2">
             {STORES.map((store) => {
               const isActive = store.id === currentStoreId;
+              const justSaved = store.id === savedStoreId;
               return (
                 <motion.button
                   key={store.id}
@@ -130,12 +142,25 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
                       : "border-border bg-secondary text-foreground hover:border-primary/40"
                   }`}
                   whileTap={{ scale: 0.97 }}
+                  animate={justSaved ? { scale: [1, 1.03, 1] } : {}}
+                  transition={{ duration: 0.3 }}
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold">{store.name}</span>
-                    {isActive && (
-                      <span className="text-xs font-bold text-primary">✓</span>
-                    )}
+                    <AnimatePresence>
+                      {isActive && (
+                        <motion.span
+                          key="check"
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                          className="text-xs font-bold text-primary"
+                        >
+                          ✓ Sede salvata
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </motion.button>
               );
@@ -197,7 +222,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
               exit={{ opacity: 0 }}
               className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-center text-xs text-destructive"
             >
-              Troppi tentativi. Riprova tra <strong>{secondsLeft}s</strong>.
+              Troppi tentativi. Riprova tra <strong>{lockedSeconds}s</strong>.
             </motion.div>
           )}
         </AnimatePresence>

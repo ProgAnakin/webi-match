@@ -232,6 +232,7 @@ const MfaSetupModal = ({ onClose, onEnabled }: { onClose: () => void; onEnabled:
   const [factorId, setFactorId] = useState("");
   const [qrCode, setQrCode] = useState("");
   const [secret, setSecret] = useState("");
+  const [showSecret, setShowSecret] = useState(false);
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -320,8 +321,19 @@ const MfaSetupModal = ({ onClose, onEnabled }: { onClose: () => void; onEnabled:
               </div>
             )}
             <div className="rounded-xl bg-muted px-3 py-2 text-center">
-              <p className="text-[10px] text-muted-foreground mb-1">Codice manuale</p>
-              <p className="font-mono text-xs text-foreground break-all">{secret}</p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] text-muted-foreground">Codice manuale</p>
+                <button
+                  onClick={() => setShowSecret((v) => !v)}
+                  className="text-[10px] text-primary underline underline-offset-2"
+                >
+                  {showSecret ? "Nascondi" : "Mostra"}
+                </button>
+              </div>
+              {showSecret
+                ? <p className="font-mono text-xs text-foreground break-all">{secret}</p>
+                : <p className="font-mono text-xs text-muted-foreground tracking-widest">••••••••••••••••••••••••••••••••</p>
+              }
             </div>
             <button onClick={() => setStep("verify")}
               className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-3 text-sm font-bold text-primary-foreground active:scale-95">
@@ -636,7 +648,14 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <h2 className="mb-4 font-bold text-foreground">🏆 Prodotti più matchati</h2>
               {productStats.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nessun dato{isFiltered ? " nel periodo selezionato" : " ancora"}.</p>
+                <div className="text-center py-3">
+                  <p className="text-sm font-medium text-foreground">
+                    {isFiltered ? "Nessun prodotto nel periodo selezionato" : "Nessun match ancora"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {isFiltered ? "Espandi le date per vedere i dati." : "I prodotti più matchati appariranno qui."}
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {productStats.map((p, i) => (
@@ -697,9 +716,17 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
                 )}
               </div>
               {filteredSessions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Nessuna sessione{isFiltered ? " nel periodo selezionato" : " registrata"}.
-                </p>
+                <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">
+                  <p className="text-2xl mb-2">📭</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {isFiltered ? "Nessuna sessione trovata" : "Nessuna sessione ancora"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {isFiltered
+                      ? "Prova ad espandere le date o a cambiare la sede selezionata."
+                      : "Avvia il quiz sull'iPad per iniziare a raccogliere dati."}
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {filteredSessions.slice(0, 10).map((s) => (
