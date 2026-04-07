@@ -116,9 +116,9 @@ export const translations: Record<Lang, T> = {
     },
     inactivity: {
       title: "Sei ancora lì?",
-      countdown: "Torno alla schermata iniziale tra",
-      dismiss: "Sono ancora qui!",
-      restart: "Ricomincia",
+      countdown: "Il quiz si azzererà tra",
+      dismiss: "Sono ancora qui! Continua →",
+      restart: "Ricomincia dall'inizio",
     },
     questions: {
       1: "Fai sport regolarmente?",
@@ -181,9 +181,9 @@ export const translations: Record<Lang, T> = {
     },
     inactivity: {
       title: "Still there?",
-      countdown: "Going back to start in",
-      dismiss: "I'm still here!",
-      restart: "Start again",
+      countdown: "The quiz will reset in",
+      dismiss: "I'm still here! Continue →",
+      restart: "Restart from the beginning",
     },
     questions: {
       1: "Do you exercise regularly?",
@@ -246,9 +246,9 @@ export const translations: Record<Lang, T> = {
     },
     inactivity: {
       title: "Ainda está aí?",
-      countdown: "Voltando ao início em",
-      dismiss: "Ainda estou aqui!",
-      restart: "Recomeçar",
+      countdown: "O quiz será reiniciado em",
+      dismiss: "Ainda estou aqui! Continuar →",
+      restart: "Recomeçar do início",
     },
     questions: {
       1: "Você pratica esportes regularmente?",
@@ -311,9 +311,9 @@ export const translations: Record<Lang, T> = {
     },
     inactivity: {
       title: "¿Sigues ahí?",
-      countdown: "Volviendo a la pantalla inicial en",
-      dismiss: "¡Sigo aquí!",
-      restart: "Volver a empezar",
+      countdown: "El quiz se reiniciará en",
+      dismiss: "¡Sigo aquí! Continuar →",
+      restart: "Volver a empezar desde el inicio",
     },
     questions: {
       1: "¿Haces deporte regularmente?",
@@ -376,9 +376,9 @@ export const translations: Record<Lang, T> = {
     },
     inactivity: {
       title: "Vous êtes encore là ?",
-      countdown: "Retour à l'écran d'accueil dans",
-      dismiss: "Je suis encore là !",
-      restart: "Recommencer",
+      countdown: "Le quiz sera réinitialisé dans",
+      dismiss: "Je suis encore là ! Continuer →",
+      restart: "Recommencer depuis le début",
     },
     questions: {
       1: "Faites-vous du sport régulièrement ?",

@@ -200,16 +200,22 @@ export function getMatchedProduct(
     if (answered && TAG_MAP[Number(qId)]) activeTags.push(TAG_MAP[Number(qId)]);
   });
 
-  let bestProduct = pool[0];
   let bestScore = 0;
+  const tied: Product[] = [];
 
   pool.forEach((product) => {
     const score = product.tags.filter((tag) => activeTags.includes(tag)).length;
     if (score > bestScore) {
       bestScore = score;
-      bestProduct = product;
+      tied.length = 0;
+      tied.push(product);
+    } else if (score === bestScore) {
+      tied.push(product);
     }
   });
+
+  // Pick randomly among tied products so different users see variety
+  const bestProduct = tied[Math.floor(Math.random() * tied.length)] ?? pool[0];
 
   const totalTags = activeTags.length || 1;
   const rawPercent = Math.round((bestScore / totalTags) * 100);
