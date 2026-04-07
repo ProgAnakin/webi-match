@@ -12,11 +12,15 @@ interface MatchResultProps {
   onClaim: () => void;
 }
 
-const CONFETTI_COLORS = [
-  "#FF6B6B", "#FFD93D", "#6BCB77", "#4D96FF",
-  "#FF6EC7", "#845EC2", "#FFC75F", "#00C9A7",
-  "#F9F871", "#FF8066", "#D65DB1", "#0089BA",
-];
+// Read confetti palette from CSS design tokens at runtime so they stay in sync
+// with the theme without hardcoded hex values. Tokens are defined in index.css.
+function readCssConfettiColors(): string[] {
+  const style = getComputedStyle(document.documentElement);
+  return Array.from({ length: 12 }, (_, i) => {
+    const raw = style.getPropertyValue(`--confetti-${i + 1}`).trim();
+    return raw ? `hsl(${raw})` : "#888";
+  });
+}
 
 interface ConfettiData {
   id: number; delay: number; duration: number;
@@ -40,6 +44,9 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
   const { play } = useSound();
   const tier = useDevicePerformance();
 
+  // Confetti colors are lazily resolved from CSS variables on first render
+  const confettiColors = useMemo(() => readCssConfettiColors(), []);
+
   const ringMotionValue = useMotionValue(0);
   const circumference = 2 * Math.PI * 56;
   const strokeDashoffset = useTransform(ringMotionValue, [0, 100], [circumference, 0]);
@@ -47,7 +54,9 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
   useEffect(() => {
     let frame: number;
     const timeout = setTimeout(() => {
-      const slotDuration = tier === "low" ? 600 : tier === "mid" ? 900 : 1200;
+      // Slot-machine duration fixed at 900ms — consistent "suspense" across all devices.
+      // Particle count still adapts per device (below) to avoid GPU overload on older iPads.
+      const slotDuration = 900;
       const slotStart = performance.now();
 
       const runSlot = (now: number) => {
@@ -88,11 +97,11 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
       delay: Math.random() * 4,
       duration: 1.8 + Math.random() * 2,
       left: `${Math.random() * 100}%`,
-      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      color: confettiColors[i % confettiColors.length],
       size: 5 + Math.random() * 10,
       rotateDeg: 360 * (Math.random() > 0.5 ? 1 : -1),
       xOffset: (Math.random() - 0.5) * 100,
-    })), [particleCount]);
+    })), [particleCount, confettiColors]);
 
   const starCount = Math.round(product.rating);
 
@@ -121,7 +130,7 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
           initial={{ opacity: 1 }} animate={{ opacity: 0 }}
           transition={{ delay: 0.6, duration: 0.4 }}
         >
-          {CONFETTI_COLORS.slice(0, tier === "mid" ? 6 : 10).map((color, i) => (
+          {confettiColors.slice(0, tier === "mid" ? 6 : 10).map((color, i) => (
             <motion.div key={i} className="absolute h-2 w-2 rounded-full" style={{ backgroundColor: color }}
               initial={{ scale: 0, x: 0, y: 0 }}
               animate={{ scale: [0, 1.5, 0], x: Math.cos((i * 36 * Math.PI) / 180) * 140, y: Math.sin((i * 36 * Math.PI) / 180) * 140 }}

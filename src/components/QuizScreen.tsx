@@ -71,8 +71,10 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
         </div>
       </div>
 
-      {/* Swipeable card */}
-      <AnimatePresence mode="wait">
+      {/* Swipeable card — no mode="wait" so the next card starts mounting
+          while the current card exits, eliminating the blank-screen gap
+          that caused perceived lag on kiosk devices. */}
+      <AnimatePresence>
         <SwipeCard
           key={currentIndex}
           question={question}
