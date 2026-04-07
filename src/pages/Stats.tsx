@@ -793,8 +793,8 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {filteredSessions.slice(0, 10).map((s) => (
+                <div className="max-h-[480px] overflow-y-auto space-y-3 pr-1">
+                  {filteredSessions.map((s) => (
                     <div key={s.id}
                       className="flex items-center justify-between rounded-xl border border-border bg-background/40 px-4 py-3 text-sm">
                       <div className="overflow-hidden">
@@ -810,11 +810,6 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
                       </div>
                     </div>
                   ))}
-                  {filteredSessions.length > 10 && (
-                    <p className="text-center text-xs text-muted-foreground">
-                      + {filteredSessions.length - 10} sessioni nel CSV
-                    </p>
-                  )}
                 </div>
               )}
             </motion.div>
