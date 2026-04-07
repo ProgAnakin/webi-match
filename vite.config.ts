@@ -19,4 +19,9 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
   },
+  build: {
+    // Never ship source maps to production — they expose the full source code
+    // and make it trivial to extract secrets embedded by Vite (env vars, etc.).
+    sourcemap: false,
+  },
 }));

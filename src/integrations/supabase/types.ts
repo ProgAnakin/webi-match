@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      manager_audit_log: {
+        Row: {
+          id: string
+          user_id: string | null
+          user_email: string | null
+          product_id: string
+          new_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          user_email?: string | null
+          product_id: string
+          new_active: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          user_email?: string | null
+          product_id?: string
+          new_active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      product_settings: {
+        Row: {
+          product_id: string
+          active: boolean
+          updated_at: string
+        }
+        Insert: {
+          product_id: string
+          active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          product_id?: string
+          active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       quiz_sessions: {
         Row: {
           answers: Json

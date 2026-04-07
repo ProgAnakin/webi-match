@@ -1,3 +1,8 @@
+// Match percentage bounds — avoids demoralizing scores (<45%) and unrealistic perfect scores (100%).
+// 98% cap preserves the sense that there's always a "better" match to explore.
+const MATCH_MIN = 45;
+const MATCH_MAX = 98;
+
 export interface Product {
   id: string;
   name: string;
@@ -82,7 +87,7 @@ export const products: Product[] = [
     tags: ["communication", "gaming", "productivity"],
     faq: [
       { q: "Funziona con PS5 e Xbox?", a: "Sì, plug & play su console, PC, Mac e smartphone via USB-C." },
-      { q: "L'AI toglie davvero il rumore?", a: "Sì, elimina rumovento, tasto, tastiera e rumore di fondo in tempo reale senza latenza." },
+      { q: "L'AI toglie davvero il rumore?", a: "Sì, elimina vento, tastiera e rumore di fondo in tempo reale senza latenza." },
       { q: "Serve un software dedicato?", a: "No, ma l'app opzionale sblocca effetti voce, equalizzatore e mixer avanzato." },
     ],
   },
@@ -162,39 +167,59 @@ export const products: Product[] = [
     ],
   },
 ];
-export function getMatchedProduct(answers: Record<number, boolean>): { product: Product; matchPercent: number } {
-  const activeTags: string[] = [];
-  const tagMap: Record<number, string> = {
-    1: "fitness",
-    2: "audio",
-    3: "productivity",
-    4: "camera",
-    5: "travel",
-    6: "gaming",
-    7: "communication",
-    8: "wellness",
-  };
+const TAG_MAP: Record<number, string> = {
+  1: "fitness",
+  2: "audio",
+  3: "productivity",
+  4: "camera",
+  5: "travel",
+  6: "gaming",
+  7: "communication",
+  8: "wellness",
+};
 
+/**
+ * Returns the best-matching product for a set of quiz answers.
+ * @param answers       Map of questionId → boolean (yes/no)
+ * @param activeIds     Optional set of active product IDs from Supabase.
+ *                      When provided, only products in the set are considered.
+ *                      Falls back to the full catalogue if the set is empty or undefined.
+ */
+export function getMatchedProduct(
+  answers: Record<number, boolean>,
+  activeIds?: Set<string>,
+): { product: Product; matchPercent: number } {
+  // Use only active products; fall back to full catalogue if none are configured
+  const pool =
+    activeIds && activeIds.size > 0
+      ? products.filter((p) => activeIds.has(p.id))
+      : products;
+
+  const activeTags: string[] = [];
   Object.entries(answers).forEach(([qId, answered]) => {
-    if (answered && tagMap[Number(qId)]) {
-      activeTags.push(tagMap[Number(qId)]);
-    }
+    if (answered && TAG_MAP[Number(qId)]) activeTags.push(TAG_MAP[Number(qId)]);
   });
 
-  let bestProduct = products[0];
   let bestScore = 0;
+  const tied: Product[] = [];
 
-  products.forEach((product) => {
+  pool.forEach((product) => {
     const score = product.tags.filter((tag) => activeTags.includes(tag)).length;
     if (score > bestScore) {
       bestScore = score;
-      bestProduct = product;
+      tied.length = 0;
+      tied.push(product);
+    } else if (score === bestScore) {
+      tied.push(product);
     }
   });
 
+  // Pick randomly among tied products so different users see variety
+  const bestProduct = tied[Math.floor(Math.random() * tied.length)] ?? pool[0];
+
   const totalTags = activeTags.length || 1;
   const rawPercent = Math.round((bestScore / totalTags) * 100);
-  const matchPercent = Math.min(98, Math.max(45, rawPercent));
+  const matchPercent = Math.min(MATCH_MAX, Math.max(MATCH_MIN, rawPercent));
 
   return { product: bestProduct, matchPercent };
 }

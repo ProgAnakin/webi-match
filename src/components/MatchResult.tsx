@@ -1,40 +1,16 @@
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
 import type { Product } from "@/data/products";
+import { useSound } from "@/hooks/useSound";
+import { useDevicePerformance } from "@/hooks/useDevicePerformance";
+import { useLang } from "@/i18n/LanguageContext";
 
 interface MatchResultProps {
   product: Product;
   matchPercent: number;
+  userName: string;
   onClaim: () => void;
 }
-
-// Confetti particle component
-const ConfettiParticle = ({ delay, duration, left, color, size }: {
-  delay: number; duration: number; left: string; color: string; size: number;
-}) => (
-  <motion.div
-    className="absolute rounded-sm"
-    style={{
-      left,
-      top: "-5%",
-      width: size,
-      height: size * 0.6,
-      backgroundColor: color,
-    }}
-    animate={{
-      y: ["0vh", "110vh"],
-      rotate: [0, 360 * (Math.random() > 0.5 ? 1 : -1)],
-      x: [0, (Math.random() - 0.5) * 120],
-      opacity: [1, 1, 0.5],
-    }}
-    transition={{
-      duration,
-      repeat: Infinity,
-      delay,
-      ease: "easeIn",
-    }}
-  />
-);
 
 const CONFETTI_COLORS = [
   "#FF6B6B", "#FFD93D", "#6BCB77", "#4D96FF",
@@ -42,250 +18,289 @@ const CONFETTI_COLORS = [
   "#F9F871", "#FF8066", "#D65DB1", "#0089BA",
 ];
 
-const MatchResult = ({ product, matchPercent, onClaim }: MatchResultProps) => {
-  const [animatedPercent, setAnimatedPercent] = useState(0);
+interface ConfettiData {
+  id: number; delay: number; duration: number;
+  left: string; color: string; size: number;
+  rotateDeg: number; xOffset: number;
+}
 
-  // Animate percentage counter
+const ConfettiParticle = ({ delay, duration, left, color, size, rotateDeg, xOffset }: ConfettiData) => (
+  <motion.div
+    className="absolute rounded-sm pointer-events-none"
+    style={{ left, top: "-5%", width: size, height: size * 0.6, backgroundColor: color }}
+    animate={{ y: ["0vh", "110vh"], rotate: [0, rotateDeg], x: [0, xOffset], opacity: [1, 1, 0.4] }}
+    transition={{ duration, repeat: Infinity, delay, ease: "easeIn" }}
+  />
+);
+
+const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultProps) => {
+  const { t } = useLang();
+  const [displayPercent, setDisplayPercent] = useState(0);
+  const [isScanning, setIsScanning] = useState(true);
+  const { play } = useSound();
+  const tier = useDevicePerformance();
+
+  const ringMotionValue = useMotionValue(0);
+  const circumference = 2 * Math.PI * 56;
+  const strokeDashoffset = useTransform(ringMotionValue, [0, 100], [circumference, 0]);
+
   useEffect(() => {
     let frame: number;
-    const start = performance.now();
-    const duration = 1500;
-    const animate = (now: number) => {
-      const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setAnimatedPercent(Math.round(eased * matchPercent));
-      if (progress < 1) frame = requestAnimationFrame(animate);
-    };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
+    const timeout = setTimeout(() => {
+      const slotDuration = tier === "low" ? 600 : tier === "mid" ? 900 : 1200;
+      const slotStart = performance.now();
+
+      const runSlot = (now: number) => {
+        if (now - slotStart < slotDuration) {
+          setDisplayPercent(Math.floor(Math.random() * 99) + 1);
+          frame = requestAnimationFrame(runSlot);
+        } else {
+          setIsScanning(false);
+          setDisplayPercent(0);
+          play("match");
+
+          animate(ringMotionValue, matchPercent, {
+            duration: 1.8,
+            ease: [0.16, 1, 0.3, 1],
+          });
+
+          const countStart = performance.now();
+          const countDuration = 1800;
+          const runCount = (now2: number) => {
+            const progress = Math.min((now2 - countStart) / countDuration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setDisplayPercent(Math.round(eased * matchPercent));
+            if (progress < 1) frame = requestAnimationFrame(runCount);
+          };
+          frame = requestAnimationFrame(runCount);
+        }
+      };
+      frame = requestAnimationFrame(runSlot);
+    }, 900);
+
+    return () => { cancelAnimationFrame(frame); clearTimeout(timeout); };
   }, [matchPercent]);
 
-  // Generate confetti particles
-  const confettiParticles = useMemo(() =>
-    Array.from({ length: 80 }, (_, i) => ({
+  const particleCount = tier === "high" ? 55 : tier === "mid" ? 28 : 12;
+  const confettiParticles = useMemo<ConfettiData[]>(() =>
+    Array.from({ length: particleCount }, (_, i) => ({
       id: i,
       delay: Math.random() * 4,
-      duration: 1.5 + Math.random() * 2.5,
+      duration: 1.8 + Math.random() * 2,
       left: `${Math.random() * 100}%`,
       color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-      size: 5 + Math.random() * 12,
-    })), []);
+      size: 5 + Math.random() * 10,
+      rotateDeg: 360 * (Math.random() > 0.5 ? 1 : -1),
+      xOffset: (Math.random() - 0.5) * 100,
+    })), [particleCount]);
 
-  const stars = Array.from({ length: 5 }, (_, i) =>
-    i < Math.round(product.rating) ? "⭐" : "☆"
-  );
+  const starCount = Math.round(product.rating);
 
-  // Determine ring/badge color based on percentage
-  const ringColor = matchPercent >= 90
-    ? "#6BCB77"
-    : matchPercent >= 80
-      ? "#FFD93D"
-      : matchPercent >= 65
-        ? "#FF8066"
-        : "#4D96FF";
+  const ringColor = matchPercent >= 90 ? "#6BCB77"
+    : matchPercent >= 80 ? "#FFD93D"
+    : matchPercent >= 65 ? "#FF8066"
+    : "#4D96FF";
 
-  const badgeBg = matchPercent >= 90
-    ? "bg-green-500"
-    : matchPercent >= 80
-      ? "bg-yellow-400 text-gray-900"
-      : matchPercent >= 65
-        ? "bg-orange-400 text-gray-900"
-        : "bg-blue-500";
-
-  const circumference = 2 * Math.PI * 54;
-  const strokeDashoffset = circumference - (circumference * animatedPercent) / 100;
+  const badgeBg = matchPercent >= 90 ? "bg-green-500"
+    : matchPercent >= 80 ? "bg-yellow-400 text-gray-900"
+    : matchPercent >= 65 ? "bg-orange-400 text-gray-900"
+    : "bg-blue-500";
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-12">
-      {/* Confetti background */}
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-10">
+
+      {/* Confetti */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {confettiParticles.map((p) => (
-          <ConfettiParticle key={p.id} {...p} />
-        ))}
+        {confettiParticles.map((p) => <ConfettiParticle key={p.id} {...p} />)}
       </div>
 
-      {/* Burst effect on load */}
-      <motion.div
-        className="pointer-events-none absolute inset-0 flex items-center justify-center"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ delay: 0.8, duration: 0.5 }}
-      >
-        {[...Array(12)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute h-2 w-2 rounded-full"
-            style={{ backgroundColor: CONFETTI_COLORS[i % CONFETTI_COLORS.length] }}
-            initial={{ scale: 0, x: 0, y: 0 }}
-            animate={{
-              scale: [0, 1.5, 0],
-              x: Math.cos((i * 30 * Math.PI) / 180) * 150,
-              y: Math.sin((i * 30 * Math.PI) / 180) * 150,
-            }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          />
-        ))}
-      </motion.div>
+      {/* Burst */}
+      {tier !== "low" && (
+        <motion.div
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          initial={{ opacity: 1 }} animate={{ opacity: 0 }}
+          transition={{ delay: 0.6, duration: 0.4 }}
+        >
+          {CONFETTI_COLORS.slice(0, tier === "mid" ? 6 : 10).map((color, i) => (
+            <motion.div key={i} className="absolute h-2 w-2 rounded-full" style={{ backgroundColor: color }}
+              initial={{ scale: 0, x: 0, y: 0 }}
+              animate={{ scale: [0, 1.5, 0], x: Math.cos((i * 36 * Math.PI) / 180) * 140, y: Math.sin((i * 36 * Math.PI) / 180) * 140 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+            />
+          ))}
+        </motion.div>
+      )}
 
       <motion.div
-        className="relative z-10 flex w-full max-w-md flex-col items-center gap-6"
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: "spring", stiffness: 200, damping: 20 }}
+        className="relative z-10 flex w-full max-w-md flex-col items-center gap-5"
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
       >
-        {/* Circular percentage indicator */}
+        {/* Personalised greeting */}
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          <p className="text-base text-muted-foreground">
+            {t.result.gadgetIntro(userName)}
+          </p>
+        </motion.div>
+
+        {/* Circular ring — large & impactful */}
         <motion.div
           className="relative flex items-center justify-center"
-          initial={{ scale: 0, rotate: -90 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: "spring", delay: 0.3, stiffness: 150 }}
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", delay: 0.2, stiffness: 180, damping: 22 }}
         >
-          <svg width="140" height="140" viewBox="0 0 120 120">
-            {/* Background ring */}
-            <circle
-              cx="60" cy="60" r="54"
-              fill="none"
-              stroke="hsl(var(--muted))"
-              strokeWidth="8"
-              opacity="0.3"
+          {/* Outer glow halo */}
+          {!isScanning && (
+            <motion.div
+              className="absolute rounded-full"
+              style={{ width: 168, height: 168, background: `radial-gradient(circle, ${ringColor}22 0%, transparent 70%)` }}
+              animate={{ scale: [1, 1.08, 1], opacity: [0.6, 0.2, 0.6] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
             />
-            {/* Animated progress ring */}
+          )}
+          <svg width="160" height="160" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="56" fill="none" stroke="hsl(var(--muted))" strokeWidth="7" opacity="0.25" />
             <motion.circle
-              cx="60" cy="60" r="54"
-              fill="none"
-              stroke={ringColor}
-              strokeWidth="8"
-              strokeLinecap="round"
+              cx="60" cy="60" r="56" fill="none"
+              stroke={ringColor} strokeWidth="7" strokeLinecap="round"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               transform="rotate(-90 60 60)"
-              style={{ filter: `drop-shadow(0 0 8px ${ringColor}40)` }}
+              style={{ filter: `drop-shadow(0 0 8px ${ringColor}60)` }}
             />
-            {/* Glow pulse */}
-            <motion.circle
-              cx="60" cy="60" r="54"
-              fill="none"
-              stroke={ringColor}
-              strokeWidth="2"
-              opacity="0.3"
-              animate={{ r: [54, 58, 54], opacity: [0.3, 0, 0.3] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
+            {!isScanning && (
+              <motion.circle cx="60" cy="60" r="56" fill="none"
+                stroke={ringColor} strokeWidth="2"
+                animate={{ r: [56, 59, 56], opacity: [0.2, 0, 0.2] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              />
+            )}
           </svg>
           <div className="absolute flex flex-col items-center">
-            <span className="text-4xl font-bold text-gradient">{animatedPercent}%</span>
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              match
+            <span className={`text-5xl font-bold tabular-nums leading-none ${isScanning ? "text-muted-foreground" : "text-gradient"}`}>
+              {displayPercent}%
+            </span>
+            <span className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              {isScanning ? t.result.scanning : t.result.match}
             </span>
           </div>
         </motion.div>
 
-        <motion.p
-          className="text-xl font-bold text-foreground"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
+        {/* Headline */}
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.35, duration: 0.4, ease: "easeOut" }}
         >
-          🎉 MATCH PERFETTO!
-        </motion.p>
+          <h2 className="text-2xl font-bold tracking-wide text-foreground">
+            {t.result.perfectMatch}
+          </h2>
+        </motion.div>
 
-        {/* Product card with image */}
+        {/* Product card */}
         <motion.div
           className="gradient-card shadow-card w-full overflow-hidden rounded-3xl border border-border"
-          initial={{ y: 40, opacity: 0 }}
+          initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.7 }}
+          transition={{ delay: 0.45, duration: 0.5, ease: "easeOut" }}
         >
-          {/* Product image area */}
           <div className="relative flex h-52 items-center justify-center bg-secondary/50 overflow-hidden">
             {product.image ? (
               <img
                 src={product.image}
                 alt={product.name}
                 className="h-full w-full object-cover"
+                onError={(e) => {
+                  // Hide broken image and show emoji fallback
+                  const target = e.currentTarget;
+                  target.style.display = "none";
+                  const fallback = target.nextElementSibling as HTMLElement | null;
+                  if (fallback) fallback.style.display = "flex";
+                }}
               />
-            ) : (
-              <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <span className="text-6xl">📦</span>
-                <span className="text-xs font-medium">Immagine prodotto</span>
-              </div>
-            )}
-            {/* Floating badge */}
-            <motion.div
-              className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-bold text-white shadow-lg ${badgeBg}`}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", delay: 1 }}
+            ) : null}
+            <div
+              className="flex flex-col items-center gap-2 text-muted-foreground"
+              style={{ display: product.image ? "none" : "flex" }}
             >
-              {animatedPercent}% Match
-            </motion.div>
+              <span className="text-6xl">📦</span>
+              <span className="text-xs font-medium">{t.result.productImageAlt}</span>
+            </div>
+            {!isScanning && (
+              <motion.div
+                className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-bold text-white shadow-lg ${badgeBg}`}
+                initial={{ scale: 0 }} animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 280, damping: 18 }}
+              >
+                {displayPercent}% Match
+              </motion.div>
+            )}
           </div>
 
-          <div className="p-6">
-            <h3 className="text-2xl font-bold text-foreground">{product.name}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{product.description}</p>
-
+          <div className="p-5">
+            <h3 className="text-xl font-bold leading-snug text-foreground">{product.name}</h3>
+            <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{product.description}</p>
             <div className="mt-3 flex items-center justify-between">
               <span className="text-2xl font-bold text-gradient">{product.price}</span>
-              <span className="text-lg">{stars.join("")}</span>
+              <span className="flex items-center gap-0.5">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill={i < starCount ? "#FFD700" : "none"}
+                    stroke={i < starCount ? "#FFD700" : "hsl(var(--muted-foreground))"} strokeWidth="1.5">
+                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                  </svg>
+                ))}
+                <span className="ml-1 text-xs text-muted-foreground">{product.rating}</span>
+              </span>
             </div>
           </div>
         </motion.div>
 
-        {/* Dynamic highlights */}
+        {/* Benefits strip */}
         <motion.div
-          className="flex w-full gap-3"
-          initial={{ opacity: 0, y: 20 }}
+          className="flex w-full gap-2"
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
+          transition={{ delay: 0.6, duration: 0.4 }}
         >
           {[
-            { icon: "🎥", label: "Video 30s" },
-            { icon: "📖", label: "Manuale" },
-            { icon: "💰", label: "Sconto VIP" },
+            { icon: "🎥", label: t.result.video },
+            { icon: "📖", label: t.result.manual },
+            { icon: "💰", label: t.result.discount },
           ].map((item, i) => (
-            <motion.div
-              key={i}
-              className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-border bg-card/80 p-3 backdrop-blur-sm"
-              whileHover={{ scale: 1.05, y: -2 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <span className="text-2xl">{item.icon}</span>
-              <span className="text-[11px] font-semibold text-muted-foreground">{item.label}</span>
-            </motion.div>
+            <div key={i} className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-border bg-card/80 p-3">
+              <span className="text-xl">{item.icon}</span>
+              <span className="text-[10px] font-semibold text-muted-foreground">{item.label}</span>
+            </div>
           ))}
         </motion.div>
 
-        {/* Info text */}
-        <motion.p
-          className="text-center text-sm text-muted-foreground"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-        >
-          Ricevi video, manuale, FAQ e uno sconto esclusivo direttamente nella tua email!
-        </motion.p>
-
-        {/* CTA Button */}
+        {/* CTA — strong & clear */}
         <motion.button
           onClick={onClaim}
-          className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-5 text-xl font-bold text-primary-foreground transition-transform active:scale-95"
-          whileHover={{ scale: 1.03 }}
+          className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-5 text-xl font-bold text-primary-foreground active:scale-95"
           whileTap={{ scale: 0.97 }}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.2 }}
+          transition={{ delay: 0.75, duration: 0.4 }}
         >
-          🔍 A cosa serve?
+          {t.result.cta}
         </motion.button>
 
         <motion.p
           className="text-center text-xs text-muted-foreground"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.6 }}
-          transition={{ delay: 1.4 }}
+          transition={{ delay: 0.9 }}
         >
-          👆 Premi sul tasto sopra per ricevere tutto nella tua mail
+          {t.result.emailSubtitle}
         </motion.p>
       </motion.div>
     </div>

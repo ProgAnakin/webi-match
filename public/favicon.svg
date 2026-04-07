@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 110">
+  <defs>
+    <linearGradient id="flame-g" x1="45%" y1="100%" x2="55%" y2="0%">
+      <stop offset="0%"   stop-color="#CC1500"/>
+      <stop offset="40%"  stop-color="#FF4500"/>
+      <stop offset="100%" stop-color="#FF9200"/>
+    </linearGradient>
+    <linearGradient id="chevron-g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#FF8800"/>
+      <stop offset="100%" stop-color="#FF2800"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer heart — solid white fill -->
+  <path d="M50 100
+           C50 100 10 74 10 48
+           C10 32 21 22 35 22
+           C42 22 48 26 50 32
+           C52 26 58 22 65 22
+           C79 22 90 32 90 48
+           C90 74 50 100 50 100Z"
+        fill="white"/>
+
+  <!-- Inner heart — light gray stroke only -->
+  <path d="M50 89
+           C50 89 21 67 21 49
+           C21 38 29 30 39 30
+           C45 30 50 34 50 39
+           C50 34 55 30 61 30
+           C71 30 79 38 79 49
+           C79 67 50 89 50 89Z"
+        fill="none" stroke="#d8d8d8" stroke-width="1.2"/>
+
+  <!-- Flame — realistic fire shape sitting on top of heart -->
+  <path d="M50 3
+           C49 8 43 13 43 19
+           C40 15 41 23 46 25
+           C43 21 46 28 50 28
+           C54 28 57 21 54 25
+           C59 23 60 15 57 19
+           C57 13 51 8 50 3Z"
+        fill="url(#flame-g)"/>
+
+  <!-- Downward chevron — rounded corners, soft tip -->
+  <path d="M32 53 Q32 50 35 50 L65 50 Q68 50 68 53 L52 71 Q50 74 48 71 Z"
+        fill="url(#chevron-g)"/>
+</svg>
