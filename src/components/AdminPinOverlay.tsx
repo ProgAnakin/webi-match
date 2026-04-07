@@ -157,7 +157,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
                           transition={{ type: "spring", stiffness: 400, damping: 20 }}
                           className="text-xs font-bold text-primary"
                         >
-                          ✓ Sede salvata
+                          ✓
                         </motion.span>
                       )}
                     </AnimatePresence>

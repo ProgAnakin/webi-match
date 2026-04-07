@@ -391,9 +391,12 @@ const REFRESH_DEBOUNCE_MS = 3000;
 const IDLE_TIMEOUT_MS = ADMIN_IDLE_TIMEOUT_MS;
 const IDLE_EVENTS = ["mousedown", "touchstart", "keydown", "scroll"] as const;
 
+interface FunnelCounts { started: number; resultShown: number; claimed: number; }
+
 const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<QuizSession[]>([]);
+  const [funnel, setFunnel] = useState<FunnelCounts | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const lastFetchRef = useRef<number>(0);
@@ -444,6 +447,16 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
       .limit(FETCH_LIMIT);
     if (error) setHasError(true);
     else setSessions((data ?? []) as QuizSession[]);
+
+    // Funnel counts — failures here are non-critical, just skip display
+    const { data: funnelData } = await supabase
+      .from("quiz_funnel_events")
+      .select("event_type");
+    if (funnelData) {
+      const count = (type: string) => funnelData.filter((r) => r.event_type === type).length;
+      setFunnel({ started: count("quiz_started"), resultShown: count("result_shown"), claimed: count("claimed") });
+    }
+
     setLoading(false);
   }, []);
 
@@ -467,6 +480,7 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
 
   // KPI — computed from filtered sessions
   const total = filteredSessions.length;
+  const globalTotal = sessions.length; // all sessions, no filter applied
   const uniqueEmails = new Set(filteredSessions.map((s) => s.email.toLowerCase())).size;
   const avgMatch = total
     ? Math.round(filteredSessions.reduce((sum, s) => sum + s.match_percent, 0) / total)
@@ -616,7 +630,11 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
                 )}
                 {isFiltered && (
                   <p className="text-xs text-muted-foreground">
-                    {filteredSessions.length} sessioni nel periodo / sede selezionati
+                    <span className="font-semibold text-foreground">{filteredSessions.length}</span>
+                    {filterStore ? ` sessioni · ${getStoreById(filterStore)?.shortName ?? filterStore}` : " sessioni nel periodo"}
+                    {filterStore && (
+                      <span className="ml-1 text-muted-foreground/60">({globalTotal} totale)</span>
+                    )}
                   </p>
                 )}
               </div>
@@ -637,7 +655,13 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
             {/* KPI */}
             <motion.div className="grid grid-cols-2 gap-4"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <StatCard label="Sessioni totali" value={total} sub={isFiltered ? "nel periodo" : undefined} />
+              <StatCard
+                label="Sessioni totali"
+                value={total}
+                sub={filterStore
+                  ? `${getStoreById(filterStore)?.shortName} · ${globalTotal} globale`
+                  : (isFiltered ? "nel periodo" : undefined)}
+              />
               <StatCard label="Email raccolte" value={uniqueEmails} sub={isFiltered ? "nel periodo" : undefined} />
               <StatCard label="Match medio" value={`${avgMatch}%`} />
               <StatCard label="Oggi" value={todaySessions} sub="sessioni" />
@@ -702,6 +726,47 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
                 ))}
               </div>
             </motion.div>
+
+            {/* Funnel di abbandono */}
+            {funnel && funnel.started > 0 && (
+              <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+                <h2 className="mb-4 font-bold text-foreground">🔽 Funil de abandono</h2>
+                {[
+                  { label: "Quiz avviati", value: funnel.started, color: "bg-blue-500" },
+                  { label: "Risultato mostrato", value: funnel.resultShown, color: "bg-orange-500" },
+                  { label: "Reclamati (claim)", value: funnel.claimed, color: "bg-green-500" },
+                ].map(({ label, value, color }, i, arr) => {
+                  const pct = arr[0].value ? Math.round((value / arr[0].value) * 100) : 0;
+                  const dropoff = i > 0 ? arr[i - 1].value - value : 0;
+                  return (
+                    <div key={label} className="mb-3">
+                      <div className="mb-1 flex items-center justify-between text-xs">
+                        <span className="font-medium text-foreground">{label}</span>
+                        <span className="text-muted-foreground">
+                          <span className="font-semibold text-foreground">{value}</span>
+                          {" "}({pct}%)
+                          {dropoff > 0 && <span className="ml-1 text-destructive">−{dropoff} abbandonati</span>}
+                        </span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <motion.div
+                          className={`h-full rounded-full ${color}`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.6, delay: 0.1 * i }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Tasso di conversione finale: <span className="font-semibold text-foreground">
+                    {funnel.started ? Math.round((funnel.claimed / funnel.started) * 100) : 0}%
+                  </span>
+                </p>
+              </motion.div>
+            )}
 
             {/* Sessioni */}
             <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
