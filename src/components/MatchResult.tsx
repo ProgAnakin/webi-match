@@ -10,6 +10,7 @@ interface MatchResultProps {
   matchPercent: number;
   userName: string;
   onClaim: () => void;
+  claiming?: boolean;
 }
 
 // Read confetti palette from CSS design tokens at runtime so they stay in sync
@@ -37,9 +38,10 @@ const ConfettiParticle = ({ delay, duration, left, color, size, rotateDeg, xOffs
   />
 );
 
-const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultProps) => {
+const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = false }: MatchResultProps) => {
   const { t } = useLang();
   const [displayPercent, setDisplayPercent] = useState(0);
+  const [imgError, setImgError] = useState(false);
   const [isScanning, setIsScanning] = useState(true);
   const { play } = useSound();
   const tier = useDevicePerformance();
@@ -65,7 +67,9 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
           frame = requestAnimationFrame(runSlot);
         } else {
           setIsScanning(false);
-          setDisplayPercent(0);
+          // Do NOT reset displayPercent to 0 here — it would flash visibly
+          // from the last random slot value to 0 before the count-up begins.
+          // The count-up loop sets it to 0 on frame 1 naturally.
           play("match");
 
           animate(ringMotionValue, matchPercent, {
@@ -103,7 +107,8 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
       xOffset: (Math.random() - 0.5) * 100,
     })), [particleCount, confettiColors]);
 
-  const starCount = Math.round(product.rating);
+  // Math.floor avoids showing 5 full stars for a 4.5 rating
+  const starCount = Math.floor(product.rating);
 
   const ringColor = matchPercent >= 90 ? "#6BCB77"
     : matchPercent >= 80 ? "#FFD93D"
@@ -222,27 +227,19 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
           transition={{ delay: 0.45, duration: 0.5, ease: "easeOut" }}
         >
           <div className="relative flex h-52 items-center justify-center bg-secondary/50 overflow-hidden">
-            {product.image ? (
+            {product.image && !imgError ? (
               <img
                 src={product.image}
                 alt={product.name}
                 className="h-full w-full object-cover"
-                onError={(e) => {
-                  // Hide broken image and show emoji fallback
-                  const target = e.currentTarget;
-                  target.style.display = "none";
-                  const fallback = target.nextElementSibling as HTMLElement | null;
-                  if (fallback) fallback.style.display = "flex";
-                }}
+                onError={() => setImgError(true)}
               />
-            ) : null}
-            <div
-              className="flex flex-col items-center gap-2 text-muted-foreground"
-              style={{ display: product.image ? "none" : "flex" }}
-            >
-              <span className="text-6xl">📦</span>
-              <span className="text-xs font-medium">{t.result.productImageAlt}</span>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <span className="text-6xl">📦</span>
+                <span className="text-xs font-medium">{t.result.productImageAlt}</span>
+              </div>
+            )}
             {!isScanning && (
               <motion.div
                 className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-bold text-white shadow-lg ${badgeBg}`}
@@ -294,13 +291,14 @@ const MatchResult = ({ product, matchPercent, userName, onClaim }: MatchResultPr
         {/* CTA — strong & clear */}
         <motion.button
           onClick={onClaim}
-          className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-5 text-xl font-bold text-primary-foreground active:scale-95"
-          whileTap={{ scale: 0.97 }}
+          disabled={claiming}
+          className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-5 text-xl font-bold text-primary-foreground active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+          whileTap={{ scale: claiming ? 1 : 0.97 }}
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.75, duration: 0.4 }}
         >
-          {t.result.cta}
+          {claiming ? "…" : t.result.cta}
         </motion.button>
 
         <motion.p
