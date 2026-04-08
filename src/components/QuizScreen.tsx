@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Heart } from "lucide-react";
 import SwipeCard from "./SwipeCard";
@@ -18,9 +18,16 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
   const [answers, setAnswers] = useState<Record<number, boolean>>({});
   const [showTutorial, setShowTutorial] = useState(true);
   const [exitDirection, setExitDirection] = useState<"left" | "right" | undefined>(undefined);
+  const [transitioning, setTransitioning] = useState(false);
+  const transitioningRef = useRef(false);
   const { play } = useSound();
 
   const handleSwipe = useCallback((direction: "left" | "right") => {
+    // Block rapid taps — ref check is synchronous (no stale closure issue)
+    if (transitioningRef.current) return;
+    transitioningRef.current = true;
+    setTransitioning(true);
+
     setExitDirection(direction);
     play(direction === "right" ? "swipe_yes" : "swipe_no");
     const question = questions[currentIndex];
@@ -28,11 +35,17 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
     setAnswers(newAnswers);
 
     if (currentIndex + 1 >= questions.length) {
-      setTimeout(() => onComplete(newAnswers), 300);
+      setTimeout(() => {
+        transitioningRef.current = false;
+        setTransitioning(false);
+        onComplete(newAnswers);
+      }, 300);
     } else {
       setTimeout(() => {
         setExitDirection(undefined);
         setCurrentIndex((i) => i + 1);
+        transitioningRef.current = false;
+        setTransitioning(false);
       }, 300);
     }
   }, [currentIndex, answers, onComplete]);
@@ -83,9 +96,9 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
         />
       </AnimatePresence>
 
-      {/* Action buttons */}
+      {/* Action buttons — pointer-events-none during card transition to prevent rapid-tap overflow */}
       <motion.div
-        className="absolute bottom-10 flex w-full max-w-xs justify-center gap-8"
+        className={`absolute bottom-10 flex w-full max-w-xs justify-center gap-8 ${transitioning ? "pointer-events-none" : ""}`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
