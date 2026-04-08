@@ -17,6 +17,7 @@ export interface UserInfo {
 
 interface WelcomeScreenProps {
   onStart: (user: UserInfo) => void;
+  settingsLoadFailed?: boolean;
 }
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
@@ -189,7 +190,7 @@ const StoreBadge = ({ onTap, refreshKey }: { onTap: () => void; refreshKey: numb
 // ─── Welcome Screen ────────────────────────────────────────────────────────────
 const LOGO_TAPS_REQUIRED = 6;
 
-const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
+const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenProps) => {
   const { t } = useLang();
   const [showPin, setShowPin] = useState(false);
   const [storeBadgeKey, setStoreBadgeKey] = useState(0);
@@ -217,11 +218,16 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
       </div>
 
       {/* Store badge — bottom-left, tapping opens staff PIN */}
-      <div className="absolute bottom-4 left-4 z-10">
+      <div className="absolute bottom-4 left-4 z-10 flex flex-col items-start gap-1.5">
         <StoreBadge
           onTap={() => setShowPin(true)}
           refreshKey={storeBadgeKey}
         />
+        {settingsLoadFailed && (
+          <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-400">
+            ⚠ Catalogo offline — verifica connessione
+          </span>
+        )}
       </div>
 
       {/* Admin PIN overlay */}
