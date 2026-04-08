@@ -31,11 +31,13 @@ const Index = () => {
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
   const [matchPercent, setMatchPercent] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, boolean>>({});
+  const [claiming, setClaiming] = useState(false); // prevents double-submit on slow networks
   const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState<number | null>(null);
   // Funnel key — generated once per quiz session to link events together
   const [funnelKey, setFunnelKey] = useState(() => crypto.randomUUID());
   // Active product IDs fetched from Supabase — null means "not loaded yet" (uses full catalogue)
   const [activeProductIds, setActiveProductIds] = useState<Set<string> | null>(null);
+  const [settingsLoadFailed, setSettingsLoadFailed] = useState(false);
 
   useEffect(() => {
     const storeId = getStoredStoreId() ?? "corso-vercelli";
@@ -43,14 +45,18 @@ const Index = () => {
       .from("product_settings")
       .select("product_id, active")
       .eq("store_id", storeId)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("[webi-match] product_settings fetch failed:", error);
+          setSettingsLoadFailed(true);
+          return;
+        }
         if (data && data.length > 0) {
           const active = new Set(
             data.filter((r) => r.active !== false).map((r) => r.product_id),
           );
           setActiveProductIds(active);
         }
-        // On error or empty table → leave null → getMatchedProduct uses all products
       });
   }, []);
 
@@ -70,7 +76,8 @@ const Index = () => {
   };
 
   const handleClaim = async () => {
-    if (!matchedProduct) return;
+    if (!matchedProduct || claiming) return;
+    setClaiming(true);
 
     const payload = {
       email: user.email,
@@ -96,6 +103,7 @@ const Index = () => {
     if (lastError) console.error("[webi-match] quiz_sessions insert failed:", lastError);
 
     trackFunnel(funnelKey, "claimed");
+    setClaiming(false);
     setScreen("success");
   };
 
@@ -173,7 +181,7 @@ const Index = () => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {screen === "welcome" && <WelcomeScreen onStart={handleStart} />}
+          {screen === "welcome" && <WelcomeScreen onStart={handleStart} settingsLoadFailed={settingsLoadFailed} />}
           {screen === "quiz" && <QuizScreen onComplete={handleQuizComplete} />}
           {screen === "result" && matchedProduct && (
             <MatchResult
@@ -181,6 +189,7 @@ const Index = () => {
               matchPercent={matchPercent}
               userName={user.nome}
               onClaim={handleClaim}
+              claiming={claiming}
             />
           )}
           {screen === "success" && matchedProduct && (
