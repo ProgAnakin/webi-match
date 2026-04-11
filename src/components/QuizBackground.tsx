@@ -6,14 +6,14 @@ interface QuizBackgroundProps {
 }
 
 const categoryColors: Record<string, string> = {
-  fitness: "hsl(145, 80%, 42%)",
-  audio: "hsl(280, 70%, 55%)",
-  productivity: "hsl(200, 80%, 50%)",
-  camera: "hsl(45, 90%, 55%)",
-  travel: "hsl(190, 85%, 50%)",
-  gaming: "hsl(330, 75%, 55%)",
-  communication: "hsl(210, 80%, 55%)",
-  wellness: "hsl(160, 70%, 50%)",
+  sport:        "hsl(145, 80%, 42%)",  // green  — athletic/movement
+  audio:        "hsl(280, 70%, 55%)",  // purple — music/sound
+  productivity: "hsl(200, 80%, 50%)",  // blue   — work/efficiency
+  wellness:     "hsl(160, 70%, 50%)",  // teal   — self-care/health
+  travel:       "hsl(190, 85%, 50%)",  // cyan   — on-the-go
+  tech:         "hsl(240, 75%, 60%)",  // indigo — smart gadgets
+  style:        "hsl(335, 80%, 60%)",  // rose   — design/aesthetics
+  recovery:     "hsl(260, 65%, 55%)",  // violet — rest/sleep
 };
 
 const QuizBackground = ({ emoji, category }: QuizBackgroundProps) => {
