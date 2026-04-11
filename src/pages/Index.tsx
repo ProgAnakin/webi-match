@@ -37,13 +37,14 @@ const Index = () => {
   const [funnelKey, setFunnelKey] = useState(() => crypto.randomUUID());
   // Active product IDs fetched from Supabase — null means "not loaded yet" (uses full catalogue)
   const [activeProductIds, setActiveProductIds] = useState<Set<string> | null>(null);
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, string>>({});
   const [settingsLoadFailed, setSettingsLoadFailed] = useState(false);
 
   useEffect(() => {
     const storeId = getStoredStoreId() ?? "corso-vercelli";
     supabase
       .from("product_settings")
-      .select("product_id, active")
+      .select("product_id, active, price_override")
       .eq("store_id", storeId)
       .then(({ data, error }) => {
         if (error) {
@@ -55,7 +56,10 @@ const Index = () => {
           const active = new Set(
             data.filter((r) => r.active !== false).map((r) => r.product_id),
           );
+          const prices: Record<string, string> = {};
+          data.forEach((r) => { if (r.price_override) prices[r.product_id] = r.price_override; });
           setActiveProductIds(active);
+          setPriceOverrides(prices);
         }
       });
   }, []);
@@ -67,7 +71,11 @@ const Index = () => {
   };
 
   const handleQuizComplete = (answers: Record<number, boolean>) => {
-    const { product, matchPercent: pct } = getMatchedProduct(answers, activeProductIds ?? undefined);
+    const { product: baseProduct, matchPercent: pct } = getMatchedProduct(answers, activeProductIds ?? undefined);
+    // Apply store-specific price override if set by manager
+    const product = priceOverrides[baseProduct.id]
+      ? { ...baseProduct, price: priceOverrides[baseProduct.id] }
+      : baseProduct;
     setMatchedProduct(product);
     setMatchPercent(pct);
     setQuizAnswers(answers);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BarChart2, Home, LogOut, MapPin, Power, PowerOff, RotateCcw, Search, X, Undo2 } from "lucide-react";
+import { BarChart2, Check, Home, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, X, Undo2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import { getStoredStoreId, setStoredStoreId, getStoreById } from "@/data/stores";
@@ -10,6 +10,8 @@ import { StoreSelectorModal } from "./StoreSelectorModal";
 
 /** product_id → active boolean, loaded from Supabase */
 type SettingsMap = Record<string, boolean>;
+/** product_id → price override string */
+type PriceMap = Record<string, string>;
 
 interface UndoEntry { productId: string; restoredValue: boolean; }
 
@@ -20,9 +22,12 @@ interface ManagerDashboardProps {
 export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const navigate = useNavigate();
   const [settings, setSettings] = useState<SettingsMap>({});
+  const [priceOverrides, setPriceOverrides] = useState<PriceMap>({});
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [draftPrice, setDraftPrice] = useState("");
   const [search, setSearch] = useState("");
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [storeId, setStoreIdState] = useState<string>(
@@ -43,12 +48,17 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     setLoading(true);
     const { data } = await supabase
       .from("product_settings")
-      .select("product_id, active")
+      .select("product_id, active, price_override")
       .eq("store_id", storeId);
     if (data) {
       const map: SettingsMap = {};
-      data.forEach((row) => { map[row.product_id] = row.active; });
+      const prices: PriceMap = {};
+      data.forEach((row) => {
+        map[row.product_id] = row.active;
+        if (row.price_override) prices[row.product_id] = row.price_override;
+      });
       setSettings(map);
+      setPriceOverrides(prices);
     }
     setLoading(false);
   }, [storeId]);
@@ -104,6 +114,25 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     const entry = undoEntry;
     setUndoEntry(null);
     await saveProductActive(entry.productId, entry.restoredValue);
+  };
+
+  const savePriceOverride = async (productId: string, price: string) => {
+    const trimmed = price.trim();
+    const { error } = await supabase
+      .from("product_settings")
+      .upsert({
+        product_id: productId,
+        store_id: storeId,
+        price_override: trimmed || null,
+        updated_at: new Date().toISOString(),
+      });
+    if (!error) {
+      setPriceOverrides((prev) => {
+        if (!trimmed) { const n = { ...prev }; delete n[productId]; return n; }
+        return { ...prev, [productId]: trimmed };
+      });
+    }
+    setEditingPriceId(null);
   };
 
   const handleLogout = async () => {
@@ -256,7 +285,53 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                         {isActive ? "● ATTIVO" : "● IN PAUSA"}
                       </span>
                       <h3 className="text-sm font-bold leading-snug text-foreground">{product.name}</h3>
-                      <p className="mt-0.5 text-sm font-semibold text-primary">{product.price}</p>
+
+                      {/* Price — inline editable */}
+                      {editingPriceId === product.id ? (
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <input
+                            autoFocus
+                            value={draftPrice}
+                            onChange={(e) => setDraftPrice(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") savePriceOverride(product.id, draftPrice);
+                              if (e.key === "Escape") setEditingPriceId(null);
+                            }}
+                            className="w-28 rounded-lg border border-primary bg-card px-2 py-1 text-sm font-semibold text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            placeholder="€0,00"
+                          />
+                          <button
+                            onClick={() => savePriceOverride(product.id, draftPrice)}
+                            className="rounded-lg bg-primary/20 p-1.5 text-primary hover:bg-primary/30"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setEditingPriceId(null)}
+                            className="rounded-lg bg-muted p-1.5 text-muted-foreground hover:bg-muted/80"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setEditingPriceId(product.id);
+                            setDraftPrice(priceOverrides[product.id] ?? product.price);
+                          }}
+                          className="mt-0.5 flex items-center gap-1.5 group"
+                        >
+                          <span className="text-sm font-semibold text-primary">
+                            {priceOverrides[product.id] ?? product.price}
+                          </span>
+                          {priceOverrides[product.id] && (
+                            <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-400">
+                              custom
+                            </span>
+                          )}
+                          <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                      )}
                       <div className="mt-2 flex flex-wrap gap-1">
                         {product.tags.map((tag) => (
                           <span key={tag}

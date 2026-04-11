@@ -4,57 +4,149 @@ import { useLang } from "@/i18n/LanguageContext";
 
 const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
   const { t } = useLang();
-  const [step, setStep] = useState(0); // 0=left, 1=right, 2=done
+  const [step, setStep] = useState<"no" | "yes" | "done">("no");
 
   useEffect(() => {
-    const t1 = setTimeout(() => setStep(1), 1600);
-    const t2 = setTimeout(() => setStep(2), 3200);
-    const t3 = setTimeout(onDismiss, 3800);
+    const t1 = setTimeout(() => setStep("yes"), 1800);
+    const t2 = setTimeout(() => setStep("done"), 3600);
+    const t3 = setTimeout(onDismiss, 4100);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [onDismiss]);
 
   return (
     <AnimatePresence>
-      {step < 2 && (
+      {step !== "done" && (
         <motion.div
-          className="absolute inset-0 z-50 flex items-center justify-center"
+          className="absolute inset-0 z-50 flex flex-col items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+          exit={{ opacity: 0, transition: { duration: 0.35 } }}
+          onClick={onDismiss}
         >
-          <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
+          {/* Blurred dark overlay */}
+          <div className="absolute inset-0 bg-background/82 backdrop-blur-md" />
 
-          <motion.div className="relative z-10 flex flex-col items-center gap-6">
-            <motion.div
-              className="gradient-card shadow-card flex h-32 w-56 items-center justify-center rounded-2xl border border-border"
-              animate={{
-                x: step === 0 ? [0, -120, 0] : [0, 120, 0],
-                rotate: step === 0 ? [0, -15, 0] : [0, 15, 0],
-              }}
-              transition={{ duration: 1.2, ease: "easeInOut" }}
-            >
-              <span className="text-5xl">{step === 0 ? "❌" : "✅"}</span>
-            </motion.div>
-
+          <div
+            className="relative z-10 flex flex-col items-center gap-7 px-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
             <motion.p
-              key={step}
-              className="text-lg font-semibold text-foreground"
-              initial={{ opacity: 0, y: 10 }}
+              className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground"
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              transition={{ delay: 0.15 }}
             >
-              {step === 0 ? t.tutorial.no : t.tutorial.yes}
+              Come funziona?
             </motion.p>
 
-            <motion.div
-              className="text-4xl"
-              animate={{ x: step === 0 ? [0, -80, 0] : [0, 80, 0] }}
-              transition={{ duration: 1.2, ease: "easeInOut" }}
+            {/* Swipe demo row */}
+            <div className="flex w-full max-w-xs items-center justify-between gap-2">
+
+              {/* NO side */}
+              <motion.div
+                className="flex flex-col items-center gap-1.5"
+                animate={{ opacity: step === "no" ? 1 : 0.22, scale: step === "no" ? 1.05 : 0.95 }}
+                transition={{ duration: 0.35 }}
+              >
+                <motion.div
+                  className="flex items-center gap-1.5 rounded-2xl border-2 border-destructive/60 bg-destructive/15 px-3.5 py-2"
+                  animate={step === "no" ? { boxShadow: ["0 0 0px hsl(0 84% 60% / 0)", "0 0 18px hsl(0 84% 60% / 0.35)", "0 0 0px hsl(0 84% 60% / 0)"] } : {}}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                >
+                  <span className="text-lg font-black text-destructive">✕</span>
+                  <span className="text-lg font-black text-destructive">{t.swipe.no}</span>
+                </motion.div>
+                <motion.span
+                  className="text-2xl"
+                  animate={step === "no" ? { x: [0, -8, 0] } : {}}
+                  transition={{ duration: 0.7, repeat: Infinity }}
+                >
+                  ←
+                </motion.span>
+              </motion.div>
+
+              {/* Demo card */}
+              <div className="relative flex h-32 w-28 items-center justify-center">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={step}
+                    className="gradient-card shadow-card absolute flex h-full w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-border/80"
+                    initial={{ scale: 0.88, opacity: 0 }}
+                    animate={{
+                      scale: 1,
+                      opacity: [1, 1, 0],
+                      x:      step === "no"  ? [0, -110] : [0,  110],
+                      rotate: step === "no"  ? [0,  -20] : [0,   20],
+                    }}
+                    exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.15 } }}
+                    transition={{
+                      scale:   { type: "spring", stiffness: 380, damping: 36 },
+                      opacity: { duration: 1.6, times: [0, 0.55, 1], ease: "easeInOut" },
+                      x:       { duration: 1.6, ease: [0.36, 0, 0.66, 0] },
+                      rotate:  { duration: 1.6, ease: [0.36, 0, 0.66, 0] },
+                    }}
+                  >
+                    {/* Top accent bar */}
+                    <div className="h-1 w-full flex-shrink-0 gradient-primary" />
+                    <span className="mt-1 text-4xl">🤔</span>
+                    <span className="pb-3 text-[10px] font-semibold text-muted-foreground">
+                      {step === "no" ? t.swipe.no : t.swipe.yes}?
+                    </span>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* YES side */}
+              <motion.div
+                className="flex flex-col items-center gap-1.5"
+                animate={{ opacity: step === "yes" ? 1 : 0.22, scale: step === "yes" ? 1.05 : 0.95 }}
+                transition={{ duration: 0.35 }}
+              >
+                <motion.div
+                  className="flex items-center gap-1.5 rounded-2xl border-2 border-success/60 bg-success/15 px-3.5 py-2"
+                  animate={step === "yes" ? { boxShadow: ["0 0 0px hsl(145 80% 42% / 0)", "0 0 18px hsl(145 80% 42% / 0.35)", "0 0 0px hsl(145 80% 42% / 0)"] } : {}}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                >
+                  <span className="text-lg font-black text-success">{t.swipe.yes}</span>
+                  <span className="text-lg font-black text-success">✓</span>
+                </motion.div>
+                <motion.span
+                  className="text-2xl"
+                  animate={step === "yes" ? { x: [0, 8, 0] } : {}}
+                  transition={{ duration: 0.7, repeat: Infinity }}
+                >
+                  →
+                </motion.span>
+              </motion.div>
+            </div>
+
+            {/* Step label */}
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={step}
+                className="text-sm font-semibold text-foreground/80"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.25 }}
+              >
+                {step === "no" ? t.tutorial.no : t.tutorial.yes}
+              </motion.p>
+            </AnimatePresence>
+
+            {/* CTA button */}
+            <motion.button
+              onClick={onDismiss}
+              className="gradient-primary shadow-glow rounded-2xl px-10 py-3.5 text-base font-bold text-primary-foreground active:scale-95"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              whileTap={{ scale: 0.96 }}
             >
-              👆
-            </motion.div>
-          </motion.div>
+              Inizia! 🚀
+            </motion.button>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
