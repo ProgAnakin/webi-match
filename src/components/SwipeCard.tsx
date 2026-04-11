@@ -92,7 +92,7 @@ const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
         dragElastic={0.65}
         dragTransition={{ bounceStiffness: 480, bounceDamping: 38 }}
         onDragEnd={handleDragEnd}
-        initial={{ scale: 0.86, opacity: 0, y: 48 }}
+        initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1, y: 0, x: 0 }}
         exit={{
           x: exitX,
@@ -100,7 +100,10 @@ const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
           rotate: exitX > 0 ? 18 : -18,
           transition: { duration: 0.26, ease: "easeIn" },
         }}
-        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        transition={{
+          scale: { type: "spring", stiffness: 380, damping: 38 },
+          opacity: { duration: 0.18, ease: "easeOut" },
+        }}
         whileDrag={{ scale: 1.025 }}
       >
         {/* Colored top accent bar */}
