@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import type { Question } from "@/data/questions";
 import { useLang } from "@/i18n/LanguageContext";
@@ -9,26 +8,36 @@ interface SwipeCardProps {
   exitDirection?: "left" | "right";
 }
 
+// Direction is passed via `custom` so it's read synchronously at exit time,
+// avoiding the stale-state "jump" that occurred when exitX was stored in useState.
+const cardVariants = {
+  initial: { scale: 0.92, opacity: 0, y: 0 },
+  animate: {
+    scale: 1,
+    opacity: 1,
+    y: 0,
+    x: 0,
+    transition: { type: "spring" as const, stiffness: 380, damping: 38 },
+  },
+  exit: (direction: "left" | "right" | undefined) => ({
+    x: direction === "right" ? 480 : -480,
+    opacity: 0,
+    rotate: direction === "right" ? 20 : -20,
+    transition: { duration: 0.28, ease: [0.32, 0, 0.67, 0] as [number, number, number, number] },
+  }),
+};
+
 const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
   const { t } = useLang();
-  const [exitX, setExitX] = useState(0);
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
   const noOpacity = useTransform(x, [-200, -80, 0], [1, 0.5, 0]);
   const yesOpacity = useTransform(x, [0, 80, 200], [0, 0.5, 1]);
 
-  // Sync exit direction from parent (button press)
-  useEffect(() => {
-    if (exitDirection === "right") setExitX(400);
-    else if (exitDirection === "left") setExitX(-400);
-  }, [exitDirection]);
-
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.x > 100) {
-      setExitX(400);
       onSwipe("right");
     } else if (info.offset.x < -100) {
-      setExitX(-400);
       onSwipe("left");
     }
   };
@@ -61,10 +70,11 @@ const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.8}
         onDragEnd={handleDragEnd}
-        initial={{ scale: 0.8, opacity: 0, y: 40 }}
-        animate={{ scale: 1, opacity: 1, y: 0, x: 0 }}
-        exit={{ x: exitX, opacity: 0, rotate: exitX > 0 ? 20 : -20, transition: { duration: 0.3 } }}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        custom={exitDirection}
+        variants={cardVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
       >
         {/* Emoji */}
         <motion.div
