@@ -217,6 +217,13 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
         <LanguageSelector />
       </div>
 
+      {/* Copyright — bottom-center */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+        <span className="text-[10px] text-muted-foreground/40 select-none">
+          © {new Date().getFullYear()} Webidoo · Webi-Match
+        </span>
+      </div>
+
       {/* Store badge — bottom-left, tapping opens staff PIN */}
       <div className="absolute bottom-4 left-4 z-10 flex flex-col items-start gap-1.5">
         <StoreBadge

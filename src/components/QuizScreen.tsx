@@ -39,14 +39,14 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
         transitioningRef.current = false;
         setTransitioning(false);
         onComplete(newAnswers);
-      }, 300);
+      }, 260);
     } else {
       setTimeout(() => {
         setExitDirection(undefined);
         setCurrentIndex((i) => i + 1);
         transitioningRef.current = false;
         setTransitioning(false);
-      }, 300);
+      }, 260);
     }
   }, [currentIndex, answers, onComplete]);
 
@@ -96,12 +96,13 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
         />
       </AnimatePresence>
 
-      {/* Action buttons — pointer-events-none during card transition to prevent rapid-tap overflow */}
+      {/* Action buttons — dimmed and non-interactive during card transition */}
       <motion.div
-        className={`absolute bottom-10 flex w-full max-w-xs justify-center gap-8 ${transitioning ? "pointer-events-none" : ""}`}
+        className="absolute bottom-10 flex w-full max-w-xs justify-center gap-8"
+        style={{ pointerEvents: transitioning ? "none" : "auto" }}
         initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        animate={{ opacity: transitioning ? 0.35 : 1, y: 0 }}
+        transition={{ duration: transitioning ? 0.1 : 0.3, delay: transitioning ? 0 : 0.3 }}
       >
         <motion.button
           onClick={() => handleSwipe("left")}
