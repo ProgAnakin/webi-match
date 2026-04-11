@@ -86,8 +86,10 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
 
       {/* Swipeable card — no mode="wait" so the next card starts mounting
           while the current card exits, eliminating the blank-screen gap
-          that caused perceived lag on kiosk devices. */}
-      <AnimatePresence>
+          that caused perceived lag on kiosk devices.
+          custom is passed to AnimatePresence so the exit variant receives
+          the direction synchronously (avoids stale-state jump). */}
+      <AnimatePresence custom={exitDirection}>
         <SwipeCard
           key={currentIndex}
           question={question}

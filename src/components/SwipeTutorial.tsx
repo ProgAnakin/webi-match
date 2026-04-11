@@ -4,32 +4,31 @@ import { useLang } from "@/i18n/LanguageContext";
 
 const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
   const { t } = useLang();
-  const [step, setStep] = useState<"no" | "yes" | "done">("no");
+  const [step, setStep] = useState<"no" | "yes">("no");
 
+  // Loop "no" → "yes" → "no" indefinitely until user clicks button
   useEffect(() => {
-    const t1 = setTimeout(() => setStep("yes"), 1800);
-    const t2 = setTimeout(() => setStep("done"), 3600);
-    const t3 = setTimeout(onDismiss, 4100);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [onDismiss]);
+    const interval = setInterval(() => {
+      setStep((s) => (s === "no" ? "yes" : "no"));
+    }, 1800);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <AnimatePresence>
-      {step !== "done" && (
-        <motion.div
-          className="absolute inset-0 z-50 flex flex-col items-center justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.35 } }}
-          onClick={onDismiss}
-        >
-          {/* Blurred dark overlay */}
-          <div className="absolute inset-0 bg-background/82 backdrop-blur-md" />
+    <motion.div
+      className="absolute inset-0 z-50 flex flex-col items-center justify-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.35 } }}
+      onClick={onDismiss}
+    >
+      {/* Blurred dark overlay */}
+      <div className="absolute inset-0 bg-background/82 backdrop-blur-md" />
 
-          <div
-            className="relative z-10 flex flex-col items-center gap-7 px-6"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <div
+        className="relative z-10 flex flex-col items-center gap-7 px-6"
+        onClick={(e) => e.stopPropagation()}
+      >
             {/* Header */}
             <motion.p
               className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground"
@@ -144,12 +143,10 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
               transition={{ delay: 0.4 }}
               whileTap={{ scale: 0.96 }}
             >
-              Inizia! 🚀
+              Sono pronto!
             </motion.button>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      </div>
+    </motion.div>
   );
 };
 
