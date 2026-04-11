@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import type { Question } from "@/data/questions";
 import { useLang } from "@/i18n/LanguageContext";
@@ -31,9 +30,30 @@ const CATEGORY_LABELS: Record<string, string> = {
   recovery:     "Recupero",
 };
 
+// Direction is passed via `custom` so it's read synchronously at exit time,
+// avoiding the stale-state "jump" that occurred with useState exitX.
+const cardVariants = {
+  initial: { scale: 0.92, opacity: 0 },
+  animate: {
+    scale: 1,
+    opacity: 1,
+    y: 0,
+    x: 0,
+    transition: {
+      scale: { type: "spring" as const, stiffness: 380, damping: 38 },
+      opacity: { duration: 0.18, ease: "easeOut" },
+    },
+  },
+  exit: (direction: "left" | "right" | undefined) => ({
+    x: direction === "right" ? 480 : -480,
+    opacity: 0,
+    rotate: direction === "right" ? 20 : -20,
+    transition: { duration: 0.28, ease: [0.32, 0, 0.67, 0] as [number, number, number, number] },
+  }),
+};
+
 const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
   const { t } = useLang();
-  const [exitX, setExitX] = useState(0);
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-22, 22]);
   const noOpacity  = useTransform(x, [-180, -60, 0], [1, 0.4, 0]);
@@ -42,22 +62,14 @@ const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
   const accentColor = CATEGORY_COLORS[question.category] ?? "hsl(27, 92%, 55%)";
   const categoryLabel = CATEGORY_LABELS[question.category] ?? question.category;
 
-  // Sync exit direction triggered by action buttons
-  useEffect(() => {
-    if (exitDirection === "right") setExitX(450);
-    else if (exitDirection === "left") setExitX(-450);
-  }, [exitDirection]);
-
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     // Velocity-aware threshold: fast flick needs less distance
     const velocityBoost = Math.abs(info.velocity.x) > 400 ? 30 : 0;
     const threshold = 90 - velocityBoost;
 
     if (info.offset.x > threshold) {
-      setExitX(450);
       onSwipe("right");
     } else if (info.offset.x < -threshold) {
-      setExitX(-450);
       onSwipe("left");
     }
   };
@@ -92,18 +104,11 @@ const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
         dragElastic={0.65}
         dragTransition={{ bounceStiffness: 480, bounceDamping: 38 }}
         onDragEnd={handleDragEnd}
-        initial={{ scale: 0.92, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1, y: 0, x: 0 }}
-        exit={{
-          x: exitX,
-          opacity: 0,
-          rotate: exitX > 0 ? 18 : -18,
-          transition: { duration: 0.26, ease: "easeIn" },
-        }}
-        transition={{
-          scale: { type: "spring", stiffness: 380, damping: 38 },
-          opacity: { duration: 0.18, ease: "easeOut" },
-        }}
+        custom={exitDirection}
+        variants={cardVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
         whileDrag={{ scale: 1.025 }}
       >
         {/* Colored top accent bar */}
