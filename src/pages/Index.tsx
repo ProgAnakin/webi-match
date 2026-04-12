@@ -4,6 +4,7 @@ import WelcomeScreen, { type UserInfo } from "@/components/WelcomeScreen";
 import QuizScreen from "@/components/QuizScreen";
 import MatchResult from "@/components/MatchResult";
 import SuccessScreen from "@/components/SuccessScreen";
+import SplashScreen from "@/components/SplashScreen";
 import { getMatchedProduct, type Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import { useInactivityReset } from "@/hooks/useInactivityReset";
@@ -11,14 +12,16 @@ import { useWakeLock } from "@/hooks/useWakeLock";
 import { useLang } from "@/i18n/LanguageContext";
 import { getStoredStoreId } from "@/data/stores";
 
-type Screen = "welcome" | "quiz" | "result" | "success";
+type Screen = "splash" | "welcome" | "quiz" | "result" | "success";
 
 // ── Per-screen directional transitions ────────────────────────────────────────
-// welcome → quiz:   slide out left, enter from right
-// quiz → result:    zoom + lift from below
-// result → success: scale up + fly out
-// any → welcome:    gentle settle back down
 const screenAnim: Record<Screen, { initial: object; animate: object; exit: object; transition: object }> = {
+  splash: {
+    initial:    { opacity: 0 },
+    animate:    { opacity: 1 },
+    exit:       { opacity: 0, scale: 1.04 },
+    transition: { duration: 0.4, ease: "easeOut" },
+  },
   welcome: {
     initial:    { opacity: 0, y: 24 },
     animate:    { opacity: 1, y: 0  },
@@ -58,7 +61,7 @@ function trackFunnel(funnelKey: string, eventType: "quiz_started" | "result_show
 
 const Index = () => {
   const { t } = useLang();
-  const [screen, setScreen] = useState<Screen>("welcome");
+  const [screen, setScreen] = useState<Screen>("splash");
   const [user, setUser] = useState<UserInfo>({ nome: "", cognome: "", email: "" });
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
   const [matchPercent, setMatchPercent] = useState(0);
@@ -94,6 +97,10 @@ const Index = () => {
       });
   }, []);
 
+  const handleSplashComplete = () => {
+    setScreen("welcome");
+  };
+
   const handleStart = (userInfo: UserInfo) => {
     setUser(userInfo);
     trackFunnel(funnelKey, "quiz_started");
@@ -113,18 +120,14 @@ const Index = () => {
     setScreen("result");
   };
 
-  // Email is now collected on the result screen at peak motivation.
-  // handleClaim receives the validated email from MatchResult and merges it
-  // into user state before persisting the session.
-  const handleClaim = async (email: string) => {
+  // Email is collected on the welcome screen — user.email is already set when
+  // handleClaim fires. We just persist the session and advance to success.
+  const handleClaim = async () => {
     if (!matchedProduct || claiming) return;
     setClaiming(true);
 
-    const updatedUser = { ...user, email };
-    setUser(updatedUser);
-
     const payload = {
-      email,
+      email: user.email,
       answers: quizAnswers,
       matched_product_id: matchedProduct.id,
       match_percent: matchPercent,
@@ -157,12 +160,12 @@ const Index = () => {
     setQuizAnswers({});
     setInactivitySecondsLeft(null);
     setFunnelKey(crypto.randomUUID());
-    setScreen("welcome");
+    setScreen("splash");
   };
 
   useWakeLock();
   const { dismiss } = useInactivityReset({
-    enabled: screen !== "welcome",
+    enabled: screen !== "welcome" && screen !== "splash",
     onWarn:    (seconds) => setInactivitySecondsLeft(seconds),
     onReset:   handleRestart,
     onDismiss: () => setInactivitySecondsLeft(null),
@@ -223,6 +226,7 @@ const Index = () => {
           exit={anim.exit}
           transition={anim.transition}
         >
+          {screen === "splash" && <SplashScreen onComplete={handleSplashComplete} />}
           {screen === "welcome" && <WelcomeScreen onStart={handleStart} settingsLoadFailed={settingsLoadFailed} />}
           {screen === "quiz" && <QuizScreen onComplete={handleQuizComplete} />}
           {screen === "result" && matchedProduct && (

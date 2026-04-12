@@ -41,22 +41,30 @@ const CATEGORY_LABELS: Record<string, string> = {
 // Direction is passed via `custom` so it's read synchronously at exit time,
 // avoiding the stale-state "jump" that occurred with useState exitX.
 const cardVariants = {
-  initial: { scale: 0.92, opacity: 0 },
+  // Card starts slightly below and small — springs up into place
+  initial: { scale: 0.88, opacity: 0, y: 32 },
   animate: {
     scale: 1,
     opacity: 1,
     y: 0,
     x: 0,
     transition: {
-      scale: { type: "spring" as const, stiffness: 380, damping: 38 },
-      opacity: { duration: 0.18, ease: "easeOut" },
+      scale: { type: "spring" as const, stiffness: 500, damping: 32 },
+      opacity: { duration: 0.15, ease: "easeOut" },
+      y: { type: "spring" as const, stiffness: 460, damping: 30 },
     },
   },
+  // Throw: accelerating fly-off with rotation + slight downward arc
   exit: (direction: "left" | "right" | undefined) => ({
-    x: direction === "right" ? 480 : -480,
+    x: direction === "right" ? 620 : -620,
+    y: 50,
     opacity: 0,
-    rotate: direction === "right" ? 20 : -20,
-    transition: { duration: 0.28, ease: [0.32, 0, 0.67, 0] as [number, number, number, number] },
+    rotate: direction === "right" ? 30 : -30,
+    scale: 0.85,
+    transition: {
+      duration: 0.32,
+      ease: [0.45, 0, 0.9, 0.6] as [number, number, number, number],
+    },
   }),
 };
 
@@ -103,6 +111,16 @@ const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
   return (
     <div className="relative flex h-[420px] w-full max-w-sm items-center justify-center">
 
+      {/* Stack peek — static card peeking behind, scales up slightly as active card exits */}
+      <div
+        className="gradient-card absolute h-full w-full rounded-3xl border border-border/50"
+        style={{
+          transform: "scale(0.93) translateY(14px)",
+          opacity: 0.55,
+          zIndex: 0,
+        }}
+      />
+
       {/* NO label */}
       <motion.div
         className="pointer-events-none absolute left-5 top-8 z-20 flex items-center gap-2 rounded-2xl border-[3px] border-destructive/80 bg-destructive/15 px-4 py-2 backdrop-blur-sm"
@@ -124,7 +142,7 @@ const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
       {/* Card */}
       <motion.div
         className="gradient-card absolute flex h-full w-full cursor-grab flex-col overflow-hidden rounded-3xl border border-border/80 active:cursor-grabbing"
-        style={{ x, rotate, boxShadow: cardShadow }}
+        style={{ x, rotate, boxShadow: cardShadow, zIndex: 1 }}
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.65}

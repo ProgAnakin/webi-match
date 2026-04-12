@@ -1,6 +1,14 @@
 export type Lang = "it" | "en" | "pt" | "es" | "fr";
 
 export interface T {
+  splash: {
+    headline: string;
+    sub: string;
+    step1: string;
+    step2: string;
+    step3: string;
+    tap: string;
+  };
   welcome: {
     tagline: string;
     firstName: string;
@@ -33,7 +41,6 @@ export interface T {
     discount: string;
     cta: string;
     emailSubtitle: string;
-    emailInputLabel: string;
     productImageAlt: string;
   };
   success: {
@@ -70,6 +77,14 @@ export const LANGUAGES: { code: Lang; flag: string; label: string }[] = [
 export const translations: Record<Lang, T> = {
   // ── ITALIANO ──────────────────────────────────────────────────────────────
   it: {
+    splash: {
+      headline: "Trova il tuo gadget tech ideale",
+      sub: "in soli 8 swipe",
+      step1: "8 domande veloci",
+      step2: "Match istantaneo",
+      step3: "Gift esclusivo",
+      tap: "Tocca per iniziare →",
+    },
     welcome: {
       tagline: "Trova il tuo gadget perfetto! 🎯",
       firstName: "Nome",
@@ -99,7 +114,6 @@ export const translations: Record<Lang, T> = {
       discount: "Sconto VIP",
       cta: "🎁 Voglio riceverlo!",
       emailSubtitle: "Ricevi video, manuale, FAQ e sconto esclusivo via email",
-      emailInputLabel: "Inserisci la tua email per ricevere il gift:",
       productImageAlt: "Immagine prodotto",
     },
     success: {
@@ -136,6 +150,14 @@ export const translations: Record<Lang, T> = {
 
   // ── ENGLISH ───────────────────────────────────────────────────────────────
   en: {
+    splash: {
+      headline: "Find your ideal tech gadget",
+      sub: "in just 8 swipes",
+      step1: "8 quick questions",
+      step2: "Instant match",
+      step3: "Exclusive gift",
+      tap: "Tap to start →",
+    },
     welcome: {
       tagline: "Find your perfect gadget! 🎯",
       firstName: "First name",
@@ -165,7 +187,6 @@ export const translations: Record<Lang, T> = {
       discount: "VIP Discount",
       cta: "🎁 I want it!",
       emailSubtitle: "Receive the video, manual, FAQ and exclusive discount by email",
-      emailInputLabel: "Enter your email to receive the gift:",
       productImageAlt: "Product image",
     },
     success: {
@@ -202,6 +223,14 @@ export const translations: Record<Lang, T> = {
 
   // ── PORTUGUÊS ─────────────────────────────────────────────────────────────
   pt: {
+    splash: {
+      headline: "Encontre o seu gadget tech ideal",
+      sub: "em apenas 8 swipes",
+      step1: "8 perguntas rápidas",
+      step2: "Match instantâneo",
+      step3: "Gift exclusivo",
+      tap: "Toque para começar →",
+    },
     welcome: {
       tagline: "Encontre o seu gadget perfeito! 🎯",
       firstName: "Nome",
@@ -231,7 +260,6 @@ export const translations: Record<Lang, T> = {
       discount: "Desconto VIP",
       cta: "🎁 Quero receber!",
       emailSubtitle: "Receba o vídeo, manual, FAQ e desconto exclusivo por email",
-      emailInputLabel: "Insira o seu email para receber o gift:",
       productImageAlt: "Imagem do produto",
     },
     success: {
@@ -268,6 +296,14 @@ export const translations: Record<Lang, T> = {
 
   // ── ESPAÑOL ───────────────────────────────────────────────────────────────
   es: {
+    splash: {
+      headline: "Encuentra tu gadget tech ideal",
+      sub: "en solo 8 swipes",
+      step1: "8 preguntas rápidas",
+      step2: "Match instantáneo",
+      step3: "Gift exclusivo",
+      tap: "Toca para empezar →",
+    },
     welcome: {
       tagline: "¡Encuentra tu gadget perfecto! 🎯",
       firstName: "Nombre",
@@ -297,7 +333,6 @@ export const translations: Record<Lang, T> = {
       discount: "Descuento VIP",
       cta: "🎁 ¡Lo quiero!",
       emailSubtitle: "Recibe el vídeo, manual, FAQ y descuento exclusivo por email",
-      emailInputLabel: "Introduce tu email para recibir el gift:",
       productImageAlt: "Imagen del producto",
     },
     success: {
@@ -334,6 +369,14 @@ export const translations: Record<Lang, T> = {
 
   // ── FRANÇAIS ──────────────────────────────────────────────────────────────
   fr: {
+    splash: {
+      headline: "Trouvez votre gadget tech idéal",
+      sub: "en seulement 8 swipes",
+      step1: "8 questions rapides",
+      step2: "Match instantané",
+      step3: "Gift exclusif",
+      tap: "Touchez pour commencer →",
+    },
     welcome: {
       tagline: "Trouvez votre gadget parfait ! 🎯",
       firstName: "Prénom",
@@ -363,7 +406,6 @@ export const translations: Record<Lang, T> = {
       discount: "Remise VIP",
       cta: "🎁 Je le veux !",
       emailSubtitle: "Recevez la vidéo, le manuel, la FAQ et la remise exclusive par email",
-      emailInputLabel: "Entrez votre email pour recevoir le gift :",
       productImageAlt: "Image du produit",
     },
     success: {
