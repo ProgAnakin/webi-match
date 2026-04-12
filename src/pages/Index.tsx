@@ -13,6 +13,38 @@ import { getStoredStoreId } from "@/data/stores";
 
 type Screen = "welcome" | "quiz" | "result" | "success";
 
+// ── Per-screen directional transitions ────────────────────────────────────────
+// welcome → quiz:   slide out left, enter from right
+// quiz → result:    zoom + lift from below
+// result → success: scale up + fly out
+// any → welcome:    gentle settle back down
+const screenAnim: Record<Screen, { initial: object; animate: object; exit: object; transition: object }> = {
+  welcome: {
+    initial:    { opacity: 0, y: 24 },
+    animate:    { opacity: 1, y: 0  },
+    exit:       { opacity: 0, y: -16, scale: 0.98 },
+    transition: { duration: 0.4, ease: "easeOut" },
+  },
+  quiz: {
+    initial:    { opacity: 0, x: 48 },
+    animate:    { opacity: 1, x: 0  },
+    exit:       { opacity: 0, x: -48 },
+    transition: { duration: 0.35, ease: "easeOut" },
+  },
+  result: {
+    initial:    { opacity: 0, scale: 0.94, y: 32 },
+    animate:    { opacity: 1, scale: 1,    y: 0   },
+    exit:       { opacity: 0, scale: 1.04          },
+    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
+  },
+  success: {
+    initial:    { opacity: 0, y: 52 },
+    animate:    { opacity: 1, y: 0  },
+    exit:       { opacity: 0, y: -24 },
+    transition: { duration: 0.4, ease: "easeOut" },
+  },
+};
+
 // Fire-and-forget funnel event — never blocks the user flow.
 function trackFunnel(funnelKey: string, eventType: "quiz_started" | "result_shown" | "claimed") {
   supabase.from("quiz_funnel_events").insert({
@@ -31,11 +63,9 @@ const Index = () => {
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
   const [matchPercent, setMatchPercent] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, boolean>>({});
-  const [claiming, setClaiming] = useState(false); // prevents double-submit on slow networks
+  const [claiming, setClaiming] = useState(false);
   const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState<number | null>(null);
-  // Funnel key — generated once per quiz session to link events together
   const [funnelKey, setFunnelKey] = useState(() => crypto.randomUUID());
-  // Active product IDs fetched from Supabase — null means "not loaded yet" (uses full catalogue)
   const [activeProductIds, setActiveProductIds] = useState<Set<string> | null>(null);
   const [priceOverrides, setPriceOverrides] = useState<Record<string, string>>({});
   const [settingsLoadFailed, setSettingsLoadFailed] = useState(false);
@@ -83,12 +113,18 @@ const Index = () => {
     setScreen("result");
   };
 
-  const handleClaim = async () => {
+  // Email is now collected on the result screen at peak motivation.
+  // handleClaim receives the validated email from MatchResult and merges it
+  // into user state before persisting the session.
+  const handleClaim = async (email: string) => {
     if (!matchedProduct || claiming) return;
     setClaiming(true);
 
+    const updatedUser = { ...user, email };
+    setUser(updatedUser);
+
     const payload = {
-      email: user.email,
+      email,
       answers: quizAnswers,
       matched_product_id: matchedProduct.id,
       match_percent: matchPercent,
@@ -100,7 +136,6 @@ const Index = () => {
     };
 
     // Retry up to 2 times with exponential backoff before giving up.
-    // The user flow continues regardless — session data is non-blocking.
     let lastError: unknown;
     for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0) await new Promise((r) => setTimeout(r, 500 * 2 ** (attempt - 1)));
@@ -121,7 +156,6 @@ const Index = () => {
     setMatchPercent(0);
     setQuizAnswers({});
     setInactivitySecondsLeft(null);
-    // New funnel key for the next session
     setFunnelKey(crypto.randomUUID());
     setScreen("welcome");
   };
@@ -131,14 +165,15 @@ const Index = () => {
     enabled: screen !== "welcome",
     onWarn:    (seconds) => setInactivitySecondsLeft(seconds),
     onReset:   handleRestart,
-    onDismiss: () => setInactivitySecondsLeft(null), // hides frozen overlay when activity detected
+    onDismiss: () => setInactivitySecondsLeft(null),
   });
 
-  // User tapped "still here" (backdrop or button) → hide overlay + restart 45s timer
   const handleDismiss = () => {
     setInactivitySecondsLeft(null);
     dismiss();
   };
+
+  const anim = screenAnim[screen];
 
   return (
     <div className="relative min-h-screen overflow-auto bg-background">
@@ -152,7 +187,6 @@ const Index = () => {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={handleDismiss}
           >
-            {/* Stop propagation so clicks inside the card don't trigger backdrop dismiss */}
             <div
               className="mx-6 rounded-2xl bg-white p-8 text-center shadow-2xl max-w-sm w-full"
               onClick={(e) => e.stopPropagation()}
@@ -184,10 +218,10 @@ const Index = () => {
       <AnimatePresence mode="wait">
         <motion.div
           key={screen}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+          initial={anim.initial}
+          animate={anim.animate}
+          exit={anim.exit}
+          transition={anim.transition}
         >
           {screen === "welcome" && <WelcomeScreen onStart={handleStart} settingsLoadFailed={settingsLoadFailed} />}
           {screen === "quiz" && <QuizScreen onComplete={handleQuizComplete} />}

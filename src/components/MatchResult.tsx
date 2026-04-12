@@ -1,5 +1,6 @@
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import type { Product } from "@/data/products";
 import { useSound } from "@/hooks/useSound";
 import { useDevicePerformance } from "@/hooks/useDevicePerformance";
@@ -9,9 +10,11 @@ interface MatchResultProps {
   product: Product;
   matchPercent: number;
   userName: string;
-  onClaim: () => void;
+  onClaim: (email: string) => void;
   claiming?: boolean;
 }
+
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
 // Read confetti palette from CSS design tokens at runtime so they stay in sync
 // with the theme without hardcoded hex values. Tokens are defined in index.css.
@@ -43,10 +46,17 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
   const [displayPercent, setDisplayPercent] = useState(0);
   const [imgError, setImgError] = useState(false);
   const [isScanning, setIsScanning] = useState(true);
+  const [email, setEmail] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const { play } = useSound();
   const tier = useDevicePerformance();
 
-  // Confetti colors are lazily resolved from CSS variables on first render
+  const isEmailValid = EMAIL_REGEX.test(email.trim());
+  const showEmailOk = email.trim().length > 0 && isEmailValid;
+  const showEmailError = (emailTouched || submitted) && email.trim().length > 0 && !isEmailValid;
+  const showEmailEmpty = submitted && email.trim().length === 0;
+
   const confettiColors = useMemo(() => readCssConfettiColors(), []);
 
   const ringMotionValue = useMotionValue(0);
@@ -56,20 +66,21 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
   useEffect(() => {
     let frame: number;
     const timeout = setTimeout(() => {
-      // Slot-machine duration fixed at 900ms — consistent "suspense" across all devices.
-      // Particle count still adapts per device (below) to avoid GPU overload on older iPads.
       const slotDuration = 900;
       const slotStart = performance.now();
 
       const runSlot = (now: number) => {
-        if (now - slotStart < slotDuration) {
-          setDisplayPercent(Math.floor(Math.random() * 99) + 1);
+        const elapsed = now - slotStart;
+        if (elapsed < slotDuration) {
+          // Decelerate the slot machine in the last 300ms — numbers slow down visibly
+          const progress = elapsed / slotDuration;
+          const speed = progress > 0.7 ? 1 - ((progress - 0.7) / 0.3) * 0.85 : 1;
+          if (Math.random() < speed) {
+            setDisplayPercent(Math.floor(Math.random() * 99) + 1);
+          }
           frame = requestAnimationFrame(runSlot);
         } else {
           setIsScanning(false);
-          // Do NOT reset displayPercent to 0 here — it would flash visibly
-          // from the last random slot value to 0 before the count-up begins.
-          // The count-up loop sets it to 0 on frame 1 naturally.
           play("match");
 
           animate(ringMotionValue, matchPercent, {
@@ -94,6 +105,13 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
     return () => { cancelAnimationFrame(frame); clearTimeout(timeout); };
   }, [matchPercent]);
 
+  const handleClaim = useCallback(() => {
+    setSubmitted(true);
+    setEmailTouched(true);
+    if (!isEmailValid || claiming) return;
+    onClaim(email.trim().toLowerCase());
+  }, [isEmailValid, email, claiming, onClaim]);
+
   const particleCount = tier === "high" ? 55 : tier === "mid" ? 28 : 12;
   const confettiParticles = useMemo<ConfettiData[]>(() =>
     Array.from({ length: particleCount }, (_, i) => ({
@@ -107,7 +125,6 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
       xOffset: (Math.random() - 0.5) * 100,
     })), [particleCount, confettiColors]);
 
-  // Math.floor avoids showing 5 full stars for a 4.5 rating
   const starCount = Math.floor(product.rating);
 
   const ringColor = matchPercent >= 90 ? "#6BCB77"
@@ -119,6 +136,14 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
     : matchPercent >= 80 ? "bg-yellow-400 text-gray-900"
     : matchPercent >= 65 ? "bg-orange-400 text-gray-900"
     : "bg-blue-500";
+
+  const emailClass = `w-full rounded-2xl border bg-card px-6 py-4 pr-14 text-center text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-colors ${
+    showEmailOk
+      ? "border-green-500 focus:ring-green-400"
+      : showEmailError || showEmailEmpty
+      ? "border-destructive focus:ring-destructive"
+      : "border-border focus:ring-primary"
+  }`;
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-10">
@@ -163,14 +188,13 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
           </p>
         </motion.div>
 
-        {/* Circular ring — large & impactful */}
+        {/* Circular ring */}
         <motion.div
           className="relative flex items-center justify-center"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", delay: 0.2, stiffness: 180, damping: 22 }}
         >
-          {/* Outer glow halo */}
           {!isScanning && (
             <motion.div
               className="absolute rounded-full"
@@ -281,22 +305,71 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
             { icon: "📖", label: t.result.manual },
             { icon: "💰", label: t.result.discount },
           ].map((item, i) => (
-            <div key={i} className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-border bg-card/80 p-3">
+            <div
+              key={i}
+              className={`flex flex-1 flex-col items-center gap-1 rounded-2xl border p-3 ${
+                i === 2
+                  ? "border-primary/60 bg-primary/10 ring-1 ring-primary/30"
+                  : "border-border bg-card/80"
+              }`}
+            >
               <span className="text-xl">{item.icon}</span>
-              <span className="text-[10px] font-semibold text-muted-foreground">{item.label}</span>
+              <span className={`text-[10px] font-semibold ${i === 2 ? "text-primary" : "text-muted-foreground"}`}>
+                {item.label}
+              </span>
             </div>
           ))}
         </motion.div>
 
-        {/* CTA — strong & clear */}
+        {/* ── Email capture — peak motivation: user has just seen their match ── */}
+        <motion.div
+          className="w-full space-y-2"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.4 }}
+        >
+          <p className="text-center text-sm font-semibold text-foreground">
+            {t.result.emailInputLabel}
+          </p>
+          <div className="relative">
+            <input
+              type="email"
+              inputMode="email"
+              placeholder={t.welcome.emailPlaceholder}
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setEmailTouched(true); setSubmitted(false); }}
+              onBlur={() => setEmailTouched(true)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleClaim(); }}
+              className={emailClass}
+            />
+            {showEmailOk && (
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500">
+                <CheckCircle2 className="h-5 w-5" />
+              </span>
+            )}
+            {(showEmailError || showEmailEmpty) && (
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-destructive">
+                <XCircle className="h-5 w-5" />
+              </span>
+            )}
+          </div>
+          {showEmailError && (
+            <p className="text-center text-xs text-destructive">{t.welcome.emailError}</p>
+          )}
+          {showEmailEmpty && (
+            <p className="text-center text-xs text-destructive">{t.welcome.emailError}</p>
+          )}
+        </motion.div>
+
+        {/* CTA */}
         <motion.button
-          onClick={onClaim}
+          onClick={handleClaim}
           disabled={claiming}
           className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-5 text-xl font-bold text-primary-foreground active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
           whileTap={{ scale: claiming ? 1 : 0.97 }}
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.75, duration: 0.4 }}
+          transition={{ delay: 0.82, duration: 0.4 }}
         >
           {claiming ? "…" : t.result.cta}
         </motion.button>
@@ -305,7 +378,7 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
           className="text-center text-xs text-muted-foreground"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.6 }}
-          transition={{ delay: 0.9 }}
+          transition={{ delay: 0.95 }}
         >
           {t.result.emailSubtitle}
         </motion.p>
