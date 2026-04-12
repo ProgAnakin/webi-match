@@ -17,6 +17,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   tech:         "hsl(240, 75%, 60%)",
   style:        "hsl(335, 80%, 60%)",
   recovery:     "hsl(260, 65%, 55%)",
+  fitness:      "hsl(145, 80%, 42%)",
+  camera:       "hsl(45, 90%, 55%)",
+  gaming:       "hsl(330, 75%, 55%)",
+  communication:"hsl(210, 80%, 55%)",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -28,6 +32,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   tech:         "Tech",
   style:        "Stile",
   recovery:     "Recupero",
+  fitness:      "Fitness",
+  camera:       "Foto",
+  gaming:       "Gaming",
+  communication:"Chat",
 };
 
 // Direction is passed via `custom` so it's read synchronously at exit time,
@@ -52,12 +60,28 @@ const cardVariants = {
   }),
 };
 
+// Short haptic pulse on devices that support it (Android + some iOS PWA).
+function haptic(ms: number) {
+  try { navigator.vibrate?.(ms); } catch { /* unsupported — silent */ }
+}
+
 const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
   const { t } = useLang();
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-22, 22]);
   const noOpacity  = useTransform(x, [-180, -60, 0], [1, 0.4, 0]);
   const yesOpacity = useTransform(x, [0, 60, 180], [0, 0.4, 1]);
+
+  // Dynamic box-shadow: red glow on left drag, green glow on right drag
+  const cardShadow = useTransform(
+    x,
+    [-180, 0, 180],
+    [
+      "0 20px 60px hsl(0 84% 60% / 0.50), -8px 0 28px hsl(0 84% 60% / 0.28)",
+      "0 20px 60px hsl(0 0% 0% / 0.40)",
+      "0 20px 60px hsl(145 80% 42% / 0.50), 8px 0 28px hsl(145 80% 42% / 0.28)",
+    ],
+  );
 
   const accentColor = CATEGORY_COLORS[question.category] ?? "hsl(27, 92%, 55%)";
   const categoryLabel = CATEGORY_LABELS[question.category] ?? question.category;
@@ -68,8 +92,10 @@ const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
     const threshold = 90 - velocityBoost;
 
     if (info.offset.x > threshold) {
+      haptic(45);
       onSwipe("right");
     } else if (info.offset.x < -threshold) {
+      haptic(30);
       onSwipe("left");
     }
   };
@@ -97,8 +123,8 @@ const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
 
       {/* Card */}
       <motion.div
-        className="gradient-card shadow-card absolute flex h-full w-full cursor-grab flex-col overflow-hidden rounded-3xl border border-border/80 active:cursor-grabbing"
-        style={{ x, rotate }}
+        className="gradient-card absolute flex h-full w-full cursor-grab flex-col overflow-hidden rounded-3xl border border-border/80 active:cursor-grabbing"
+        style={{ x, rotate, boxShadow: cardShadow }}
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.65}
@@ -112,10 +138,7 @@ const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
         whileDrag={{ scale: 1.025 }}
       >
         {/* Colored top accent bar */}
-        <div
-          className="h-1 w-full flex-shrink-0"
-          style={{ background: accentColor }}
-        />
+        <div className="h-1 w-full flex-shrink-0" style={{ background: accentColor }} />
 
         {/* Category chip */}
         <div className="flex justify-center pt-5">

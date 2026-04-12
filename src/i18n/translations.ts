@@ -33,6 +33,7 @@ export interface T {
     discount: string;
     cta: string;
     emailSubtitle: string;
+    emailInputLabel: string;
     productImageAlt: string;
   };
   success: {
@@ -98,6 +99,7 @@ export const translations: Record<Lang, T> = {
       discount: "Sconto VIP",
       cta: "🎁 Voglio riceverlo!",
       emailSubtitle: "Ricevi video, manuale, FAQ e sconto esclusivo via email",
+      emailInputLabel: "Inserisci la tua email per ricevere il gift:",
       productImageAlt: "Immagine prodotto",
     },
     success: {
@@ -163,6 +165,7 @@ export const translations: Record<Lang, T> = {
       discount: "VIP Discount",
       cta: "🎁 I want it!",
       emailSubtitle: "Receive the video, manual, FAQ and exclusive discount by email",
+      emailInputLabel: "Enter your email to receive the gift:",
       productImageAlt: "Product image",
     },
     success: {
@@ -228,6 +231,7 @@ export const translations: Record<Lang, T> = {
       discount: "Desconto VIP",
       cta: "🎁 Quero receber!",
       emailSubtitle: "Receba o vídeo, manual, FAQ e desconto exclusivo por email",
+      emailInputLabel: "Insira o seu email para receber o gift:",
       productImageAlt: "Imagem do produto",
     },
     success: {
@@ -293,6 +297,7 @@ export const translations: Record<Lang, T> = {
       discount: "Descuento VIP",
       cta: "🎁 ¡Lo quiero!",
       emailSubtitle: "Recibe el vídeo, manual, FAQ y descuento exclusivo por email",
+      emailInputLabel: "Introduce tu email para recibir el gift:",
       productImageAlt: "Imagen del producto",
     },
     success: {
@@ -358,6 +363,7 @@ export const translations: Record<Lang, T> = {
       discount: "Remise VIP",
       cta: "🎁 Je le veux !",
       emailSubtitle: "Recevez la vidéo, le manuel, la FAQ et la remise exclusive par email",
+      emailInputLabel: "Entrez votre email pour recevoir le gift :",
       productImageAlt: "Image du produit",
     },
     success: {
