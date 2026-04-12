@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle2, XCircle } from "lucide-react";
 import webidooLogo from "@/assets/webidoo-logo.png";
 import DiscoveryBackground from "./DiscoveryBackground";
 import AdminPinOverlay from "./AdminPinOverlay";
@@ -19,7 +20,8 @@ interface WelcomeScreenProps {
   settingsLoadFailed?: boolean;
 }
 
-const NAME_REGEX = /^[\p{L}\s'\-]{2,100}$/u;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+const NAME_REGEX  = /^[\p{L}\s'\-]{2,100}$/u;
 
 function sanitizeName(value: string): string {
   return value
@@ -51,43 +53,51 @@ const LanguageSelector = () => {
   );
 };
 
-// ─── Feature Badges ───────────────────────────────────────────────────────────
-const FeatureBadges = () => (
-  <motion.div
-    className="flex items-center justify-center gap-2 flex-wrap"
-    initial={{ opacity: 0, y: 8 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5, delay: 0.25 }}
-  >
-    {[
-      { icon: "⚡", label: "8 domande" },
-      { icon: "🎯", label: "Match istantaneo" },
-      { icon: "🎁", label: "Gift esclusivo" },
-    ].map((badge, i) => (
-      <span
-        key={i}
-        className="flex items-center gap-1 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs font-semibold text-muted-foreground backdrop-blur-sm"
-      >
-        <span>{badge.icon}</span>
-        <span>{badge.label}</span>
-      </span>
-    ))}
-  </motion.div>
-);
+// ─── Feature Badges (localised via splash translation keys) ───────────────────
+const FeatureBadges = () => {
+  const { t } = useLang();
+  return (
+    <motion.div
+      className="flex items-center justify-center gap-2 flex-wrap"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.25 }}
+    >
+      {[
+        { icon: "⚡", label: t.splash.step1 },
+        { icon: "🎯", label: t.splash.step2 },
+        { icon: "🎁", label: t.splash.step3 },
+      ].map((badge, i) => (
+        <span
+          key={i}
+          className="flex items-center gap-1 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs font-semibold text-muted-foreground backdrop-blur-sm"
+        >
+          <span>{badge.icon}</span>
+          <span>{badge.label}</span>
+        </span>
+      ))}
+    </motion.div>
+  );
+};
 
-// ─── Welcome Form (nome + cognome only — email collected after result) ─────────
+// ─── Welcome Form ─────────────────────────────────────────────────────────────
 const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const { t } = useLang();
   const [nome, setNome] = useState("");
   const [cognome, setCognome] = useState("");
+  const [email, setEmail] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const { play } = useSound();
 
-  const isNomeValid = NAME_REGEX.test(nome.trim());
+  const isEmailValid   = EMAIL_REGEX.test(email.trim());
+  const isNomeValid    = NAME_REGEX.test(nome.trim());
   const isCognomeValid = NAME_REGEX.test(cognome.trim());
-  const isFormValid = isNomeValid && isCognomeValid;
+  const isFormValid    = isNomeValid && isCognomeValid && isEmailValid;
 
-  const showNomeError = submitted && !isNomeValid;
+  const showEmailError  = emailTouched && email.trim().length > 0 && !isEmailValid;
+  const showEmailOk     = email.trim().length > 0 && isEmailValid;
+  const showNomeError    = submitted && !isNomeValid;
   const showCognomeError = submitted && !isCognomeValid;
 
   const handleNome = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,31 +110,31 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
     setSubmitted(false);
   }, []);
 
+  const handleEmail = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    setEmailTouched(true);
+  }, []);
+
   const handleStart = useCallback(() => {
     setSubmitted(true);
+    setEmailTouched(true);
     if (!isFormValid) return;
     play("start");
-    // Email is empty here — it will be collected on the result screen
-    onStart({ nome: nome.trim(), cognome: cognome.trim(), email: "" });
-  }, [isFormValid, nome, cognome, play, onStart]);
+    onStart({ nome: nome.trim(), cognome: cognome.trim(), email: email.trim().toLowerCase() });
+  }, [isFormValid, nome, cognome, email, play, onStart]);
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleStart();
   }, [handleStart]);
 
   const nomeClass = `w-full rounded-2xl border bg-card px-4 py-4 text-center text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
-    showNomeError
-      ? "border-destructive focus:ring-destructive"
-      : isNomeValid && nome.length > 0
-      ? "border-green-500 focus:ring-green-400"
-      : "border-border focus:ring-primary"
+    showNomeError ? "border-destructive focus:ring-destructive" : isNomeValid && nome.length > 0 ? "border-green-500 focus:ring-green-400" : "border-border focus:ring-primary"
   }`;
   const cognomeClass = `w-full rounded-2xl border bg-card px-4 py-4 text-center text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
-    showCognomeError
-      ? "border-destructive focus:ring-destructive"
-      : isCognomeValid && cognome.length > 0
-      ? "border-green-500 focus:ring-green-400"
-      : "border-border focus:ring-primary"
+    showCognomeError ? "border-destructive focus:ring-destructive" : isCognomeValid && cognome.length > 0 ? "border-green-500 focus:ring-green-400" : "border-border focus:ring-primary"
+  }`;
+  const emailClass = `w-full rounded-2xl border bg-card px-6 py-4 pr-14 text-center text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
+    showEmailOk ? "border-green-500 focus:ring-green-400" : showEmailError ? "border-destructive focus:ring-destructive" : "border-border focus:ring-primary"
   }`;
 
   return (
@@ -132,32 +142,41 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
       {/* Nome + Cognome */}
       <div className="flex gap-3">
         <div className="flex-1">
-          <input
-            type="text"
-            placeholder={t.welcome.firstName}
-            value={nome}
-            onChange={handleNome}
-            onKeyDown={onKeyDown}
-            className={nomeClass}
-          />
+          <input type="text" placeholder={t.welcome.firstName} value={nome}
+            onChange={handleNome} onKeyDown={onKeyDown} className={nomeClass} />
           {showNomeError && (
             <p className="mt-1 text-center text-xs text-destructive">{t.welcome.firstNameError}</p>
           )}
         </div>
         <div className="flex-1">
-          <input
-            type="text"
-            placeholder={t.welcome.lastName}
-            value={cognome}
-            onChange={handleCognome}
-            onKeyDown={onKeyDown}
-            className={cognomeClass}
-          />
+          <input type="text" placeholder={t.welcome.lastName} value={cognome}
+            onChange={handleCognome} onKeyDown={onKeyDown} className={cognomeClass} />
           {showCognomeError && (
             <p className="mt-1 text-center text-xs text-destructive">{t.welcome.lastNameError}</p>
           )}
         </div>
       </div>
+
+      {/* Email */}
+      <div className="relative">
+        <input type="email" placeholder={t.welcome.emailPlaceholder}
+          value={email} onChange={handleEmail}
+          onBlur={() => setEmailTouched(true)}
+          onKeyDown={onKeyDown} className={emailClass} />
+        {showEmailOk && (
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500">
+            <CheckCircle2 className="h-5 w-5" />
+          </span>
+        )}
+        {showEmailError && (
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-destructive">
+            <XCircle className="h-5 w-5" />
+          </span>
+        )}
+      </div>
+      {showEmailError && (
+        <p className="text-center text-xs text-destructive">{t.welcome.emailError}</p>
+      )}
 
       {/* CTA */}
       <motion.button
@@ -178,7 +197,6 @@ const StoreBadge = ({ onTap, refreshKey }: { onTap: () => void; refreshKey: numb
   const storeId = getStoredStoreId();
   const store = storeId ? getStoreById(storeId) : null;
   void refreshKey;
-
   return (
     <button
       onClick={onTap}
@@ -231,7 +249,7 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
         </span>
       </div>
 
-      {/* Store badge — bottom-left, tapping opens staff PIN */}
+      {/* Store badge — bottom-left */}
       <div className="absolute bottom-4 left-4 z-10 flex flex-col items-start gap-1.5">
         <StoreBadge onTap={() => setShowPin(true)} refreshKey={storeBadgeKey} />
         {settingsLoadFailed && (
@@ -259,7 +277,7 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: "easeOut" }}
       >
-        {/* Logo — tap 6× to open staff PIN */}
+        {/* Logo */}
         <motion.img
           src={webidooLogo}
           alt="Webidoo Store"
@@ -284,10 +302,10 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
           <p className="text-base text-muted-foreground">{t.welcome.tagline}</p>
         </motion.div>
 
-        {/* Feature badges — sets expectations before the form */}
+        {/* Feature badges */}
         <FeatureBadges />
 
-        {/* Form — nome + cognome only */}
+        {/* Form — nome + cognome + email */}
         <WelcomeForm onStart={onStart} />
       </motion.div>
     </div>
