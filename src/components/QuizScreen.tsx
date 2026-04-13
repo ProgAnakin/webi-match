@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Heart } from "lucide-react";
 import SwipeCard from "./SwipeCard";
@@ -25,20 +25,7 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
   const [exitDirection, setExitDirection] = useState<"left" | "right" | undefined>(undefined);
   const [transitioning, setTransitioning] = useState(false);
   const transitioningRef = useRef(false);
-  // Stores answers for the last card so onComplete can be called after the exit
-  // animation plays (triggered by setCurrentIndex below).
-  const pendingCompleteRef = useRef<Record<number, boolean> | null>(null);
   const { play } = useSound();
-
-  // When currentIndex advances past the last question, the last card's exit
-  // animation has been triggered. Call onComplete with the stored answers.
-  useEffect(() => {
-    if (currentIndex >= questions.length && pendingCompleteRef.current !== null) {
-      const ans = pendingCompleteRef.current;
-      pendingCompleteRef.current = null;
-      onComplete(ans);
-    }
-  }, [currentIndex, onComplete]);
 
   const handleSwipe = useCallback((direction: "left" | "right") => {
     if (transitioningRef.current) return;
@@ -51,20 +38,22 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
     const newAnswers = { ...answers, [question.id]: direction === "right" };
     setAnswers(newAnswers);
 
-    // For the last card: store answers before advancing.
-    if (currentIndex + 1 >= questions.length) {
-      pendingCompleteRef.current = newAnswers;
-    }
+    const isLast = currentIndex + 1 >= questions.length;
 
-    // Always advance the index — this changes AnimatePresence's key and triggers
-    // the exit animation on EVERY card, including the last one.
+    // Always advance the index — changes AnimatePresence key → triggers exit
+    // animation on every card, including the last one.
     setTimeout(() => {
       setExitDirection(undefined);
       setCurrentIndex((i) => i + 1);
       transitioningRef.current = false;
       setTransitioning(false);
     }, 300);
-  }, [currentIndex, answers]);
+
+    // For the last card: call onComplete after the exit animation has started.
+    if (isLast) {
+      setTimeout(() => onComplete(newAnswers), 420);
+    }
+  }, [currentIndex, answers, onComplete]);
 
   // null when the last card has been answered — AnimatePresence will animate it out
   const question = currentIndex < questions.length ? questions[currentIndex] : null;
