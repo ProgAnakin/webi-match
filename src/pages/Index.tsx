@@ -71,13 +71,14 @@ const Index = () => {
   const [funnelKey, setFunnelKey] = useState(() => crypto.randomUUID());
   const [activeProductIds, setActiveProductIds] = useState<Set<string> | null>(null);
   const [priceOverrides, setPriceOverrides] = useState<Record<string, string>>({});
+  const [imageOverrides, setImageOverrides] = useState<Record<string, string>>({});
   const [settingsLoadFailed, setSettingsLoadFailed] = useState(false);
 
   useEffect(() => {
     const storeId = getStoredStoreId() ?? "corso-vercelli";
     supabase
       .from("product_settings")
-      .select("product_id, active, price_override")
+      .select("product_id, active, price_override, image_url")
       .eq("store_id", storeId)
       .then(({ data, error }) => {
         if (error) {
@@ -90,9 +91,15 @@ const Index = () => {
             data.filter((r) => r.active !== false).map((r) => r.product_id),
           );
           const prices: Record<string, string> = {};
-          data.forEach((r) => { if (r.price_override) prices[r.product_id] = r.price_override; });
+          const images: Record<string, string> = {};
+          data.forEach((r) => {
+            if (r.price_override) prices[r.product_id] = r.price_override;
+            // @ts-ignore — image_url column added via migration
+            if (r.image_url) images[r.product_id] = r.image_url;
+          });
           setActiveProductIds(active);
           setPriceOverrides(prices);
+          setImageOverrides(images);
         }
       });
   }, []);
@@ -109,9 +116,14 @@ const Index = () => {
 
   const handleQuizComplete = (answers: Record<number, boolean>) => {
     const { product: baseProduct, matchPercent: pct } = getMatchedProduct(answers, activeProductIds ?? undefined);
-    // Apply store-specific price override if set by manager
-    const override = baseProduct && priceOverrides[baseProduct.id];
-    const product = override ? { ...baseProduct, price: override } : baseProduct;
+    // Apply store-specific overrides (price + image) set by manager
+    const priceOverride = baseProduct && priceOverrides[baseProduct.id];
+    const imageOverride = baseProduct && imageOverrides[baseProduct.id];
+    const product = baseProduct ? {
+      ...baseProduct,
+      ...(priceOverride ? { price: priceOverride } : {}),
+      ...(imageOverride ? { image: imageOverride } : {}),
+    } : baseProduct;
     setMatchedProduct(product);
     setMatchPercent(pct);
     setQuizAnswers(answers);
