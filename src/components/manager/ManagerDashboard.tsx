@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BarChart2, Check, Home, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, X, Undo2 } from "lucide-react";
+import { BarChart2, Check, Home, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, X, Undo2, Upload, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import { getStoredStoreId, setStoredStoreId, getStoreById } from "@/data/stores";
@@ -34,6 +34,9 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     () => getStoredStoreId() ?? "corso-vercelli"
   );
   const [showStoreModal, setShowStoreModal] = useState(false);
+  const [bulkSelection, setBulkSelection] = useState<Set<string>>(new Set());
+  const [showCsvModal, setShowCsvModal] = useState(false);
+  const [csvPreview, setCsvPreview] = useState<{ productId: string; newPrice: string }[]>([]);
   // Undo last toggle — auto-dismisses after 8 s
   const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -135,6 +138,52 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     setEditingPriceId(null);
   };
 
+  const handleBulkToggle = async (enable: boolean) => {
+    for (const productId of bulkSelection) {
+      await saveProductActive(productId, enable);
+    }
+    setBulkSelection(new Set());
+  };
+
+  const handleCsvUpload = async (file: File) => {
+    const text = await file.text();
+    const lines = text.trim().split("\n");
+    const parsed: { productId: string; newPrice: string }[] = [];
+
+    for (const line of lines) {
+      const [productId, price] = line.split(",").map((s) => s.trim());
+      if (productId && price) {
+        parsed.push({ productId, newPrice: price });
+      }
+    }
+
+    setCsvPreview(parsed);
+    setShowCsvModal(true);
+  };
+
+  const applyPriceUpload = async () => {
+    for (const { productId, newPrice } of csvPreview) {
+      await savePriceOverride(productId, newPrice);
+    }
+    setCsvPreview([]);
+    setShowCsvModal(false);
+  };
+
+  const downloadCsvTemplate = () => {
+    const header = "product_id,price\n";
+    const rows = products.map((p) => `${p.id},${p.price}`).join("\n");
+    const csv = header + rows;
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "product-prices.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     onLogout();
@@ -175,13 +224,43 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             </button>
             <p className="text-xs text-muted-foreground">
               {loading ? "Caricamento…" : `${activeCount} di ${products.length} prodotti attivi nel quiz`}
+              {bulkSelection.size > 0 && <span className="ml-2 font-semibold text-primary">· {bulkSelection.size} selezionati</span>}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
+            {bulkSelection.size > 0 && (
+              <>
+                <button onClick={() => handleBulkToggle(false)}
+                  className="flex items-center gap-1 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-400 active:scale-95">
+                  <PowerOff className="h-3 w-3" /> Disattiva {bulkSelection.size}
+                </button>
+                <button onClick={() => handleBulkToggle(true)}
+                  className="flex items-center gap-1 rounded-xl border border-green-500/40 bg-green-500/10 px-3 py-2 text-xs text-green-400 active:scale-95">
+                  <Power className="h-3 w-3" /> Attiva {bulkSelection.size}
+                </button>
+                <button onClick={() => setBulkSelection(new Set())}
+                  className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
+                  <X className="h-3 w-3" /> Annulla
+                </button>
+              </>
+            )}
             <button onClick={fetchSettings}
               className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
               <RotateCcw className="h-3 w-3" /> Aggiorna
             </button>
+            <button onClick={downloadCsvTemplate}
+              className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
+              <Download className="h-3 w-3" /> Template CSV
+            </button>
+            <label className="flex items-center gap-1 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary active:scale-95 cursor-pointer">
+              <Upload className="h-3 w-3" /> Carica Prezzi
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(e) => e.target.files?.[0] && handleCsvUpload(e.target.files[0])}
+                className="hidden"
+              />
+            </label>
             <button onClick={() => navigate("/stats")}
               className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
               <BarChart2 className="h-3 w-3" /> Analytics
@@ -278,6 +357,17 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                   transition={{ delay: i * 0.04 }}
                 >
                   <div className="flex items-start gap-4 p-5">
+                    <input
+                      type="checkbox"
+                      checked={bulkSelection.has(product.id)}
+                      onChange={(e) => {
+                        const newSet = new Set(bulkSelection);
+                        if (e.target.checked) newSet.add(product.id);
+                        else newSet.delete(product.id);
+                        setBulkSelection(newSet);
+                      }}
+                      className="mt-1 h-4 w-4 cursor-pointer"
+                    />
                     <div className="min-w-0 flex-1">
                       <span className={`mb-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
                         isActive ? "bg-green-500/15 text-green-400" : "bg-muted text-muted-foreground"
@@ -384,6 +474,50 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             }}
             onClose={() => setShowStoreModal(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* CSV Preview Modal */}
+      <AnimatePresence>
+        {showCsvModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setShowCsvModal(false)}
+          >
+            <motion.div
+              className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl max-h-[70vh] overflow-y-auto"
+              initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-lg font-bold text-foreground mb-4">Conferma aggiornamento prezzi</h2>
+              <div className="space-y-2 mb-6">
+                {csvPreview.map(({ productId, newPrice }) => {
+                  const prod = products.find((p) => p.id === productId);
+                  return (
+                    <div key={productId} className="text-xs p-2 rounded-lg border border-border bg-background/40">
+                      <p className="font-semibold text-foreground">{prod?.name ?? productId}</p>
+                      <p className="text-muted-foreground">{prod?.price ?? "—"} → <span className="text-primary font-semibold">{newPrice}</span></p>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCsvModal(false)}
+                  className="flex-1 rounded-xl border border-border bg-muted px-4 py-2 text-sm text-muted-foreground active:scale-95"
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={applyPriceUpload}
+                  className="flex-1 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary active:scale-95"
+                >
+                  Applica {csvPreview.length}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
