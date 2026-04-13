@@ -184,7 +184,6 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
               →
             </span>
           </motion.button>
-          <p className="text-xs text-white/35">Gratuito · Solo per te</p>
         </motion.div>
       </div>
     </div>
