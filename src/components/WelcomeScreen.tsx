@@ -194,6 +194,7 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
 
 // ─── Store Badge ──────────────────────────────────────────────────────────────
 const StoreBadge = ({ onTap, refreshKey }: { onTap: () => void; refreshKey: number }) => {
+  const { t } = useLang();
   const storeId = getStoredStoreId();
   const store = storeId ? getStoreById(storeId) : null;
   void refreshKey;
@@ -206,7 +207,7 @@ const StoreBadge = ({ onTap, refreshKey }: { onTap: () => void; refreshKey: numb
       {store ? (
         <span className="font-medium text-foreground">{store.shortName}</span>
       ) : (
-        <span className="font-medium text-amber-500">Sede non configurata</span>
+        <span className="font-medium text-amber-500">{t.welcome.noStore}</span>
       )}
     </button>
   );
@@ -254,7 +255,7 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
         <StoreBadge onTap={() => setShowPin(true)} refreshKey={storeBadgeKey} />
         {settingsLoadFailed && (
           <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-400">
-            ⚠ Catalogo offline — verifica connessione
+            {t.welcome.catalogOffline}
           </span>
         )}
       </div>

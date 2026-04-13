@@ -23,6 +23,8 @@ export interface T {
     emailError: string;
     cta: string;
     subtitle: string;
+    noStore: string;
+    catalogOffline: string;
   };
   quiz: {
     questionOf: (current: number, total: number) => string;
@@ -103,6 +105,8 @@ export const translations: Record<Lang, T> = {
       emailError: "Per favore, inserisci un'email valida.",
       cta: "🚀 INIZIA IL GIOCO!",
       subtitle: "Rispondi a 8 domande veloci e scopri il tuo match perfetto",
+      noStore: "Sede non configurata",
+      catalogOffline: "⚠ Catalogo offline — verifica connessione",
     },
     quiz: {
       questionOf: (c, t) => `Domanda ${c} di ${t}`,
@@ -180,6 +184,8 @@ export const translations: Record<Lang, T> = {
       emailError: "Please enter a valid email address.",
       cta: "🚀 START THE GAME!",
       subtitle: "Answer 8 quick questions and find your perfect match",
+      noStore: "Store not configured",
+      catalogOffline: "⚠ Catalog offline — check connection",
     },
     quiz: {
       questionOf: (c, t) => `Question ${c} of ${t}`,
@@ -257,6 +263,8 @@ export const translations: Record<Lang, T> = {
       emailError: "Por favor, insira um email válido.",
       cta: "🚀 COMEÇAR O JOGO!",
       subtitle: "Responda a 8 perguntas rápidas e descubra o seu match perfeito",
+      noStore: "Loja não configurada",
+      catalogOffline: "⚠ Catálogo offline — verifique a conexão",
     },
     quiz: {
       questionOf: (c, t) => `Pergunta ${c} de ${t}`,
@@ -334,6 +342,8 @@ export const translations: Record<Lang, T> = {
       emailError: "Por favor, introduce un email válido.",
       cta: "🚀 ¡EMPEZAR EL JUEGO!",
       subtitle: "Responde 8 preguntas rápidas y descubre tu match perfecto",
+      noStore: "Tienda no configurada",
+      catalogOffline: "⚠ Catálogo sin conexión — comprueba la red",
     },
     quiz: {
       questionOf: (c, t) => `Pregunta ${c} de ${t}`,
@@ -411,6 +421,8 @@ export const translations: Record<Lang, T> = {
       emailError: "Veuillez entrer une adresse email valide.",
       cta: "🚀 COMMENCER LE JEU !",
       subtitle: "Répondez à 8 questions rapides et découvrez votre match parfait",
+      noStore: "Boutique non configurée",
+      catalogOffline: "⚠ Catalogue hors ligne — vérifiez la connexion",
     },
     quiz: {
       questionOf: (c, t) => `Question ${c} sur ${t}`,
