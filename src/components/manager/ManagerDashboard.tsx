@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BarChart2, Check, Home, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, X, Undo2, Upload, Download } from "lucide-react";
+import { BarChart2, Camera, Check, Home, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import { getStoredStoreId, setStoredStoreId, getStoreById } from "@/data/stores";
@@ -12,6 +12,8 @@ import { StoreSelectorModal } from "./StoreSelectorModal";
 type SettingsMap = Record<string, boolean>;
 /** product_id → price override string */
 type PriceMap = Record<string, string>;
+/** product_id → custom image URL */
+type ImageMap = Record<string, string>;
 
 interface UndoEntry { productId: string; restoredValue: boolean; }
 
@@ -23,6 +25,8 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const navigate = useNavigate();
   const [settings, setSettings] = useState<SettingsMap>({});
   const [priceOverrides, setPriceOverrides] = useState<PriceMap>({});
+  const [imageOverrides, setImageOverrides] = useState<ImageMap>({});
+  const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -51,17 +55,21 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     setLoading(true);
     const { data } = await supabase
       .from("product_settings")
-      .select("product_id, active, price_override")
+      .select("product_id, active, price_override, image_url")
       .eq("store_id", storeId);
     if (data) {
       const map: SettingsMap = {};
       const prices: PriceMap = {};
+      const images: ImageMap = {};
       data.forEach((row) => {
         map[row.product_id] = row.active;
         if (row.price_override) prices[row.product_id] = row.price_override;
+        // @ts-ignore — image_url column added via migration
+        if (row.image_url) images[row.product_id] = row.image_url;
       });
       setSettings(map);
       setPriceOverrides(prices);
+      setImageOverrides(images);
     }
     setLoading(false);
   }, [storeId]);
@@ -167,6 +175,54 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     }
     setCsvPreview([]);
     setShowCsvModal(false);
+  };
+
+  const uploadProductImage = async (productId: string, file: File) => {
+    setUploadingImageId(productId);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${storeId}/${productId}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("product-images")
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (uploadError) {
+      setSaveError("Errore upload immagine: " + uploadError.message);
+      setUploadingImageId(null);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("product-images")
+      .getPublicUrl(path);
+
+    const imageUrl = urlData.publicUrl;
+
+    await supabase.from("product_settings").upsert({
+      product_id: productId,
+      store_id: storeId,
+      // @ts-ignore
+      image_url: imageUrl,
+      updated_at: new Date().toISOString(),
+    });
+
+    setImageOverrides((prev) => ({ ...prev, [productId]: imageUrl }));
+    setUploadingImageId(null);
+  };
+
+  const removeProductImage = async (productId: string) => {
+    await supabase.from("product_settings").upsert({
+      product_id: productId,
+      store_id: storeId,
+      // @ts-ignore
+      image_url: null,
+      updated_at: new Date().toISOString(),
+    });
+    setImageOverrides((prev) => {
+      const next = { ...prev };
+      delete next[productId];
+      return next;
+    });
   };
 
   const downloadCsvTemplate = () => {
@@ -429,6 +485,47 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                             {tag}
                           </span>
                         ))}
+                      </div>
+
+                      {/* Image upload */}
+                      <div className="mt-3 flex items-center gap-2">
+                        {imageOverrides[product.id] ? (
+                          <>
+                            <img
+                              src={imageOverrides[product.id]}
+                              alt={product.name}
+                              className="h-12 w-20 rounded-lg object-cover border border-border"
+                            />
+                            <span className="text-[10px] text-green-400 font-semibold">Immagine custom</span>
+                            <button
+                              onClick={() => removeProductImage(product.id)}
+                              className="ml-auto flex items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/10 px-2 py-1 text-[10px] text-destructive active:scale-95"
+                            >
+                              <Trash2 className="h-3 w-3" /> Rimuovi
+                            </button>
+                          </>
+                        ) : (
+                          <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:bg-muted active:scale-95">
+                            {uploadingImageId === product.id ? (
+                              <span className="animate-pulse">Caricamento…</span>
+                            ) : (
+                              <>
+                                <Camera className="h-3 w-3" /> Carica immagine
+                              </>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              disabled={uploadingImageId !== null}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) uploadProductImage(product.id, file);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                        )}
                       </div>
                     </div>
                     <motion.button
