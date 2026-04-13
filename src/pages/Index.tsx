@@ -4,7 +4,7 @@ import WelcomeScreen, { type UserInfo } from "@/components/WelcomeScreen";
 import QuizScreen from "@/components/QuizScreen";
 import MatchResult from "@/components/MatchResult";
 import SuccessScreen from "@/components/SuccessScreen";
-import SplashScreen from "@/components/SplashScreen";
+import AttractScreen from "@/components/AttractScreen";
 import { getMatchedProduct, type Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import { useInactivityReset } from "@/hooks/useInactivityReset";
@@ -226,7 +226,7 @@ const Index = () => {
           exit={anim.exit}
           transition={anim.transition}
         >
-          {screen === "splash" && <SplashScreen onComplete={handleSplashComplete} />}
+          {screen === "splash" && <AttractScreen onComplete={handleSplashComplete} />}
           {screen === "welcome" && <WelcomeScreen onStart={handleStart} settingsLoadFailed={settingsLoadFailed} />}
           {screen === "quiz" && <QuizScreen onComplete={handleQuizComplete} />}
           {screen === "result" && matchedProduct && (
