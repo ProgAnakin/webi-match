@@ -23,6 +23,7 @@ export interface ProductStat {
   name: string;
   count: number;
   percent: number;
+  avgMatch?: number;
 }
 
 export interface FunnelCounts {
