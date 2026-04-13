@@ -7,6 +7,10 @@ export interface T {
     step1: string;
     step2: string;
     step3: string;
+    step4: string;
+    chip1: string;
+    chip2: string;
+    chip3: string;
     tap: string;
   };
   welcome: {
@@ -80,10 +84,14 @@ export const translations: Record<Lang, T> = {
     splash: {
       headline: "Trova il tuo gadget tech ideale",
       sub: "in soli 8 swipe",
-      step1: "8 domande veloci",
-      step2: "Match istantaneo",
-      step3: "Gift esclusivo",
-      tap: "Tocca per iniziare →",
+      step1: "Il prodotto perfetto per te",
+      step2: "L'idea regalo ideale",
+      step3: "Il gadget che stavi cercando",
+      step4: "Il tuo match tech personale",
+      chip1: "Match istantaneo",
+      chip2: "Scelta personalizzata",
+      chip3: "Regalo perfetto",
+      tap: "Tocca per iniziare",
     },
     welcome: {
       tagline: "Trova il tuo gadget perfetto! 🎯",
@@ -153,10 +161,14 @@ export const translations: Record<Lang, T> = {
     splash: {
       headline: "Find your ideal tech gadget",
       sub: "in just 8 swipes",
-      step1: "8 quick questions",
-      step2: "Instant match",
-      step3: "Exclusive gift",
-      tap: "Tap to start →",
+      step1: "The perfect product for you",
+      step2: "The ideal gift idea",
+      step3: "The gadget you were looking for",
+      step4: "Your personal tech match",
+      chip1: "Instant match",
+      chip2: "Personalised choice",
+      chip3: "Perfect gift",
+      tap: "Tap to start",
     },
     welcome: {
       tagline: "Find your perfect gadget! 🎯",
@@ -226,10 +238,14 @@ export const translations: Record<Lang, T> = {
     splash: {
       headline: "Encontre o seu gadget tech ideal",
       sub: "em apenas 8 swipes",
-      step1: "8 perguntas rápidas",
-      step2: "Match instantâneo",
-      step3: "Gift exclusivo",
-      tap: "Toque para começar →",
+      step1: "O produto perfeito para você",
+      step2: "A ideia de presente ideal",
+      step3: "O gadget que você procurava",
+      step4: "O seu match tech pessoal",
+      chip1: "Match instantâneo",
+      chip2: "Escolha personalizada",
+      chip3: "Presente perfeito",
+      tap: "Toque para começar",
     },
     welcome: {
       tagline: "Encontre o seu gadget perfeito! 🎯",
@@ -299,10 +315,14 @@ export const translations: Record<Lang, T> = {
     splash: {
       headline: "Encuentra tu gadget tech ideal",
       sub: "en solo 8 swipes",
-      step1: "8 preguntas rápidas",
-      step2: "Match instantáneo",
-      step3: "Gift exclusivo",
-      tap: "Toca para empezar →",
+      step1: "El producto perfecto para ti",
+      step2: "La idea de regalo ideal",
+      step3: "El gadget que buscabas",
+      step4: "Tu match tech personal",
+      chip1: "Match instantáneo",
+      chip2: "Elección personalizada",
+      chip3: "Regalo perfecto",
+      tap: "Toca para empezar",
     },
     welcome: {
       tagline: "¡Encuentra tu gadget perfecto! 🎯",
@@ -372,10 +392,14 @@ export const translations: Record<Lang, T> = {
     splash: {
       headline: "Trouvez votre gadget tech idéal",
       sub: "en seulement 8 swipes",
-      step1: "8 questions rapides",
-      step2: "Match instantané",
-      step3: "Gift exclusif",
-      tap: "Touchez pour commencer →",
+      step1: "Le produit parfait pour vous",
+      step2: "L'idée cadeau idéale",
+      step3: "Le gadget que vous cherchiez",
+      step4: "Votre match tech personnel",
+      chip1: "Match instantané",
+      chip2: "Choix personnalisé",
+      chip3: "Cadeau parfait",
+      tap: "Touchez pour commencer",
     },
     welcome: {
       tagline: "Trouvez votre gadget parfait ! 🎯",
