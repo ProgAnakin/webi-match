@@ -5,12 +5,7 @@ import { AttractBackground } from "./AttractBackground";
 import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";
 
-const MESSAGES = [
-  { emoji: "🎯", text: "Il prodotto perfetto per te" },
-  { emoji: "🎁", text: "L'idea regalo ideale" },
-  { emoji: "💡", text: "Il gadget che stavi cercando" },
-  { emoji: "✨", text: "Il tuo match tech personale" },
-];
+const MSG_EMOJIS = ["🎯", "🎁", "💡", "✨"];
 
 const LanguageSelector = () => {
   const { lang, setLang } = useLang();
@@ -39,11 +34,26 @@ interface AttractScreenProps {
 }
 
 const AttractScreen = ({ onComplete }: AttractScreenProps) => {
+  const { t } = useLang();
   const [msgIndex, setMsgIndex] = useState(0);
 
+  const messages = [
+    { emoji: MSG_EMOJIS[0], text: t.splash.step1 },
+    { emoji: MSG_EMOJIS[1], text: t.splash.step2 },
+    { emoji: MSG_EMOJIS[2], text: t.splash.step3 },
+    { emoji: MSG_EMOJIS[3], text: t.splash.step4 },
+  ];
+
+  const chips = [
+    { icon: "⚡", label: t.splash.chip1 },
+    { icon: "🧠", label: t.splash.chip2 },
+    { icon: "🎁", label: t.splash.chip3 },
+  ];
+
   useEffect(() => {
-    const id = setInterval(() => setMsgIndex((i) => (i + 1) % MESSAGES.length), 2500);
+    const id = setInterval(() => setMsgIndex((i) => (i + 1) % messages.length), 2500);
     return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -54,7 +64,7 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
     >
       <AttractBackground />
 
-      {/* Language selector */}
+      {/* Language selector — top-right */}
       <div className="absolute top-4 right-4 z-20" onClick={(e) => e.stopPropagation()}>
         <LanguageSelector />
       </div>
@@ -99,16 +109,16 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
         <div className="h-14 flex items-center justify-center">
           <AnimatePresence mode="wait">
             <motion.div
-              key={msgIndex}
+              key={`${msgIndex}-${t.splash.step1}`}
               className="flex items-center gap-3"
               initial={{ opacity: 0, y: 14, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -14, scale: 0.95 }}
               transition={{ duration: 0.35 }}
             >
-              <span className="text-3xl">{MESSAGES[msgIndex].emoji}</span>
+              <span className="text-3xl">{messages[msgIndex].emoji}</span>
               <span className="text-xl font-semibold text-white/90">
-                {MESSAGES[msgIndex].text}
+                {messages[msgIndex].text}
               </span>
             </motion.div>
           </AnimatePresence>
@@ -116,7 +126,7 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
 
         {/* Progress dots */}
         <div className="flex gap-2">
-          {MESSAGES.map((_, i) => (
+          {messages.map((_, i) => (
             <motion.div
               key={i}
               className="rounded-full"
@@ -138,11 +148,7 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
-          {[
-            { icon: "⚡", label: "Match istantaneo" },
-            { icon: "🧠", label: "Scelta personalizzata" },
-            { icon: "🎁", label: "Regalo perfetto" },
-          ].map(({ icon, label }) => (
+          {chips.map(({ icon, label }) => (
             <div
               key={label}
               className="flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white/80 backdrop-blur-sm"
@@ -173,7 +179,7 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
             whileTap={{ scale: 0.96 }}
             onClick={onComplete}
           >
-            Tocca per iniziare{" "}
+            {t.splash.tap}{" "}
             <span style={{ display: "inline-block", animation: "at-arrow-nudge 1s ease-in-out infinite" }}>
               →
             </span>
