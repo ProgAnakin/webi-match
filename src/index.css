@@ -160,6 +160,51 @@
   to   { transform: translateY(100vh); }
 }
 
+/* ── Attract screen animations ──────────────────────────────────────────────── */
+
+/* Product icons float upward like embers */
+@keyframes at-float-up {
+  0%         { opacity: 0;    transform: translateY(0)     scale(0.8); }
+  12%        { opacity: 0.42; transform: translateY(-8vh)  scale(1);   }
+  80%        { opacity: 0.28; transform: translateY(-80vh) scale(1.05);}
+  100%       { opacity: 0;    transform: translateY(-95vh) scale(0.9); }
+}
+
+/* Logo glow pulse */
+@keyframes at-logo-glow {
+  0%, 100%   { filter: drop-shadow(0 0 18px hsla(27,92%,55%,0.55)); }
+  50%        { filter: drop-shadow(0 0 55px hsla(27,92%,55%,0.95)) drop-shadow(0 0 90px hsla(16,100%,50%,0.4)); }
+}
+
+/* Grid layer subtle pulse */
+@keyframes at-grid-pulse {
+  0%, 100%   { opacity: 0.045; }
+  50%        { opacity: 0.09;  }
+}
+
+/* CTA arrow nudge */
+@keyframes at-arrow-nudge {
+  0%, 100%   { transform: translateX(0); }
+  50%        { transform: translateX(7px); }
+}
+
+/* Vivid orb drift for attract screen */
+@keyframes at-orb-a {
+  0%,100% { transform: translate(0, 0)       scale(1);    }
+  33%     { transform: translate(60px,-50px)  scale(1.18); }
+  66%     { transform: translate(-40px, 70px) scale(0.88); }
+}
+@keyframes at-orb-b {
+  0%,100% { transform: translate(0, 0)        scale(1);    }
+  40%     { transform: translate(-70px, 45px) scale(1.22); }
+  75%     { transform: translate(55px,-60px)  scale(0.90); }
+}
+@keyframes at-orb-c {
+  0%,100% { transform: translate(0, 0)        scale(1);    }
+  30%     { transform: translate(35px, 60px)  scale(1.15); }
+  70%     { transform: translate(-55px,-35px) scale(0.85); }
+}
+
 @layer utilities {
   .gradient-primary {
     background: var(--gradient-primary);
