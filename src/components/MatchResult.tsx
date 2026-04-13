@@ -244,7 +244,7 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
                 initial={{ scale: 0 }} animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 280, damping: 18 }}
               >
-                {displayPercent}% Match
+                {displayPercent}% {t.result.match}
               </motion.div>
             )}
           </div>

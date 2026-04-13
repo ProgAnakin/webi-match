@@ -16,7 +16,10 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
 
 const AdminFallback = () => (
   <div className="flex min-h-screen items-center justify-center bg-background">
-    <div className="text-muted-foreground text-sm">Caricamento…</div>
+    <div className="flex flex-col items-center gap-3">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="text-muted-foreground text-sm">Loading…</div>
+    </div>
   </div>
 );
 
