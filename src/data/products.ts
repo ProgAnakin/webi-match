@@ -203,10 +203,12 @@ export function getMatchedProduct(
   activeIds?: Set<string>,
 ): { product: Product; matchPercent: number } {
   // Use only active products; fall back to full catalogue if none are configured
-  const pool =
+  // or if the filtered set is empty (e.g. Supabase has stale/outdated product IDs).
+  const filtered =
     activeIds && activeIds.size > 0
       ? products.filter((p) => activeIds.has(p.id))
       : products;
+  const pool = filtered.length > 0 ? filtered : products;
 
   const activeTags: string[] = [];
   Object.entries(answers).forEach(([qId, answered]) => {
@@ -227,8 +229,9 @@ export function getMatchedProduct(
     }
   });
 
-  // Pick randomly among tied products so different users see variety
-  const bestProduct = tied[Math.floor(Math.random() * tied.length)] ?? pool[0];
+  // Pick randomly among tied products so different users see variety.
+  // Fallback to pool[0] then products[0] to guarantee a non-null result.
+  const bestProduct = tied[Math.floor(Math.random() * tied.length)] ?? pool[0] ?? products[0];
 
   const totalTags = activeTags.length || 1;
   const rawPercent = Math.round((bestScore / totalTags) * 100);

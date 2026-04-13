@@ -110,9 +110,8 @@ const Index = () => {
   const handleQuizComplete = (answers: Record<number, boolean>) => {
     const { product: baseProduct, matchPercent: pct } = getMatchedProduct(answers, activeProductIds ?? undefined);
     // Apply store-specific price override if set by manager
-    const product = priceOverrides[baseProduct.id]
-      ? { ...baseProduct, price: priceOverrides[baseProduct.id] }
-      : baseProduct;
+    const override = baseProduct && priceOverrides[baseProduct.id];
+    const product = override ? { ...baseProduct, price: override } : baseProduct;
     setMatchedProduct(product);
     setMatchPercent(pct);
     setQuizAnswers(answers);
