@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LogOut, RefreshCw, Package, Download, Shield, ShieldCheck,
-  Calendar, ChevronDown, ChevronUp, Home,
+  Calendar, ChevronDown, ChevronUp, Home, ChevronLeft, ChevronRight, TrendingUp,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,7 @@ import {
 } from "./types";
 
 const FETCH_LIMIT = 500;
+const PAGE_SIZE = 50;
 const REFRESH_DEBOUNCE_MS = 3000;
 
 interface DashboardProps {
@@ -35,6 +36,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
   const [filterStore, setFilterStore] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
+  const [page, setPage] = useState(0);
   const [hasMfa, setHasMfa] = useState(false);
   const [showMfaModal, setShowMfaModal] = useState(false);
   // GDPR export confirmation — true while awaiting user confirmation
@@ -80,6 +82,8 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+  // Reset to first page whenever filters change
+  useEffect(() => { setPage(0); }, [dateFrom, dateTo, filterStore]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -111,12 +115,23 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
   filteredSessions.forEach((s) => {
     productCounts[s.matched_product_id] = (productCounts[s.matched_product_id] ?? 0) + 1;
   });
+  // Average match % per product
+  const productMatchSums: Record<string, number> = {};
+  filteredSessions.forEach((s) => {
+    productMatchSums[s.matched_product_id] = (productMatchSums[s.matched_product_id] ?? 0) + s.match_percent;
+  });
+
   const productStats: ProductStat[] = Object.entries(productCounts)
     .map(([id, count]) => ({
       id, name: productName(id), count,
       percent: total ? Math.round((count / total) * 100) : 0,
+      avgMatch: Math.round((productMatchSums[id] ?? 0) / count),
     }))
     .sort((a, b) => b.count - a.count);
+
+  // Pagination
+  const pagedSessions = filteredSessions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const totalPages = Math.ceil(filteredSessions.length / PAGE_SIZE);
 
   const dayCounts: DayCount[] = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
@@ -279,7 +294,11 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             {/* Top products */}
             <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <h2 className="mb-4 font-bold text-foreground">🏆 Prodotti più matchati</h2>
+              <div className="mb-1 flex items-center gap-2">
+                <h2 className="font-bold text-foreground">🏆 Prodotti più reclamati</h2>
+                <TrendingUp className="h-4 w-4 text-primary" />
+              </div>
+              <p className="mb-4 text-[11px] text-muted-foreground">Ogni sessione = un utente che ha completato il claim</p>
               {productStats.length === 0 ? (
                 <div className="text-center py-3">
                   <p className="text-sm font-medium text-foreground">
@@ -297,7 +316,12 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                         <span className="truncate pr-2 font-medium text-foreground">
                           {["🥇", "🥈", "🥉"][i] ?? "  "} {p.name}
                         </span>
-                        <span className="shrink-0 font-bold text-primary">{p.count}x · {p.percent}%</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {p.avgMatch !== undefined && (
+                            <span className="text-muted-foreground">⌀{p.avgMatch}%</span>
+                          )}
+                          <span className="font-bold text-primary">{p.count}x · {p.percent}%</span>
+                        </div>
                       </div>
                       <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                         <motion.div className="h-full rounded-full gradient-primary"
@@ -398,11 +422,20 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-bold text-foreground">🕐 Ultime sessioni</h2>
+                <div>
+                  <h2 className="font-bold text-foreground">🕐 Sessioni</h2>
+                  {filteredSessions.length > 0 && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {filteredSessions.length} totali
+                      {totalPages > 1 && ` · pagina ${page + 1} di ${totalPages}`}
+                    </p>
+                  )}
+                </div>
                 {filteredSessions.length > 0 && (
                   <button onClick={handleExportRequest}
                     className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-muted-foreground active:scale-95">
-                    <Download className="h-3 w-3" /> Esporta CSV
+                    <Download className="h-3 w-3" />
+                    {filterStore ? `Esporta ${getStoreById(filterStore)?.shortName ?? ""}` : "Esporta CSV"}
                   </button>
                 )}
               </div>
@@ -419,24 +452,49 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                   </p>
                 </div>
               ) : (
-                <div className="max-h-[480px] overflow-y-auto space-y-3 pr-1">
-                  {filteredSessions.map((s) => (
-                    <div key={s.id}
-                      className="flex items-center justify-between rounded-xl border border-border bg-background/40 px-4 py-3 text-sm">
-                      <div className="overflow-hidden">
-                        <p className="truncate font-medium text-foreground">{s.email}</p>
-                        <p className="truncate text-xs text-muted-foreground">{productName(s.matched_product_id)}</p>
-                        {s.store_id && (
-                          <p className="text-[10px] text-primary/70 mt-0.5">📍 {storeName(s.store_id)}</p>
-                        )}
+                <>
+                  <div className="space-y-3">
+                    {pagedSessions.map((s) => (
+                      <div key={s.id}
+                        className="flex items-center justify-between rounded-xl border border-border bg-background/40 px-4 py-3 text-sm">
+                        <div className="overflow-hidden">
+                          <p className="truncate font-medium text-foreground">{s.email}</p>
+                          <p className="truncate text-xs text-muted-foreground">{productName(s.matched_product_id)}</p>
+                          {s.store_id && (
+                            <p className="text-[10px] text-primary/70 mt-0.5">📍 {storeName(s.store_id)}</p>
+                          )}
+                        </div>
+                        <div className="ml-3 shrink-0 text-right">
+                          <p className="font-bold text-primary">{s.match_percent}%</p>
+                          <p className="text-[10px] text-muted-foreground">{formatDate(s.created_at)}</p>
+                        </div>
                       </div>
-                      <div className="ml-3 shrink-0 text-right">
-                        <p className="font-bold text-primary">{s.match_percent}%</p>
-                        <p className="text-[10px] text-muted-foreground">{formatDate(s.created_at)}</p>
-                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination controls */}
+                  {totalPages > 1 && (
+                    <div className="mt-4 flex items-center justify-center gap-3">
+                      <button
+                        onClick={() => setPage((p) => Math.max(0, p - 1))}
+                        disabled={page === 0}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground disabled:opacity-30 active:scale-95"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span className="text-xs text-muted-foreground">
+                        {page + 1} / {totalPages}
+                      </span>
+                      <button
+                        onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                        disabled={page >= totalPages - 1}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground disabled:opacity-30 active:scale-95"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </motion.div>
 
@@ -470,11 +528,17 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
               initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }}
             >
               <p className="text-sm font-bold text-foreground mb-2">⚠️ Dati personali — GDPR</p>
-              <p className="text-xs text-muted-foreground leading-relaxed mb-5">
+              <p className="text-xs text-muted-foreground leading-relaxed mb-3">
                 Il file contiene <strong className="text-foreground">indirizzi email</strong> dei clienti.
                 Tratta questi dati in conformità al GDPR: non condividere il file, non conservarlo più del necessario
                 e cancellalo dopo l'uso.
               </p>
+              <div className="mb-5 rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                <strong className="text-foreground">{filteredSessions.length}</strong> sessioni
+                {filterStore && <> · <span className="text-primary">{getStoreById(filterStore)?.shortName ?? filterStore}</span></>}
+                {dateFrom && <> · da {dateFrom}</>}
+                {dateTo && <> a {dateTo}</>}
+              </div>
               <div className="flex gap-3">
                 <button
                   onClick={() => setConfirmExport(false)}

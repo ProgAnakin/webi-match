@@ -247,6 +247,7 @@ const Index = () => {
               userName={user.nome}
               userEmail={user.email}
               onClaim={handleClaim}
+              onChangeEmail={() => setScreen("welcome")}
               claiming={claiming}
             />
           )}

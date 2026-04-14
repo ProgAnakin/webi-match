@@ -7,18 +7,37 @@ import { ManagerDashboard } from "@/components/manager/ManagerDashboard";
 // ─── Manager — auth guard ─────────────────────────────────────────────────────
 // Verifies the Supabase session; redirects to /stats (login) if unauthenticated.
 
+const AdminSpinner = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="flex flex-col items-center gap-3">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="text-muted-foreground text-sm">Loading…</div>
+    </div>
+  </div>
+);
+
 const Manager = () => {
   const navigate = useNavigate();
   const [authed, setAuthed] = useState(false);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        console.error("[webi-match] getSession failed:", error);
+        navigate("/stats", { replace: true });
+        setChecking(false);
+        return;
+      }
       if (data.session) {
         setAuthed(true);
       } else {
         navigate("/stats", { replace: true });
       }
+      setChecking(false);
+    }).catch((err) => {
+      console.error("[webi-match] auth check threw:", err);
+      navigate("/stats", { replace: true });
       setChecking(false);
     });
 
@@ -30,13 +49,7 @@ const Manager = () => {
     return () => listener.subscription.unsubscribe();
   }, [navigate]);
 
-  if (checking) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-muted-foreground">Verifica sessione…</p>
-      </div>
-    );
-  }
+  if (checking) return <AdminSpinner />;
 
   if (!authed) return null;
 

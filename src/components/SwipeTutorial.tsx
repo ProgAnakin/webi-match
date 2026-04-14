@@ -6,78 +6,147 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
   const { t } = useLang();
   const [step, setStep] = useState<"no" | "yes">("no");
 
-  // Loop "no" → "yes" → "no" indefinitely until user clicks the button
+  // Loop "no" → "yes" → "no" indefinitely until user clicks button
   useEffect(() => {
     const interval = setInterval(() => {
       setStep((s) => (s === "no" ? "yes" : "no"));
-    }, 1600);
+    }, 1800);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center">
-      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
+    <motion.div
+      className="absolute inset-0 z-50 flex flex-col items-center justify-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.35 } }}
+      onClick={onDismiss}
+    >
+      {/* Blurred dark overlay */}
+      <div className="absolute inset-0 bg-background/82 backdrop-blur-md" />
 
-      <div className="relative z-10 flex flex-col items-center gap-8">
-        {/* Animated demo card */}
-        <motion.div
-          className="gradient-card shadow-card flex h-32 w-56 items-center justify-center rounded-2xl border border-border"
-          animate={{
-            x: step === "no" ? [0, -120, 0] : [0, 120, 0],
-            rotate: step === "no" ? [0, -15, 0] : [0, 15, 0],
-          }}
-          transition={{ duration: 1.2, ease: "easeInOut" }}
-        >
-          <AnimatePresence mode="wait">
-            <motion.span
-              key={step}
-              className="text-5xl"
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.7 }}
-              transition={{ duration: 0.2 }}
+      <div
+        className="relative z-10 flex flex-col items-center gap-7 px-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+            {/* Header */}
+            <motion.p
+              className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
             >
-              {step === "no" ? "❌" : "✅"}
-            </motion.span>
-          </AnimatePresence>
-        </motion.div>
+              Come funziona?
+            </motion.p>
 
-        {/* Direction label */}
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={step}
-            className="text-lg font-semibold text-foreground"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25 }}
-          >
-            {step === "no" ? t.tutorial.no : t.tutorial.yes}
-          </motion.p>
-        </AnimatePresence>
+            {/* Swipe demo row */}
+            <div className="flex w-full max-w-xs items-center justify-between gap-2">
 
-        {/* Finger icon */}
-        <motion.div
-          className="text-4xl"
-          animate={{ x: step === "no" ? [0, -80, 0] : [0, 80, 0] }}
-          transition={{ duration: 1.2, ease: "easeInOut" }}
-        >
-          👆
-        </motion.div>
+              {/* NO side */}
+              <motion.div
+                className="flex flex-col items-center gap-1.5"
+                animate={{ opacity: step === "no" ? 1 : 0.22, scale: step === "no" ? 1.05 : 0.95 }}
+                transition={{ duration: 0.35 }}
+              >
+                <motion.div
+                  className="flex items-center gap-1.5 rounded-2xl border-2 border-destructive/60 bg-destructive/15 px-3.5 py-2"
+                  animate={step === "no" ? { boxShadow: ["0 0 0px hsl(0 84% 60% / 0)", "0 0 18px hsl(0 84% 60% / 0.35)", "0 0 0px hsl(0 84% 60% / 0)"] } : {}}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                >
+                  <span className="text-lg font-black text-destructive">✕</span>
+                  <span className="text-lg font-black text-destructive">{t.swipe.no}</span>
+                </motion.div>
+                <motion.span
+                  className="text-2xl"
+                  animate={step === "no" ? { x: [0, -8, 0] } : {}}
+                  transition={{ duration: 0.7, repeat: Infinity }}
+                >
+                  ←
+                </motion.span>
+              </motion.div>
 
-        {/* Dismiss button */}
-        <motion.button
-          onClick={onDismiss}
-          className="mt-2 rounded-2xl bg-primary px-8 py-3.5 text-base font-bold text-primary-foreground shadow-lg active:scale-95"
-          whileTap={{ scale: 0.96 }}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          Sono pronto!
-        </motion.button>
+              {/* Demo card */}
+              <div className="relative flex h-32 w-28 items-center justify-center">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={step}
+                    className="gradient-card shadow-card absolute flex h-full w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-border/80"
+                    initial={{ scale: 0.88, opacity: 0 }}
+                    animate={{
+                      scale: 1,
+                      opacity: [1, 1, 0],
+                      x:      step === "no"  ? [0, -110] : [0,  110],
+                      rotate: step === "no"  ? [0,  -20] : [0,   20],
+                    }}
+                    exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.15 } }}
+                    transition={{
+                      scale:   { type: "spring", stiffness: 380, damping: 36 },
+                      opacity: { duration: 1.6, times: [0, 0.55, 1], ease: "easeInOut" },
+                      x:       { duration: 1.6, ease: [0.36, 0, 0.66, 0] },
+                      rotate:  { duration: 1.6, ease: [0.36, 0, 0.66, 0] },
+                    }}
+                  >
+                    {/* Top accent bar */}
+                    <div className="h-1 w-full flex-shrink-0 gradient-primary" />
+                    <span className="mt-1 text-4xl">🤔</span>
+                    <span className="pb-3 text-[10px] font-semibold text-muted-foreground">
+                      {step === "no" ? t.swipe.no : t.swipe.yes}?
+                    </span>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* YES side */}
+              <motion.div
+                className="flex flex-col items-center gap-1.5"
+                animate={{ opacity: step === "yes" ? 1 : 0.22, scale: step === "yes" ? 1.05 : 0.95 }}
+                transition={{ duration: 0.35 }}
+              >
+                <motion.div
+                  className="flex items-center gap-1.5 rounded-2xl border-2 border-success/60 bg-success/15 px-3.5 py-2"
+                  animate={step === "yes" ? { boxShadow: ["0 0 0px hsl(145 80% 42% / 0)", "0 0 18px hsl(145 80% 42% / 0.35)", "0 0 0px hsl(145 80% 42% / 0)"] } : {}}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                >
+                  <span className="text-lg font-black text-success">{t.swipe.yes}</span>
+                  <span className="text-lg font-black text-success">✓</span>
+                </motion.div>
+                <motion.span
+                  className="text-2xl"
+                  animate={step === "yes" ? { x: [0, 8, 0] } : {}}
+                  transition={{ duration: 0.7, repeat: Infinity }}
+                >
+                  →
+                </motion.span>
+              </motion.div>
+            </div>
+
+            {/* Step label */}
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={step}
+                className="text-sm font-semibold text-foreground/80"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.25 }}
+              >
+                {step === "no" ? t.tutorial.no : t.tutorial.yes}
+              </motion.p>
+            </AnimatePresence>
+
+            {/* CTA button */}
+            <motion.button
+              onClick={onDismiss}
+              className="gradient-primary shadow-glow rounded-2xl px-10 py-3.5 text-base font-bold text-primary-foreground active:scale-95"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              whileTap={{ scale: 0.96 }}
+            >
+              Sono pronto!
+            </motion.button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -8,87 +8,187 @@ interface SwipeCardProps {
   exitDirection?: "left" | "right";
 }
 
+const CATEGORY_COLORS: Record<string, string> = {
+  sport:        "hsl(145, 80%, 42%)",
+  audio:        "hsl(280, 70%, 55%)",
+  productivity: "hsl(200, 80%, 50%)",
+  wellness:     "hsl(160, 70%, 50%)",
+  travel:       "hsl(190, 85%, 50%)",
+  tech:         "hsl(240, 75%, 60%)",
+  style:        "hsl(335, 80%, 60%)",
+  recovery:     "hsl(260, 65%, 55%)",
+  fitness:      "hsl(145, 80%, 42%)",
+  camera:       "hsl(45, 90%, 55%)",
+  gaming:       "hsl(330, 75%, 55%)",
+  communication:"hsl(210, 80%, 55%)",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  sport:        "Sport",
+  audio:        "Audio",
+  productivity: "Produttività",
+  wellness:     "Benessere",
+  travel:       "Viaggio",
+  tech:         "Tech",
+  style:        "Stile",
+  recovery:     "Recupero",
+  fitness:      "Fitness",
+  camera:       "Foto",
+  gaming:       "Gaming",
+  communication:"Chat",
+};
+
 // Direction is passed via `custom` so it's read synchronously at exit time,
-// avoiding the stale-state "jump" that occurred when exitX was stored in useState.
+// avoiding the stale-state "jump" that occurred with useState exitX.
 const cardVariants = {
-  initial: { scale: 0.92, opacity: 0, y: 0 },
+  // Card starts slightly below and small — springs up into place
+  initial: { scale: 0.88, opacity: 0, y: 32 },
   animate: {
     scale: 1,
     opacity: 1,
     y: 0,
     x: 0,
-    transition: { type: "spring" as const, stiffness: 380, damping: 38 },
+    transition: {
+      scale: { type: "spring" as const, stiffness: 500, damping: 32 },
+      opacity: { duration: 0.15, ease: "easeOut" },
+      y: { type: "spring" as const, stiffness: 460, damping: 30 },
+    },
   },
+  // Throw: accelerating fly-off with rotation + slight downward arc
   exit: (direction: "left" | "right" | undefined) => ({
-    x: direction === "right" ? 480 : -480,
+    x: direction === "right" ? 620 : -620,
+    y: 50,
     opacity: 0,
-    rotate: direction === "right" ? 20 : -20,
-    transition: { duration: 0.28, ease: [0.32, 0, 0.67, 0] as [number, number, number, number] },
+    rotate: direction === "right" ? 30 : -30,
+    scale: 0.85,
+    transition: {
+      duration: 0.32,
+      ease: [0.45, 0, 0.9, 0.6] as [number, number, number, number],
+    },
   }),
 };
+
+// Short haptic pulse on devices that support it (Android + some iOS PWA).
+function haptic(ms: number) {
+  try { navigator.vibrate?.(ms); } catch { /* unsupported — silent */ }
+}
 
 const SwipeCard = ({ question, onSwipe, exitDirection }: SwipeCardProps) => {
   const { t } = useLang();
   const x = useMotionValue(0);
-  const rotate = useTransform(x, [-200, 200], [-25, 25]);
-  const noOpacity = useTransform(x, [-200, -80, 0], [1, 0.5, 0]);
-  const yesOpacity = useTransform(x, [0, 80, 200], [0, 0.5, 1]);
+  const rotate = useTransform(x, [-200, 200], [-22, 22]);
+  const noOpacity  = useTransform(x, [-180, -60, 0], [1, 0.4, 0]);
+  const yesOpacity = useTransform(x, [0, 60, 180], [0, 0.4, 1]);
+
+  // Dynamic box-shadow: red glow on left drag, green glow on right drag
+  const cardShadow = useTransform(
+    x,
+    [-180, 0, 180],
+    [
+      "0 20px 60px hsl(0 84% 60% / 0.50), -8px 0 28px hsl(0 84% 60% / 0.28)",
+      "0 20px 60px hsl(0 0% 0% / 0.40)",
+      "0 20px 60px hsl(145 80% 42% / 0.50), 8px 0 28px hsl(145 80% 42% / 0.28)",
+    ],
+  );
+
+  const accentColor = CATEGORY_COLORS[question.category] ?? "hsl(27, 92%, 55%)";
+  const categoryLabel = CATEGORY_LABELS[question.category] ?? question.category;
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
-    if (info.offset.x > 100) {
+    // Velocity-aware threshold: fast flick needs less distance
+    const velocityBoost = Math.abs(info.velocity.x) > 400 ? 30 : 0;
+    const threshold = 90 - velocityBoost;
+
+    if (info.offset.x > threshold) {
+      haptic(45);
       onSwipe("right");
-    } else if (info.offset.x < -100) {
+    } else if (info.offset.x < -threshold) {
+      haptic(30);
       onSwipe("left");
     }
   };
 
   return (
-    <div className="relative flex h-[380px] w-full max-w-sm items-center justify-center">
-      {/* NO overlay */}
+    <div className="relative flex h-[420px] w-full max-w-sm items-center justify-center">
+
+      {/* Stack peek — static card peeking behind, scales up slightly as active card exits */}
+      <div
+        className="gradient-card absolute h-full w-full rounded-3xl border border-border/50"
+        style={{
+          transform: "scale(0.93) translateY(14px)",
+          opacity: 0.55,
+          zIndex: 0,
+        }}
+      />
+
+      {/* NO label */}
       <motion.div
-        className="pointer-events-none absolute left-4 top-6 z-20 flex items-center gap-2 rounded-2xl border-4 border-destructive/80 bg-destructive/10 px-5 py-2 backdrop-blur-sm"
-        style={{ opacity: noOpacity, rotate: -15 }}
+        className="pointer-events-none absolute left-5 top-8 z-20 flex items-center gap-2 rounded-2xl border-[3px] border-destructive/80 bg-destructive/15 px-4 py-2 backdrop-blur-sm"
+        style={{ opacity: noOpacity, rotate: -14 }}
       >
-        <span className="text-2xl font-bold text-destructive">✕</span>
-        <span className="text-2xl font-bold text-destructive">{t.swipe.no}</span>
+        <span className="text-xl font-black text-destructive">✕</span>
+        <span className="text-xl font-black tracking-wide text-destructive">{t.swipe.no}</span>
       </motion.div>
 
-      {/* YES overlay */}
+      {/* YES label */}
       <motion.div
-        className="pointer-events-none absolute right-4 top-6 z-20 flex items-center gap-2 rounded-2xl border-4 border-success/80 bg-success/10 px-5 py-2 backdrop-blur-sm"
-        style={{ opacity: yesOpacity, rotate: 15 }}
+        className="pointer-events-none absolute right-5 top-8 z-20 flex items-center gap-2 rounded-2xl border-[3px] border-success/80 bg-success/15 px-4 py-2 backdrop-blur-sm"
+        style={{ opacity: yesOpacity, rotate: 14 }}
       >
-        <span className="text-2xl font-bold text-success">{t.swipe.yes}</span>
-        <span className="text-2xl font-bold text-success">✓</span>
+        <span className="text-xl font-black tracking-wide text-success">{t.swipe.yes}</span>
+        <span className="text-xl font-black text-success">✓</span>
       </motion.div>
 
       {/* Card */}
       <motion.div
-        className="gradient-card shadow-card absolute flex h-full w-full cursor-grab flex-col items-center justify-center rounded-3xl border border-border p-8 active:cursor-grabbing"
-        style={{ x, rotate }}
+        className="gradient-card absolute flex h-full w-full cursor-grab flex-col overflow-hidden rounded-3xl border border-border/80 active:cursor-grabbing"
+        style={{ x, rotate, boxShadow: cardShadow, zIndex: 1 }}
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.8}
+        dragElastic={0.65}
+        dragTransition={{ bounceStiffness: 480, bounceDamping: 38 }}
         onDragEnd={handleDragEnd}
         custom={exitDirection}
         variants={cardVariants}
         initial="initial"
         animate="animate"
         exit="exit"
+        whileDrag={{ scale: 1.025 }}
       >
-        {/* Emoji */}
-        <motion.div
-          className="mb-6 text-[120px] leading-none"
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        >
-          {question.emoji}
-        </motion.div>
+        {/* Colored top accent bar */}
+        <div className="h-1 w-full flex-shrink-0" style={{ background: accentColor }} />
 
-        {/* Question text — translated */}
-        <h2 className="text-center text-2xl font-bold text-foreground">
-          {t.questions[question.id] ?? question.text}
-        </h2>
+        {/* Category chip */}
+        <div className="flex justify-center pt-5">
+          <span
+            className="rounded-full px-3.5 py-1 text-[11px] font-bold uppercase tracking-widest"
+            style={{
+              color: accentColor,
+              background: `${accentColor}1A`,
+              border: `1px solid ${accentColor}40`,
+            }}
+          >
+            {categoryLabel}
+          </span>
+        </div>
+
+        {/* Emoji — vertically centered in remaining space */}
+        <div className="flex flex-1 items-center justify-center">
+          <motion.div
+            className="text-[96px] leading-none select-none"
+            animate={{ scale: [1, 1.07, 1] }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+          >
+            {question.emoji}
+          </motion.div>
+        </div>
+
+        {/* Question text */}
+        <div className="px-7 pb-8 text-center">
+          <h2 className="text-[1.35rem] font-bold leading-snug text-foreground">
+            {t.questions[question.id] ?? question.text}
+          </h2>
+        </div>
       </motion.div>
     </div>
   );
