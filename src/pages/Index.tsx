@@ -4,6 +4,7 @@ import WelcomeScreen, { type UserInfo } from "@/components/WelcomeScreen";
 import QuizScreen from "@/components/QuizScreen";
 import MatchResult from "@/components/MatchResult";
 import SuccessScreen from "@/components/SuccessScreen";
+import AttractScreen from "@/components/AttractScreen";
 import { getMatchedProduct, type Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import { useInactivityReset } from "@/hooks/useInactivityReset";
@@ -11,7 +12,41 @@ import { useWakeLock } from "@/hooks/useWakeLock";
 import { useLang } from "@/i18n/LanguageContext";
 import { getStoredStoreId } from "@/data/stores";
 
-type Screen = "welcome" | "quiz" | "result" | "success";
+type Screen = "splash" | "welcome" | "quiz" | "result" | "success";
+
+// ── Per-screen directional transitions ────────────────────────────────────────
+const screenAnim: Record<Screen, { initial: object; animate: object; exit: object; transition: object }> = {
+  splash: {
+    initial:    { opacity: 0 },
+    animate:    { opacity: 1 },
+    exit:       { opacity: 0, scale: 1.04 },
+    transition: { duration: 0.4, ease: "easeOut" },
+  },
+  welcome: {
+    initial:    { opacity: 0, y: 24 },
+    animate:    { opacity: 1, y: 0  },
+    exit:       { opacity: 0, y: -16, scale: 0.98 },
+    transition: { duration: 0.4, ease: "easeOut" },
+  },
+  quiz: {
+    initial:    { opacity: 0, x: 48 },
+    animate:    { opacity: 1, x: 0  },
+    exit:       { opacity: 0, x: -48 },
+    transition: { duration: 0.35, ease: "easeOut" },
+  },
+  result: {
+    initial:    { opacity: 0, scale: 0.94, y: 32 },
+    animate:    { opacity: 1, scale: 1,    y: 0   },
+    exit:       { opacity: 0, scale: 1.04          },
+    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
+  },
+  success: {
+    initial:    { opacity: 0, y: 52 },
+    animate:    { opacity: 1, y: 0  },
+    exit:       { opacity: 0, y: -24 },
+    transition: { duration: 0.4, ease: "easeOut" },
+  },
+};
 
 // Fire-and-forget funnel event — never blocks the user flow.
 function trackFunnel(funnelKey: string, eventType: "quiz_started" | "result_shown" | "claimed") {
@@ -26,24 +61,24 @@ function trackFunnel(funnelKey: string, eventType: "quiz_started" | "result_show
 
 const Index = () => {
   const { t } = useLang();
-  const [screen, setScreen] = useState<Screen>("welcome");
+  const [screen, setScreen] = useState<Screen>("splash");
   const [user, setUser] = useState<UserInfo>({ nome: "", cognome: "", email: "" });
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
   const [matchPercent, setMatchPercent] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, boolean>>({});
-  const [claiming, setClaiming] = useState(false); // prevents double-submit on slow networks
+  const [claiming, setClaiming] = useState(false);
   const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState<number | null>(null);
-  // Funnel key — generated once per quiz session to link events together
   const [funnelKey, setFunnelKey] = useState(() => crypto.randomUUID());
-  // Active product IDs fetched from Supabase — null means "not loaded yet" (uses full catalogue)
   const [activeProductIds, setActiveProductIds] = useState<Set<string> | null>(null);
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, string>>({});
+  const [imageOverrides, setImageOverrides] = useState<Record<string, string>>({});
   const [settingsLoadFailed, setSettingsLoadFailed] = useState(false);
 
   useEffect(() => {
     const storeId = getStoredStoreId() ?? "corso-vercelli";
     supabase
       .from("product_settings")
-      .select("product_id, active")
+      .select("product_id, active, price_override, image_url")
       .eq("store_id", storeId)
       .then(({ data, error }) => {
         if (error) {
@@ -55,10 +90,23 @@ const Index = () => {
           const active = new Set(
             data.filter((r) => r.active !== false).map((r) => r.product_id),
           );
+          const prices: Record<string, string> = {};
+          const images: Record<string, string> = {};
+          data.forEach((r) => {
+            if (r.price_override) prices[r.product_id] = r.price_override;
+            // @ts-ignore — image_url column added via migration
+            if (r.image_url) images[r.product_id] = r.image_url;
+          });
           setActiveProductIds(active);
+          setPriceOverrides(prices);
+          setImageOverrides(images);
         }
       });
   }, []);
+
+  const handleSplashComplete = () => {
+    setScreen("welcome");
+  };
 
   const handleStart = (userInfo: UserInfo) => {
     setUser(userInfo);
@@ -67,7 +115,15 @@ const Index = () => {
   };
 
   const handleQuizComplete = (answers: Record<number, boolean>) => {
-    const { product, matchPercent: pct } = getMatchedProduct(answers, activeProductIds ?? undefined);
+    const { product: baseProduct, matchPercent: pct } = getMatchedProduct(answers, activeProductIds ?? undefined);
+    // Apply store-specific overrides (price + image) set by manager
+    const priceOverride = baseProduct && priceOverrides[baseProduct.id];
+    const imageOverride = baseProduct && imageOverrides[baseProduct.id];
+    const product = baseProduct ? {
+      ...baseProduct,
+      ...(priceOverride ? { price: priceOverride } : {}),
+      ...(imageOverride ? { image: imageOverride } : {}),
+    } : baseProduct;
     setMatchedProduct(product);
     setMatchPercent(pct);
     setQuizAnswers(answers);
@@ -75,6 +131,8 @@ const Index = () => {
     setScreen("result");
   };
 
+  // Email is collected on the welcome screen — user.email is already set when
+  // handleClaim fires. We just persist the session and advance to success.
   const handleClaim = async () => {
     if (!matchedProduct || claiming) return;
     setClaiming(true);
@@ -92,7 +150,6 @@ const Index = () => {
     };
 
     // Retry up to 2 times with exponential backoff before giving up.
-    // The user flow continues regardless — session data is non-blocking.
     let lastError: unknown;
     for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0) await new Promise((r) => setTimeout(r, 500 * 2 ** (attempt - 1)));
@@ -113,24 +170,24 @@ const Index = () => {
     setMatchPercent(0);
     setQuizAnswers({});
     setInactivitySecondsLeft(null);
-    // New funnel key for the next session
     setFunnelKey(crypto.randomUUID());
-    setScreen("welcome");
+    setScreen("splash");
   };
 
   useWakeLock();
   const { dismiss } = useInactivityReset({
-    enabled: screen !== "welcome",
+    enabled: screen !== "welcome" && screen !== "splash",
     onWarn:    (seconds) => setInactivitySecondsLeft(seconds),
     onReset:   handleRestart,
-    onDismiss: () => setInactivitySecondsLeft(null), // hides frozen overlay when activity detected
+    onDismiss: () => setInactivitySecondsLeft(null),
   });
 
-  // User tapped "still here" (backdrop or button) → hide overlay + restart 45s timer
   const handleDismiss = () => {
     setInactivitySecondsLeft(null);
     dismiss();
   };
+
+  const anim = screenAnim[screen];
 
   return (
     <div className="relative min-h-screen overflow-auto bg-background">
@@ -144,7 +201,6 @@ const Index = () => {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={handleDismiss}
           >
-            {/* Stop propagation so clicks inside the card don't trigger backdrop dismiss */}
             <div
               className="mx-6 rounded-2xl bg-white p-8 text-center shadow-2xl max-w-sm w-full"
               onClick={(e) => e.stopPropagation()}
@@ -176,11 +232,12 @@ const Index = () => {
       <AnimatePresence mode="wait">
         <motion.div
           key={screen}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+          initial={anim.initial}
+          animate={anim.animate}
+          exit={anim.exit}
+          transition={anim.transition}
         >
+          {screen === "splash" && <AttractScreen onComplete={handleSplashComplete} />}
           {screen === "welcome" && <WelcomeScreen onStart={handleStart} settingsLoadFailed={settingsLoadFailed} />}
           {screen === "quiz" && <QuizScreen onComplete={handleQuizComplete} />}
           {screen === "result" && matchedProduct && (
@@ -188,6 +245,7 @@ const Index = () => {
               product={matchedProduct}
               matchPercent={matchPercent}
               userName={user.nome}
+              userEmail={user.email}
               onClaim={handleClaim}
               claiming={claiming}
             />
