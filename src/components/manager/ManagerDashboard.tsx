@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BarChart2, Home, LogOut, MapPin, Power, PowerOff, RotateCcw, Search, X, Undo2 } from "lucide-react";
+import { BarChart2, Camera, Check, Home, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import { getStoredStoreId, setStoredStoreId, getStoreById } from "@/data/stores";
@@ -10,6 +10,10 @@ import { StoreSelectorModal } from "./StoreSelectorModal";
 
 /** product_id → active boolean, loaded from Supabase */
 type SettingsMap = Record<string, boolean>;
+/** product_id → price override string */
+type PriceMap = Record<string, string>;
+/** product_id → custom image URL */
+type ImageMap = Record<string, string>;
 
 interface UndoEntry { productId: string; restoredValue: boolean; }
 
@@ -20,15 +24,23 @@ interface ManagerDashboardProps {
 export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const navigate = useNavigate();
   const [settings, setSettings] = useState<SettingsMap>({});
+  const [priceOverrides, setPriceOverrides] = useState<PriceMap>({});
+  const [imageOverrides, setImageOverrides] = useState<ImageMap>({});
+  const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [draftPrice, setDraftPrice] = useState("");
   const [search, setSearch] = useState("");
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [storeId, setStoreIdState] = useState<string>(
     () => getStoredStoreId() ?? "corso-vercelli"
   );
   const [showStoreModal, setShowStoreModal] = useState(false);
+  const [bulkSelection, setBulkSelection] = useState<Set<string>>(new Set());
+  const [showCsvModal, setShowCsvModal] = useState(false);
+  const [csvPreview, setCsvPreview] = useState<{ productId: string; newPrice: string }[]>([]);
   // Undo last toggle — auto-dismisses after 8 s
   const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -43,12 +55,21 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     setLoading(true);
     const { data } = await supabase
       .from("product_settings")
-      .select("product_id, active")
+      .select("product_id, active, price_override, image_url")
       .eq("store_id", storeId);
     if (data) {
       const map: SettingsMap = {};
-      data.forEach((row) => { map[row.product_id] = row.active; });
+      const prices: PriceMap = {};
+      const images: ImageMap = {};
+      data.forEach((row) => {
+        map[row.product_id] = row.active;
+        if (row.price_override) prices[row.product_id] = row.price_override;
+        // @ts-ignore — image_url column added via migration
+        if (row.image_url) images[row.product_id] = row.image_url;
+      });
       setSettings(map);
+      setPriceOverrides(prices);
+      setImageOverrides(images);
     }
     setLoading(false);
   }, [storeId]);
@@ -106,6 +127,119 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     await saveProductActive(entry.productId, entry.restoredValue);
   };
 
+  const savePriceOverride = async (productId: string, price: string) => {
+    const trimmed = price.trim();
+    const { error } = await supabase
+      .from("product_settings")
+      .upsert({
+        product_id: productId,
+        store_id: storeId,
+        price_override: trimmed || null,
+        updated_at: new Date().toISOString(),
+      });
+    if (!error) {
+      setPriceOverrides((prev) => {
+        if (!trimmed) { const n = { ...prev }; delete n[productId]; return n; }
+        return { ...prev, [productId]: trimmed };
+      });
+    }
+    setEditingPriceId(null);
+  };
+
+  const handleBulkToggle = async (enable: boolean) => {
+    for (const productId of bulkSelection) {
+      await saveProductActive(productId, enable);
+    }
+    setBulkSelection(new Set());
+  };
+
+  const handleCsvUpload = async (file: File) => {
+    const text = await file.text();
+    const lines = text.trim().split("\n");
+    const parsed: { productId: string; newPrice: string }[] = [];
+
+    for (const line of lines) {
+      const [productId, price] = line.split(",").map((s) => s.trim());
+      if (productId && price) {
+        parsed.push({ productId, newPrice: price });
+      }
+    }
+
+    setCsvPreview(parsed);
+    setShowCsvModal(true);
+  };
+
+  const applyPriceUpload = async () => {
+    for (const { productId, newPrice } of csvPreview) {
+      await savePriceOverride(productId, newPrice);
+    }
+    setCsvPreview([]);
+    setShowCsvModal(false);
+  };
+
+  const uploadProductImage = async (productId: string, file: File) => {
+    setUploadingImageId(productId);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${storeId}/${productId}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("product-images")
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (uploadError) {
+      setSaveError("Errore upload immagine: " + uploadError.message);
+      setUploadingImageId(null);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("product-images")
+      .getPublicUrl(path);
+
+    const imageUrl = urlData.publicUrl;
+
+    await supabase.from("product_settings").upsert({
+      product_id: productId,
+      store_id: storeId,
+      // @ts-ignore
+      image_url: imageUrl,
+      updated_at: new Date().toISOString(),
+    });
+
+    setImageOverrides((prev) => ({ ...prev, [productId]: imageUrl }));
+    setUploadingImageId(null);
+  };
+
+  const removeProductImage = async (productId: string) => {
+    await supabase.from("product_settings").upsert({
+      product_id: productId,
+      store_id: storeId,
+      // @ts-ignore
+      image_url: null,
+      updated_at: new Date().toISOString(),
+    });
+    setImageOverrides((prev) => {
+      const next = { ...prev };
+      delete next[productId];
+      return next;
+    });
+  };
+
+  const downloadCsvTemplate = () => {
+    const header = "product_id,price\n";
+    const rows = products.map((p) => `${p.id},${p.price}`).join("\n");
+    const csv = header + rows;
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "product-prices.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     onLogout();
@@ -146,13 +280,43 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             </button>
             <p className="text-xs text-muted-foreground">
               {loading ? "Caricamento…" : `${activeCount} di ${products.length} prodotti attivi nel quiz`}
+              {bulkSelection.size > 0 && <span className="ml-2 font-semibold text-primary">· {bulkSelection.size} selezionati</span>}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
+            {bulkSelection.size > 0 && (
+              <>
+                <button onClick={() => handleBulkToggle(false)}
+                  className="flex items-center gap-1 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-400 active:scale-95">
+                  <PowerOff className="h-3 w-3" /> Disattiva {bulkSelection.size}
+                </button>
+                <button onClick={() => handleBulkToggle(true)}
+                  className="flex items-center gap-1 rounded-xl border border-green-500/40 bg-green-500/10 px-3 py-2 text-xs text-green-400 active:scale-95">
+                  <Power className="h-3 w-3" /> Attiva {bulkSelection.size}
+                </button>
+                <button onClick={() => setBulkSelection(new Set())}
+                  className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
+                  <X className="h-3 w-3" /> Annulla
+                </button>
+              </>
+            )}
             <button onClick={fetchSettings}
               className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
               <RotateCcw className="h-3 w-3" /> Aggiorna
             </button>
+            <button onClick={downloadCsvTemplate}
+              className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
+              <Download className="h-3 w-3" /> Template CSV
+            </button>
+            <label className="flex items-center gap-1 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary active:scale-95 cursor-pointer">
+              <Upload className="h-3 w-3" /> Carica Prezzi
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(e) => e.target.files?.[0] && handleCsvUpload(e.target.files[0])}
+                className="hidden"
+              />
+            </label>
             <button onClick={() => navigate("/stats")}
               className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
               <BarChart2 className="h-3 w-3" /> Analytics
@@ -249,6 +413,17 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                   transition={{ delay: i * 0.04 }}
                 >
                   <div className="flex items-start gap-4 p-5">
+                    <input
+                      type="checkbox"
+                      checked={bulkSelection.has(product.id)}
+                      onChange={(e) => {
+                        const newSet = new Set(bulkSelection);
+                        if (e.target.checked) newSet.add(product.id);
+                        else newSet.delete(product.id);
+                        setBulkSelection(newSet);
+                      }}
+                      className="mt-1 h-4 w-4 cursor-pointer"
+                    />
                     <div className="min-w-0 flex-1">
                       <span className={`mb-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
                         isActive ? "bg-green-500/15 text-green-400" : "bg-muted text-muted-foreground"
@@ -256,7 +431,53 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                         {isActive ? "● ATTIVO" : "● IN PAUSA"}
                       </span>
                       <h3 className="text-sm font-bold leading-snug text-foreground">{product.name}</h3>
-                      <p className="mt-0.5 text-sm font-semibold text-primary">{product.price}</p>
+
+                      {/* Price — inline editable */}
+                      {editingPriceId === product.id ? (
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <input
+                            autoFocus
+                            value={draftPrice}
+                            onChange={(e) => setDraftPrice(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") savePriceOverride(product.id, draftPrice);
+                              if (e.key === "Escape") setEditingPriceId(null);
+                            }}
+                            className="w-28 rounded-lg border border-primary bg-card px-2 py-1 text-sm font-semibold text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            placeholder="€0,00"
+                          />
+                          <button
+                            onClick={() => savePriceOverride(product.id, draftPrice)}
+                            className="rounded-lg bg-primary/20 p-1.5 text-primary hover:bg-primary/30"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setEditingPriceId(null)}
+                            className="rounded-lg bg-muted p-1.5 text-muted-foreground hover:bg-muted/80"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setEditingPriceId(product.id);
+                            setDraftPrice(priceOverrides[product.id] ?? product.price);
+                          }}
+                          className="mt-0.5 flex items-center gap-1.5 group"
+                        >
+                          <span className="text-sm font-semibold text-primary">
+                            {priceOverrides[product.id] ?? product.price}
+                          </span>
+                          {priceOverrides[product.id] && (
+                            <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-400">
+                              custom
+                            </span>
+                          )}
+                          <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                      )}
                       <div className="mt-2 flex flex-wrap gap-1">
                         {product.tags.map((tag) => (
                           <span key={tag}
@@ -264,6 +485,47 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                             {tag}
                           </span>
                         ))}
+                      </div>
+
+                      {/* Image upload */}
+                      <div className="mt-3 flex items-center gap-2">
+                        {imageOverrides[product.id] ? (
+                          <>
+                            <img
+                              src={imageOverrides[product.id]}
+                              alt={product.name}
+                              className="h-12 w-20 rounded-lg object-cover border border-border"
+                            />
+                            <span className="text-[10px] text-green-400 font-semibold">Immagine custom</span>
+                            <button
+                              onClick={() => removeProductImage(product.id)}
+                              className="ml-auto flex items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/10 px-2 py-1 text-[10px] text-destructive active:scale-95"
+                            >
+                              <Trash2 className="h-3 w-3" /> Rimuovi
+                            </button>
+                          </>
+                        ) : (
+                          <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:bg-muted active:scale-95">
+                            {uploadingImageId === product.id ? (
+                              <span className="animate-pulse">Caricamento…</span>
+                            ) : (
+                              <>
+                                <Camera className="h-3 w-3" /> Carica immagine
+                              </>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              disabled={uploadingImageId !== null}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) uploadProductImage(product.id, file);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                        )}
                       </div>
                     </div>
                     <motion.button
@@ -309,6 +571,50 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             }}
             onClose={() => setShowStoreModal(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* CSV Preview Modal */}
+      <AnimatePresence>
+        {showCsvModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setShowCsvModal(false)}
+          >
+            <motion.div
+              className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl max-h-[70vh] overflow-y-auto"
+              initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-lg font-bold text-foreground mb-4">Conferma aggiornamento prezzi</h2>
+              <div className="space-y-2 mb-6">
+                {csvPreview.map(({ productId, newPrice }) => {
+                  const prod = products.find((p) => p.id === productId);
+                  return (
+                    <div key={productId} className="text-xs p-2 rounded-lg border border-border bg-background/40">
+                      <p className="font-semibold text-foreground">{prod?.name ?? productId}</p>
+                      <p className="text-muted-foreground">{prod?.price ?? "—"} → <span className="text-primary font-semibold">{newPrice}</span></p>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCsvModal(false)}
+                  className="flex-1 rounded-xl border border-border bg-muted px-4 py-2 text-sm text-muted-foreground active:scale-95"
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={applyPriceUpload}
+                  className="flex-1 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary active:scale-95"
+                >
+                  Applica {csvPreview.length}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 

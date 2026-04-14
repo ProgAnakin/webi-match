@@ -21,7 +21,7 @@ interface WelcomeScreenProps {
 }
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-const NAME_REGEX = /^[\p{L}\s'\-]{2,100}$/u;
+const NAME_REGEX  = /^[\p{L}\s'\-]{2,100}$/u;
 
 function sanitizeName(value: string): string {
   return value
@@ -53,6 +53,33 @@ const LanguageSelector = () => {
   );
 };
 
+// ─── Feature Badges (localised via splash translation keys) ───────────────────
+const FeatureBadges = () => {
+  const { t } = useLang();
+  return (
+    <motion.div
+      className="flex items-center justify-center gap-2 flex-wrap"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.25 }}
+    >
+      {[
+        { icon: "⚡", label: t.splash.step1 },
+        { icon: "🎯", label: t.splash.step2 },
+        { icon: "🎁", label: t.splash.step3 },
+      ].map((badge, i) => (
+        <span
+          key={i}
+          className="flex items-center gap-1 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs font-semibold text-muted-foreground backdrop-blur-sm"
+        >
+          <span>{badge.icon}</span>
+          <span>{badge.label}</span>
+        </span>
+      ))}
+    </motion.div>
+  );
+};
+
 // ─── Welcome Form ─────────────────────────────────────────────────────────────
 const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const { t } = useLang();
@@ -63,14 +90,14 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const [submitted, setSubmitted] = useState(false);
   const { play } = useSound();
 
-  const isEmailValid = EMAIL_REGEX.test(email.trim());
-  const isNomeValid = NAME_REGEX.test(nome.trim());
+  const isEmailValid   = EMAIL_REGEX.test(email.trim());
+  const isNomeValid    = NAME_REGEX.test(nome.trim());
   const isCognomeValid = NAME_REGEX.test(cognome.trim());
-  const isFormValid = isNomeValid && isCognomeValid && isEmailValid;
+  const isFormValid    = isNomeValid && isCognomeValid && isEmailValid;
 
-  const showEmailError = emailTouched && email.trim().length > 0 && !isEmailValid;
-  const showEmailOk = email.trim().length > 0 && isEmailValid;
-  const showNomeError = submitted && !isNomeValid;
+  const showEmailError  = emailTouched && email.trim().length > 0 && !isEmailValid;
+  const showEmailOk     = email.trim().length > 0 && isEmailValid;
+  const showNomeError    = submitted && !isNomeValid;
   const showCognomeError = submitted && !isCognomeValid;
 
   const handleNome = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,10 +128,10 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   }, [handleStart]);
 
   const nomeClass = `w-full rounded-2xl border bg-card px-4 py-4 text-center text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
-    showNomeError ? "border-destructive focus:ring-destructive" : isNomeValid ? "border-green-500 focus:ring-green-400" : "border-border focus:ring-primary"
+    showNomeError ? "border-destructive focus:ring-destructive" : isNomeValid && nome.length > 0 ? "border-green-500 focus:ring-green-400" : "border-border focus:ring-primary"
   }`;
   const cognomeClass = `w-full rounded-2xl border bg-card px-4 py-4 text-center text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
-    showCognomeError ? "border-destructive focus:ring-destructive" : isCognomeValid ? "border-green-500 focus:ring-green-400" : "border-border focus:ring-primary"
+    showCognomeError ? "border-destructive focus:ring-destructive" : isCognomeValid && cognome.length > 0 ? "border-green-500 focus:ring-green-400" : "border-border focus:ring-primary"
   }`;
   const emailClass = `w-full rounded-2xl border bg-card px-6 py-4 pr-14 text-center text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
     showEmailOk ? "border-green-500 focus:ring-green-400" : showEmailError ? "border-destructive focus:ring-destructive" : "border-border focus:ring-primary"
@@ -160,18 +187,24 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
         {t.welcome.cta}
       </motion.button>
 
-      <p className="text-center text-xs text-muted-foreground/60">{t.welcome.subtitle}</p>
+      {/* Trust / Privacy */}
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+          <span>🔒</span>
+          <span>{t.welcome.privacy}</span>
+        </div>
+        <p className="text-center text-[11px] text-muted-foreground/50">{t.welcome.noSpam}</p>
+      </div>
     </div>
   );
 };
 
 // ─── Store Badge ──────────────────────────────────────────────────────────────
 const StoreBadge = ({ onTap, refreshKey }: { onTap: () => void; refreshKey: number }) => {
+  const { t } = useLang();
   const storeId = getStoredStoreId();
   const store = storeId ? getStoreById(storeId) : null;
-  // refreshKey is used to force re-render when store changes (see WelcomeScreen)
   void refreshKey;
-
   return (
     <button
       onClick={onTap}
@@ -181,7 +214,7 @@ const StoreBadge = ({ onTap, refreshKey }: { onTap: () => void; refreshKey: numb
       {store ? (
         <span className="font-medium text-foreground">{store.shortName}</span>
       ) : (
-        <span className="font-medium text-amber-500">Sede non configurata</span>
+        <span className="font-medium text-amber-500">{t.welcome.noStore}</span>
       )}
     </button>
   );
@@ -212,20 +245,24 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
     <div className="flex min-h-screen flex-col items-center justify-center px-6 py-8">
       <DiscoveryBackground />
 
-      {/* Language selector — top-right, above background */}
+      {/* Language selector — top-right */}
       <div className="absolute top-4 right-4 z-10">
         <LanguageSelector />
       </div>
 
-      {/* Store badge — bottom-left, tapping opens staff PIN */}
+      {/* Copyright — bottom-center */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+        <span className="text-[10px] text-muted-foreground/40 select-none">
+          © {new Date().getFullYear()} Webidoo · Webi-Match
+        </span>
+      </div>
+
+      {/* Store badge — bottom-left */}
       <div className="absolute bottom-4 left-4 z-10 flex flex-col items-start gap-1.5">
-        <StoreBadge
-          onTap={() => setShowPin(true)}
-          refreshKey={storeBadgeKey}
-        />
+        <StoreBadge onTap={() => setShowPin(true)} refreshKey={storeBadgeKey} />
         {settingsLoadFailed && (
           <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-400">
-            ⚠ Catalogo offline — verifica connessione
+            {t.welcome.catalogOffline}
           </span>
         )}
       </div>
@@ -236,7 +273,6 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
           <AdminPinOverlay
             onClose={() => {
               setShowPin(false);
-              // Bump key so StoreBadge re-reads localStorage after store change
               setStoreBadgeKey((k) => k + 1);
             }}
           />
@@ -244,16 +280,16 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
       </AnimatePresence>
 
       <motion.div
-        className="relative z-10 flex w-full max-w-md flex-col items-center gap-6"
+        className="relative z-10 flex w-full max-w-md flex-col items-center gap-5"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: "easeOut" }}
       >
-        {/* Logo — tap 6× to open staff PIN */}
+        {/* Logo */}
         <motion.img
           src={webidooLogo}
           alt="Webidoo Store"
-          className="h-44 w-auto"
+          className="h-36 w-auto"
           onClick={handleLogoTap}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -274,7 +310,10 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
           <p className="text-base text-muted-foreground">{t.welcome.tagline}</p>
         </motion.div>
 
-        {/* Form */}
+        {/* Feature badges */}
+        <FeatureBadges />
+
+        {/* Form — nome + cognome + email */}
         <WelcomeForm onStart={onStart} />
       </motion.div>
     </div>

@@ -227,6 +227,15 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
         >
           {t.success.restart}
         </motion.button>
+
+        <motion.p
+          className="text-[10px] text-muted-foreground/40 select-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5 }}
+        >
+          © {new Date().getFullYear()} Webidoo · Webi-Match
+        </motion.p>
       </motion.div>
     </div>
   );

@@ -72,12 +72,12 @@ const DiscoveryBackground = memo(() => (
         Sizes use max(fixed_px, vw) so on large screens (MacBook/desktop)
         the orbs grow to fill the viewport; phones stay at the fixed_px floor.
         A 5th centered bottom orb fills the gap that corners leave on wide screens. */}
-    <div style={{ position:"absolute", left:"-8%", top:"-5%", width:"max(480px,35vw)", height:"max(480px,35vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,55%,0.85) 0%,transparent 70%)", filter:"blur(max(60px,5vw))", opacity:0.20, animation:"wb-orb-a 19s ease-in-out infinite", willChange:"transform" }} />
-    <div style={{ position:"absolute", right:"-10%", top:"0", width:"max(420px,30vw)", height:"max(420px,30vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(16,100%,50%,0.85) 0%,transparent 70%)", filter:"blur(max(70px,5.5vw))", opacity:0.16, animation:"wb-orb-b 23s ease-in-out infinite", willChange:"transform" }} />
-    <div style={{ position:"absolute", right:"-6%", bottom:"4%", width:"max(360px,28vw)", height:"max(360px,28vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,62%,0.85) 0%,transparent 70%)", filter:"blur(max(65px,5vw))", opacity:0.13, animation:"wb-orb-c 21s ease-in-out infinite", willChange:"transform" }} />
-    <div style={{ position:"absolute", left:"-5%", bottom:"6%", width:"max(340px,26vw)", height:"max(340px,26vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(230,60%,55%,0.85) 0%,transparent 70%)", filter:"blur(max(70px,5.5vw))", opacity:0.10, animation:"wb-orb-d 26s ease-in-out infinite", willChange:"transform" }} />
+    <div style={{ position:"absolute", left:"-8%", top:"-5%", width:"max(480px,35vw)", height:"max(480px,35vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,55%,0.85) 0%,transparent 70%)", filter:"blur(max(60px,5vw))", opacity:0.20, animation:"wb-orb-a 9s ease-in-out infinite", willChange:"transform" }} />
+    <div style={{ position:"absolute", right:"-10%", top:"0", width:"max(420px,30vw)", height:"max(420px,30vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(16,100%,50%,0.85) 0%,transparent 70%)", filter:"blur(max(70px,5.5vw))", opacity:0.16, animation:"wb-orb-b 11s ease-in-out infinite", willChange:"transform" }} />
+    <div style={{ position:"absolute", right:"-6%", bottom:"4%", width:"max(360px,28vw)", height:"max(360px,28vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,62%,0.85) 0%,transparent 70%)", filter:"blur(max(65px,5vw))", opacity:0.13, animation:"wb-orb-c 10s ease-in-out infinite", willChange:"transform" }} />
+    <div style={{ position:"absolute", left:"-5%", bottom:"6%", width:"max(340px,26vw)", height:"max(340px,26vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(230,60%,55%,0.85) 0%,transparent 70%)", filter:"blur(max(70px,5.5vw))", opacity:0.10, animation:"wb-orb-d 12s ease-in-out infinite", willChange:"transform" }} />
     {/* 5th orb — centre-bottom, fills the horizontal gap on MacBook */}
-    <div style={{ position:"absolute", left:"50%", bottom:"-8%", width:"max(400px,30vw)", height:"max(400px,30vw)", marginLeft:"max(-200px,-15vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,58%,0.85) 0%,transparent 70%)", filter:"blur(max(70px,5.5vw))", opacity:0.11, animation:"wb-orb-a 22s ease-in-out 8s infinite", willChange:"transform" }} />
+    <div style={{ position:"absolute", left:"50%", bottom:"-8%", width:"max(400px,30vw)", height:"max(400px,30vw)", marginLeft:"max(-200px,-15vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,58%,0.85) 0%,transparent 70%)", filter:"blur(max(70px,5.5vw))", opacity:0.11, animation:"wb-orb-a 10s ease-in-out 3s infinite", willChange:"transform" }} />
 
     {/* ── Product icon silhouettes ──────────────────────────────── */}
     {ICONS.map((icon, i) => (
@@ -110,7 +110,7 @@ const DiscoveryBackground = memo(() => (
     ))}
 
     {/* ── Slow scanline ─────────────────────────────────────────── */}
-    <div style={{ position:"absolute", left:0, right:0, top:0, height:2, background:"linear-gradient(90deg,transparent,hsla(27,92%,55%,0.4),transparent)", opacity:0.06, animation:"wb-scanline 12s linear infinite", willChange:"transform" }} />
+    <div style={{ position:"absolute", left:0, right:0, top:0, height:2, background:"linear-gradient(90deg,transparent,hsla(27,92%,55%,0.5),transparent)", opacity:0.09, animation:"wb-scanline 12s linear infinite", willChange:"transform" }} />
   </div>
 ));
 
