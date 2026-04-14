@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import webidooLogo from "@/assets/webidoo-logo.png";
 import DiscoveryBackground from "./DiscoveryBackground";
 import AdminPinOverlay from "./AdminPinOverlay";
@@ -8,6 +8,7 @@ import { useSound } from "@/hooks/useSound";
 import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";
 import { getStoredStoreId, getStoreById } from "@/data/stores";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface UserInfo {
   nome: string;
@@ -88,6 +89,8 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const [email, setEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [cooldownHours, setCooldownHours] = useState<number | null>(null);
   const { play } = useSound();
 
   const isEmailValid   = EMAIL_REGEX.test(email.trim());
@@ -96,7 +99,7 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const isFormValid    = isNomeValid && isCognomeValid && isEmailValid;
 
   const showEmailError  = emailTouched && email.trim().length > 0 && !isEmailValid;
-  const showEmailOk     = email.trim().length > 0 && isEmailValid;
+  const showEmailOk     = email.trim().length > 0 && isEmailValid && cooldownHours === null;
   const showNomeError    = submitted && !isNomeValid;
   const showCognomeError = submitted && !isCognomeValid;
 
@@ -113,15 +116,31 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const handleEmail = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
     setEmailTouched(true);
+    setCooldownHours(null);
   }, []);
 
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback(async () => {
     setSubmitted(true);
     setEmailTouched(true);
-    if (!isFormValid) return;
+    if (!isFormValid || checking) return;
+
+    setChecking(true);
+    try {
+      const { data } = await supabase.rpc("check_email_cooldown", {
+        p_email: email.trim().toLowerCase(),
+      });
+      if (data?.in_cooldown) {
+        setCooldownHours(data.hours_remaining as number);
+        setChecking(false);
+        return;
+      }
+    } catch {
+      // If the RPC doesn't exist yet or fails, allow through — never block a real customer
+    }
+    setChecking(false);
     play("start");
     onStart({ nome: nome.trim(), cognome: cognome.trim(), email: email.trim().toLowerCase() });
-  }, [isFormValid, nome, cognome, email, play, onStart]);
+  }, [isFormValid, checking, nome, cognome, email, play, onStart]);
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleStart();
@@ -134,7 +153,10 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
     showCognomeError ? "border-destructive focus:ring-destructive" : isCognomeValid && cognome.length > 0 ? "border-green-500 focus:ring-green-400" : "border-border focus:ring-primary"
   }`;
   const emailClass = `w-full rounded-2xl border bg-card px-6 py-4 pr-14 text-center text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
-    showEmailOk ? "border-green-500 focus:ring-green-400" : showEmailError ? "border-destructive focus:ring-destructive" : "border-border focus:ring-primary"
+    cooldownHours !== null ? "border-amber-400 focus:ring-amber-400"
+    : showEmailOk ? "border-green-500 focus:ring-green-400"
+    : showEmailError ? "border-destructive focus:ring-destructive"
+    : "border-border focus:ring-primary"
   }`;
 
   return (
@@ -173,18 +195,32 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
             <XCircle className="h-5 w-5" />
           </span>
         )}
+        {cooldownHours !== null && (
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-500">
+            <Clock className="h-5 w-5" />
+          </span>
+        )}
       </div>
       {showEmailError && (
         <p className="text-center text-xs text-destructive">{t.welcome.emailError}</p>
+      )}
+      {cooldownHours !== null && (
+        <motion.p
+          className="text-center text-xs text-amber-600 font-medium"
+          initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+        >
+          ⏳ {t.welcome.cooldownError(cooldownHours)}
+        </motion.p>
       )}
 
       {/* CTA */}
       <motion.button
         onClick={handleStart}
-        className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-5 text-xl font-bold text-primary-foreground active:scale-95"
-        whileTap={{ scale: 0.97 }}
+        disabled={checking}
+        className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-5 text-xl font-bold text-primary-foreground active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+        whileTap={{ scale: checking ? 1 : 0.97 }}
       >
-        {t.welcome.cta}
+        {checking ? "…" : t.welcome.cta}
       </motion.button>
 
       {/* Trust / Privacy */}

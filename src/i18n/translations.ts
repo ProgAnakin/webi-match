@@ -21,6 +21,7 @@ export interface T {
     firstNameError: string;
     lastNameError: string;
     emailError: string;
+    cooldownError: (hours: number) => string;
     cta: string;
     subtitle: string;
     noStore: string;
@@ -107,6 +108,7 @@ export const translations: Record<Lang, T> = {
       firstNameError: "Inserisci il nome",
       lastNameError: "Inserisci il cognome",
       emailError: "Per favore, inserisci un'email valida.",
+      cooldownError: (h) => `Hai già partecipato di recente. Riprova tra ${h} ore.`,
       cta: "🚀 INIZIA IL GIOCO!",
       subtitle: "Rispondi a 8 domande veloci e scopri il tuo match perfetto",
       noStore: "Sede non configurata",
@@ -190,6 +192,7 @@ export const translations: Record<Lang, T> = {
       firstNameError: "Enter your first name",
       lastNameError: "Enter your last name",
       emailError: "Please enter a valid email address.",
+      cooldownError: (h) => `You've already played recently. Try again in ${h} hours.`,
       cta: "🚀 START THE GAME!",
       subtitle: "Answer 8 quick questions and find your perfect match",
       noStore: "Store not configured",
@@ -273,6 +276,7 @@ export const translations: Record<Lang, T> = {
       firstNameError: "Insira o seu nome",
       lastNameError: "Insira o seu sobrenome",
       emailError: "Por favor, insira um email válido.",
+      cooldownError: (h) => `Você já participou recentemente. Tente novamente em ${h} horas.`,
       cta: "🚀 COMEÇAR O JOGO!",
       subtitle: "Responda a 8 perguntas rápidas e descubra o seu match perfeito",
       noStore: "Loja não configurada",
@@ -356,6 +360,7 @@ export const translations: Record<Lang, T> = {
       firstNameError: "Introduce tu nombre",
       lastNameError: "Introduce tu apellido",
       emailError: "Por favor, introduce un email válido.",
+      cooldownError: (h) => `Ya has participado recientemente. Inténtalo de nuevo en ${h} horas.`,
       cta: "🚀 ¡EMPEZAR EL JUEGO!",
       subtitle: "Responde 8 preguntas rápidas y descubre tu match perfecto",
       noStore: "Tienda no configurada",
@@ -439,6 +444,7 @@ export const translations: Record<Lang, T> = {
       firstNameError: "Entrez votre prénom",
       lastNameError: "Entrez votre nom",
       emailError: "Veuillez entrer une adresse email valide.",
+      cooldownError: (h) => `Vous avez déjà participé récemment. Réessayez dans ${h} heures.`,
       cta: "🚀 COMMENCER LE JEU !",
       subtitle: "Répondez à 8 questions rapides et découvrez votre match parfait",
       noStore: "Boutique non configurée",
