@@ -9,7 +9,9 @@ interface MatchResultProps {
   product: Product;
   matchPercent: number;
   userName: string;
+  userEmail: string;
   onClaim: () => void;
+  onChangeEmail: () => void;
   claiming?: boolean;
 }
 
@@ -38,7 +40,7 @@ const ConfettiParticle = ({ delay, duration, left, color, size, rotateDeg, xOffs
   />
 );
 
-const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = false }: MatchResultProps) => {
+const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, onChangeEmail, claiming = false }: MatchResultProps) => {
   const { t } = useLang();
   const [displayPercent, setDisplayPercent] = useState(0);
   const [imgError, setImgError] = useState(false);
@@ -295,6 +297,23 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
           ))}
         </motion.div>
 
+        {/* Email reminder */}
+        <motion.div
+          className="w-full rounded-2xl border border-border bg-card/60 px-4 py-3"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.4 }}
+        >
+          <p className="text-xs text-muted-foreground mb-1">{t.result.sendTo}</p>
+          <p className="text-sm font-semibold text-foreground truncate">📬 {userEmail}</p>
+          <button
+            onClick={onChangeEmail}
+            className="mt-1 text-xs text-primary underline underline-offset-2"
+          >
+            {t.result.changeEmail}
+          </button>
+        </motion.div>
+
         {/* CTA */}
         <motion.button
           onClick={onClaim}
@@ -303,7 +322,7 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
           whileTap={{ scale: claiming ? 1 : 0.97 }}
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.75, duration: 0.4 }}
+          transition={{ delay: 0.85, duration: 0.4 }}
         >
           {claiming ? "…" : t.result.cta}
         </motion.button>
