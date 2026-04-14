@@ -147,6 +147,10 @@ const Index = () => {
       nome: user.nome,
       cognome: user.cognome,
       store_id: getStoredStoreId(),
+      // Product snapshot — used by the Edge Function to build the email
+      product_name:  matchedProduct.name,
+      product_price: matchedProduct.price,
+      product_image: matchedProduct.image ?? null,
     };
 
     // Retry up to 2 times with exponential backoff before giving up.
