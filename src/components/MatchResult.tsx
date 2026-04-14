@@ -9,6 +9,7 @@ interface MatchResultProps {
   product: Product;
   matchPercent: number;
   userName: string;
+  userEmail: string;
   onClaim: () => void;
   claiming?: boolean;
 }
@@ -38,7 +39,7 @@ const ConfettiParticle = ({ delay, duration, left, color, size, rotateDeg, xOffs
   />
 );
 
-const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = false }: MatchResultProps) => {
+const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, claiming = false }: MatchResultProps) => {
   const { t } = useLang();
   const [displayPercent, setDisplayPercent] = useState(0);
   const [imgError, setImgError] = useState(false);
@@ -46,7 +47,6 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
   const { play } = useSound();
   const tier = useDevicePerformance();
 
-  // Confetti colors are lazily resolved from CSS variables on first render
   const confettiColors = useMemo(() => readCssConfettiColors(), []);
 
   const ringMotionValue = useMotionValue(0);
@@ -56,20 +56,21 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
   useEffect(() => {
     let frame: number;
     const timeout = setTimeout(() => {
-      // Slot-machine duration fixed at 900ms — consistent "suspense" across all devices.
-      // Particle count still adapts per device (below) to avoid GPU overload on older iPads.
       const slotDuration = 900;
       const slotStart = performance.now();
 
       const runSlot = (now: number) => {
-        if (now - slotStart < slotDuration) {
-          setDisplayPercent(Math.floor(Math.random() * 99) + 1);
+        const elapsed = now - slotStart;
+        if (elapsed < slotDuration) {
+          // Decelerate the slot machine in the last 300ms — numbers slow down visibly
+          const progress = elapsed / slotDuration;
+          const speed = progress > 0.7 ? 1 - ((progress - 0.7) / 0.3) * 0.85 : 1;
+          if (Math.random() < speed) {
+            setDisplayPercent(Math.floor(Math.random() * 99) + 1);
+          }
           frame = requestAnimationFrame(runSlot);
         } else {
           setIsScanning(false);
-          // Do NOT reset displayPercent to 0 here — it would flash visibly
-          // from the last random slot value to 0 before the count-up begins.
-          // The count-up loop sets it to 0 on frame 1 naturally.
           play("match");
 
           animate(ringMotionValue, matchPercent, {
@@ -107,7 +108,6 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
       xOffset: (Math.random() - 0.5) * 100,
     })), [particleCount, confettiColors]);
 
-  // Math.floor avoids showing 5 full stars for a 4.5 rating
   const starCount = Math.floor(product.rating);
 
   const ringColor = matchPercent >= 90 ? "#6BCB77"
@@ -163,14 +163,13 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
           </p>
         </motion.div>
 
-        {/* Circular ring — large & impactful */}
+        {/* Circular ring */}
         <motion.div
           className="relative flex items-center justify-center"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", delay: 0.2, stiffness: 180, damping: 22 }}
         >
-          {/* Outer glow halo */}
           {!isScanning && (
             <motion.div
               className="absolute rounded-full"
@@ -246,7 +245,7 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
                 initial={{ scale: 0 }} animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 280, damping: 18 }}
               >
-                {displayPercent}% Match
+                {displayPercent}% {t.result.match}
               </motion.div>
             )}
           </div>
@@ -281,14 +280,34 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
             { icon: "📖", label: t.result.manual },
             { icon: "💰", label: t.result.discount },
           ].map((item, i) => (
-            <div key={i} className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-border bg-card/80 p-3">
+            <div
+              key={i}
+              className={`flex flex-1 flex-col items-center gap-1 rounded-2xl border p-3 ${
+                i === 2
+                  ? "border-primary/60 bg-primary/10 ring-1 ring-primary/30"
+                  : "border-border bg-card/80"
+              }`}
+            >
               <span className="text-xl">{item.icon}</span>
-              <span className="text-[10px] font-semibold text-muted-foreground">{item.label}</span>
+              <span className={`text-[10px] font-semibold ${i === 2 ? "text-primary" : "text-muted-foreground"}`}>
+                {item.label}
+              </span>
             </div>
           ))}
         </motion.div>
 
-        {/* CTA — strong & clear */}
+        {/* Email reminder */}
+        <motion.div
+          className="w-full rounded-2xl border border-border bg-card/60 px-4 py-3"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.4 }}
+        >
+          <p className="text-xs text-muted-foreground mb-1">{t.result.sendTo}</p>
+          <p className="text-sm font-semibold text-foreground truncate">📬 {userEmail}</p>
+        </motion.div>
+
+        {/* CTA */}
         <motion.button
           onClick={onClaim}
           disabled={claiming}
@@ -296,7 +315,7 @@ const MatchResult = ({ product, matchPercent, userName, onClaim, claiming = fals
           whileTap={{ scale: claiming ? 1 : 0.97 }}
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.75, duration: 0.4 }}
+          transition={{ delay: 0.85, duration: 0.4 }}
         >
           {claiming ? "…" : t.result.cta}
         </motion.button>
