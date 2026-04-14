@@ -187,7 +187,14 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
         {t.welcome.cta}
       </motion.button>
 
-      <p className="text-center text-xs text-muted-foreground/60">{t.welcome.subtitle}</p>
+      {/* Trust / Privacy */}
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+          <span>🔒</span>
+          <span>{t.welcome.privacy}</span>
+        </div>
+        <p className="text-center text-[11px] text-muted-foreground/50">{t.welcome.noSpam}</p>
+      </div>
     </div>
   );
 };

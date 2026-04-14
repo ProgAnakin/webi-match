@@ -25,6 +25,8 @@ export interface T {
     subtitle: string;
     noStore: string;
     catalogOffline: string;
+    privacy: string;
+    noSpam: string;
   };
   quiz: {
     questionOf: (current: number, total: number) => string;
@@ -48,6 +50,8 @@ export interface T {
     cta: string;
     emailSubtitle: string;
     productImageAlt: string;
+    sendTo: string;
+    changeEmail: string;
   };
   success: {
     title: (name: string) => string;
@@ -107,6 +111,8 @@ export const translations: Record<Lang, T> = {
       subtitle: "Rispondi a 8 domande veloci e scopri il tuo match perfetto",
       noStore: "Sede non configurata",
       catalogOffline: "⚠ Catalogo offline — verifica connessione",
+      privacy: "Dati crittografati · Conformità GDPR",
+      noSpam: "Niente spam. Puoi cancellarti in qualsiasi momento.",
     },
     quiz: {
       questionOf: (c, t) => `Domanda ${c} di ${t}`,
@@ -127,6 +133,8 @@ export const translations: Record<Lang, T> = {
       cta: "🎁 Voglio riceverlo!",
       emailSubtitle: "Ricevi video, manuale, FAQ e sconto esclusivo via email",
       productImageAlt: "Immagine prodotto",
+      sendTo: "Il match verrà inviato a:",
+      changeEmail: "Cambia email",
     },
     success: {
       title: (n) => `Perfetto, ${n}!`,
@@ -186,6 +194,8 @@ export const translations: Record<Lang, T> = {
       subtitle: "Answer 8 quick questions and find your perfect match",
       noStore: "Store not configured",
       catalogOffline: "⚠ Catalog offline — check connection",
+      privacy: "Encrypted data · GDPR compliant",
+      noSpam: "No spam. Unsubscribe anytime.",
     },
     quiz: {
       questionOf: (c, t) => `Question ${c} of ${t}`,
@@ -206,6 +216,8 @@ export const translations: Record<Lang, T> = {
       cta: "🎁 I want it!",
       emailSubtitle: "Receive the video, manual, FAQ and exclusive discount by email",
       productImageAlt: "Product image",
+      sendTo: "Your match will be sent to:",
+      changeEmail: "Change email",
     },
     success: {
       title: (n) => `Perfect, ${n}!`,
@@ -265,6 +277,8 @@ export const translations: Record<Lang, T> = {
       subtitle: "Responda a 8 perguntas rápidas e descubra o seu match perfeito",
       noStore: "Loja não configurada",
       catalogOffline: "⚠ Catálogo offline — verifique a conexão",
+      privacy: "Dados encriptados · Conformidade GDPR",
+      noSpam: "Sem spam. Pode cancelar a qualquer momento.",
     },
     quiz: {
       questionOf: (c, t) => `Pergunta ${c} de ${t}`,
@@ -285,6 +299,8 @@ export const translations: Record<Lang, T> = {
       cta: "🎁 Quero receber!",
       emailSubtitle: "Receba o vídeo, manual, FAQ e desconto exclusivo por email",
       productImageAlt: "Imagem do produto",
+      sendTo: "O match será enviado para:",
+      changeEmail: "Alterar email",
     },
     success: {
       title: (n) => `Perfeito, ${n}!`,
@@ -344,6 +360,8 @@ export const translations: Record<Lang, T> = {
       subtitle: "Responde 8 preguntas rápidas y descubre tu match perfecto",
       noStore: "Tienda no configurada",
       catalogOffline: "⚠ Catálogo sin conexión — comprueba la red",
+      privacy: "Datos cifrados · Cumplimiento GDPR",
+      noSpam: "Sin spam. Puedes darte de baja en cualquier momento.",
     },
     quiz: {
       questionOf: (c, t) => `Pregunta ${c} de ${t}`,
@@ -364,6 +382,8 @@ export const translations: Record<Lang, T> = {
       cta: "🎁 ¡Lo quiero!",
       emailSubtitle: "Recibe el vídeo, manual, FAQ y descuento exclusivo por email",
       productImageAlt: "Imagen del producto",
+      sendTo: "El match se enviará a:",
+      changeEmail: "Cambiar email",
     },
     success: {
       title: (n) => `¡Perfecto, ${n}!`,
@@ -423,6 +443,8 @@ export const translations: Record<Lang, T> = {
       subtitle: "Répondez à 8 questions rapides et découvrez votre match parfait",
       noStore: "Boutique non configurée",
       catalogOffline: "⚠ Catalogue hors ligne — vérifiez la connexion",
+      privacy: "Données chiffrées · Conformité RGPD",
+      noSpam: "Aucun spam. Désinscription possible à tout moment.",
     },
     quiz: {
       questionOf: (c, t) => `Question ${c} sur ${t}`,
@@ -443,6 +465,8 @@ export const translations: Record<Lang, T> = {
       cta: "🎁 Je le veux !",
       emailSubtitle: "Recevez la vidéo, le manuel, la FAQ et la remise exclusive par email",
       productImageAlt: "Image du produit",
+      sendTo: "Le match sera envoyé à :",
+      changeEmail: "Changer l'email",
     },
     success: {
       title: (n) => `Parfait, ${n} !`,
