@@ -459,7 +459,7 @@ serve(async (req) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Webidoo Store <noreply@webidoo.it>",  // change to your verified domain
+      from: "Webidoo Store <onboarding@resend.dev>",  // domain verified by Resend — swap to your domain once verified
       to:   record.email,
       subject: `${subjectName} tuo match è ${pct}% — Codice sconto valido 24h ⏰`,
       html,
