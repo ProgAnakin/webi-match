@@ -261,129 +261,156 @@ export function buildEmailHtml(data: EmailData): string {
     </td>
   </tr>
 
-  <!-- ▌TICKET SECTION — REAL SCONTRINO STYLE -->
+  <!-- ▌TICKET SECTION — SCONTRINO STYLE on navy palette -->
   <tr>
-    <td style="background:#0a0600;padding:0;border-top:1px solid ${C.border};">
+    <td style="background:${C.bg};padding:28px 24px 32px;border-top:1px solid ${C.border};">
 
-      <!-- TICKET HEADER STUB (orange bar) -->
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <p style="margin:0 0 16px;font-size:10px;font-weight:700;letter-spacing:0.28em;
+                text-transform:uppercase;color:${C.muted};text-align:center;">
+        🎁 IL TUO CODICE SCONTO ESCLUSIVO
+      </p>
+
+      <!-- TICKET FLOATING BOX with orange glow border -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="border-radius:16px;overflow:hidden;
+                    box-shadow:0 0 0 2px ${C.orange},0 8px 48px rgba(245,131,28,0.35);">
+
+        <!-- STUB HEADER -->
         <tr>
           <td style="background:linear-gradient(90deg,${C.orange},${C.orangeRed},${C.orange});
-                     padding:10px 28px;text-align:center;">
+                     padding:11px 24px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td align="left" style="font-size:11px;font-weight:800;color:#fff;letter-spacing:0.15em;">
-                  🎟 SCONTO SPECIALE
+                <td style="font-size:12px;font-weight:800;color:#fff;letter-spacing:0.14em;">
+                  🎟&nbsp; SCONTO SPECIALE
                 </td>
-                <td align="right" style="font-size:9px;font-weight:600;color:rgba(255,255,255,0.8);">
+                <td align="right" style="font-size:9px;font-weight:700;
+                                         color:rgba(255,255,255,0.8);letter-spacing:0.1em;">
                   WEBIDOO STORE
                 </td>
               </tr>
             </table>
           </td>
         </tr>
-      </table>
 
-      <!-- PERFORATION LINE (top notches) -->
-      <tr style="display:table-row;">
-        <td style="background:#0a0600;padding:0;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td width="22" height="32" style="background:${C.outerBg};border-radius:0 16px 16px 0;font-size:0;">&nbsp;</td>
-              <td style="border-top:2px dashed ${C.border};height:0;">&nbsp;</td>
-              <td width="22" height="32" style="background:${C.outerBg};border-radius:16px 0 0 16px;font-size:0;">&nbsp;</td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-
-      <!-- TICKET MAIN BODY -->
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <!-- PERFORATION (top) -->
         <tr>
-          <td style="background:#0a0600;padding:32px 28px;text-align:center;">
-
-            <!-- "Insert at checkout" label -->
-            <p style="margin:0 0 8px;font-size:10px;font-weight:700;color:${C.orange};
-                      letter-spacing:0.22em;text-transform:uppercase;">Inserisci al checkout</p>
-
-            <!-- THE CODE — big monospace -->
-            <p style="margin:0 0 20px;font-size:44px;font-weight:900;color:#fff;
-                      font-family:'Courier New',Courier,monospace;letter-spacing:0.18em;
-                      line-height:1;text-shadow:0 4px 12px rgba(0,0,0,0.6);">
-              ${code}
-            </p>
-
-            <!-- VALIDITY PILLS -->
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
-              <tr>
-                <td style="background:${C.orange}28;border:1.5px solid ${C.orange}70;
-                           border-radius:999px;padding:6px 16px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:700;color:${C.orange};">⏰ 24 ore</span>
-                </td>
-                <td width="8">&nbsp;</td>
-                <td style="background:#ffffff12;border:1px solid ${C.border};
-                           border-radius:999px;padding:6px 14px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:600;color:${C.muted};">🏪 In negozio</span>
-                </td>
-                <td width="8">&nbsp;</td>
-                <td style="background:#ffffff12;border:1px solid ${C.border};
-                           border-radius:999px;padding:6px 14px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:600;color:${C.muted};">1️⃣ Usa</span>
-                </td>
-              </tr>
-            </table>
-
-          </td>
-        </tr>
-      </table>
-
-      <!-- PERFORATION LINE (bottom notches) -->
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td style="background:#0a0600;padding:0;">
+          <td style="background:${C.cardDeep};padding:0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td width="22" height="32" style="background:${C.outerBg};border-radius:0 16px 16px 0;font-size:0;">&nbsp;</td>
+                <td width="20" height="28" style="background:${C.bg};border-radius:0 14px 14px 0;font-size:0;">&nbsp;</td>
                 <td style="border-top:2px dashed ${C.border};height:0;">&nbsp;</td>
-                <td width="22" height="32" style="background:${C.outerBg};border-radius:16px 0 0 16px;font-size:0;">&nbsp;</td>
+                <td width="20" height="28" style="background:${C.bg};border-radius:14px 0 0 14px;font-size:0;">&nbsp;</td>
               </tr>
             </table>
           </td>
         </tr>
-      </table>
 
-      <!-- BARCODE STRIP (authenticity) -->
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <!-- CODE BODY -->
         <tr>
-          <td style="background:#0a0600;padding:14px 28px;text-align:center;border-top:1px solid ${C.border}28;">
-            <svg width="160" height="32" viewBox="0 0 160 32" xmlns="http://www.w3.org/2000/svg">
-              <rect x="4" y="2" width="2" height="28" fill="${C.orange}" opacity="0.6"/>
-              <rect x="8" y="2" width="1" height="28" fill="${C.orange}" opacity="0.8"/>
-              <rect x="11" y="2" width="3" height="28" fill="${C.orange}" opacity="0.5"/>
-              <rect x="16" y="2" width="2" height="28" fill="${C.orange}" opacity="0.7"/>
-              <rect x="20" y="2" width="4" height="28" fill="${C.orange}" opacity="0.6"/>
-              <rect x="26" y="2" width="1" height="28" fill="${C.orange}" opacity="0.8"/>
-              <rect x="29" y="2" width="3" height="28" fill="${C.orange}" opacity="0.5"/>
-              <rect x="34" y="2" width="2" height="28" fill="${C.orange}" opacity="0.7"/>
-              <rect x="38" y="2" width="5" height="28" fill="${C.orange}" opacity="0.6"/>
-              <rect x="45" y="2" width="1" height="28" fill="${C.orange}" opacity="0.8"/>
-              <rect x="48" y="2" width="3" height="28" fill="${C.orange}" opacity="0.5"/>
-              <rect x="53" y="2" width="2" height="28" fill="${C.orange}" opacity="0.7"/>
-              <rect x="57" y="2" width="4" height="28" fill="${C.orange}" opacity="0.6"/>
-              <rect x="63" y="2" width="1" height="28" fill="${C.orange}" opacity="0.8"/>
-              <rect x="66" y="2" width="3" height="28" fill="${C.orange}" opacity="0.5"/>
-              <rect x="71" y="2" width="2" height="28" fill="${C.orange}" opacity="0.7"/>
-              <rect x="75" y="2" width="4" height="28" fill="${C.orange}" opacity="0.6"/>
-              <rect x="81" y="2" width="1" height="28" fill="${C.orange}" opacity="0.8"/>
-              <rect x="84" y="2" width="3" height="28" fill="${C.orange}" opacity="0.5"/>
-              <rect x="89" y="2" width="2" height="28" fill="${C.orange}" opacity="0.7"/>
-            </svg>
-            <p style="margin:6px 0 0;font-size:8px;color:${C.muted};letter-spacing:0.1em;">
-              BIGLIETTO SCONTO WEBIDOO
-            </p>
+          <td style="background:${C.cardDeep};padding:30px 28px 26px;text-align:center;">
+
+            <p style="margin:0 0 10px;font-size:10px;font-weight:700;color:${C.orange};
+                      letter-spacing:0.24em;text-transform:uppercase;">Inserisci al checkout</p>
+
+            <!-- Orange radial glow behind code -->
+            <div style="background:radial-gradient(ellipse 80% 60% at 50% 50%,
+                          rgba(245,131,28,0.12) 0%,transparent 70%);
+                        padding:8px 0 18px;">
+              <p style="margin:0;font-size:46px;font-weight:900;color:${C.fg};
+                        font-family:'Courier New',Courier,monospace;letter-spacing:0.16em;
+                        line-height:1;">
+                ${code}
+              </p>
+            </div>
+
+            <!-- Pills -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0"
+                   align="center" style="margin:0 auto;">
+              <tr>
+                <td style="background:${C.orange};border-radius:999px;padding:6px 18px;
+                           white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:700;color:#fff;">⏰ Valido 24 ore</span>
+                </td>
+                <td width="8">&nbsp;</td>
+                <td style="background:${C.card};border:1px solid ${C.border};
+                           border-radius:999px;padding:6px 14px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:600;color:${C.fg};">🏪 Solo in negozio</span>
+                </td>
+                <td width="8">&nbsp;</td>
+                <td style="background:${C.card};border:1px solid ${C.border};
+                           border-radius:999px;padding:6px 14px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:600;color:${C.fg};">1️⃣ Un utilizzo</span>
+                </td>
+              </tr>
+            </table>
+
           </td>
         </tr>
+
+        <!-- PERFORATION (bottom) -->
+        <tr>
+          <td style="background:${C.cardDeep};padding:0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="20" height="28" style="background:${C.bg};border-radius:0 14px 14px 0;font-size:0;">&nbsp;</td>
+                <td style="border-top:2px dashed ${C.border};height:0;">&nbsp;</td>
+                <td width="20" height="28" style="background:${C.bg};border-radius:14px 0 0 14px;font-size:0;">&nbsp;</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- BARCODE STRIP -->
+        <tr>
+          <td style="background:${C.cardDeep};padding:12px 28px 14px;text-align:center;">
+            <svg width="200" height="30" viewBox="0 0 200 30" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2"   y="0" width="3"  height="30" fill="${C.orange}" opacity="0.55"/>
+              <rect x="7"   y="0" width="1"  height="30" fill="${C.orange}" opacity="0.80"/>
+              <rect x="10"  y="0" width="4"  height="30" fill="${C.orange}" opacity="0.50"/>
+              <rect x="16"  y="0" width="2"  height="30" fill="${C.orange}" opacity="0.70"/>
+              <rect x="20"  y="0" width="5"  height="30" fill="${C.orange}" opacity="0.55"/>
+              <rect x="27"  y="0" width="1"  height="30" fill="${C.orange}" opacity="0.85"/>
+              <rect x="30"  y="0" width="3"  height="30" fill="${C.orange}" opacity="0.50"/>
+              <rect x="36"  y="0" width="2"  height="30" fill="${C.orange}" opacity="0.70"/>
+              <rect x="40"  y="0" width="4"  height="30" fill="${C.orange}" opacity="0.55"/>
+              <rect x="47"  y="0" width="1"  height="30" fill="${C.orange}" opacity="0.85"/>
+              <rect x="50"  y="0" width="6"  height="30" fill="${C.orange}" opacity="0.50"/>
+              <rect x="58"  y="0" width="2"  height="30" fill="${C.orange}" opacity="0.70"/>
+              <rect x="62"  y="0" width="3"  height="30" fill="${C.orange}" opacity="0.55"/>
+              <rect x="68"  y="0" width="1"  height="30" fill="${C.orange}" opacity="0.85"/>
+              <rect x="71"  y="0" width="4"  height="30" fill="${C.orange}" opacity="0.50"/>
+              <rect x="78"  y="0" width="2"  height="30" fill="${C.orange}" opacity="0.70"/>
+              <rect x="83"  y="0" width="5"  height="30" fill="${C.orange}" opacity="0.55"/>
+              <rect x="90"  y="0" width="1"  height="30" fill="${C.orange}" opacity="0.85"/>
+              <rect x="93"  y="0" width="3"  height="30" fill="${C.orange}" opacity="0.50"/>
+              <rect x="98"  y="0" width="4"  height="30" fill="${C.orange}" opacity="0.70"/>
+              <rect x="105" y="0" width="2"  height="30" fill="${C.orange}" opacity="0.55"/>
+              <rect x="109" y="0" width="1"  height="30" fill="${C.orange}" opacity="0.85"/>
+              <rect x="113" y="0" width="5"  height="30" fill="${C.orange}" opacity="0.50"/>
+              <rect x="121" y="0" width="2"  height="30" fill="${C.orange}" opacity="0.70"/>
+              <rect x="125" y="0" width="3"  height="30" fill="${C.orange}" opacity="0.55"/>
+              <rect x="131" y="0" width="1"  height="30" fill="${C.orange}" opacity="0.85"/>
+              <rect x="134" y="0" width="4"  height="30" fill="${C.orange}" opacity="0.50"/>
+              <rect x="141" y="0" width="2"  height="30" fill="${C.orange}" opacity="0.70"/>
+              <rect x="146" y="0" width="6"  height="30" fill="${C.orange}" opacity="0.55"/>
+              <rect x="155" y="0" width="1"  height="30" fill="${C.orange}" opacity="0.85"/>
+              <rect x="158" y="0" width="3"  height="30" fill="${C.orange}" opacity="0.50"/>
+              <rect x="163" y="0" width="2"  height="30" fill="${C.orange}" opacity="0.70"/>
+              <rect x="168" y="0" width="4"  height="30" fill="${C.orange}" opacity="0.55"/>
+              <rect x="175" y="0" width="1"  height="30" fill="${C.orange}" opacity="0.85"/>
+              <rect x="178" y="0" width="5"  height="30" fill="${C.orange}" opacity="0.50"/>
+              <rect x="186" y="0" width="2"  height="30" fill="${C.orange}" opacity="0.70"/>
+              <rect x="190" y="0" width="3"  height="30" fill="${C.orange}" opacity="0.55"/>
+              <rect x="196" y="0" width="2"  height="30" fill="${C.orange}" opacity="0.80"/>
+            </svg>
+            <p style="margin:5px 0 0;font-size:8px;color:${C.muted};letter-spacing:0.12em;
+                      text-transform:uppercase;">Biglietto Sconto Webidoo</p>
+          </td>
+        </tr>
+
       </table>
+      <!-- /TICKET FLOATING BOX -->
 
     </td>
   </tr>
