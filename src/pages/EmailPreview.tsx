@@ -9,6 +9,7 @@ const DEFAULTS = {
   product_name:  "Sony WH-1000XM5",
   product_price: "€349.00",
   product_image: "",
+  product_video: "",
   discount_code: "WEBI-A4F2C9",
 };
 
@@ -74,6 +75,10 @@ export default function EmailPreview() {
         <Field label="URL imagem produto" placeholder="https://..."
           value={data.product_image}
           onChange={(v) => set("product_image", v)} />
+
+        <Field label="URL vídeo YouTube" placeholder="https://youtube.com/watch?v=..."
+          value={data.product_video}
+          onChange={(v) => set("product_video", v)} />
 
         <Field label="Código de desconto" value={data.discount_code}
           onChange={(v) => set("discount_code", v)} />
