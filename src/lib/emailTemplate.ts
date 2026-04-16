@@ -14,6 +14,7 @@ export interface EmailData {
   product_image?: string;
   product_video?: string;
   discount_code:  string;
+  faq?: Array<{ q: string; a: string }>;
 }
 
 const C = {
@@ -47,6 +48,7 @@ export function buildEmailHtml(data: EmailData): string {
   const productImage = data.product_image ?? "";
   const productVideo = data.product_video ?? "";
   const code         = data.discount_code;
+  const faq          = (data.faq ?? []).filter(f => f.q.trim() && f.a.trim());
   const ringColor    = matchColor(pct);
 
   const greeting  = nome ? `Ciao ${nome},` : "Ciao,";
@@ -332,6 +334,32 @@ export function buildEmailHtml(data: EmailData): string {
         </table>
       </td>
     </tr>
+
+    <!-- FAQ -->
+    ${faq.length > 0 ? `
+    <tr>
+      <td style="background:${C.card};padding:28px;
+                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
+        <p style="margin:0 0 16px;font-size:11px;font-weight:700;letter-spacing:0.18em;
+                  text-transform:uppercase;color:${C.muted};text-align:center;">
+          ❓ DOMANDE FREQUENTI
+        </p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          ${faq.map((item, i) => `
+          <tr>
+            <td style="padding:${i === 0 ? "0" : "12px"} 0 0;">
+              ${i > 0 ? `<div style="border-top:1px solid ${C.border};margin-bottom:12px;"></div>` : ""}
+              <p style="margin:0 0 5px;font-size:13px;font-weight:700;color:${C.fg};">
+                ❓ ${item.q}
+              </p>
+              <p style="margin:0;font-size:12px;color:${C.muted};line-height:1.6;">
+                ${item.a}
+              </p>
+            </td>
+          </tr>`).join("")}
+        </table>
+      </td>
+    </tr>` : ""}
 
     <!-- SPAM NOTE -->
     <tr>

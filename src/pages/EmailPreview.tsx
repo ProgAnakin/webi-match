@@ -1,147 +1,215 @@
 import { useState, useMemo } from "react";
 import { buildEmailHtml } from "@/lib/emailTemplate";
 
-const DEFAULTS = {
-  nome:          "Marco",
-  cognome:       "Rossi",
-  email:         "marco.rossi@example.com",
-  match_percent: 87,
-  product_name:  "Sony WH-1000XM5",
-  product_price: "€349.00",
-  product_image: "",
-  product_video: "",
-  discount_code: "WEBI-A4F2C9",
+const MATCH_COLORS: Record<string, string> = {
+  "≥90% Verde":   "#6BCB77",
+  "≥80% Giallo":  "#FFD93D",
+  "≥65% Coral":   "#FF8066",
+  "<65% Blu":     "#4D96FF",
 };
 
+const DEFAULT_FAQ = [
+  { q: "La batteria dura quanto tempo?", a: "Fino a 8 ore di utilizzo continuo con una singola carica." },
+  { q: "È compatibile con iPhone?",      a: "Sì, compatibile con tutti i dispositivi tramite Bluetooth 5.0." },
+  { q: "È inclusa la garanzia?",         a: "2 anni di garanzia ufficiale con assistenza dedicata." },
+];
+
 export default function EmailPreview() {
-  const [data, setData] = useState(DEFAULTS);
+  const [nome,         setNome]         = useState("Marco");
+  const [cognome,      setCognome]      = useState("Rossi");
+  const [email,        setEmail]        = useState("marco.rossi@example.com");
+  const [matchPercent, setMatchPercent] = useState(87);
+  const [productName,  setProductName]  = useState("BLND Portable Blender");
+  const [productPrice, setProductPrice] = useState("€39.00");
+  const [productImage, setProductImage] = useState("");
+  const [productVideo, setProductVideo] = useState("");
+  const [discountCode, setDiscountCode] = useState("WEBI-A4F2C9");
+  const [faq, setFaq] = useState(DEFAULT_FAQ);
 
-  const html = useMemo(() => buildEmailHtml(data), [data]);
+  const html = useMemo(() => buildEmailHtml({
+    nome, cognome, email,
+    match_percent: matchPercent,
+    product_name:  productName,
+    product_price: productPrice,
+    product_image: productImage,
+    product_video: productVideo,
+    discount_code: discountCode,
+    faq,
+  }), [nome, cognome, email, matchPercent, productName, productPrice,
+      productImage, productVideo, discountCode, faq]);
 
-  const set = (k: keyof typeof DEFAULTS, v: string | number) =>
-    setData((prev) => ({ ...prev, [k]: v }));
+  const updateFaq = (i: number, field: "q" | "a", val: string) =>
+    setFaq(prev => prev.map((item, idx) => idx === i ? { ...item, [field]: val } : item));
+
+  const ringColor = matchPercent >= 90 ? MATCH_COLORS["≥90% Verde"]
+    : matchPercent >= 80 ? MATCH_COLORS["≥80% Giallo"]
+    : matchPercent >= 65 ? MATCH_COLORS["≥65% Coral"]
+    : MATCH_COLORS["<65% Blu"];
 
   return (
-    <div className="flex min-h-screen bg-[#0b0f1e]">
+    <div className="flex h-screen bg-[#0b0f1e] overflow-hidden">
 
-      {/* ── Controls panel ─────────────────────────────────────── */}
-      <aside className="w-72 shrink-0 border-r border-white/10 bg-[#151d47] p-5 flex flex-col gap-4 overflow-y-auto">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400 mb-3">
-            Webi-Match · Email Preview
-          </p>
-          <p className="text-[11px] text-white/40 leading-relaxed">
-            Edita os campos e o preview atualiza em tempo real. O email enviado é
-            exatamente este HTML.
-          </p>
+      {/* ── Controls panel ──────────────────────────────────────────────── */}
+      <aside className="w-80 shrink-0 flex flex-col border-r border-white/10 overflow-y-auto">
+
+        {/* Header */}
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Webi-Match</p>
+          <h1 className="text-lg font-bold text-white leading-tight">Email Preview</h1>
+          <p className="text-[11px] text-white/70 mt-0.5">Edita e vê em tempo real</p>
         </div>
 
-        <hr className="border-white/10" />
+        <div className="flex-1 px-4 py-4 space-y-5">
 
-        {/* Nome / Cognome */}
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Nome" value={data.nome}
-            onChange={(v) => set("nome", v)} />
-          <Field label="Cognome" value={data.cognome}
-            onChange={(v) => set("cognome", v)} />
+          {/* CLIENTE */}
+          <Section title="👤 Cliente">
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Nome" value={nome} onChange={setNome} />
+              <Field label="Cognome" value={cognome} onChange={setCognome} />
+            </div>
+            <Field label="Email" value={email} onChange={setEmail} />
+          </Section>
+
+          {/* MATCH */}
+          <Section title="🎯 Match">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">
+                  Percentagem
+                </label>
+                <span className="text-sm font-bold px-2 py-0.5 rounded-full text-black text-[11px]"
+                  style={{ backgroundColor: ringColor }}>
+                  {matchPercent}%
+                </span>
+              </div>
+              <input type="range" min={1} max={100} value={matchPercent}
+                onChange={(e) => setMatchPercent(Number(e.target.value))}
+                className="w-full accent-orange-500" />
+              <div className="flex justify-between text-[9px] text-white/30 mt-1">
+                {Object.entries(MATCH_COLORS).map(([label, color]) => (
+                  <span key={label} style={{ color }}>{label}</span>
+                ))}
+              </div>
+            </div>
+          </Section>
+
+          {/* PRODUTO */}
+          <Section title="📦 Produto">
+            <Field label="Nome" value={productName} onChange={setProductName} />
+            <Field label="Preço" placeholder="€349.00" value={productPrice} onChange={setProductPrice} />
+            <Field label="Imagem (URL)" placeholder="https://..." value={productImage} onChange={setProductImage} />
+            <Field label="Vídeo YouTube (URL)" placeholder="https://youtube.com/watch?v=..." value={productVideo} onChange={setProductVideo} />
+          </Section>
+
+          {/* DESCONTO */}
+          <Section title="🎁 Desconto">
+            <Field label="Código" value={discountCode} onChange={setDiscountCode} />
+          </Section>
+
+          {/* FAQ */}
+          <Section title="❓ FAQ (3 perguntas)">
+            {faq.map((item, i) => (
+              <div key={i} className="space-y-1.5 pb-3 border-b border-white/10 last:border-0 last:pb-0">
+                <p className="text-[10px] font-bold text-orange-400 uppercase tracking-wider">
+                  Pergunta {i + 1}
+                </p>
+                <textarea
+                  value={item.q}
+                  onChange={(e) => updateFaq(i, "q", e.target.value)}
+                  rows={2}
+                  placeholder="Domanda..."
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2
+                             text-xs text-white placeholder:text-white/20 resize-none
+                             focus:border-orange-500/60 focus:outline-none focus:ring-1 focus:ring-orange-500/30"
+                />
+                <textarea
+                  value={item.a}
+                  onChange={(e) => updateFaq(i, "a", e.target.value)}
+                  rows={2}
+                  placeholder="Risposta..."
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2
+                             text-xs text-white/70 placeholder:text-white/20 resize-none
+                             focus:border-orange-500/60 focus:outline-none focus:ring-1 focus:ring-orange-500/30"
+                />
+              </div>
+            ))}
+          </Section>
+
         </div>
-
-        <Field label="Email" value={data.email}
-          onChange={(v) => set("email", v)} />
-
-        {/* Match % slider */}
-        <div>
-          <label className="text-[11px] font-semibold text-white/60 uppercase tracking-wider">
-            Match % — <span className="text-orange-400">{data.match_percent}%</span>
-          </label>
-          <input type="range" min={1} max={100} value={data.match_percent}
-            onChange={(e) => set("match_percent", Number(e.target.value))}
-            className="mt-1 w-full accent-orange-500" />
-          <div className="flex justify-between text-[9px] text-white/30 mt-0.5">
-            <span>1% (azul)</span>
-            <span>65% (coral)</span>
-            <span>80% (amarelo)</span>
-            <span>90% (verde)</span>
-          </div>
-        </div>
-
-        <Field label="Nome do produto" value={data.product_name}
-          onChange={(v) => set("product_name", v)} />
-
-        <Field label="Preço" placeholder="€349.00"
-          value={data.product_price}
-          onChange={(v) => set("product_price", v)} />
-
-        <Field label="URL imagem produto" placeholder="https://..."
-          value={data.product_image}
-          onChange={(v) => set("product_image", v)} />
-
-        <Field label="URL vídeo YouTube" placeholder="https://youtube.com/watch?v=..."
-          value={data.product_video}
-          onChange={(v) => set("product_video", v)} />
-
-        <Field label="Código de desconto" value={data.discount_code}
-          onChange={(v) => set("discount_code", v)} />
-
-        <hr className="border-white/10" />
 
         {/* Copy HTML button */}
-        <button
-          onClick={() => navigator.clipboard.writeText(html)}
-          className="w-full rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-bold text-white
-                     hover:bg-orange-400 active:scale-95 transition-all"
-        >
-          Copiar HTML
-        </button>
-
-        <p className="text-[10px] text-white/30 text-center leading-relaxed">
-          Cola o HTML em mail-tester.com ou litmus.com para testar em vários clientes de email
-        </p>
+        <div className="p-4 border-t border-white/10 bg-[#0f1530]">
+          <button
+            onClick={() => navigator.clipboard.writeText(html)}
+            className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600
+                       px-4 py-3 text-sm font-bold text-white shadow-lg
+                       hover:from-orange-400 hover:to-orange-500 active:scale-95 transition-all"
+          >
+            Copiar HTML completo
+          </button>
+          <p className="text-[10px] text-white/30 text-center mt-2">
+            Cola em mail-tester.com para testar em vários clientes
+          </p>
+        </div>
       </aside>
 
-      {/* ── Email preview iframe ────────────────────────────────── */}
-      <main className="flex-1 flex flex-col">
+      {/* ── Preview area ─────────────────────────────────────────────────── */}
+      <main className="flex-1 flex flex-col min-w-0">
+
         {/* Toolbar */}
-        <div className="flex items-center gap-3 border-b border-white/10 bg-[#151d47] px-5 py-3">
+        <div className="flex items-center gap-3 border-b border-white/10 bg-[#111827] px-5 py-3 shrink-0">
           <div className="flex gap-1.5">
-            <span className="h-3 w-3 rounded-full bg-red-500/80" />
-            <span className="h-3 w-3 rounded-full bg-yellow-500/80" />
-            <span className="h-3 w-3 rounded-full bg-green-500/80" />
+            <span className="h-3 w-3 rounded-full bg-red-500/70" />
+            <span className="h-3 w-3 rounded-full bg-yellow-500/70" />
+            <span className="h-3 w-3 rounded-full bg-green-500/70" />
           </div>
-          <span className="text-[11px] text-white/30 font-mono">
-            email-preview · {data.email || "sem destinatário"}
+          <div className="flex-1 rounded-lg bg-white/5 border border-white/10 px-3 py-1.5
+                          text-[11px] text-white/40 font-mono truncate">
+            Para: {email || "—"} · {productName}
+          </div>
+          <span className="text-[10px] text-white/30 shrink-0">
+            {new Date().toLocaleDateString("it-IT")}
           </span>
         </div>
 
-        {/* iframe */}
+        {/* iframe — sandbox allows popups so YouTube links open in new tab */}
         <iframe
           srcDoc={html}
           title="Email Preview"
-          className="flex-1 w-full border-0"
-          sandbox="allow-same-origin"
+          className="flex-1 w-full border-0 bg-white"
+          sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
         />
       </main>
     </div>
   );
 }
 
-function Field({
-  label, value, onChange, placeholder,
-}: {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-[11px] font-bold uppercase tracking-widest text-orange-400/80 mb-2">
+        {title}
+      </p>
+      <div className="space-y-2 rounded-xl bg-white/3 border border-white/8 p-3">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, value, onChange, placeholder }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string;
 }) {
   return (
     <div>
-      <label className="text-[11px] font-semibold text-white/60 uppercase tracking-wider">
+      <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">
         {label}
       </label>
       <input
-        type="text"
-        value={value}
-        placeholder={placeholder}
+        type="text" value={value} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2
-                   text-sm text-white placeholder:text-white/20
+        className="mt-0.5 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2
+                   text-xs text-white placeholder:text-white/20
                    focus:border-orange-500/60 focus:outline-none focus:ring-1 focus:ring-orange-500/30"
       />
     </div>
