@@ -293,15 +293,10 @@ export function buildEmailHtml(data: EmailData): string {
           </td>
         </tr>
 
-        <!-- PERFORATION (top) -->
+        <!-- PERFORATION (top) — subtle spacing only -->
         <tr>
           <td style="background:${C.cardDeep};padding:0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td width="20" height="28" style="background:${C.bg};border-radius:0 14px 14px 0;font-size:0;">&nbsp;</td>
-                <td style="border-top:2px dashed ${C.border};height:0;">&nbsp;</td>
-                <td width="20" height="28" style="background:${C.bg};border-radius:14px 0 0 14px;font-size:0;">&nbsp;</td>
-              </tr>
             </table>
           </td>
         </tr>
@@ -348,14 +343,12 @@ export function buildEmailHtml(data: EmailData): string {
           </td>
         </tr>
 
-        <!-- PERFORATION (bottom) -->
+        <!-- PERFORATION (bottom) — simple dashed line -->
         <tr>
           <td style="background:${C.cardDeep};padding:0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td width="20" height="28" style="background:${C.bg};border-radius:0 14px 14px 0;font-size:0;">&nbsp;</td>
                 <td style="border-top:2px dashed ${C.border};height:0;">&nbsp;</td>
-                <td width="20" height="28" style="background:${C.bg};border-radius:14px 0 0 14px;font-size:0;">&nbsp;</td>
               </tr>
             </table>
           </td>
