@@ -222,28 +222,12 @@ export function buildEmailHtml(data: EmailData): string {
                        background:linear-gradient(135deg,${C.orange}18,${C.orangeRed}10);
                        border:2px solid ${C.orange};border-radius:16px;
                        padding:22px 20px;text-align:center;">
-
-              <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:${C.muted};
-                        letter-spacing:0.15em;text-transform:uppercase;">
-                SCONTO APPLICABILE AL CHECKOUT
-              </p>
-              <p style="margin:0 0 6px;font-size:56px;font-weight:800;
-                        color:${C.orange};line-height:1;">
-                ${discountPct}%
-              </p>
-
-              <div style="border-top:1px dashed ${C.border};margin:14px auto;max-width:220px;"></div>
-
-              <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:${C.muted};
-                        letter-spacing:0.18em;text-transform:uppercase;">
-                Codice di riferimento
-              </p>
-              <p style="margin:0 0 10px;font-size:28px;font-weight:700;color:${C.fg};
-                        font-family:'Courier New',Courier,monospace;letter-spacing:0.14em;line-height:1;">
+              <p style="margin:0 0 6px;font-size:36px;font-weight:700;color:${C.fg};
+                        font-family:'Courier New',Courier,monospace;letter-spacing:0.12em;line-height:1;">
                 ${code}
               </p>
               <p style="margin:0;font-size:12px;color:${C.orange};font-weight:600;">
-                ⏰ Valido 24 ore · Solo in negozio
+                ⏰ Valido 24 ore · Solo in negozio · Un utilizzo
               </p>
             </td>
           </tr>
