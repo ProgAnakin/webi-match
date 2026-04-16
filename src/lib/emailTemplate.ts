@@ -1,8 +1,6 @@
 // Email HTML template — single source of truth used by:
 //   • src/pages/EmailPreview.tsx  (live browser preview)
 //   • supabase/functions/on-session-created/index.ts  (production sending)
-//
-// Keep both in sync when editing the design.
 
 export interface EmailData {
   nome?:          string;
@@ -18,14 +16,15 @@ export interface EmailData {
 }
 
 const C = {
+  outerBg:   "#0d1228",
   bg:        "#151d47",
-  card:      "#1c2856",
-  cardDeep:  "#131a3e",
-  border:    "#2d3f72",
-  fg:        "#fafafa",
-  muted:     "#8a9ab8",
+  card:      "#1a2550",
+  cardDeep:  "#101628",
+  border:    "#2a3a68",
+  fg:        "#f0f4ff",
+  muted:     "#7a8fbb",
   orange:    "#f5831c",
-  orangeRed: "#ff4400",
+  orangeRed: "#e8420a",
   green:     "#6BCB77",
   yellow:    "#FFD93D",
   coral:     "#FF8066",
@@ -39,8 +38,23 @@ function matchColor(pct: number): string {
   return C.blue;
 }
 
+function matchLabel(pct: number): string {
+  if (pct >= 90) return "🏆 MATCH PERFETTO";
+  if (pct >= 80) return "⭐ OTTIMA COMPATIBILITÀ";
+  if (pct >= 65) return "✅ BUON MATCH";
+  return "🔍 POSSIBILE MATCH";
+}
+
+function extractYouTubeId(url: string): string | null {
+  if (!url) return null;
+  const m = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+  );
+  return m ? m[1] : null;
+}
+
 export function buildEmailHtml(data: EmailData): string {
-  const nome         = (data.nome ?? "").trim();
+  const nome         = (data.nome    ?? "").trim();
   const cognome      = (data.cognome ?? "").trim();
   const pct          = data.match_percent;
   const productName  = data.product_name;
@@ -50,351 +64,530 @@ export function buildEmailHtml(data: EmailData): string {
   const code         = data.discount_code;
   const faq          = (data.faq ?? []).filter(f => f.q.trim() && f.a.trim());
   const ringColor    = matchColor(pct);
+  const label        = matchLabel(pct);
+  const fullName     = [nome, cognome].filter(Boolean).join(" ");
+  const ytId         = extractYouTubeId(productVideo);
+  const ytThumb      = ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : null;
 
-  const greeting  = nome ? `Ciao ${nome},` : "Ciao,";
-  const fullName  = [nome, cognome].filter(Boolean).join(" ");
-
-  const r          = 56;
+  const r          = 60;
   const circ       = 2 * Math.PI * r;
   const dashoffset = circ * (1 - pct / 100);
 
-  return /* html */`
-<!DOCTYPE html>
+  return /* html */`<!DOCTYPE html>
 <html lang="it" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="color-scheme" content="dark" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="color-scheme" content="dark"/>
   <title>Il tuo match Webi-Match</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
     body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
     table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
-    img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none}
-    body{margin:0!important;padding:0!important;background-color:${C.bg}}
-    a{color:${C.orange}}
+    img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none;display:block}
+    body{margin:0!important;padding:0!important;background-color:${C.outerBg}}
+    a{color:${C.orange};text-decoration:none}
     @media only screen and (max-width:620px){
-      .wrapper{width:100%!important}
-      .step-cell{padding:10px 8px!important}
-      .product-img{height:180px!important}
+      .wrapper{width:100%!important;border-radius:0!important}
+      .step-col{display:block!important;width:100%!important;text-align:center!important;
+                padding:12px 20px!important;border-right:none!important;border-bottom:1px solid ${C.border}!important}
+      .step-col:last-child{border-bottom:none!important}
+      .hide-mobile{display:none!important;max-height:0!important;overflow:hidden!important}
     }
   </style>
 </head>
-<body style="margin:0;padding:0;background-color:${C.bg};
-             font-family:'Space Grotesk',Arial,sans-serif;">
+<body style="margin:0;padding:0;background-color:${C.outerBg};
+             font-family:'Space Grotesk',Arial,Helvetica,sans-serif;">
+
+<!-- pre-header -->
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;
+            color:${C.outerBg};line-height:1px;">
+  🎉 ${pct}% di compatibilità — Il tuo codice ${code} scade in 24 ore!
+  &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+  &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+</div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-       style="background-color:${C.bg};min-width:100%;">
-  <tr><td align="center" style="padding:32px 16px 48px;">
+       style="background-color:${C.outerBg};">
+<tr><td align="center" style="padding:28px 12px 52px;">
 
-  <table class="wrapper" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
-         style="max-width:600px;width:100%;border-radius:24px;overflow:hidden;
-                box-shadow:0 24px 80px rgba(0,0,0,0.5);">
+<!-- ═══════════════════════════════════════════ CARD (600px) -->
+<table class="wrapper" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+       style="max-width:600px;width:100%;border-radius:20px;overflow:hidden;
+              box-shadow:0 32px 80px rgba(0,0,0,0.7),0 0 0 1px ${C.border};">
 
-    <!-- HEADER -->
-    <tr>
-      <td style="background:linear-gradient(135deg,${C.orange},${C.orangeRed});
-                 padding:36px 40px 32px;text-align:center;">
-        <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.25em;
-                  text-transform:uppercase;color:rgba(255,255,255,0.7);">
-          WEBIDOO STORE
-        </p>
-        <h1 style="margin:6px 0 0;font-size:32px;font-weight:700;letter-spacing:0.12em;
-                   text-transform:uppercase;color:#ffffff;line-height:1;">
-          WEBI <span style="opacity:0.85;">MATCH</span>
-        </h1>
-        <p style="margin:10px 0 0;font-size:14px;color:rgba(255,255,255,0.85);font-weight:500;">
-          ${greeting} il tuo gadget ideale ti aspetta! 🎉
-        </p>
-      </td>
-    </tr>
+  <!-- ▌TOP ACCENT LINE -->
+  <tr>
+    <td height="4" style="background:linear-gradient(90deg,${C.orange},${C.orangeRed},${C.orange});
+                           font-size:0;line-height:0;">&nbsp;</td>
+  </tr>
 
-    <!-- MATCH RING -->
-    <tr>
-      <td style="background:${C.card};padding:36px 40px 28px;text-align:center;
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"
-               style="margin:0 auto;">
-          <tr><td>
-            <svg width="160" height="160" viewBox="0 0 120 120"
-                 style="display:block;margin:0 auto;" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="60" cy="60" r="${r}" fill="none"
-                      stroke="${C.border}" stroke-width="7" opacity="0.5"/>
-              <circle cx="60" cy="60" r="${r}" fill="none"
-                      stroke="${ringColor}" stroke-width="7" stroke-linecap="round"
-                      stroke-dasharray="${circ.toFixed(2)}"
-                      stroke-dashoffset="${dashoffset.toFixed(2)}"
-                      transform="rotate(-90 60 60)"
-                      style="filter:drop-shadow(0 0 8px ${ringColor}80)"/>
-              <text x="60" y="54" text-anchor="middle" dominant-baseline="middle"
-                    font-family="'Space Grotesk',Arial,sans-serif"
-                    font-size="22" font-weight="700" fill="${ringColor}">${pct}%</text>
-              <text x="60" y="72" text-anchor="middle" dominant-baseline="middle"
-                    font-family="'Space Grotesk',Arial,sans-serif"
-                    font-size="9" font-weight="600" fill="${C.muted}" letter-spacing="2">MATCH</text>
-            </svg>
-          </td></tr>
-        </table>
-        <h2 style="margin:20px 0 4px;font-size:22px;font-weight:700;color:${C.fg};
-                   letter-spacing:0.04em;">
-          🎉 MATCH PERFETTO!
-        </h2>
-        <p style="margin:0;font-size:14px;color:${C.muted};line-height:1.5;">
-          Il nostro algoritmo ha trovato il prodotto ideale per te
-        </p>
-      </td>
-    </tr>
+  <!-- ▌HEADER -->
+  <tr>
+    <td style="background:${C.cardDeep};padding:36px 40px 32px;text-align:center;">
 
-    <!-- PRODUCT CARD -->
-    <tr>
-      <td style="background:linear-gradient(145deg,${C.card},${C.cardDeep});
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};padding:0;">
-        ${productImage
-          ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-               <tr><td style="padding:0;">
-                 <img class="product-img" src="${productImage}" alt="${productName}"
-                      width="600" style="display:block;width:100%;height:220px;
-                             object-fit:cover;object-position:center;"/>
-               </td></tr>
-             </table>`
-          : `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-               <tr><td style="background:${C.cardDeep};padding:40px;text-align:center;
-                              border-bottom:1px solid ${C.border};">
-                 <span style="font-size:64px;line-height:1;">📦</span>
-               </td></tr>
-             </table>`
-        }
+      <!-- Logo pill -->
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+        <tr>
+          <td style="background:linear-gradient(135deg,${C.orange},${C.orangeRed});
+                     border-radius:10px;padding:7px 22px;">
+            <span style="font-size:13px;font-weight:800;letter-spacing:0.22em;
+                         text-transform:uppercase;color:#fff;">WEBI·MATCH</span>
+          </td>
+        </tr>
+      </table>
+
+      <!-- Greeting -->
+      <h1 style="margin:22px 0 8px;font-size:30px;font-weight:800;color:${C.fg};
+                 line-height:1.15;letter-spacing:-0.01em;">
+        ${nome
+          ? `Ciao <span style="color:${C.orange};">${nome}</span>,<br/>abbiamo trovato il tuo match! 🎉`
+          : `Il tuo match è pronto! 🎉`}
+      </h1>
+      <p style="margin:0;font-size:15px;color:${C.muted};line-height:1.6;">
+        Il nostro algoritmo ha analizzato le tue risposte<br/>e ha selezionato il
+        <strong style="color:${C.fg};">gadget perfetto per il tuo stile di vita</strong>.
+      </p>
+    </td>
+  </tr>
+
+  <!-- ▌MATCH RING HERO -->
+  <tr>
+    <td style="background:linear-gradient(180deg,${C.card} 0%,${C.bg} 100%);
+               padding:44px 40px 36px;text-align:center;border-top:1px solid ${C.border};">
+
+      <!-- Ring SVG -->
+      <svg width="190" height="190" viewBox="0 0 140 140" style="display:block;margin:0 auto;"
+           xmlns="http://www.w3.org/2000/svg">
+        <!-- outer glow halo -->
+        <circle cx="70" cy="70" r="${r + 8}" fill="${ringColor}" opacity="0.06"/>
+        <!-- track ring -->
+        <circle cx="70" cy="70" r="${r}" fill="none"
+                stroke="${C.border}" stroke-width="8" opacity="0.7"/>
+        <!-- progress ring -->
+        <circle cx="70" cy="70" r="${r}" fill="none"
+                stroke="${ringColor}" stroke-width="8" stroke-linecap="round"
+                stroke-dasharray="${circ.toFixed(2)}"
+                stroke-dashoffset="${dashoffset.toFixed(2)}"
+                transform="rotate(-90 70 70)"
+                style="filter:drop-shadow(0 0 10px ${ringColor})"/>
+        <!-- percent text -->
+        <text x="70" y="62" text-anchor="middle" dominant-baseline="middle"
+              font-family="'Space Grotesk',Arial,sans-serif"
+              font-size="28" font-weight="800" fill="${ringColor}">${pct}%</text>
+        <!-- label text -->
+        <text x="70" y="82" text-anchor="middle" dominant-baseline="middle"
+              font-family="'Space Grotesk',Arial,sans-serif"
+              font-size="9" font-weight="600" fill="${C.muted}" letter-spacing="2.5">COMPATIBILITÀ</text>
+      </svg>
+
+      <!-- Quality badge -->
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"
+             style="margin:18px auto 0;">
+        <tr>
+          <td style="background:${ringColor}22;border:1.5px solid ${ringColor}66;
+                     border-radius:999px;padding:7px 22px;">
+            <span style="font-size:12px;font-weight:700;color:${ringColor};
+                         letter-spacing:0.12em;">${label}</span>
+          </td>
+        </tr>
+      </table>
+
+      <p style="margin:14px 0 0;font-size:13px;color:${C.muted};line-height:1.5;">
+        Compatibilità verificata su 8 categorie di preferenze personali
+      </p>
+    </td>
+  </tr>
+
+  <!-- ▌PRODUCT CARD -->
+  <tr>
+    <td style="background:${C.bg};padding:0;border-top:1px solid ${C.border};">
+
+      <!-- Section label -->
+      <p style="margin:0;padding:22px 32px 14px;font-size:10px;font-weight:700;
+                letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">
+        ── IL TUO GADGET IDEALE ──
+      </p>
+
+      <!-- Product image -->
+      ${productImage
+        ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+             <tr><td style="padding:0 24px;">
+               <img src="${productImage}" alt="${productName}" width="552"
+                    style="width:100%;height:230px;object-fit:cover;object-position:center;
+                           border-radius:14px;border:1px solid ${C.border};display:block;"/>
+             </td></tr>
+           </table>`
+        : `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+             <tr><td style="padding:0 24px;">
+               <div style="background:${C.card};border:1px solid ${C.border};border-radius:14px;
+                           padding:52px 20px;text-align:center;">
+                 <span style="font-size:72px;line-height:1;">📦</span>
+               </div>
+             </td></tr>
+           </table>`
+      }
+
+      <!-- Product info row -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="padding:20px 32px 28px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr valign="top">
+                <td>
+                  <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${C.fg};
+                             line-height:1.2;letter-spacing:-0.01em;">${productName}</h2>
+                  ${productPrice
+                    ? `<p style="margin:0;font-size:26px;font-weight:700;color:${C.orange};
+                                 line-height:1;">${productPrice}</p>`
+                    : ""}
+                </td>
+                <td align="right" valign="top" style="padding-left:12px;white-space:nowrap;">
+                  <span style="display:inline-block;background:${ringColor};color:#000;
+                               font-size:12px;font-weight:700;border-radius:999px;
+                               padding:5px 14px;letter-spacing:0.04em;">
+                    ${pct}% match
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- ▌TICKET PERFORATED DIVIDER (top) -->
+  <tr>
+    <td style="background:${C.outerBg};padding:0;font-size:0;line-height:0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <!-- left notch -->
+          <td width="18" height="28"
+              style="background:${C.bg};border-radius:0 14px 14px 0;font-size:0;line-height:0;">&nbsp;</td>
+          <!-- dashed middle -->
+          <td style="border-top:2px dashed ${C.border};height:0;font-size:0;line-height:0;">&nbsp;</td>
+          <!-- right notch -->
+          <td width="18" height="28"
+              style="background:${C.bg};border-radius:14px 0 0 14px;font-size:0;line-height:0;">&nbsp;</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- ▌DISCOUNT CODE — TICKET STYLE -->
+  <tr>
+    <td style="background:${C.bg};padding:8px 24px 32px;">
+
+      <p style="margin:0 0 14px;font-size:10px;font-weight:700;letter-spacing:0.28em;
+                text-transform:uppercase;color:${C.muted};text-align:center;">
+        🎁 IL TUO CODICE SCONTO ESCLUSIVO
+      </p>
+
+      <!-- Ticket box -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background:linear-gradient(145deg,#1a0d00,#120900);
+                     border:2px solid ${C.orange};border-radius:16px;
+                     padding:28px 24px 22px;text-align:center;">
+
+            <!-- Code -->
+            <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:${C.orange};
+                      letter-spacing:0.2em;text-transform:uppercase;">Inserisci al checkout</p>
+            <p style="margin:0 0 20px;font-size:42px;font-weight:800;color:${C.fg};
+                      font-family:'Courier New',Courier,monospace;letter-spacing:0.16em;line-height:1.1;">
+              ${code}
+            </p>
+
+            <!-- 3-pill validity strip -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr>
+                <td style="background:${C.orange}22;border:1px solid ${C.orange}55;
+                           border-radius:999px;padding:5px 14px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:700;color:${C.orange};">⏰ Valido 24 ore</span>
+                </td>
+                <td width="10">&nbsp;</td>
+                <td style="background:#ffffff11;border:1px solid ${C.border};
+                           border-radius:999px;padding:5px 14px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:600;color:${C.muted};">🏪 Solo in negozio</span>
+                </td>
+                <td width="10">&nbsp;</td>
+                <td style="background:#ffffff11;border:1px solid ${C.border};
+                           border-radius:999px;padding:5px 14px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:600;color:${C.muted};">1️⃣ Un utilizzo</span>
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- ▌TICKET PERFORATED DIVIDER (bottom) -->
+  <tr>
+    <td style="background:${C.outerBg};padding:0;font-size:0;line-height:0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td width="18" height="28"
+              style="background:${C.bg};border-radius:0 14px 14px 0;font-size:0;line-height:0;">&nbsp;</td>
+          <td style="border-top:2px dashed ${C.border};height:0;font-size:0;line-height:0;">&nbsp;</td>
+          <td width="18" height="28"
+              style="background:${C.bg};border-radius:14px 0 0 14px;font-size:0;line-height:0;">&nbsp;</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- ▌HOW TO USE — 3 STEPS -->
+  <tr>
+    <td style="background:${C.card};padding:28px 24px;border-top:1px solid ${C.border};">
+
+      <p style="margin:0 0 22px;font-size:10px;font-weight:700;letter-spacing:0.28em;
+                text-transform:uppercase;color:${C.muted};text-align:center;">
+        COME RISCUOTERE LO SCONTO
+      </p>
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr valign="top">
+
+          <!-- Step 1 -->
+          <td class="step-col" width="33%" style="padding:0 16px 0 8px;text-align:center;
+                                                   border-right:1px solid ${C.border};">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr><td style="background:linear-gradient(135deg,${C.orange},${C.orangeRed});
+                             width:44px;height:44px;border-radius:50%;text-align:center;
+                             vertical-align:middle;line-height:44px;font-size:11px;font-weight:800;
+                             color:#fff;letter-spacing:0;">
+                1
+              </td></tr>
+            </table>
+            <p style="margin:10px 0 4px;font-size:13px;font-weight:700;color:${C.fg};">Mostra l'email</p>
+            <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">
+              Al consulente Webidoo in negozio
+            </p>
+          </td>
+
+          <!-- Step 2 -->
+          <td class="step-col" width="33%" style="padding:0 16px;text-align:center;
+                                                   border-right:1px solid ${C.border};">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr><td style="background:linear-gradient(135deg,${C.orange},${C.orangeRed});
+                             width:44px;height:44px;border-radius:50%;text-align:center;
+                             vertical-align:middle;line-height:44px;font-size:11px;font-weight:800;
+                             color:#fff;">
+                2
+              </td></tr>
+            </table>
+            <p style="margin:10px 0 4px;font-size:13px;font-weight:700;color:${C.fg};">Scegli il prodotto</p>
+            <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">
+              Il tuo match o qualsiasi altro
+            </p>
+          </td>
+
+          <!-- Step 3 -->
+          <td class="step-col" width="33%" style="padding:0 8px 0 16px;text-align:center;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr><td style="background:linear-gradient(135deg,${C.orange},${C.orangeRed});
+                             width:44px;height:44px;border-radius:50%;text-align:center;
+                             vertical-align:middle;line-height:44px;font-size:11px;font-weight:800;
+                             color:#fff;">
+                3
+              </td></tr>
+            </table>
+            <p style="margin:10px 0 4px;font-size:13px;font-weight:700;color:${C.fg};">Applica il codice</p>
+            <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">
+              Al checkout — sconto immediato
+            </p>
+          </td>
+
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- ▌VIDEO CTA (only when URL is set) -->
+  ${productVideo ? `
+  <tr>
+    <td style="background:${C.bg};padding:24px;border-top:1px solid ${C.border};">
+      <a href="${productVideo}" target="_blank" style="display:block;text-decoration:none;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td style="padding:0 20px;" align="right">
-              <span style="display:inline-block;background:${ringColor};color:#000;
-                           font-weight:700;font-size:12px;border-radius:999px;
-                           padding:4px 12px;margin-top:-16px;position:relative;
-                           box-shadow:0 4px 12px rgba(0,0,0,0.4);">
-                ${pct}% match
-              </span>
-            </td>
-          </tr>
-        </table>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td style="padding:20px 28px 24px;">
-              <h3 style="margin:0 0 6px;font-size:20px;font-weight:700;color:${C.fg};line-height:1.3;">
-                ${productName}
-              </h3>
-              ${productPrice
-                ? `<p style="margin:0;font-size:22px;font-weight:700;color:${C.orange};">
-                     ${productPrice}
-                   </p>`
-                : ""
+            <td style="border-radius:14px;overflow:hidden;position:relative;">
+              ${ytThumb
+                ? `<!-- YouTube thumbnail as real image -->
+                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                          style="border-radius:14px;overflow:hidden;">
+                     <tr>
+                       <td style="position:relative;padding:0;">
+                         <img src="${ytThumb}" alt="Video del consulente" width="552"
+                              style="width:100%;height:200px;object-fit:cover;object-position:center;
+                                     display:block;border-radius:14px;"/>
+                       </td>
+                     </tr>
+                     <tr>
+                       <td style="background:linear-gradient(0deg,rgba(0,0,0,0.75) 0%,rgba(0,0,0,0.1) 100%);
+                                  margin-top:-80px;padding:0 20px 18px;text-align:center;
+                                  border-radius:0 0 14px 14px;border:1px solid ${C.border};">
+                         <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                           <tr><td style="background:${C.orange};border-radius:50%;
+                                          width:52px;height:52px;text-align:center;
+                                          vertical-align:middle;line-height:52px;font-size:20px;
+                                          box-shadow:0 4px 20px rgba(245,131,28,0.6);">
+                             ▶
+                           </td></tr>
+                         </table>
+                         <p style="margin:10px 0 3px;font-size:14px;font-weight:700;color:#fff;">
+                           Guarda la presentazione del consulente
+                         </p>
+                         <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.65);">
+                           30 secondi per scoprire tutto sul tuo prodotto
+                         </p>
+                       </td>
+                     </tr>
+                   </table>`
+                : `<!-- Fallback: no thumbnail -->
+                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                     <tr>
+                       <td style="background:linear-gradient(135deg,${C.cardDeep},${C.card});
+                                  border:1px solid ${C.border};border-radius:14px;
+                                  padding:32px 20px;text-align:center;">
+                         <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                           <tr><td style="background:${C.orange};border-radius:50%;
+                                          width:60px;height:60px;text-align:center;
+                                          vertical-align:middle;line-height:60px;font-size:24px;
+                                          box-shadow:0 4px 20px rgba(245,131,28,0.5);">
+                             ▶
+                           </td></tr>
+                         </table>
+                         <p style="margin:14px 0 4px;font-size:14px;font-weight:700;color:${C.fg};">
+                           Guarda la presentazione del consulente
+                         </p>
+                         <p style="margin:0;font-size:11px;color:${C.muted};">
+                           30 secondi per scoprire tutto sul tuo prodotto
+                         </p>
+                       </td>
+                     </tr>
+                   </table>`
               }
             </td>
           </tr>
         </table>
-      </td>
-    </tr>
+      </a>
+    </td>
+  </tr>` : ""}
 
-    <!-- DISCOUNT CODE -->
-    <tr>
-      <td style="background:${C.bg};padding:32px 28px;
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
-        <p style="margin:0 0 12px;font-size:11px;font-weight:700;letter-spacing:0.2em;
-                  text-transform:uppercase;color:${C.muted};text-align:center;">
-          🎁 IL TUO CODICE SCONTO ESCLUSIVO
-        </p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td style="background:linear-gradient(135deg,${C.orange}18,${C.orangeRed}10);
-                       border:2px solid ${C.orange};border-radius:16px;
-                       padding:22px 20px;text-align:center;">
-              <p style="margin:0 0 6px;font-size:36px;font-weight:700;color:${C.fg};
-                        font-family:'Space Grotesk',monospace;letter-spacing:0.12em;line-height:1;">
-                ${code}
-              </p>
-              <p style="margin:0;font-size:12px;color:${C.orange};font-weight:600;">
-                ⏰ Valido 24 ore · Solo in negozio · Un utilizzo
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
+  <!-- ▌FAQ -->
+  ${faq.length > 0 ? `
+  <tr>
+    <td style="background:${C.card};padding:28px 24px;border-top:1px solid ${C.border};">
 
-    <!-- HOW TO USE -->
-    <tr>
-      <td style="background:${C.card};padding:28px;
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
-        <p style="margin:0 0 20px;font-size:11px;font-weight:700;letter-spacing:0.18em;
-                  text-transform:uppercase;color:${C.muted};text-align:center;">
-          COME UTILIZZARLO
-        </p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td class="step-cell" width="33%" valign="top"
-                style="padding:0 12px;text-align:center;border-right:1px solid ${C.border};">
-              <div style="width:40px;height:40px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});
-                          border-radius:50%;margin:0 auto 10px;line-height:40px;text-align:center;font-size:18px;">
-                📱
-              </div>
-              <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Mostra l'email</p>
-              <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.4;">
-                Al consulente Webidoo in negozio
-              </p>
-            </td>
-            <td class="step-cell" width="33%" valign="top"
-                style="padding:0 12px;text-align:center;border-right:1px solid ${C.border};">
-              <div style="width:40px;height:40px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});
-                          border-radius:50%;margin:0 auto 10px;line-height:40px;text-align:center;font-size:18px;">
-                🛍️
-              </div>
-              <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Scegli il prodotto</p>
-              <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.4;">
-                Quello del tuo match o un altro
-              </p>
-            </td>
-            <td class="step-cell" width="33%" valign="top"
-                style="padding:0 12px;text-align:center;">
-              <div style="width:40px;height:40px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});
-                          border-radius:50%;margin:0 auto 10px;line-height:40px;text-align:center;font-size:18px;">
-                ✅
-              </div>
-              <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Applica il codice</p>
-              <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.4;">
-                Al checkout · Sconto automatico
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
+      <p style="margin:0 0 20px;font-size:10px;font-weight:700;letter-spacing:0.28em;
+                text-transform:uppercase;color:${C.muted};text-align:center;">
+        DOMANDE FREQUENTI
+      </p>
 
-    <!-- VIDEO BUTTON (only if URL is set) -->
-    ${productVideo ? `
-    <tr>
-      <td style="background:${C.bg};padding:0 28px 24px;
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td style="border-radius:14px;overflow:hidden;position:relative;">
-              <!-- Thumbnail placeholder with play button -->
-              <a href="${productVideo}" target="_blank" style="display:block;text-decoration:none;">
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    <td style="background:linear-gradient(135deg,${C.cardDeep},${C.card});
-                               border:1px solid ${C.border};border-radius:14px;
-                               padding:28px 20px;text-align:center;">
-                      <div style="width:64px;height:64px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});
-                                  border-radius:50%;margin:0 auto 12px;line-height:64px;
-                                  text-align:center;font-size:26px;
-                                  box-shadow:0 8px 24px rgba(245,131,28,0.4);">
-                        ▶
-                      </div>
-                      <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:${C.fg};">
-                        Guarda il video del consulente
-                      </p>
-                      <p style="margin:0;font-size:11px;color:${C.muted};">
-                        Spiega tutto sul tuo prodotto in 30 secondi
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-              </a>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>` : ""}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        ${faq.map((item, i) => `
+        <tr>
+          <td style="padding:${i === 0 ? "0" : "14px"} 0 0;">
+            ${i > 0 ? `<div style="border-top:1px solid ${C.border};margin-bottom:14px;"></div>` : ""}
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="4" style="background:${C.orange};border-radius:4px;padding:0;
+                                     font-size:0;line-height:0;">&nbsp;</td>
+                <td style="padding:4px 0 4px 14px;">
+                  <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:${C.fg};
+                             line-height:1.4;">${item.q}</p>
+                  <p style="margin:0;font-size:13px;color:${C.muted};line-height:1.65;">${item.a}</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>`).join("")}
+      </table>
+    </td>
+  </tr>` : ""}
 
-    <!-- BENEFITS -->
-    <tr>
-      <td style="background:${C.cardDeep};padding:24px 28px;
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
-        <p style="margin:0 0 16px;font-size:11px;font-weight:700;letter-spacing:0.18em;
-                  text-transform:uppercase;color:${C.muted};text-align:center;">
-          INCLUSO NEL TUO PACCHETTO
-        </p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td width="33%" style="text-align:center;padding:0 8px;border-right:1px solid ${C.border};">
-              <p style="margin:0 0 4px;font-size:22px;">🎥</p>
-              <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:${C.fg};">Video 30s</p>
-              <p style="margin:0;font-size:10px;color:${C.muted};">Il consulente spiega tutto</p>
-            </td>
-            <td width="33%" style="text-align:center;padding:0 8px;border-right:1px solid ${C.border};">
-              <p style="margin:0 0 4px;font-size:22px;">📖</p>
-              <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:${C.fg};">Manuale PDF</p>
-              <p style="margin:0;font-size:10px;color:${C.muted};">Guia passo-passo</p>
-            </td>
-            <td width="33%" style="text-align:center;padding:0 8px;">
-              <p style="margin:0 0 4px;font-size:22px;">💰</p>
-              <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:${C.orange};">Sconto VIP</p>
-              <p style="margin:0;font-size:10px;color:${C.muted};">Solo per te oggi</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
+  <!-- ▌BENEFITS STRIP -->
+  <tr>
+    <td style="background:${C.cardDeep};padding:22px 24px;border-top:1px solid ${C.border};">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td width="33%" style="text-align:center;padding:0 10px;border-right:1px solid ${C.border};">
+            <p style="margin:0 0 5px;font-size:24px;">🎥</p>
+            <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:${C.fg};">Video 30s</p>
+            <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.4;">
+              Il consulente spiega tutto
+            </p>
+          </td>
+          <td width="33%" style="text-align:center;padding:0 10px;border-right:1px solid ${C.border};">
+            <p style="margin:0 0 5px;font-size:24px;">📖</p>
+            <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:${C.fg};">Manuale PDF</p>
+            <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.4;">
+              Guida passo-passo
+            </p>
+          </td>
+          <td width="33%" style="text-align:center;padding:0 10px;">
+            <p style="margin:0 0 5px;font-size:24px;">💰</p>
+            <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:${C.orange};">Sconto VIP</p>
+            <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.4;">
+              Solo per te, oggi
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
 
-    <!-- FAQ -->
-    ${faq.length > 0 ? `
-    <tr>
-      <td style="background:${C.card};padding:28px;
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
-        <p style="margin:0 0 16px;font-size:11px;font-weight:700;letter-spacing:0.18em;
-                  text-transform:uppercase;color:${C.muted};text-align:center;">
-          ❓ DOMANDE FREQUENTI
-        </p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          ${faq.map((item, i) => `
-          <tr>
-            <td style="padding:${i === 0 ? "0" : "12px"} 0 0;">
-              ${i > 0 ? `<div style="border-top:1px solid ${C.border};margin-bottom:12px;"></div>` : ""}
-              <p style="margin:0 0 5px;font-size:13px;font-weight:700;color:${C.fg};">
-                ❓ ${item.q}
-              </p>
-              <p style="margin:0;font-size:12px;color:${C.muted};line-height:1.6;">
-                ${item.a}
-              </p>
-            </td>
-          </tr>`).join("")}
-        </table>
-      </td>
-    </tr>` : ""}
+  <!-- ▌SPAM NOTE -->
+  <tr>
+    <td style="background:${C.bg};padding:14px 28px;text-align:center;
+               border-top:1px solid ${C.border};">
+      <p style="margin:0;font-size:11px;color:${C.muted};">
+        📬 Non vedi questa email?
+        Controlla la cartella <strong style="color:${C.fg};">spam</strong>
+        o <strong style="color:${C.fg};">promozioni</strong>.
+      </p>
+    </td>
+  </tr>
 
-    <!-- SPAM NOTE -->
-    <tr>
-      <td style="background:${C.bg};padding:12px 28px;text-align:center;
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
-        <p style="margin:0;font-size:11px;color:${C.muted};">
-          📬 Non vedi l'email? Controlla la cartella <strong>spam</strong> o <strong>promozioni</strong>.
-        </p>
-      </td>
-    </tr>
+  <!-- ▌FOOTER -->
+  <tr>
+    <td style="background:${C.cardDeep};padding:24px 32px 28px;text-align:center;
+               border-top:1px solid ${C.border};border-radius:0 0 20px 20px;">
 
-    <!-- FOOTER -->
-    <tr>
-      <td style="background:${C.cardDeep};padding:24px 28px;text-align:center;
-                 border-radius:0 0 24px 24px;border:1px solid ${C.border};border-top:none;">
-        <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:${C.fg};letter-spacing:0.08em;">
-          WEBIDOO STORE
-        </p>
-        ${fullName
-          ? `<p style="margin:0 0 8px;font-size:12px;color:${C.muted};">
-               Inviato a ${fullName}${data.email ? ` — ${data.email}` : ""}
-             </p>`
-          : ""
-        }
-        <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.6;">
-          Dati crittografati · Conformità GDPR<br/>
-          Ricevi questa email perché hai partecipato a Webi-Match in negozio.<br/>
-          Questo codice è valido 24 ore dalla ricezione di questa email.
-        </p>
-      </td>
-    </tr>
+      <!-- Logo small -->
+      <p style="margin:0 0 4px;font-size:15px;font-weight:800;color:${C.fg};
+                letter-spacing:0.1em;">WEBIDOO STORE</p>
+      <p style="margin:0 0 12px;font-size:11px;color:${C.muted};">
+        Powered by Webi-Match
+      </p>
 
-  </table>
-  </td></tr>
+      ${fullName
+        ? `<p style="margin:0 0 10px;font-size:12px;color:${C.muted};">
+             Inviato a <strong style="color:${C.fg};">${fullName}</strong>${data.email ? ` · ${data.email}` : ""}
+           </p>`
+        : ""}
+
+      <!-- Divider -->
+      <div style="border-top:1px solid ${C.border};margin:12px auto;max-width:200px;"></div>
+
+      <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.8;">
+        Dati crittografati · Conformità GDPR<br/>
+        Hai ricevuto questa email perché hai partecipato a Webi-Match in negozio.<br/>
+        <span style="color:${C.orange};">Il codice sconto è valido 24 ore dalla ricezione.</span>
+      </p>
+    </td>
+  </tr>
+
 </table>
+<!-- /CARD -->
+
+</td></tr>
+</table>
+
 </body>
 </html>`.trim();
 }
