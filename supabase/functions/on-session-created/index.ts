@@ -54,12 +54,13 @@ function genDiscountCode(sessionId: string): string {
 
 // ── Email HTML template ───────────────────────────────────────────────────────
 function buildEmail(record: Record<string, unknown>, code: string): string {
-  const nome        = String(record.nome        ?? "").trim();
-  const cognome     = String(record.cognome     ?? "").trim();
+  const nome        = String(record.nome         ?? "").trim();
+  const cognome     = String(record.cognome      ?? "").trim();
   const pct         = Number(record.match_percent ?? 0);
   const productName = String(record.product_name  ?? "Il tuo prodotto");
   const productPrice= String(record.product_price ?? "");
   const productImage= String(record.product_image ?? "");
+  const productVideo= String(record.product_video ?? "");
   const ringColor   = matchColor(pct);
 
   const greeting = nome ? `Ciao ${nome},` : "Ciao,";
@@ -322,6 +323,34 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
         </table>
       </td>
     </tr>
+
+    <!-- ══ VIDEO BUTTON ══════════════════════════════════════════════════════ -->
+    ${productVideo ? `
+    <tr>
+      <td style="background:${C.bg};padding:0 28px 24px;
+                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
+        <a href="${productVideo}" target="_blank" style="display:block;text-decoration:none;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td style="background:linear-gradient(135deg,${C.cardDeep},${C.card});
+                         border:1px solid ${C.border};border-radius:14px;
+                         padding:28px 20px;text-align:center;">
+                <div style="width:64px;height:64px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});
+                            border-radius:50%;margin:0 auto 12px;line-height:64px;
+                            text-align:center;font-size:26px;
+                            box-shadow:0 8px 24px rgba(245,131,28,0.4);">▶</div>
+                <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:${C.fg};">
+                  Guarda il video del consulente
+                </p>
+                <p style="margin:0;font-size:11px;color:${C.muted};">
+                  Spiega tutto sul tuo prodotto in 30 secondi
+                </p>
+              </td>
+            </tr>
+          </table>
+        </a>
+      </td>
+    </tr>` : ""}
 
     <!-- ══ BENEFITS STRIP ════════════════════════════════════════════════════ -->
     <tr>

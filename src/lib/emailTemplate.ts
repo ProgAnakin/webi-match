@@ -5,13 +5,14 @@
 // Keep both in sync when editing the design.
 
 export interface EmailData {
-  nome?:         string;
-  cognome?:      string;
-  email?:        string;
-  match_percent: number;
-  product_name:  string;
+  nome?:          string;
+  cognome?:       string;
+  email?:         string;
+  match_percent:  number;
+  product_name:   string;
   product_price?: string;
   product_image?: string;
+  product_video?: string;
   discount_code:  string;
 }
 
@@ -44,6 +45,7 @@ export function buildEmailHtml(data: EmailData): string {
   const productName  = data.product_name;
   const productPrice = data.product_price ?? "";
   const productImage = data.product_image ?? "";
+  const productVideo = data.product_video ?? "";
   const code         = data.discount_code;
   const ringColor    = matchColor(pct);
 
@@ -263,6 +265,43 @@ export function buildEmailHtml(data: EmailData): string {
         </table>
       </td>
     </tr>
+
+    <!-- VIDEO BUTTON (only if URL is set) -->
+    ${productVideo ? `
+    <tr>
+      <td style="background:${C.bg};padding:0 28px 24px;
+                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="border-radius:14px;overflow:hidden;position:relative;">
+              <!-- Thumbnail placeholder with play button -->
+              <a href="${productVideo}" target="_blank" style="display:block;text-decoration:none;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="background:linear-gradient(135deg,${C.cardDeep},${C.card});
+                               border:1px solid ${C.border};border-radius:14px;
+                               padding:28px 20px;text-align:center;">
+                      <div style="width:64px;height:64px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});
+                                  border-radius:50%;margin:0 auto 12px;line-height:64px;
+                                  text-align:center;font-size:26px;
+                                  box-shadow:0 8px 24px rgba(245,131,28,0.4);">
+                        ▶
+                      </div>
+                      <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:${C.fg};">
+                        Guarda il video del consulente
+                      </p>
+                      <p style="margin:0;font-size:11px;color:${C.muted};">
+                        Spiega tutto sul tuo prodotto in 30 secondi
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>` : ""}
 
     <!-- BENEFITS -->
     <tr>
