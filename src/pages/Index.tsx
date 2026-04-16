@@ -73,13 +73,14 @@ const Index = () => {
   const [priceOverrides, setPriceOverrides] = useState<Record<string, string>>({});
   const [imageOverrides, setImageOverrides] = useState<Record<string, string>>({});
   const [videoOverrides, setVideoOverrides] = useState<Record<string, string>>({});
+  const [discountOverrides, setDiscountOverrides] = useState<Record<string, number>>({});
   const [settingsLoadFailed, setSettingsLoadFailed] = useState(false);
 
   useEffect(() => {
     const storeId = getStoredStoreId() ?? "corso-vercelli";
     supabase
       .from("product_settings")
-      .select("product_id, active, price_override, image_url, video_url")
+      .select("product_id, active, price_override, image_url, video_url, discount_percent")
       .eq("store_id", storeId)
       .then(({ data, error }) => {
         if (error) {
@@ -94,17 +95,21 @@ const Index = () => {
           const prices: Record<string, string> = {};
           const images: Record<string, string> = {};
           const videos: Record<string, string> = {};
+          const discounts: Record<string, number> = {};
           data.forEach((r) => {
             if (r.price_override) prices[r.product_id] = r.price_override;
             // @ts-ignore — columns added via migration
             if (r.image_url) images[r.product_id] = r.image_url;
             // @ts-ignore
             if (r.video_url) videos[r.product_id] = r.video_url;
+            // @ts-ignore
+            if (r.discount_percent) discounts[r.product_id] = r.discount_percent;
           });
           setActiveProductIds(active);
           setPriceOverrides(prices);
           setVideoOverrides(videos);
           setImageOverrides(images);
+          setDiscountOverrides(discounts);
         }
       });
   }, []);
@@ -157,6 +162,7 @@ const Index = () => {
       product_price: matchedProduct.price,
       product_image: matchedProduct.image ?? null,
       product_video: videoOverrides[matchedProduct.id] ?? null,
+      discount_percent: discountOverrides[matchedProduct.id] ?? 5,
     };
 
     // Retry up to 2 times with exponential backoff before giving up.

@@ -45,12 +45,19 @@ function matchColor(pct: number) {
 }
 
 // ── Discount code ─────────────────────────────────────────────────────────────
-function genDiscountCode(sessionId: string): string {
-  // Deterministic from session UUID — last 6 hex chars uppercased.
-  // Guaranteed unique because session IDs are unique.
-  const hex = sessionId.replace(/-/g, "").slice(-6).toUpperCase();
-  return `WEBI-${hex}`;
+// Format: WEBI-XXXX05 / WEBI-XXXX08 / WEBI-XXXX10
+// Last 2 digits encode the discount %, set per-product in /manager.
+// Shopify admin creates one discount per value (5%, 8%, 10%) with
+// "specific discount codes" enabled — paste/import generated codes there.
+function genDiscountCode(sessionId: string, discountPct: number): string {
+  const hex    = sessionId.replace(/-/g, "").slice(-4).toUpperCase();
+  const suffix = String(discountPct).padStart(2, "0");
+  return `WEBI-${hex}${suffix}`;
 }
+
+// Default video shown when a product has no specific video yet.
+// Update this URL to the general Webidoo product video.
+const DEFAULT_VIDEO_URL = "";
 
 // ── Email HTML template ───────────────────────────────────────────────────────
 function buildEmail(record: Record<string, unknown>, code: string): string {
@@ -60,7 +67,7 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
   const productName = String(record.product_name  ?? "Il tuo prodotto");
   const productPrice= String(record.product_price ?? "");
   const productImage= String(record.product_image ?? "");
-  const productVideo= String(record.product_video ?? "");
+  const productVideo= String(record.product_video ?? "") || DEFAULT_VIDEO_URL;
   const ringColor   = matchColor(pct);
 
   const greeting = nome ? `Ciao ${nome},` : "Ciao,";
@@ -461,7 +468,8 @@ serve(async (req) => {
     return new Response("no email", { status: 200 });
   }
 
-  const code = genDiscountCode(String(record.id));
+  const discountPct = Number(record.discount_percent ?? 5);
+  const code = genDiscountCode(String(record.id), discountPct);
 
   // ── 1. Update DB row with code + email_sent flag ───────────────────────────
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);

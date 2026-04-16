@@ -16,6 +16,11 @@ type PriceMap = Record<string, string>;
 type ImageMap = Record<string, string>;
 /** product_id → YouTube video URL */
 type VideoMap = Record<string, string>;
+/** product_id → discount percent (5 | 8 | 10) */
+type DiscountMap = Record<string, number>;
+
+const DISCOUNT_OPTIONS = [5, 8, 10] as const;
+type DiscountOption = typeof DISCOUNT_OPTIONS[number];
 
 interface UndoEntry { productId: string; restoredValue: boolean; }
 
@@ -29,6 +34,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const [priceOverrides, setPriceOverrides] = useState<PriceMap>({});
   const [imageOverrides, setImageOverrides] = useState<ImageMap>({});
   const [videoOverrides, setVideoOverrides] = useState<VideoMap>({});
+  const [discountOverrides, setDiscountOverrides] = useState<DiscountMap>({});
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
   const [draftVideo, setDraftVideo] = useState("");
@@ -60,13 +66,14 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     setLoading(true);
     const { data } = await supabase
       .from("product_settings")
-      .select("product_id, active, price_override, image_url, video_url")
+      .select("product_id, active, price_override, image_url, video_url, discount_percent")
       .eq("store_id", storeId);
     if (data) {
       const map: SettingsMap = {};
       const prices: PriceMap = {};
       const images: ImageMap = {};
       const videos: VideoMap = {};
+      const discounts: DiscountMap = {};
       data.forEach((row) => {
         map[row.product_id] = row.active;
         if (row.price_override) prices[row.product_id] = row.price_override;
@@ -74,11 +81,14 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         if (row.image_url) images[row.product_id] = row.image_url;
         // @ts-ignore
         if (row.video_url) videos[row.product_id] = row.video_url;
+        // @ts-ignore
+        if (row.discount_percent) discounts[row.product_id] = row.discount_percent;
       });
       setSettings(map);
       setPriceOverrides(prices);
       setImageOverrides(images);
       setVideoOverrides(videos);
+      setDiscountOverrides(discounts);
     }
     setLoading(false);
   }, [storeId]);
@@ -232,6 +242,17 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
       delete next[productId];
       return next;
     });
+  };
+
+  const saveDiscount = async (productId: string, pct: DiscountOption) => {
+    // @ts-ignore — column added via migration
+    await supabase.from("product_settings").upsert({
+      product_id: productId,
+      store_id: storeId,
+      discount_percent: pct,
+      updated_at: new Date().toISOString(),
+    });
+    setDiscountOverrides((prev) => ({ ...prev, [productId]: pct }));
   };
 
   const saveVideoUrl = async (productId: string, url: string) => {
@@ -503,6 +524,29 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                           <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
                       )}
+                      {/* Discount % selector */}
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
+                          Sconto:
+                        </span>
+                        {DISCOUNT_OPTIONS.map((opt) => {
+                          const active = (discountOverrides[product.id] ?? 5) === opt;
+                          return (
+                            <button
+                              key={opt}
+                              onClick={() => saveDiscount(product.id, opt)}
+                              className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold transition-colors ${
+                                active
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
+                            >
+                              {opt}%
+                            </button>
+                          );
+                        })}
+                      </div>
+
                       <div className="mt-2 flex flex-wrap gap-1">
                         {product.tags.map((tag) => (
                           <span key={tag}
