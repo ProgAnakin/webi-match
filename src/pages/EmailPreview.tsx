@@ -1,12 +1,19 @@
 import { useState, useMemo } from "react";
 import { buildEmailHtml } from "@/lib/emailTemplate";
 
-const MATCH_COLORS: Record<string, string> = {
-  "≥90% Verde":   "#6BCB77",
-  "≥80% Giallo":  "#FFD93D",
-  "≥65% Coral":   "#FF8066",
-  "<65% Blu":     "#4D96FF",
-};
+const MATCH_TIERS = [
+  { min: 0,  label: "<65% Blu",     color: "#4D96FF" },
+  { min: 65, label: "≥65% Coral",   color: "#FF8066" },
+  { min: 80, label: "≥80% Giallo",  color: "#FFD93D" },
+  { min: 90, label: "≥90% Verde",   color: "#6BCB77" },
+];
+
+function getMatchColor(pct: number): string {
+  for (let i = MATCH_TIERS.length - 1; i >= 0; i--) {
+    if (pct >= MATCH_TIERS[i].min) return MATCH_TIERS[i].color;
+  }
+  return MATCH_TIERS[0].color;
+}
 
 const DEFAULT_FAQ = [
   { q: "La batteria dura quanto tempo?", a: "Fino a 8 ore di utilizzo continuo con una singola carica." },
@@ -41,10 +48,7 @@ export default function EmailPreview() {
   const updateFaq = (i: number, field: "q" | "a", val: string) =>
     setFaq(prev => prev.map((item, idx) => idx === i ? { ...item, [field]: val } : item));
 
-  const ringColor = matchPercent >= 90 ? MATCH_COLORS["≥90% Verde"]
-    : matchPercent >= 80 ? MATCH_COLORS["≥80% Giallo"]
-    : matchPercent >= 65 ? MATCH_COLORS["≥65% Coral"]
-    : MATCH_COLORS["<65% Blu"];
+  const ringColor = getMatchColor(matchPercent);
 
   return (
     <div className="flex h-screen bg-[#0b0f1e] overflow-hidden">
@@ -84,10 +88,11 @@ export default function EmailPreview() {
               </div>
               <input type="range" min={1} max={100} value={matchPercent}
                 onChange={(e) => setMatchPercent(Number(e.target.value))}
-                className="w-full accent-orange-500" />
+                style={{ accentColor: ringColor }}
+                className="w-full" />
               <div className="flex justify-between text-[9px] text-white/30 mt-1">
-                {Object.entries(MATCH_COLORS).map(([label, color]) => (
-                  <span key={label} style={{ color }}>{label}</span>
+                {MATCH_TIERS.map((tier) => (
+                  <span key={tier.label} style={{ color: tier.color }}>{tier.label}</span>
                 ))}
               </div>
             </div>

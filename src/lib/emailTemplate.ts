@@ -153,32 +153,36 @@ export function buildEmailHtml(data: EmailData): string {
 
   <!-- ▌MATCH RING HERO -->
   <tr>
-    <td style="background:linear-gradient(180deg,${C.card} 0%,${C.bg} 100%);
-               padding:44px 40px 36px;text-align:center;border-top:1px solid ${C.border};">
+    <td style="background:${C.bg};padding:48px 40px 40px;text-align:center;border-top:1px solid ${C.border};">
 
-      <!-- Ring SVG -->
-      <svg width="190" height="190" viewBox="0 0 140 140" style="display:block;margin:0 auto;"
+      <!-- Ring SVG — glow via concentric circles, no CSS filter artifact -->
+      <svg width="210" height="210" viewBox="0 0 180 180" style="display:block;margin:0 auto;"
            xmlns="http://www.w3.org/2000/svg">
-        <!-- outer glow halo -->
-        <circle cx="70" cy="70" r="${r + 8}" fill="${ringColor}" opacity="0.06"/>
-        <!-- track ring -->
-        <circle cx="70" cy="70" r="${r}" fill="none"
-                stroke="${C.border}" stroke-width="8" opacity="0.7"/>
-        <!-- progress ring -->
-        <circle cx="70" cy="70" r="${r}" fill="none"
-                stroke="${ringColor}" stroke-width="8" stroke-linecap="round"
+        <!-- Glow layers: pure SVG (no CSS filter) -->
+        <circle cx="90" cy="90" r="76" fill="none" stroke="${ringColor}" stroke-width="24" opacity="0.05"/>
+        <circle cx="90" cy="90" r="70" fill="none" stroke="${ringColor}" stroke-width="16" opacity="0.08"/>
+        <circle cx="90" cy="90" r="64" fill="none" stroke="${ringColor}" stroke-width="10" opacity="0.12"/>
+
+        <!-- track ring (unfilled) -->
+        <circle cx="90" cy="90" r="${r}" fill="none"
+                stroke="${C.border}" stroke-width="9" opacity="0.65"/>
+
+        <!-- progress ring (animated) -->
+        <circle cx="90" cy="90" r="${r}" fill="none"
+                stroke="${ringColor}" stroke-width="9" stroke-linecap="round"
                 stroke-dasharray="${circ.toFixed(2)}"
                 stroke-dashoffset="${dashoffset.toFixed(2)}"
-                transform="rotate(-90 70 70)"
-                style="filter:drop-shadow(0 0 10px ${ringColor})"/>
-        <!-- percent text -->
-        <text x="70" y="62" text-anchor="middle" dominant-baseline="middle"
+                transform="rotate(-90 90 90)"/>
+
+        <!-- percent text — big and bold -->
+        <text x="90" y="85" text-anchor="middle" dominant-baseline="middle"
               font-family="'Space Grotesk',Arial,sans-serif"
-              font-size="28" font-weight="800" fill="${ringColor}">${pct}%</text>
-        <!-- label text -->
-        <text x="70" y="82" text-anchor="middle" dominant-baseline="middle"
+              font-size="34" font-weight="800" fill="${ringColor}">${pct}%</text>
+
+        <!-- label text — subtle -->
+        <text x="90" y="108" text-anchor="middle" dominant-baseline="middle"
               font-family="'Space Grotesk',Arial,sans-serif"
-              font-size="9" font-weight="600" fill="${C.muted}" letter-spacing="2.5">COMPATIBILITÀ</text>
+              font-size="9" font-weight="700" fill="${C.muted}" letter-spacing="2.2">COMPATIBILITÀ</text>
       </svg>
 
       <!-- Quality badge -->
@@ -257,64 +261,74 @@ export function buildEmailHtml(data: EmailData): string {
     </td>
   </tr>
 
-  <!-- ▌TICKET PERFORATED DIVIDER (top) -->
+  <!-- ▌TICKET SECTION — REAL SCONTRINO STYLE -->
   <tr>
-    <td style="background:${C.outerBg};padding:0;font-size:0;line-height:0;">
+    <td style="background:#0a0600;padding:0;border-top:1px solid ${C.border};">
+
+      <!-- TICKET HEADER STUB (orange bar) -->
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <!-- left notch -->
-          <td width="18" height="28"
-              style="background:${C.bg};border-radius:0 14px 14px 0;font-size:0;line-height:0;">&nbsp;</td>
-          <!-- dashed middle -->
-          <td style="border-top:2px dashed ${C.border};height:0;font-size:0;line-height:0;">&nbsp;</td>
-          <!-- right notch -->
-          <td width="18" height="28"
-              style="background:${C.bg};border-radius:14px 0 0 14px;font-size:0;line-height:0;">&nbsp;</td>
+          <td style="background:linear-gradient(90deg,${C.orange},${C.orangeRed},${C.orange});
+                     padding:10px 28px;text-align:center;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="left" style="font-size:11px;font-weight:800;color:#fff;letter-spacing:0.15em;">
+                  🎟 SCONTO SPECIALE
+                </td>
+                <td align="right" style="font-size:9px;font-weight:600;color:rgba(255,255,255,0.8);">
+                  WEBIDOO STORE
+                </td>
+              </tr>
+            </table>
+          </td>
         </tr>
       </table>
-    </td>
-  </tr>
 
-  <!-- ▌DISCOUNT CODE — TICKET STYLE -->
-  <tr>
-    <td style="background:${C.bg};padding:8px 24px 32px;">
+      <!-- PERFORATION LINE (top notches) -->
+      <tr style="display:table-row;">
+        <td style="background:#0a0600;padding:0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td width="22" height="32" style="background:${C.outerBg};border-radius:0 16px 16px 0;font-size:0;">&nbsp;</td>
+              <td style="border-top:2px dashed ${C.border};height:0;">&nbsp;</td>
+              <td width="22" height="32" style="background:${C.outerBg};border-radius:16px 0 0 16px;font-size:0;">&nbsp;</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
 
-      <p style="margin:0 0 14px;font-size:10px;font-weight:700;letter-spacing:0.28em;
-                text-transform:uppercase;color:${C.muted};text-align:center;">
-        🎁 IL TUO CODICE SCONTO ESCLUSIVO
-      </p>
-
-      <!-- Ticket box -->
+      <!-- TICKET MAIN BODY -->
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td style="background:linear-gradient(145deg,#1a0d00,#120900);
-                     border:2px solid ${C.orange};border-radius:16px;
-                     padding:28px 24px 22px;text-align:center;">
+          <td style="background:#0a0600;padding:32px 28px;text-align:center;">
 
-            <!-- Code -->
-            <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:${C.orange};
-                      letter-spacing:0.2em;text-transform:uppercase;">Inserisci al checkout</p>
-            <p style="margin:0 0 20px;font-size:42px;font-weight:800;color:${C.fg};
-                      font-family:'Courier New',Courier,monospace;letter-spacing:0.16em;line-height:1.1;">
+            <!-- "Insert at checkout" label -->
+            <p style="margin:0 0 8px;font-size:10px;font-weight:700;color:${C.orange};
+                      letter-spacing:0.22em;text-transform:uppercase;">Inserisci al checkout</p>
+
+            <!-- THE CODE — big monospace -->
+            <p style="margin:0 0 20px;font-size:44px;font-weight:900;color:#fff;
+                      font-family:'Courier New',Courier,monospace;letter-spacing:0.18em;
+                      line-height:1;text-shadow:0 4px 12px rgba(0,0,0,0.6);">
               ${code}
             </p>
 
-            <!-- 3-pill validity strip -->
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+            <!-- VALIDITY PILLS -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
               <tr>
-                <td style="background:${C.orange}22;border:1px solid ${C.orange}55;
-                           border-radius:999px;padding:5px 14px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:700;color:${C.orange};">⏰ Valido 24 ore</span>
+                <td style="background:${C.orange}28;border:1.5px solid ${C.orange}70;
+                           border-radius:999px;padding:6px 16px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:700;color:${C.orange};">⏰ 24 ore</span>
                 </td>
-                <td width="10">&nbsp;</td>
-                <td style="background:#ffffff11;border:1px solid ${C.border};
-                           border-radius:999px;padding:5px 14px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:600;color:${C.muted};">🏪 Solo in negozio</span>
+                <td width="8">&nbsp;</td>
+                <td style="background:#ffffff12;border:1px solid ${C.border};
+                           border-radius:999px;padding:6px 14px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:600;color:${C.muted};">🏪 In negozio</span>
                 </td>
-                <td width="10">&nbsp;</td>
-                <td style="background:#ffffff11;border:1px solid ${C.border};
-                           border-radius:999px;padding:5px 14px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:600;color:${C.muted};">1️⃣ Un utilizzo</span>
+                <td width="8">&nbsp;</td>
+                <td style="background:#ffffff12;border:1px solid ${C.border};
+                           border-radius:999px;padding:6px 14px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:600;color:${C.muted};">1️⃣ Usa</span>
                 </td>
               </tr>
             </table>
@@ -322,21 +336,55 @@ export function buildEmailHtml(data: EmailData): string {
           </td>
         </tr>
       </table>
-    </td>
-  </tr>
 
-  <!-- ▌TICKET PERFORATED DIVIDER (bottom) -->
-  <tr>
-    <td style="background:${C.outerBg};padding:0;font-size:0;line-height:0;">
+      <!-- PERFORATION LINE (bottom notches) -->
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td width="18" height="28"
-              style="background:${C.bg};border-radius:0 14px 14px 0;font-size:0;line-height:0;">&nbsp;</td>
-          <td style="border-top:2px dashed ${C.border};height:0;font-size:0;line-height:0;">&nbsp;</td>
-          <td width="18" height="28"
-              style="background:${C.bg};border-radius:14px 0 0 14px;font-size:0;line-height:0;">&nbsp;</td>
+          <td style="background:#0a0600;padding:0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="22" height="32" style="background:${C.outerBg};border-radius:0 16px 16px 0;font-size:0;">&nbsp;</td>
+                <td style="border-top:2px dashed ${C.border};height:0;">&nbsp;</td>
+                <td width="22" height="32" style="background:${C.outerBg};border-radius:16px 0 0 16px;font-size:0;">&nbsp;</td>
+              </tr>
+            </table>
+          </td>
         </tr>
       </table>
+
+      <!-- BARCODE STRIP (authenticity) -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="background:#0a0600;padding:14px 28px;text-align:center;border-top:1px solid ${C.border}28;">
+            <svg width="160" height="32" viewBox="0 0 160 32" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="2" width="2" height="28" fill="${C.orange}" opacity="0.6"/>
+              <rect x="8" y="2" width="1" height="28" fill="${C.orange}" opacity="0.8"/>
+              <rect x="11" y="2" width="3" height="28" fill="${C.orange}" opacity="0.5"/>
+              <rect x="16" y="2" width="2" height="28" fill="${C.orange}" opacity="0.7"/>
+              <rect x="20" y="2" width="4" height="28" fill="${C.orange}" opacity="0.6"/>
+              <rect x="26" y="2" width="1" height="28" fill="${C.orange}" opacity="0.8"/>
+              <rect x="29" y="2" width="3" height="28" fill="${C.orange}" opacity="0.5"/>
+              <rect x="34" y="2" width="2" height="28" fill="${C.orange}" opacity="0.7"/>
+              <rect x="38" y="2" width="5" height="28" fill="${C.orange}" opacity="0.6"/>
+              <rect x="45" y="2" width="1" height="28" fill="${C.orange}" opacity="0.8"/>
+              <rect x="48" y="2" width="3" height="28" fill="${C.orange}" opacity="0.5"/>
+              <rect x="53" y="2" width="2" height="28" fill="${C.orange}" opacity="0.7"/>
+              <rect x="57" y="2" width="4" height="28" fill="${C.orange}" opacity="0.6"/>
+              <rect x="63" y="2" width="1" height="28" fill="${C.orange}" opacity="0.8"/>
+              <rect x="66" y="2" width="3" height="28" fill="${C.orange}" opacity="0.5"/>
+              <rect x="71" y="2" width="2" height="28" fill="${C.orange}" opacity="0.7"/>
+              <rect x="75" y="2" width="4" height="28" fill="${C.orange}" opacity="0.6"/>
+              <rect x="81" y="2" width="1" height="28" fill="${C.orange}" opacity="0.8"/>
+              <rect x="84" y="2" width="3" height="28" fill="${C.orange}" opacity="0.5"/>
+              <rect x="89" y="2" width="2" height="28" fill="${C.orange}" opacity="0.7"/>
+            </svg>
+            <p style="margin:6px 0 0;font-size:8px;color:${C.muted};letter-spacing:0.1em;">
+              BIGLIETTO SCONTO WEBIDOO
+            </p>
+          </td>
+        </tr>
+      </table>
+
     </td>
   </tr>
 
@@ -510,32 +558,45 @@ export function buildEmailHtml(data: EmailData): string {
     </td>
   </tr>` : ""}
 
-  <!-- ▌BENEFITS STRIP -->
+  <!-- ▌ACTION REMINDER — URGENCY CTA -->
   <tr>
-    <td style="background:${C.cardDeep};padding:22px 24px;border-top:1px solid ${C.border};">
+    <td style="background:${C.card};padding:26px 24px;border-top:1px solid ${C.border};">
+
+      <p style="margin:0 0 18px;font-size:11px;font-weight:700;letter-spacing:0.24em;
+                text-transform:uppercase;color:${C.orange};text-align:center;">
+        ⚡ AZIONE RICHIESTA
+      </p>
+
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td width="33%" style="text-align:center;padding:0 10px;border-right:1px solid ${C.border};">
-            <p style="margin:0 0 5px;font-size:24px;">🎥</p>
-            <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:${C.fg};">Video 30s</p>
-            <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.4;">
-              Il consulente spiega tutto
+        <tr valign="top">
+
+          <!-- Action 1: Save email -->
+          <td width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
+            <p style="margin:0 0 6px;font-size:18px;">💾</p>
+            <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Salva l'email</p>
+            <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">
+              Avrai il codice a portata di mano
             </p>
           </td>
-          <td width="33%" style="text-align:center;padding:0 10px;border-right:1px solid ${C.border};">
-            <p style="margin:0 0 5px;font-size:24px;">📖</p>
-            <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:${C.fg};">Manuale PDF</p>
-            <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.4;">
-              Guida passo-passo
+
+          <!-- Action 2: Time limit -->
+          <td width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
+            <p style="margin:0 0 6px;font-size:18px;">⏰</p>
+            <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Entro 24 ore</p>
+            <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">
+              Il codice scade presto
             </p>
           </td>
-          <td width="33%" style="text-align:center;padding:0 10px;">
-            <p style="margin:0 0 5px;font-size:24px;">💰</p>
-            <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:${C.orange};">Sconto VIP</p>
-            <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.4;">
-              Solo per te, oggi
+
+          <!-- Action 3: Go to store -->
+          <td width="33%" style="text-align:center;padding:0 12px;">
+            <p style="margin:0 0 6px;font-size:18px;">🏪</p>
+            <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Vieni in store</p>
+            <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">
+              Mostra al consulente
             </p>
           </td>
+
         </tr>
       </table>
     </td>
