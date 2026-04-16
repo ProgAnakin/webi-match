@@ -72,13 +72,14 @@ const Index = () => {
   const [activeProductIds, setActiveProductIds] = useState<Set<string> | null>(null);
   const [priceOverrides, setPriceOverrides] = useState<Record<string, string>>({});
   const [imageOverrides, setImageOverrides] = useState<Record<string, string>>({});
+  const [videoOverrides, setVideoOverrides] = useState<Record<string, string>>({});
   const [settingsLoadFailed, setSettingsLoadFailed] = useState(false);
 
   useEffect(() => {
     const storeId = getStoredStoreId() ?? "corso-vercelli";
     supabase
       .from("product_settings")
-      .select("product_id, active, price_override, image_url")
+      .select("product_id, active, price_override, image_url, video_url")
       .eq("store_id", storeId)
       .then(({ data, error }) => {
         if (error) {
@@ -92,13 +93,17 @@ const Index = () => {
           );
           const prices: Record<string, string> = {};
           const images: Record<string, string> = {};
+          const videos: Record<string, string> = {};
           data.forEach((r) => {
             if (r.price_override) prices[r.product_id] = r.price_override;
-            // @ts-ignore — image_url column added via migration
+            // @ts-ignore — columns added via migration
             if (r.image_url) images[r.product_id] = r.image_url;
+            // @ts-ignore
+            if (r.video_url) videos[r.product_id] = r.video_url;
           });
           setActiveProductIds(active);
           setPriceOverrides(prices);
+          setVideoOverrides(videos);
           setImageOverrides(images);
         }
       });
@@ -151,6 +156,7 @@ const Index = () => {
       product_name:  matchedProduct.name,
       product_price: matchedProduct.price,
       product_image: matchedProduct.image ?? null,
+      product_video: videoOverrides[matchedProduct.id] ?? null,
     };
 
     // Retry up to 2 times with exponential backoff before giving up.

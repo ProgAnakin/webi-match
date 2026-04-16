@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BarChart2, Camera, Check, Home, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download } from "lucide-react";
+import { BarChart2, Camera, Check, Home, Link, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import { getStoredStoreId, setStoredStoreId, getStoreById } from "@/data/stores";
@@ -14,6 +14,8 @@ type SettingsMap = Record<string, boolean>;
 type PriceMap = Record<string, string>;
 /** product_id → custom image URL */
 type ImageMap = Record<string, string>;
+/** product_id → YouTube video URL */
+type VideoMap = Record<string, string>;
 
 interface UndoEntry { productId: string; restoredValue: boolean; }
 
@@ -26,7 +28,10 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const [settings, setSettings] = useState<SettingsMap>({});
   const [priceOverrides, setPriceOverrides] = useState<PriceMap>({});
   const [imageOverrides, setImageOverrides] = useState<ImageMap>({});
+  const [videoOverrides, setVideoOverrides] = useState<VideoMap>({});
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
+  const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
+  const [draftVideo, setDraftVideo] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -55,21 +60,25 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     setLoading(true);
     const { data } = await supabase
       .from("product_settings")
-      .select("product_id, active, price_override, image_url")
+      .select("product_id, active, price_override, image_url, video_url")
       .eq("store_id", storeId);
     if (data) {
       const map: SettingsMap = {};
       const prices: PriceMap = {};
       const images: ImageMap = {};
+      const videos: VideoMap = {};
       data.forEach((row) => {
         map[row.product_id] = row.active;
         if (row.price_override) prices[row.product_id] = row.price_override;
-        // @ts-ignore — image_url column added via migration
+        // @ts-ignore — columns added via migration
         if (row.image_url) images[row.product_id] = row.image_url;
+        // @ts-ignore
+        if (row.video_url) videos[row.product_id] = row.video_url;
       });
       setSettings(map);
       setPriceOverrides(prices);
       setImageOverrides(images);
+      setVideoOverrides(videos);
     }
     setLoading(false);
   }, [storeId]);
@@ -223,6 +232,22 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
       delete next[productId];
       return next;
     });
+  };
+
+  const saveVideoUrl = async (productId: string, url: string) => {
+    const trimmed = url.trim();
+    await supabase.from("product_settings").upsert({
+      product_id: productId,
+      store_id: storeId,
+      // @ts-ignore
+      video_url: trimmed || null,
+      updated_at: new Date().toISOString(),
+    });
+    setVideoOverrides((prev) => {
+      if (!trimmed) { const n = { ...prev }; delete n[productId]; return n; }
+      return { ...prev, [productId]: trimmed };
+    });
+    setEditingVideoId(null);
   };
 
   const downloadCsvTemplate = () => {
@@ -525,6 +550,48 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                               }}
                             />
                           </label>
+                        )}
+                      </div>
+
+                      {/* Video URL */}
+                      <div className="mt-2">
+                        {editingVideoId === product.id ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              autoFocus
+                              value={draftVideo}
+                              onChange={(e) => setDraftVideo(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveVideoUrl(product.id, draftVideo);
+                                if (e.key === "Escape") setEditingVideoId(null);
+                              }}
+                              placeholder="https://youtube.com/watch?v=..."
+                              className="flex-1 rounded-lg border border-primary bg-card px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                            <button onClick={() => saveVideoUrl(product.id, draftVideo)}
+                              className="rounded-lg bg-primary/20 p-1.5 text-primary hover:bg-primary/30">
+                              <Check className="h-3.5 w-3.5" />
+                            </button>
+                            <button onClick={() => setEditingVideoId(null)}
+                              className="rounded-lg bg-muted p-1.5 text-muted-foreground">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => { setEditingVideoId(product.id); setDraftVideo(videoOverrides[product.id] ?? ""); }}
+                            className="flex items-center gap-1.5 group"
+                          >
+                            <Link className="h-3 w-3 text-muted-foreground" />
+                            {videoOverrides[product.id] ? (
+                              <>
+                                <span className="text-[10px] text-green-400 font-semibold">Vídeo YouTube ✓</span>
+                                <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground hover:text-foreground">Adicionar vídeo YouTube</span>
+                            )}
+                          </button>
                         )}
                       </div>
                     </div>
