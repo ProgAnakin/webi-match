@@ -30,20 +30,22 @@ export default function EmailPreview() {
   const [productPrice, setProductPrice] = useState("€39.00");
   const [productImage, setProductImage] = useState("");
   const [productVideo, setProductVideo] = useState("");
-  const [discountCode, setDiscountCode] = useState("WEBI-A4F2C9");
+  const [discountCode,    setDiscountCode]    = useState("WEBI-A4F205");
+  const [discountPercent, setDiscountPercent] = useState<5 | 8 | 10>(5);
   const [faq, setFaq] = useState(DEFAULT_FAQ);
 
   const html = useMemo(() => buildEmailHtml({
     nome, cognome, email,
-    match_percent: matchPercent,
-    product_name:  productName,
-    product_price: productPrice,
-    product_image: productImage,
-    product_video: productVideo,
-    discount_code: discountCode,
+    match_percent:    matchPercent,
+    product_name:     productName,
+    product_price:    productPrice,
+    product_image:    productImage,
+    product_video:    productVideo,
+    discount_code:    discountCode,
+    discount_percent: discountPercent,
     faq,
   }), [nome, cognome, email, matchPercent, productName, productPrice,
-      productImage, productVideo, discountCode, faq]);
+      productImage, productVideo, discountCode, discountPercent, faq]);
 
   const updateFaq = (i: number, field: "q" | "a", val: string) =>
     setFaq(prev => prev.map((item, idx) => idx === i ? { ...item, [field]: val } : item));
@@ -108,7 +110,30 @@ export default function EmailPreview() {
 
           {/* DESCONTO */}
           <Section title="🎁 Desconto">
-            <Field label="Código" value={discountCode} onChange={setDiscountCode} />
+            <div>
+              <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">
+                % Sconto
+              </label>
+              <div className="mt-1 flex gap-2">
+                {([5, 8, 10] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => {
+                      setDiscountPercent(opt);
+                      setDiscountCode(`WEBI-A4F2${String(opt).padStart(2, "0")}`);
+                    }}
+                    className={`flex-1 rounded-lg py-2 text-sm font-bold transition-all ${
+                      discountPercent === opt
+                        ? "bg-orange-500 text-white"
+                        : "bg-white/5 border border-white/10 text-white/50 hover:bg-white/10"
+                    }`}
+                  >
+                    {opt}%
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Field label="Código gerado" value={discountCode} onChange={setDiscountCode} />
           </Section>
 
           {/* FAQ */}
