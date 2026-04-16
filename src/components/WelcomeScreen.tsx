@@ -126,14 +126,15 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
 
     setChecking(true);
     try {
-      const { data } = await supabase.rpc("check_email_cooldown", {
-        p_email: email.trim().toLowerCase(),
-      });
-      if (data?.in_cooldown) {
-        setCooldownHours(data.hours_remaining as number);
-        setChecking(false);
-        return;
-      }
+      // TODO: Re-enable check_email_cooldown RPC after testing phase
+      // const { data } = await supabase.rpc("check_email_cooldown", {
+      //   p_email: email.trim().toLowerCase(),
+      // });
+      // if (data?.in_cooldown) {
+      //   setCooldownHours(data.hours_remaining as number);
+      //   setChecking(false);
+      //   return;
+      // }
     } catch {
       // If the RPC doesn't exist yet or fails, allow through — never block a real customer
     }
