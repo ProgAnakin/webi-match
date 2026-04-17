@@ -235,14 +235,14 @@ export function buildEmailHtml(data: EmailData): string {
   <!-- TICKET / DISCOUNT CODE -->
   <tr>
     <td style="background:${C.card};padding:28px 24px 32px;border-top:1px solid ${C.border};">
-      <p style="margin:0 0 16px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">🎁 IL TUO CODICE SCONTO ESCLUSIVO</p>
+      <p style="margin:0 0 16px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">IL TUO CODICE SCONTO ESCLUSIVO</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
              style="border-radius:16px;border:2px solid ${C.orange};box-shadow:0 8px 48px rgba(245,131,28,0.35);">
         <tr>
           <td style="background:${C.orange};background:linear-gradient(90deg,${C.orange},${C.orangeRed},${C.orange});padding:11px 24px;border-radius:14px 14px 0 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="font-size:12px;font-weight:800;color:#fff;letter-spacing:0.14em;">🎟&nbsp; SCONTO SPECIALE</td>
+                <td style="font-size:12px;font-weight:800;color:#fff;letter-spacing:0.14em;">SCONTO SPECIALE</td>
                 <td align="right" style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.8);letter-spacing:0.1em;">WEBIDOO STORE</td>
               </tr>
             </table>
@@ -255,15 +255,15 @@ export function buildEmailHtml(data: EmailData): string {
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
               <tr>
                 <td style="background:${C.orange};border-radius:999px;padding:6px 18px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:700;color:#fff;">⏰ Valido 24 ore</span>
+                  <span style="font-size:12px;font-weight:700;color:#fff;">Valido 24 ore</span>
                 </td>
                 <td width="8">&nbsp;</td>
                 <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:6px 14px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:600;color:${C.fg};">🏪 Solo in negozio</span>
+                  <span style="font-size:12px;font-weight:600;color:${C.fg};">Solo in negozio</span>
                 </td>
                 <td width="8">&nbsp;</td>
                 <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:6px 14px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:600;color:${C.fg};">1️⃣ Un utilizzo</span>
+                  <span style="font-size:12px;font-weight:600;color:${C.fg};">Un utilizzo</span>
                 </td>
               </tr>
             </table>
@@ -372,7 +372,7 @@ export function buildEmailHtml(data: EmailData): string {
   <!-- ACTION REMINDER -->
   <tr>
     <td style="background:${C.cardAlt};padding:26px 24px;border-top:1px solid ${C.border};">
-      <p style="margin:0 0 18px;font-size:11px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:${C.orange};text-align:center;">⚡ AZIONE RICHIESTA</p>
+      <p style="margin:0 0 18px;font-size:11px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:${C.orange};text-align:center;">AZIONE RICHIESTA</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr valign="top">
           <td width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
@@ -398,7 +398,7 @@ export function buildEmailHtml(data: EmailData): string {
   <!-- SPAM NOTE -->
   <tr>
     <td style="background:${C.card};padding:14px 28px;text-align:center;border-top:1px solid ${C.border};">
-      <p style="margin:0;font-size:11px;color:${C.muted};">📬 Non vedi questa email? Controlla la cartella <strong style="color:${C.fg};">spam</strong> o <strong style="color:${C.fg};">promozioni</strong>.</p>
+      <p style="margin:0;font-size:11px;color:${C.muted};">Non vedi questa email? Controlla la cartella <strong style="color:${C.fg};">spam</strong> o <strong style="color:${C.fg};">promozioni</strong>.</p>
     </td>
   </tr>
 
