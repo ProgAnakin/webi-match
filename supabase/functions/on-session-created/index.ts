@@ -17,7 +17,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const RESEND_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
+const BREVO_KEY  = Deno.env.get("BREVO_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
@@ -487,30 +487,30 @@ serve(async (req) => {
   const subjectName = nome ? `${nome}, il` : "Il";
   const html = buildEmail(record, code);
 
-  const resendRes = await fetch("https://api.resend.com/emails", {
+  const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${RESEND_KEY}`,
+      "api-key": BREVO_KEY,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Webidoo Store <onboarding@resend.dev>",  // domain verified by Resend — swap to your domain once verified
-      to:   record.email,
+      sender: { name: "Webidoo Store", email: "costanzobruno.annichini@webidoo.com" },
+      to: [{ email: record.email, name: [nome, String(record.cognome ?? "")].filter(Boolean).join(" ") }],
       subject: `${subjectName} tuo match è ${pct}% — Codice sconto valido 24h ⏰`,
-      html,
+      htmlContent: html,
     }),
   });
 
-  if (!resendRes.ok) {
-    const errText = await resendRes.text();
-    console.error("[on-session-created] Resend error:", errText);
+  if (!brevoRes.ok) {
+    const errText = await brevoRes.text();
+    console.error("[on-session-created] Brevo error:", errText);
     return new Response(JSON.stringify({ ok: false, error: errText }), { status: 500 });
   }
 
-  const resendData = await resendRes.json();
-  console.log("[on-session-created] email sent:", resendData.id, "→", record.email);
+  const brevoData = await brevoRes.json();
+  console.log("[on-session-created] email sent:", brevoData.messageId, "→", record.email);
 
-  return new Response(JSON.stringify({ ok: true, code, emailId: resendData.id }), {
+  return new Response(JSON.stringify({ ok: true, code, emailId: brevoData.messageId }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
