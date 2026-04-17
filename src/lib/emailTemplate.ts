@@ -180,10 +180,10 @@ export function buildEmailHtml(data: EmailData): string {
         }
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td style="padding:0 20px;" align="right">
+            <td style="padding:8px 20px 0;" align="right">
               <span style="display:inline-block;background:${ringColor};color:#000;
                            font-weight:700;font-size:12px;border-radius:999px;
-                           padding:4px 12px;margin-top:-16px;position:relative;
+                           padding:4px 12px;
                            border:1px solid ${ringColor};">
                 ${pct}% match
               </span>
@@ -245,7 +245,7 @@ export function buildEmailHtml(data: EmailData): string {
         </p>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td class="step-cell" width="33%" valign="top"
+            <td width="33%" valign="top"
                 style="padding:0 12px;text-align:center;border-right:1px solid ${C.border};">
               <div style="width:40px;height:40px;background:${C.orange};
                           background:linear-gradient(135deg,${C.orange},${C.orangeRed});
@@ -257,7 +257,7 @@ export function buildEmailHtml(data: EmailData): string {
                 Al consulente Webidoo in negozio
               </p>
             </td>
-            <td class="step-cell" width="33%" valign="top"
+            <td width="33%" valign="top"
                 style="padding:0 12px;text-align:center;border-right:1px solid ${C.border};">
               <div style="width:40px;height:40px;background:${C.orange};
                           background:linear-gradient(135deg,${C.orange},${C.orangeRed});
@@ -269,7 +269,7 @@ export function buildEmailHtml(data: EmailData): string {
                 Quello del tuo match o un altro
               </p>
             </td>
-            <td class="step-cell" width="33%" valign="top"
+            <td width="33%" valign="top"
                 style="padding:0 12px;text-align:center;">
               <div style="width:40px;height:40px;background:${C.orange};
                           background:linear-gradient(135deg,${C.orange},${C.orangeRed});
@@ -293,7 +293,7 @@ export function buildEmailHtml(data: EmailData): string {
                  border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td style="border-radius:14px;overflow:hidden;position:relative;">
+            <td>
               <!-- Thumbnail placeholder with play button -->
               <a href="${productVideo}" target="_blank" style="display:block;text-decoration:none;">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
