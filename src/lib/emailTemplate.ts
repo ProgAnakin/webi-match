@@ -104,10 +104,6 @@ export function buildEmailHtml(data: EmailData): string {
   const vidId       = productVideo ? youtubeId(productVideo) : null;
   const thumbUrl    = vidId ? `https://img.youtube.com/vi/${vidId}/maxresdefault.jpg` : null;
 
-  const r          = 60;
-  const circ       = 2 * Math.PI * r;
-  const dashoffset = circ * (1 - pct / 100);
-
   return `<!DOCTYPE html>
 <html lang="it" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -174,18 +170,15 @@ export function buildEmailHtml(data: EmailData): string {
   <!-- MATCH RING -->
   <tr>
     <td style="background:${C.card};padding:48px 40px 40px;text-align:center;border-top:1px solid ${C.border};">
-      <svg width="210" height="210" viewBox="0 0 180 180" style="display:block;margin:0 auto;" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="90" cy="90" r="76" fill="none" stroke="${ringColor}" stroke-width="24" opacity="0.05"/>
-        <circle cx="90" cy="90" r="70" fill="none" stroke="${ringColor}" stroke-width="16" opacity="0.08"/>
-        <circle cx="90" cy="90" r="64" fill="none" stroke="${ringColor}" stroke-width="10" opacity="0.12"/>
-        <circle cx="90" cy="90" r="${r}" fill="none" stroke="${C.border}" stroke-width="9" opacity="0.65"/>
-        <circle cx="90" cy="90" r="${r}" fill="none" stroke="${ringColor}" stroke-width="9" stroke-linecap="round"
-                stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${dashoffset.toFixed(2)}" transform="rotate(-90 90 90)"/>
-        <text x="90" y="85" text-anchor="middle" dominant-baseline="middle"
-              font-family="'Space Grotesk',Arial,sans-serif" font-size="34" font-weight="800" fill="${ringColor}">${pct}%</text>
-        <text x="90" y="108" text-anchor="middle" dominant-baseline="middle"
-              font-family="'Space Grotesk',Arial,sans-serif" font-size="9" font-weight="700" fill="${C.muted}" letter-spacing="2.2">COMPATIBILITÀ</text>
-      </svg>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+        <tr>
+          <td width="140" height="140" align="center" valign="middle"
+              style="width:140px;height:140px;border-radius:70px;border:10px solid ${ringColor};background-color:${ringColor}18;text-align:center;vertical-align:middle;">
+            <p style="margin:0 0 4px;font-size:42px;font-weight:800;color:${ringColor};line-height:1;font-family:'Space Grotesk',Arial,sans-serif;">${pct}%</p>
+            <p style="margin:0;font-size:9px;font-weight:700;color:${C.muted};letter-spacing:2px;font-family:Arial,sans-serif;">COMPATIBILITÀ</p>
+          </td>
+        </tr>
+      </table>
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:18px auto 0;">
         <tr>
           <td style="background:${ringColor}22;border:1.5px solid ${ringColor}66;border-radius:999px;padding:7px 22px;">
