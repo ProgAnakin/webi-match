@@ -1,450 +1,368 @@
 // Supabase Edge Function — triggered by Database Webhook on quiz_sessions INSERT
-// Generates a unique Shopify discount code, sends the match email via Resend,
+// Generates a unique discount code, sends the match email via Brevo,
 // then updates the session row with the code and email_sent = true.
 //
-// Required secrets (set via: supabase secrets set KEY=value):
-//   RESEND_API_KEY        — from resend.com
-//   SUPABASE_URL          — auto-injected by Supabase runtime
+// Required secrets (set via Supabase Dashboard → Edge Functions → Secrets):
+//   BREVO_API_KEY             — from brevo.com
+//   SUPABASE_URL              — auto-injected by Supabase runtime
 //   SUPABASE_SERVICE_ROLE_KEY — auto-injected by Supabase runtime
-//
-// Shopify note:
-//   The generated code format is WEBI-XXXXXX (e.g. WEBI-A4F2C9).
-//   In Shopify Admin → Discounts, create a "percentage" or "fixed amount"
-//   discount and choose "Specific discount codes". Upload / paste the generated
-//   code there, OR use the Shopify Admin API to create codes programmatically
-//   (add SHOPIFY_ADMIN_TOKEN + SHOPIFY_SHOP secrets and call the API here).
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const BREVO_KEY  = Deno.env.get("BREVO_API_KEY") ?? "";
+const BREVO_KEY   = Deno.env.get("BREVO_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SERVICE_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-// ── Colours (mirrored from index.css design tokens) ───────────────────────────
 const C = {
-  bg:         "#151d47",   // --background  hsl(230 55% 18%)
-  card:       "#1c2856",   // --card        hsl(230 50% 22%)
-  cardDeep:   "#131a3e",   // slightly darker card (gradient end)
-  border:     "#2d3f72",   // --border      hsl(230 40% 28%)
-  fg:         "#fafafa",   // --foreground
-  muted:      "#8a9ab8",   // --muted-foreground
-  orange:     "#f5831c",   // --primary     hsl(27 92% 55%)
-  orangeRed:  "#ff4400",   // gradient end  hsl(16 100% 50%)
+  bg:         "#0d1228",
+  card:       "#151d47",
+  cardAlt:    "#1a2550",
+  cardHeader: "#101628",
+  border:     "#2a3a68",
+  fg:         "#f0f4ff",
+  muted:      "#7a8fbb",
+  orange:     "#f5831c",
+  orangeRed:  "#e8420a",
   green:      "#6BCB77",
   yellow:     "#FFD93D",
   coral:      "#FF8066",
   blue:       "#4D96FF",
 } as const;
 
-function matchColor(pct: number) {
+function matchColor(pct: number): string {
   if (pct >= 90) return C.green;
   if (pct >= 80) return C.yellow;
   if (pct >= 65) return C.coral;
   return C.blue;
 }
 
-// ── Discount code ─────────────────────────────────────────────────────────────
+function matchBadgeLabel(pct: number): string {
+  if (pct >= 90) return "🏆 MATCH PERFETTO";
+  if (pct >= 80) return "⭐ OTTIMO MATCH";
+  if (pct >= 65) return "👍 BUON MATCH";
+  return "💡 MATCH TROVATO";
+}
+
+function youtubeId(url: string): string | null {
+  const m = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 // Format: WEBI-XXXX05 / WEBI-XXXX08 / WEBI-XXXX10
-// Last 2 digits encode the discount %, set per-product in /manager.
-// Shopify admin creates one discount per value (5%, 8%, 10%) with
-// "specific discount codes" enabled — paste/import generated codes there.
+// Last 2 digits encode the discount %, readable by the consultant at checkout.
 function genDiscountCode(sessionId: string, discountPct: number): string {
   const hex    = sessionId.replace(/-/g, "").slice(-4).toUpperCase();
   const suffix = String(discountPct).padStart(2, "0");
   return `WEBI-${hex}${suffix}`;
 }
 
-// Default video shown when a product has no specific video yet.
-// Update this URL to the general Webidoo product video.
-const DEFAULT_VIDEO_URL = "";
+const BARCODE_RECTS = [
+  [2,3,.55],[7,1,.80],[10,4,.50],[16,2,.70],[20,5,.55],[27,1,.85],[30,3,.50],
+  [36,2,.70],[40,4,.55],[47,1,.85],[50,6,.50],[58,2,.70],[62,3,.55],[68,1,.85],
+  [71,4,.50],[78,2,.70],[83,5,.55],[90,1,.85],[93,3,.50],[98,4,.70],[105,2,.55],
+  [109,1,.85],[113,5,.50],[121,2,.70],[125,3,.55],[131,1,.85],[134,4,.50],
+  [141,2,.70],[146,6,.55],[155,1,.85],[158,3,.50],[163,2,.70],[168,4,.55],
+  [175,1,.85],[178,5,.50],[186,2,.70],[190,3,.55],[196,2,.80],
+] as const;
 
-// ── Email HTML template ───────────────────────────────────────────────────────
+function barcodesvg(color: string): string {
+  const rects = BARCODE_RECTS.map(([x,w,o]) =>
+    `<rect x="${x}" y="0" width="${w}" height="30" fill="${color}" opacity="${o}"/>`
+  ).join("");
+  return `<svg width="200" height="30" viewBox="0 0 200 30" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
+}
+
 function buildEmail(record: Record<string, unknown>, code: string): string {
-  const nome        = String(record.nome         ?? "").trim();
-  const cognome     = String(record.cognome      ?? "").trim();
-  const pct         = Number(record.match_percent ?? 0);
-  const productName = String(record.product_name  ?? "Il tuo prodotto");
-  const productPrice= String(record.product_price ?? "");
-  const productImage= String(record.product_image ?? "");
-  const productVideo= String(record.product_video ?? "") || DEFAULT_VIDEO_URL;
-  const ringColor   = matchColor(pct);
+  const nome         = String(record.nome    ?? "").trim();
+  const cognome      = String(record.cognome ?? "").trim();
+  const pct          = Number(record.match_percent ?? 0);
+  const productName  = String(record.product_name  ?? "Il tuo prodotto");
+  const productPrice = String(record.product_price ?? "");
+  const productImage = String(record.product_image ?? "");
+  const productVideo = String(record.product_video ?? "");
+  const ringColor    = matchColor(pct);
+  const badgeLabel   = matchBadgeLabel(pct);
+  const fullName     = [nome, cognome].filter(Boolean).join(" ");
+  const vidId        = productVideo ? youtubeId(productVideo) : null;
+  const thumbUrl     = vidId ? `https://img.youtube.com/vi/${vidId}/maxresdefault.jpg` : null;
 
-  const greeting = nome ? `Ciao ${nome},` : "Ciao,";
-  const fullName  = [nome, cognome].filter(Boolean).join(" ");
-
-  // SVG ring — works in Gmail / Apple Mail / Outlook 365
-  const r          = 56;
+  const r          = 60;
   const circ       = 2 * Math.PI * r;
   const dashoffset = circ * (1 - pct / 100);
 
-  return /* html */`
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="it" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="color-scheme" content="dark" />
-  <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="color-scheme" content="dark"/>
   <title>Il tuo match Webi-Match</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
-    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
-    body { margin: 0 !important; padding: 0 !important; background-color: ${C.bg}; }
-    a { color: ${C.orange}; }
-    .btn-code { letter-spacing: 0.12em; }
-    @media only screen and (max-width: 620px) {
-      .wrapper { width: 100% !important; }
-      .col2 { display: block !important; width: 100% !important; }
-      .step-cell { padding: 10px 16px !important; }
-      .product-img { height: 180px !important; }
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
+    body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+    table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
+    img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none;display:block}
+    body{margin:0!important;padding:0!important;background-color:${C.bg}}
+    a{color:${C.orange};text-decoration:none}
+    @media only screen and (max-width:620px){
+      .wrapper{width:100%!important;border-radius:0!important}
+      .step-col{display:block!important;width:100%!important;text-align:center!important;
+                padding:12px 20px!important;border-right:none!important;border-bottom:1px solid ${C.border}!important}
+      .step-col:last-child{border-bottom:none!important}
     }
   </style>
 </head>
-<body style="margin:0;padding:0;background-color:${C.bg};font-family:'Space Grotesk',Arial,sans-serif;">
+<body style="margin:0;padding:0;background-color:${C.bg};font-family:'Space Grotesk',Arial,Helvetica,sans-serif;">
 
-<!-- Outer wrapper -->
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-       style="background-color:${C.bg};min-width:100%;">
-  <tr><td align="center" style="padding:32px 16px 48px;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:${C.bg};line-height:1px;">
+  🎉 ${pct}% di compatibilità — Il tuo codice ${code} scade in 24 ore!
+  &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+</div>
 
-  <!-- ── Card container ─────────────────────────────────────────────────── -->
-  <table class="wrapper" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
-         style="max-width:600px;width:100%;border-radius:24px;overflow:hidden;
-                box-shadow:0 24px 80px rgba(0,0,0,0.5);">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${C.bg};">
+<tr><td align="center" style="padding:28px 12px 52px;">
+<table class="wrapper" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+       style="max-width:600px;width:100%;border-radius:20px;border:1px solid ${C.border};box-shadow:0 32px 80px rgba(0,0,0,0.7);">
 
-    <!-- ══ HEADER ══════════════════════════════════════════════════════════ -->
-    <tr>
-      <td style="background:linear-gradient(135deg,${C.orange},${C.orangeRed});
-                 padding:36px 40px 32px;text-align:center;">
-        <!-- Wordmark -->
-        <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.25em;
-                  text-transform:uppercase;color:rgba(255,255,255,0.7);">
-          WEBIDOO STORE
-        </p>
-        <h1 style="margin:6px 0 0;font-size:32px;font-weight:700;letter-spacing:0.12em;
-                   text-transform:uppercase;color:#ffffff;line-height:1;">
-          WEBI <span style="opacity:0.85;">MATCH</span>
-        </h1>
-        <p style="margin:10px 0 0;font-size:14px;color:rgba(255,255,255,0.85);font-weight:500;">
-          ${greeting} il tuo gadget ideale ti aspetta! 🎉
-        </p>
-      </td>
-    </tr>
+  <tr><td height="4" style="background:${C.orange};background:linear-gradient(90deg,${C.orange},${C.orangeRed},${C.orange});font-size:0;line-height:0;border-radius:20px 20px 0 0;">&nbsp;</td></tr>
 
-    <!-- ══ MATCH RING ═══════════════════════════════════════════════════════ -->
-    <tr>
-      <td style="background:${C.card};padding:36px 40px 28px;text-align:center;
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
-        <!-- SVG ring -->
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0"
-               align="center" style="margin:0 auto;">
-          <tr><td style="padding:0;">
-            <svg width="160" height="160" viewBox="0 0 120 120"
-                 style="display:block;margin:0 auto;" xmlns="http://www.w3.org/2000/svg">
-              <!-- Background ring -->
-              <circle cx="60" cy="60" r="${r}" fill="none"
-                      stroke="${C.border}" stroke-width="7" opacity="0.5"/>
-              <!-- Progress ring -->
-              <circle cx="60" cy="60" r="${r}" fill="none"
-                      stroke="${ringColor}" stroke-width="7"
-                      stroke-linecap="round"
-                      stroke-dasharray="${circ.toFixed(2)}"
-                      stroke-dashoffset="${dashoffset.toFixed(2)}"
-                      transform="rotate(-90 60 60)"/>
-              <!-- Percentage text -->
-              <text x="60" y="54" text-anchor="middle" dominant-baseline="middle"
-                    font-family="'Space Grotesk',Arial,sans-serif"
-                    font-size="22" font-weight="700" fill="${ringColor}">${pct}%</text>
-              <text x="60" y="72" text-anchor="middle" dominant-baseline="middle"
-                    font-family="'Space Grotesk',Arial,sans-serif"
-                    font-size="9" font-weight="600" fill="${C.muted}"
-                    letter-spacing="2">MATCH</text>
-            </svg>
-          </td></tr>
-        </table>
+  <tr>
+    <td style="background:${C.cardHeader};padding:36px 40px 32px;text-align:center;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+        <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});border-radius:10px;padding:7px 22px;">
+          <span style="font-size:13px;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:#fff;">WEBI·MATCH</span>
+        </td></tr>
+      </table>
+      <h1 style="margin:22px 0 8px;font-size:30px;font-weight:800;color:${C.fg};line-height:1.15;letter-spacing:-0.01em;">
+        ${nome ? `Ciao <span style="color:${C.orange};">${nome}</span>,<br/>abbiamo trovato il tuo match! 🎉` : "Abbiamo trovato il tuo match! 🎉"}
+      </h1>
+      <p style="margin:0;font-size:15px;color:${C.muted};line-height:1.6;">
+        Il nostro algoritmo ha analizzato le tue risposte<br/>e ha selezionato il <strong style="color:${C.fg};">gadget perfetto per il tuo stile di vita</strong>.
+      </p>
+    </td>
+  </tr>
 
-        <h2 style="margin:20px 0 4px;font-size:22px;font-weight:700;color:${C.fg};
-                   letter-spacing:0.04em;">
-          🎉 MATCH PERFETTO!
-        </h2>
-        <p style="margin:0;font-size:14px;color:${C.muted};line-height:1.5;">
-          Il nostro algoritmo ha trovato il prodotto ideale per te
-        </p>
-      </td>
-    </tr>
+  <tr>
+    <td style="background:${C.card};padding:48px 40px 40px;text-align:center;border-top:1px solid ${C.border};">
+      <svg width="210" height="210" viewBox="0 0 180 180" style="display:block;margin:0 auto;" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="90" cy="90" r="76" fill="none" stroke="${ringColor}" stroke-width="24" opacity="0.05"/>
+        <circle cx="90" cy="90" r="70" fill="none" stroke="${ringColor}" stroke-width="16" opacity="0.08"/>
+        <circle cx="90" cy="90" r="64" fill="none" stroke="${ringColor}" stroke-width="10" opacity="0.12"/>
+        <circle cx="90" cy="90" r="${r}" fill="none" stroke="${C.border}" stroke-width="9" opacity="0.65"/>
+        <circle cx="90" cy="90" r="${r}" fill="none" stroke="${ringColor}" stroke-width="9" stroke-linecap="round"
+                stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${dashoffset.toFixed(2)}" transform="rotate(-90 90 90)"/>
+        <text x="90" y="85" text-anchor="middle" dominant-baseline="middle"
+              font-family="'Space Grotesk',Arial,sans-serif" font-size="34" font-weight="800" fill="${ringColor}">${pct}%</text>
+        <text x="90" y="108" text-anchor="middle" dominant-baseline="middle"
+              font-family="'Space Grotesk',Arial,sans-serif" font-size="9" font-weight="700" fill="${C.muted}" letter-spacing="2.2">COMPATIBILITÀ</text>
+      </svg>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:18px auto 0;">
+        <tr><td style="background:${ringColor}22;border:1.5px solid ${ringColor}66;border-radius:999px;padding:7px 22px;">
+          <span style="font-size:12px;font-weight:700;color:${ringColor};letter-spacing:0.12em;">${badgeLabel}</span>
+        </td></tr>
+      </table>
+      <p style="margin:14px 0 0;font-size:13px;color:${C.muted};line-height:1.5;">Compatibilità verificata su 8 categorie di preferenze personali</p>
+    </td>
+  </tr>
 
-    <!-- ══ PRODUCT CARD ═════════════════════════════════════════════════════ -->
-    <tr>
-      <td style="background:linear-gradient(145deg,${C.card},${C.cardDeep});
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};
-                 padding:0;">
-
-        ${productImage ? /* Product image row */ `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td style="padding:0;position:relative;">
-              <img class="product-img" src="${productImage}" alt="${productName}"
-                   width="600" style="display:block;width:100%;height:220px;
-                          object-fit:cover;object-position:center;" />
-              <!-- Match badge overlay via absolute-ish table trick -->
-            </td>
-          </tr>
-        </table>
-        ` : /* Placeholder when no image */ `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td style="background:${C.cardDeep};padding:40px;text-align:center;
-                       border-bottom:1px solid ${C.border};">
-              <span style="font-size:64px;line-height:1;">📦</span>
-            </td>
-          </tr>
-        </table>
-        `}
-
-        <!-- Match badge row -->
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td style="padding:8px 20px 0;" align="right">
-              <span style="display:inline-block;background:${ringColor};color:#000;
-                           font-weight:700;font-size:12px;border-radius:999px;
-                           padding:4px 12px;
-                           box-shadow:0 4px 12px rgba(0,0,0,0.4);">
-                ${pct}% match
-              </span>
-            </td>
-          </tr>
-        </table>
-
-        <!-- Product info -->
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td style="padding:20px 28px 24px;">
-              <h3 style="margin:0 0 6px;font-size:20px;font-weight:700;color:${C.fg};
-                         line-height:1.3;">
-                ${productName}
-              </h3>
-              ${productPrice ? `
-              <p style="margin:0;font-size:22px;font-weight:700;color:${C.orange};">
-                ${productPrice}
-              </p>` : ""}
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-
-    <!-- ══ DISCOUNT CODE ════════════════════════════════════════════════════ -->
-    <tr>
-      <td style="background:${C.bg};padding:32px 28px;
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
-        <p style="margin:0 0 12px;font-size:11px;font-weight:700;
-                  letter-spacing:0.2em;text-transform:uppercase;color:${C.muted};
-                  text-align:center;">
-          🎁 IL TUO CODICE SCONTO ESCLUSIVO
-        </p>
-
-        <!-- Code box -->
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td style="background:${C.cardDeep};
-                       background:linear-gradient(135deg,${C.orange}18,${C.orangeRed}10);
-                       border:2px solid ${C.orange};border-radius:16px;
-                       padding:22px 20px;text-align:center;">
-
-              <p style="margin:0 0 6px;font-size:36px;font-weight:700;
-                         color:${C.fg};font-family:'Courier New',Courier,monospace;
-                         letter-spacing:0.12em;line-height:1;">
-                ${code}
-              </p>
-              <p style="margin:0;font-size:12px;color:${C.orange};font-weight:600;">
-                ⏰ Valido 24 ore · Solo in negozio · Un utilizzo
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-
-    <!-- ══ HOW TO USE ════════════════════════════════════════════════════════ -->
-    <tr>
-      <td style="background:${C.card};padding:28px;
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
-        <p style="margin:0 0 20px;font-size:11px;font-weight:700;
-                  letter-spacing:0.18em;text-transform:uppercase;
-                  color:${C.muted};text-align:center;">
-          COME UTILIZZARLO
-        </p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <!-- Step 1 -->
-            <td width="33%" valign="top"
-                style="padding:0 12px;text-align:center;border-right:1px solid ${C.border};">
-              <div style="width:40px;height:40px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});
-                          border-radius:50%;margin:0 auto 10px;
-                          text-align:center;font-size:18px;line-height:40px;">
-                📱
-              </div>
-              <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">
-                Mostra l'email
-              </p>
-              <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.4;">
-                Al consulente Webidoo in negozio
-              </p>
-            </td>
-            <!-- Step 2 -->
-            <td width="33%" valign="top"
-                style="padding:0 12px;text-align:center;border-right:1px solid ${C.border};">
-              <div style="width:40px;height:40px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});
-                          border-radius:50%;margin:0 auto 10px;font-size:18px;line-height:40px;
-                          text-align:center;">
-                🛍️
-              </div>
-              <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">
-                Scegli il prodotto
-              </p>
-              <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.4;">
-                Quello del tuo match o un altro che ti ispira
-              </p>
-            </td>
-            <!-- Step 3 -->
-            <td width="33%" valign="top"
-                style="padding:0 12px;text-align:center;">
-              <div style="width:40px;height:40px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});
-                          border-radius:50%;margin:0 auto 10px;font-size:18px;line-height:40px;
-                          text-align:center;">
-                ✅
-              </div>
-              <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">
-                Applica il codice
-              </p>
-              <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.4;">
-                Al checkout Shopify · Sconto applicato automaticamente
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-
-    <!-- ══ VIDEO BUTTON ══════════════════════════════════════════════════════ -->
-    ${productVideo ? `
-    <tr>
-      <td style="background:${C.bg};padding:0 28px 24px;
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
-        <a href="${productVideo}" target="_blank" style="display:block;text-decoration:none;">
+  <tr>
+    <td style="background:${C.card};padding:0;border-top:1px solid ${C.border};">
+      <p style="margin:0;padding:22px 32px 14px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">── IL TUO GADGET IDEALE ──</p>
+      ${productImage
+        ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+             <tr><td style="padding:0 24px;">
+               <img src="${productImage}" alt="${productName}" width="552"
+                    style="width:100%;height:230px;object-fit:cover;object-position:center;border-radius:14px;border:1px solid ${C.border};display:block;"/>
+             </td></tr>
+           </table>`
+        : `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+             <tr><td style="padding:0 24px;">
+               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                 <tr><td style="background:${C.cardHeader};height:160px;text-align:center;vertical-align:middle;border-radius:14px;border:1px solid ${C.border};">
+                   <span style="font-size:64px;line-height:1;">📦</span>
+                 </td></tr>
+               </table>
+             </td></tr>
+           </table>`}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td style="padding:20px 32px 28px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td style="background:linear-gradient(135deg,${C.cardDeep},${C.card});
-                         border:1px solid ${C.border};border-radius:14px;
-                         padding:28px 20px;text-align:center;">
-                <div style="width:64px;height:64px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});
-                            border-radius:50%;margin:0 auto 12px;line-height:64px;
-                            text-align:center;font-size:26px;
-                            box-shadow:0 8px 24px rgba(245,131,28,0.4);">▶</div>
-                <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:${C.fg};">
-                  Guarda il video del consulente
-                </p>
-                <p style="margin:0;font-size:11px;color:${C.muted};">
-                  Spiega tutto sul tuo prodotto in 30 secondi
-                </p>
+            <tr valign="top">
+              <td>
+                <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${C.fg};line-height:1.2;letter-spacing:-0.01em;">${productName}</h2>
+                ${productPrice ? `<p style="margin:0;font-size:26px;font-weight:700;color:${C.orange};line-height:1;">${productPrice}</p>` : ""}
+              </td>
+              <td align="right" valign="top" style="padding-left:12px;white-space:nowrap;">
+                <span style="display:inline-block;background:${ringColor};color:#000;font-size:12px;font-weight:700;border-radius:999px;padding:5px 14px;letter-spacing:0.04em;">${pct}% match</span>
               </td>
             </tr>
           </table>
-        </a>
-      </td>
-    </tr>` : ""}
+        </td></tr>
+      </table>
+    </td>
+  </tr>
 
-    <!-- ══ BENEFITS STRIP ════════════════════════════════════════════════════ -->
-    <tr>
-      <td style="background:${C.cardDeep};padding:24px 28px;
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
-        <p style="margin:0 0 16px;font-size:11px;font-weight:700;letter-spacing:0.18em;
-                  text-transform:uppercase;color:${C.muted};text-align:center;">
-          INCLUSO NEL TUO PACCHETTO
-        </p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td style="background:${C.card};padding:28px 24px 32px;border-top:1px solid ${C.border};">
+      <p style="margin:0 0 16px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">🎁 IL TUO CODICE SCONTO ESCLUSIVO</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="border-radius:16px;border:2px solid ${C.orange};box-shadow:0 8px 48px rgba(245,131,28,0.35);">
+        <tr>
+          <td style="background:${C.orange};background:linear-gradient(90deg,${C.orange},${C.orangeRed},${C.orange});padding:11px 24px;border-radius:14px 14px 0 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="font-size:12px;font-weight:800;color:#fff;letter-spacing:0.14em;">🎟&nbsp; SCONTO SPECIALE</td>
+                <td align="right" style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.8);letter-spacing:0.1em;">WEBIDOO STORE</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:${C.cardHeader};padding:30px 28px 26px;text-align:center;">
+            <p style="margin:0 0 10px;font-size:10px;font-weight:700;color:${C.orange};letter-spacing:0.24em;text-transform:uppercase;">Inserisci al checkout</p>
+            <p style="margin:0 0 18px;font-size:46px;font-weight:900;color:${C.fg};font-family:'Courier New',Courier,monospace;letter-spacing:0.16em;line-height:1;">${code}</p>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+              <tr>
+                <td style="background:${C.orange};border-radius:999px;padding:6px 18px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:700;color:#fff;">⏰ Valido 24 ore</span>
+                </td>
+                <td width="8">&nbsp;</td>
+                <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:6px 14px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:600;color:${C.fg};">🏪 Solo in negozio</span>
+                </td>
+                <td width="8">&nbsp;</td>
+                <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:6px 14px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:600;color:${C.fg};">1️⃣ Un utilizzo</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:${C.cardHeader};padding:0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr><td style="border-top:2px dashed ${C.border};height:0;">&nbsp;</td></tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:${C.cardHeader};padding:12px 28px 14px;text-align:center;border-radius:0 0 14px 14px;">
+            ${barcodesvg(C.orange)}
+            <p style="margin:5px 0 0;font-size:8px;color:${C.muted};letter-spacing:0.12em;text-transform:uppercase;">Biglietto Sconto Webidoo</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="background:${C.cardAlt};padding:28px 24px;border-top:1px solid ${C.border};">
+      <p style="margin:0 0 22px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">COME RISCUOTERE LO SCONTO</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr valign="top">
+          <td class="step-col" width="33%" style="padding:0 16px 0 8px;text-align:center;border-right:1px solid ${C.border};">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});width:44px;height:44px;border-radius:50%;text-align:center;vertical-align:middle;line-height:44px;font-size:11px;font-weight:800;color:#fff;">1</td></tr>
+            </table>
+            <p style="margin:10px 0 4px;font-size:13px;font-weight:700;color:${C.fg};">Mostra l'email</p>
+            <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">Al consulente Webidoo in negozio</p>
+          </td>
+          <td class="step-col" width="33%" style="padding:0 16px;text-align:center;border-right:1px solid ${C.border};">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});width:44px;height:44px;border-radius:50%;text-align:center;vertical-align:middle;line-height:44px;font-size:11px;font-weight:800;color:#fff;">2</td></tr>
+            </table>
+            <p style="margin:10px 0 4px;font-size:13px;font-weight:700;color:${C.fg};">Scegli il prodotto</p>
+            <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">Il tuo match o qualsiasi altro</p>
+          </td>
+          <td class="step-col" width="33%" style="padding:0 8px 0 16px;text-align:center;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});width:44px;height:44px;border-radius:50%;text-align:center;vertical-align:middle;line-height:44px;font-size:11px;font-weight:800;color:#fff;">3</td></tr>
+            </table>
+            <p style="margin:10px 0 4px;font-size:13px;font-weight:700;color:${C.fg};">Applica il codice</p>
+            <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">Al checkout — sconto immediato</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  ${productVideo ? `
+  <tr>
+    <td style="background:${C.card};padding:24px;border-top:1px solid ${C.border};">
+      <a href="${productVideo}" target="_blank" style="display:block;text-decoration:none;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${C.border};border-radius:14px;">
+          ${thumbUrl ? `<tr><td style="padding:0;">
+            <img src="${thumbUrl}" alt="Video del consulente" width="552"
+                 style="width:100%;height:200px;object-fit:cover;object-position:center;display:block;border-radius:14px 14px 0 0;"/>
+          </td></tr>` : ""}
           <tr>
-            <td width="33%" style="text-align:center;padding:0 8px;
-                                   border-right:1px solid ${C.border};">
-              <p style="margin:0 0 4px;font-size:22px;">🎥</p>
-              <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:${C.fg};">
-                Video 30s
-              </p>
-              <p style="margin:0;font-size:10px;color:${C.muted};">
-                Il consulente spiega tutto
-              </p>
-            </td>
-            <td width="33%" style="text-align:center;padding:0 8px;
-                                   border-right:1px solid ${C.border};">
-              <p style="margin:0 0 4px;font-size:22px;">📖</p>
-              <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:${C.fg};">
-                Manuale PDF
-              </p>
-              <p style="margin:0;font-size:10px;color:${C.muted};">
-                Guida passo-passo
-              </p>
-            </td>
-            <td width="33%" style="text-align:center;padding:0 8px;">
-              <p style="margin:0 0 4px;font-size:22px;">💰</p>
-              <p style="margin:0 0 2px;font-size:12px;font-weight:700;color:${C.orange};">
-                Sconto VIP
-              </p>
-              <p style="margin:0;font-size:10px;color:${C.muted};">
-                Solo per te oggi
-              </p>
+            <td style="background:${C.cardHeader};padding:20px;text-align:center;border-radius:${thumbUrl ? "0 0 14px 14px" : "14px"};">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                <tr><td style="background:${C.orange};border-radius:50%;width:52px;height:52px;text-align:center;vertical-align:middle;line-height:52px;font-size:20px;color:#fff;">▶</td></tr>
+              </table>
+              <p style="margin:10px 0 3px;font-size:14px;font-weight:700;color:${C.fg};">Guarda la presentazione del consulente</p>
+              <p style="margin:0;font-size:11px;color:${C.muted};">30 secondi per scoprire tutto sul tuo prodotto</p>
             </td>
           </tr>
         </table>
-      </td>
-    </tr>
+      </a>
+    </td>
+  </tr>` : ""}
 
-    <!-- ══ SPAM NOTE ══════════════════════════════════════════════════════════ -->
-    <tr>
-      <td style="background:${C.bg};padding:12px 28px;text-align:center;
-                 border-left:1px solid ${C.border};border-right:1px solid ${C.border};">
-        <p style="margin:0;font-size:11px;color:${C.muted};">
-          📬 Non vedi l'email? Controlla la cartella <strong>spam</strong> o <strong>promozioni</strong>.
-        </p>
-      </td>
-    </tr>
+  <tr>
+    <td style="background:${C.cardAlt};padding:26px 24px;border-top:1px solid ${C.border};">
+      <p style="margin:0 0 18px;font-size:11px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:${C.orange};text-align:center;">⚡ AZIONE RICHIESTA</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr valign="top">
+          <td width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
+            <p style="margin:0 0 6px;font-size:18px;">💾</p>
+            <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Salva l'email</p>
+            <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Avrai il codice a portata di mano</p>
+          </td>
+          <td width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
+            <p style="margin:0 0 6px;font-size:18px;">⏰</p>
+            <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Entro 24 ore</p>
+            <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Il codice scade presto</p>
+          </td>
+          <td width="33%" style="text-align:center;padding:0 12px;">
+            <p style="margin:0 0 6px;font-size:18px;">🏪</p>
+            <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Vieni in store</p>
+            <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Mostra al consulente</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
 
-    <!-- ══ FOOTER ════════════════════════════════════════════════════════════ -->
-    <tr>
-      <td style="background:${C.cardDeep};padding:24px 28px;text-align:center;
-                 border-radius:0 0 24px 24px;
-                 border:1px solid ${C.border};border-top:none;">
-        <p style="margin:0 0 6px;font-size:13px;font-weight:700;
-                  color:${C.fg};letter-spacing:0.08em;">
-          WEBIDOO STORE
-        </p>
-        ${fullName ? `<p style="margin:0 0 8px;font-size:12px;color:${C.muted};">
-          Inviato a ${fullName} — ${String(record.email ?? "")}
-        </p>` : ""}
-        <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.6;">
-          Dati crittografati · Conformità GDPR<br/>
-          Ricevi questa email perché hai partecipato a Webi-Match in negozio.<br/>
-          Questo codice è valido 24 ore dalla ricezione di questa email.
-        </p>
-      </td>
-    </tr>
+  <tr>
+    <td style="background:${C.card};padding:14px 28px;text-align:center;border-top:1px solid ${C.border};">
+      <p style="margin:0;font-size:11px;color:${C.muted};">📬 Non vedi questa email? Controlla la cartella <strong style="color:${C.fg};">spam</strong> o <strong style="color:${C.fg};">promozioni</strong>.</p>
+    </td>
+  </tr>
 
-  </table>
-  <!-- /card container -->
+  <tr>
+    <td style="background:${C.cardHeader};padding:24px 32px 28px;text-align:center;border-top:1px solid ${C.border};border-radius:0 0 20px 20px;">
+      <p style="margin:0 0 4px;font-size:15px;font-weight:800;color:${C.fg};letter-spacing:0.1em;">WEBIDOO STORE</p>
+      <p style="margin:0 0 12px;font-size:11px;color:${C.muted};">Powered by Webi-Match</p>
+      ${fullName ? `<p style="margin:0 0 10px;font-size:12px;color:${C.muted};">Inviato a <strong style="color:${C.fg};">${fullName}</strong> · ${String(record.email ?? "")}</p>` : ""}
+      <div style="border-top:1px solid ${C.border};margin:12px auto;max-width:200px;"></div>
+      <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.8;">
+        Dati crittografati · Conformità GDPR<br/>
+        Hai ricevuto questa email perché hai partecipato a Webi-Match in negozio.<br/>
+        <span style="color:${C.orange};">Il codice sconto è valido 24 ore dalla ricezione.</span>
+      </p>
+    </td>
+  </tr>
 
-  </td></tr>
 </table>
-
+</td></tr>
+</table>
 </body>
-</html>
-`.trim();
+</html>`.trim();
 }
 
-// ── Main handler ──────────────────────────────────────────────────────────────
 serve(async (req) => {
-  // Supabase webhooks send POST; respond to GET for health checks
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
@@ -456,7 +374,6 @@ serve(async (req) => {
     return new Response("bad json", { status: 400 });
   }
 
-  // Only handle INSERT events
   if (payload.type !== "INSERT") {
     return new Response(JSON.stringify({ skipped: true }), { status: 200 });
   }
@@ -469,34 +386,26 @@ serve(async (req) => {
   const discountPct = Number(record.discount_percent ?? 5);
   const code = genDiscountCode(String(record.id), discountPct);
 
-  // ── 1. Update DB row with code + email_sent flag ───────────────────────────
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
   const { error: dbErr } = await supabase
     .from("quiz_sessions")
     .update({ discount_code: code, email_sent: true })
     .eq("id", record.id);
 
-  if (dbErr) {
-    console.error("[on-session-created] db update failed:", dbErr.message);
-    // Continue anyway — we still want to send the email
-  }
+  if (dbErr) console.error("[on-session-created] db update failed:", dbErr.message);
 
-  // ── 2. Send email via Resend ───────────────────────────────────────────────
-  const nome = String(record.nome ?? "").trim();
-  const pct  = Number(record.match_percent ?? 0);
-  const subjectName = nome ? `${nome}, il` : "Il";
-  const html = buildEmail(record, code);
+  const nome     = String(record.nome ?? "").trim();
+  const pct      = Number(record.match_percent ?? 0);
+  const subjName = nome ? `${nome}, il` : "Il";
+  const html     = buildEmail(record, code);
 
   const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
-    headers: {
-      "api-key": BREVO_KEY,
-      "Content-Type": "application/json",
-    },
+    headers: { "api-key": BREVO_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({
       sender: { name: "Webidoo Store", email: "costanzobruno.annichini@webidoo.com" },
       to: [{ email: record.email, name: [nome, String(record.cognome ?? "")].filter(Boolean).join(" ") }],
-      subject: `${subjectName} tuo match è ${pct}% — Codice sconto valido 24h ⏰`,
+      subject: `${subjName} tuo match è ${pct}% — Codice sconto valido 24h ⏰`,
       htmlContent: html,
     }),
   });
