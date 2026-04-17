@@ -36,10 +36,10 @@ function matchColor(pct: number): string {
 }
 
 function matchBadgeLabel(pct: number): string {
-  if (pct >= 90) return "🏆 MATCH PERFETTO";
-  if (pct >= 80) return "⭐ OTTIMO MATCH";
-  if (pct >= 65) return "👍 BUON MATCH";
-  return "💡 MATCH TROVATO";
+  if (pct >= 90) return "MATCH PERFETTO";
+  if (pct >= 80) return "OTTIMO MATCH";
+  if (pct >= 65) return "BUON MATCH";
+  return "MATCH TROVATO";
 }
 
 function youtubeId(url: string): string | null {
@@ -157,8 +157,8 @@ export function buildEmailHtml(data: EmailData): string {
       </table>
       <h1 style="margin:22px 0 8px;font-size:30px;font-weight:800;color:${C.fg};line-height:1.15;letter-spacing:-0.01em;">
         ${nome
-          ? `Ciao <span style="color:${C.orange};">${nome}</span>,<br/>abbiamo trovato il tuo match! 🎉`
-          : `Abbiamo trovato il tuo match! 🎉`}
+          ? `Ciao <span style="color:${C.orange};">${nome}</span>,<br/>abbiamo trovato il tuo match!`
+          : `Abbiamo trovato il tuo match!`}
       </h1>
       <p style="margin:0;font-size:15px;color:${C.muted};line-height:1.6;">
         Il nostro algoritmo ha analizzato le tue risposte<br/>e ha selezionato il
@@ -376,18 +376,24 @@ export function buildEmailHtml(data: EmailData): string {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr valign="top">
           <td width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
-            <p style="margin:0 0 6px;font-size:18px;">💾</p>
-            <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Salva l'email</p>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});width:44px;height:44px;border-radius:50%;text-align:center;vertical-align:middle;line-height:44px;font-size:20px;font-weight:800;color:#fff;">&#8595;</td></tr>
+            </table>
+            <p style="margin:10px 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Salva l'email</p>
             <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Avrai il codice a portata di mano</p>
           </td>
           <td width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
-            <p style="margin:0 0 6px;font-size:18px;">⏰</p>
-            <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Entro 24 ore</p>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});width:44px;height:44px;border-radius:50%;text-align:center;vertical-align:middle;line-height:44px;font-size:9px;font-weight:800;color:#fff;letter-spacing:0;">24h</td></tr>
+            </table>
+            <p style="margin:10px 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Entro 24 ore</p>
             <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Il codice scade presto</p>
           </td>
           <td width="33%" style="text-align:center;padding:0 12px;">
-            <p style="margin:0 0 6px;font-size:18px;">🏪</p>
-            <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Vieni in store</p>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});width:44px;height:44px;border-radius:50%;text-align:center;vertical-align:middle;line-height:44px;font-size:20px;font-weight:800;color:#fff;">&#8594;</td></tr>
+            </table>
+            <p style="margin:10px 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Vieni in store</p>
             <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Mostra al consulente</p>
           </td>
         </tr>
@@ -398,7 +404,7 @@ export function buildEmailHtml(data: EmailData): string {
   <!-- SPAM NOTE -->
   <tr>
     <td style="background:${C.card};padding:14px 28px;text-align:center;border-top:1px solid ${C.border};">
-      <p style="margin:0;font-size:11px;color:${C.muted};">Non vedi questa email? Controlla la cartella <strong style="color:${C.fg};">spam</strong> o <strong style="color:${C.fg};">promozioni</strong>.</p>
+      <p style="margin:0;font-size:11px;color:${C.muted};">Le immagini non si caricano? Clicca <strong style="color:${C.fg};">&ldquo;Mostra immagini&rdquo;</strong> in cima all&rsquo;email per visualizzare il prodotto e il video del consulente.</p>
     </td>
   </tr>
 
