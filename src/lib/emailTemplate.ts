@@ -333,7 +333,7 @@ export function buildEmailHtml(data: EmailData): string {
           <tr>
             <td style="background:${C.cardHeader};padding:20px;text-align:center;border-radius:${thumbUrl ? "0 0 14px 14px" : "14px"};">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
-                <tr><td style="background:${C.orange};border-radius:50%;width:52px;height:52px;text-align:center;vertical-align:middle;line-height:52px;font-size:20px;color:#fff;">▶</td></tr>
+                <tr><td style="background:${C.orange};border-radius:50%;width:52px;height:52px;text-align:center;vertical-align:middle;line-height:52px;font-size:20px;color:#fff;padding-left:5px;">&#9658;</td></tr>
               </table>
               <p style="margin:10px 0 3px;font-size:14px;font-weight:700;color:${C.fg};">Guarda la presentazione del consulente</p>
               <p style="margin:0;font-size:11px;color:${C.muted};">30 secondi per scoprire tutto sul tuo prodotto</p>
