@@ -153,8 +153,7 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
                       stroke-linecap="round"
                       stroke-dasharray="${circ.toFixed(2)}"
                       stroke-dashoffset="${dashoffset.toFixed(2)}"
-                      transform="rotate(-90 60 60)"
-                      style="filter:drop-shadow(0 0 8px ${ringColor}80)"/>
+                      transform="rotate(-90 60 60)"/>
               <!-- Percentage text -->
               <text x="60" y="54" text-anchor="middle" dominant-baseline="middle"
                     font-family="'Space Grotesk',Arial,sans-serif"
@@ -208,10 +207,10 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
         <!-- Match badge row -->
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td style="padding:0 20px;" align="right">
+            <td style="padding:8px 20px 0;" align="right">
               <span style="display:inline-block;background:${ringColor};color:#000;
                            font-weight:700;font-size:12px;border-radius:999px;
-                           padding:4px 12px;margin-top:-16px;position:relative;
+                           padding:4px 12px;
                            box-shadow:0 4px 12px rgba(0,0,0,0.4);">
                 ${pct}% match
               </span>
@@ -228,10 +227,7 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
                 ${productName}
               </h3>
               ${productPrice ? `
-              <p style="margin:0;font-size:22px;font-weight:700;
-                        background:linear-gradient(135deg,${C.orange},${C.orangeRed});
-                        -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-                        background-clip:text;color:${C.orange};">
+              <p style="margin:0;font-size:22px;font-weight:700;color:${C.orange};">
                 ${productPrice}
               </p>` : ""}
             </td>
@@ -258,7 +254,7 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
                        border:2px solid ${C.orange};border-radius:16px;
                        padding:22px 20px;text-align:center;">
 
-              <p class="btn-code" style="margin:0 0 6px;font-size:36px;font-weight:700;
+              <p style="margin:0 0 6px;font-size:36px;font-weight:700;
                          color:${C.fg};font-family:'Courier New',Courier,monospace;
                          letter-spacing:0.12em;line-height:1;">
                 ${code}
@@ -284,11 +280,11 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
             <!-- Step 1 -->
-            <td class="step-cell" width="33%" valign="top"
+            <td width="33%" valign="top"
                 style="padding:0 12px;text-align:center;border-right:1px solid ${C.border};">
               <div style="width:40px;height:40px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});
-                          border-radius:50%;margin:0 auto 10px;display:flex;
-                          align-items:center;justify-content:center;font-size:18px;line-height:40px;">
+                          border-radius:50%;margin:0 auto 10px;
+                          text-align:center;font-size:18px;line-height:40px;">
                 📱
               </div>
               <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:${C.fg};">
@@ -299,7 +295,7 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
               </p>
             </td>
             <!-- Step 2 -->
-            <td class="step-cell" width="33%" valign="top"
+            <td width="33%" valign="top"
                 style="padding:0 12px;text-align:center;border-right:1px solid ${C.border};">
               <div style="width:40px;height:40px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});
                           border-radius:50%;margin:0 auto 10px;font-size:18px;line-height:40px;
@@ -314,7 +310,7 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
               </p>
             </td>
             <!-- Step 3 -->
-            <td class="step-cell" width="33%" valign="top"
+            <td width="33%" valign="top"
                 style="padding:0 12px;text-align:center;">
               <div style="width:40px;height:40px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});
                           border-radius:50%;margin:0 auto 10px;font-size:18px;line-height:40px;
