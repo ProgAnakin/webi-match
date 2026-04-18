@@ -7,24 +7,31 @@ import { LANGUAGES } from "@/i18n/translations";
 
 const MSG_EMOJIS = ["🎯", "🎁", "💡", "✨"];
 
-const LanguageSelector = () => {
+const LanguageSelectorFeatured = () => {
   const { lang, setLang } = useLang();
   return (
-    <div className="flex items-center gap-1.5">
-      {LANGUAGES.map(({ code, flag, label }) => (
-        <button
-          key={code}
-          onClick={(e) => { e.stopPropagation(); setLang(code); }}
-          className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${
-            lang === code
-              ? "bg-primary text-primary-foreground shadow-sm scale-105"
-              : "bg-white/10 text-white/70 border border-white/20 hover:bg-white/20"
-          }`}
-        >
-          <span>{flag}</span>
-          <span>{label}</span>
-        </button>
-      ))}
+    <div className="flex flex-col items-center gap-3">
+      <p className="text-white/40 text-xs font-medium uppercase tracking-widest">🌍 Scegli la lingua</p>
+      <div className="flex items-center gap-2">
+        {LANGUAGES.map(({ code, flag, label }) => (
+          <button
+            key={code}
+            onClick={(e) => { e.stopPropagation(); setLang(code); }}
+            className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all duration-200 ${
+              lang === code
+                ? "text-white scale-110 shadow-lg"
+                : "bg-white/8 text-white/50 border border-white/15 hover:bg-white/15 hover:text-white/80"
+            }`}
+            style={lang === code ? {
+              background: "linear-gradient(135deg, hsl(27,92%,55%), hsl(16,100%,48%))",
+              boxShadow: "0 0 20px hsla(27,92%,55%,0.4), 0 4px 16px hsla(0,0%,0%,0.3)",
+            } : {}}
+          >
+            <span className="text-lg">{flag}</span>
+            <span>{label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 };
@@ -60,14 +67,8 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
     <div
       className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden"
       style={{ background: "hsl(225,60%,7%)" }}
-      onClick={onComplete}
     >
       <AttractBackground />
-
-      {/* Language selector — top-right */}
-      <div className="absolute top-4 right-4 z-20" onClick={(e) => e.stopPropagation()}>
-        <LanguageSelector />
-      </div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 px-6 text-center">
@@ -158,6 +159,16 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
               <span>{label}</span>
             </div>
           ))}
+        </motion.div>
+
+        {/* Language selector — featured */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <LanguageSelectorFeatured />
         </motion.div>
 
         {/* CTA button */}
