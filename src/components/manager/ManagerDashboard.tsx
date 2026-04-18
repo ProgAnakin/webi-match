@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BarChart2, Camera, Check, Home, Link, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download } from "lucide-react";
+import { BarChart2, Camera, Check, HelpCircle, Home, Link, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import { getStoredStoreId, setStoredStoreId, getStoreById } from "@/data/stores";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 import { StoreSelectorModal } from "./StoreSelectorModal";
+import { FaqModal, FaqData, EMPTY_FAQ } from "./FaqModal";
 
 /** product_id → active boolean, loaded from Supabase */
 type SettingsMap = Record<string, boolean>;
@@ -18,6 +19,8 @@ type ImageMap = Record<string, string>;
 type VideoMap = Record<string, string>;
 /** product_id → discount percent (5 | 8 | 10) */
 type DiscountMap = Record<string, number>;
+/** product_id → FAQ data */
+type FaqMap = Record<string, FaqData>;
 
 const DISCOUNT_OPTIONS = [5, 8, 10] as const;
 type DiscountOption = typeof DISCOUNT_OPTIONS[number];
@@ -35,6 +38,8 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const [imageOverrides, setImageOverrides] = useState<ImageMap>({});
   const [videoOverrides, setVideoOverrides] = useState<VideoMap>({});
   const [discountOverrides, setDiscountOverrides] = useState<DiscountMap>({});
+  const [faqOverrides, setFaqOverrides] = useState<FaqMap>({});
+  const [editingFaqId, setEditingFaqId] = useState<string | null>(null);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
   const [draftVideo, setDraftVideo] = useState("");
@@ -74,6 +79,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
       const images: ImageMap = {};
       const videos: VideoMap = {};
       const discounts: DiscountMap = {};
+      const faqs: FaqMap = {};
       data.forEach((row) => {
         map[row.product_id] = row.active;
         if (row.price_override) prices[row.product_id] = row.price_override;
@@ -83,12 +89,22 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         if (row.video_url) videos[row.product_id] = row.video_url;
         // @ts-ignore
         if (row.discount_percent) discounts[row.product_id] = row.discount_percent;
+        // @ts-ignore
+        const { faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3 } = row as Record<string, string>;
+        if (faq_q1 || faq_q2 || faq_q3) {
+          faqs[row.product_id] = {
+            q1: faq_q1 ?? "", a1: faq_a1 ?? "",
+            q2: faq_q2 ?? "", a2: faq_a2 ?? "",
+            q3: faq_q3 ?? "", a3: faq_a3 ?? "",
+          };
+        }
       });
       setSettings(map);
       setPriceOverrides(prices);
       setImageOverrides(images);
       setVideoOverrides(videos);
       setDiscountOverrides(discounts);
+      setFaqOverrides(faqs);
     }
     setLoading(false);
   }, [storeId]);
@@ -271,6 +287,20 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     setEditingVideoId(null);
   };
 
+  const saveFaq = async (productId: string, faq: FaqData) => {
+    // @ts-ignore — columns added via migration 20260418000002
+    await supabase.from("product_settings").upsert({
+      product_id: productId,
+      store_id: storeId,
+      faq_q1: faq.q1 || null, faq_a1: faq.a1 || null,
+      faq_q2: faq.q2 || null, faq_a2: faq.a2 || null,
+      faq_q3: faq.q3 || null, faq_a3: faq.a3 || null,
+      updated_at: new Date().toISOString(),
+    });
+    setFaqOverrides((prev) => ({ ...prev, [productId]: faq }));
+    setEditingFaqId(null);
+  };
+
   const downloadCsvTemplate = () => {
     const header = "product_id,price\n";
     const rows = products.map((p) => `${p.id},${p.price}`).join("\n");
@@ -451,36 +481,60 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
               return (
                 <motion.div
                   key={product.id}
-                  className={`rounded-2xl border bg-card shadow-card transition-all duration-300 ${
+                  className={`overflow-hidden rounded-2xl border bg-card shadow-card transition-all duration-300 ${
                     isActive ? "border-border" : "border-border/30"
                   }`}
                   initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: isActive ? 1 : 0.55, y: 0 }}
+                  animate={{ opacity: isActive ? 1 : 0.52, y: 0 }}
                   transition={{ delay: i * 0.04 }}
                 >
-                  <div className="flex items-start gap-4 p-5">
-                    <input
-                      type="checkbox"
-                      checked={bulkSelection.has(product.id)}
-                      onChange={(e) => {
-                        const newSet = new Set(bulkSelection);
-                        if (e.target.checked) newSet.add(product.id);
-                        else newSet.delete(product.id);
-                        setBulkSelection(newSet);
-                      }}
-                      className="mt-1 h-4 w-4 cursor-pointer"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <span className={`mb-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        isActive ? "bg-green-500/15 text-green-400" : "bg-muted text-muted-foreground"
-                      }`}>
-                        {isActive ? "● ATTIVO" : "● IN PAUSA"}
-                      </span>
-                      <h3 className="text-sm font-bold leading-snug text-foreground">{product.name}</h3>
+                  {/* Status accent bar */}
+                  <div className={`h-0.5 w-full transition-colors duration-500 ${isActive ? "gradient-primary" : "bg-border/40"}`} />
 
-                      {/* Price — inline editable */}
+                  <div className="p-4">
+                    {/* ── Row 1: checkbox · status · name · toggle ─────── */}
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={bulkSelection.has(product.id)}
+                        onChange={(e) => {
+                          const newSet = new Set(bulkSelection);
+                          if (e.target.checked) newSet.add(product.id);
+                          else newSet.delete(product.id);
+                          setBulkSelection(newSet);
+                        }}
+                        className="mt-1.5 h-4 w-4 shrink-0 cursor-pointer"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <span className={`mb-1 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${
+                          isActive ? "text-green-400" : "text-muted-foreground"
+                        }`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-green-400" : "bg-muted-foreground"}`} />
+                          {isActive ? "Attivo" : "In pausa"}
+                        </span>
+                        <h3 className="text-sm font-bold leading-snug text-foreground">{product.name}</h3>
+                      </div>
+                      <motion.button
+                        onClick={() => !isSaving && toggleProduct(product.id)}
+                        disabled={isSaving}
+                        className={`shrink-0 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                          isActive
+                            ? "border-destructive/30 bg-destructive/10 text-destructive active:bg-destructive/20"
+                            : "border-green-500/30 bg-green-500/10 text-green-400 active:bg-green-500/20"
+                        }`}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        {isSaving ? <span className="animate-pulse">…</span>
+                          : isActive ? <><PowerOff className="h-3 w-3" /> Disattiva</>
+                          : <><Power className="h-3 w-3" /> Riattiva</>}
+                      </motion.button>
+                    </div>
+
+                    {/* ── Row 2: price · discount ──────────────────────── */}
+                    <div className="ml-7 mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                      {/* Price */}
                       {editingPriceId === product.id ? (
-                        <div className="mt-1 flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5">
                           <input
                             autoFocus
                             value={draftPrice}
@@ -492,171 +546,120 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                             className="w-28 rounded-lg border border-primary bg-card px-2 py-1 text-sm font-semibold text-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             placeholder="€0,00"
                           />
-                          <button
-                            onClick={() => savePriceOverride(product.id, draftPrice)}
-                            className="rounded-lg bg-primary/20 p-1.5 text-primary hover:bg-primary/30"
-                          >
+                          <button onClick={() => savePriceOverride(product.id, draftPrice)}
+                            className="rounded-lg bg-primary/20 p-1.5 text-primary hover:bg-primary/30">
                             <Check className="h-3.5 w-3.5" />
                           </button>
-                          <button
-                            onClick={() => setEditingPriceId(null)}
-                            className="rounded-lg bg-muted p-1.5 text-muted-foreground hover:bg-muted/80"
-                          >
+                          <button onClick={() => setEditingPriceId(null)}
+                            className="rounded-lg bg-muted p-1.5 text-muted-foreground">
                             <X className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       ) : (
                         <button
-                          onClick={() => {
-                            setEditingPriceId(product.id);
-                            setDraftPrice(priceOverrides[product.id] ?? product.price);
-                          }}
-                          className="mt-0.5 flex items-center gap-1.5 group"
+                          onClick={() => { setEditingPriceId(product.id); setDraftPrice(priceOverrides[product.id] ?? product.price); }}
+                          className="group flex items-center gap-1.5"
                         >
-                          <span className="text-sm font-semibold text-primary">
+                          <span className="text-sm font-bold text-primary">
                             {priceOverrides[product.id] ?? product.price}
                           </span>
                           {priceOverrides[product.id] && (
-                            <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-400">
-                              custom
-                            </span>
+                            <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-400">custom</span>
                           )}
-                          <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <Pencil className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                         </button>
                       )}
-                      {/* Discount % selector */}
-                      <div className="mt-2 flex items-center gap-1.5">
-                        <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
-                          Sconto:
-                        </span>
+
+                      <span className="hidden h-3 w-px bg-border/50 sm:block" />
+
+                      {/* Discount */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Sconto:</span>
                         {DISCOUNT_OPTIONS.map((opt) => {
-                          const active = (discountOverrides[product.id] ?? 5) === opt;
+                          const sel = (discountOverrides[product.id] ?? 5) === opt;
                           return (
-                            <button
-                              key={opt}
-                              onClick={() => saveDiscount(product.id, opt)}
+                            <button key={opt} onClick={() => saveDiscount(product.id, opt)}
                               className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold transition-colors ${
-                                active
-                                  ? "bg-primary text-primary-foreground"
-                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-                              }`}
-                            >
+                                sel ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}>
                               {opt}%
                             </button>
                           );
                         })}
                       </div>
+                    </div>
 
-                      <div className="mt-2 flex flex-wrap gap-1">
+                    {/* ── Row 3: media actions + tags ──────────────────── */}
+                    <div className="ml-7 mt-3 flex flex-wrap items-center gap-2">
+
+                      {/* Image */}
+                      {imageOverrides[product.id] ? (
+                        <div className="flex items-center gap-1.5">
+                          <img src={imageOverrides[product.id]} alt={product.name}
+                            className="h-8 w-12 rounded-md border border-border object-cover" />
+                          <button onClick={() => removeProductImage(product.id)}
+                            className="flex items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/10 px-2 py-1 text-[10px] text-destructive active:scale-95">
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className={`flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:bg-muted active:scale-95 ${
+                          uploadingImageId === product.id ? "animate-pulse" : ""
+                        }`}>
+                          <Camera className="h-3 w-3" />
+                          {uploadingImageId === product.id ? "…" : "Foto"}
+                          <input type="file" accept="image/*" className="hidden"
+                            disabled={uploadingImageId !== null}
+                            onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadProductImage(product.id, f); e.target.value = ""; }} />
+                        </label>
+                      )}
+
+                      {/* Video */}
+                      {editingVideoId === product.id ? (
+                        <div className="flex flex-1 items-center gap-1.5">
+                          <input autoFocus value={draftVideo} onChange={(e) => setDraftVideo(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") saveVideoUrl(product.id, draftVideo); if (e.key === "Escape") setEditingVideoId(null); }}
+                            placeholder="https://youtube.com/watch?v=..."
+                            className="flex-1 rounded-lg border border-primary bg-card px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                          <button onClick={() => saveVideoUrl(product.id, draftVideo)}
+                            className="rounded-lg bg-primary/20 p-1.5 text-primary"><Check className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => setEditingVideoId(null)}
+                            className="rounded-lg bg-muted p-1.5 text-muted-foreground"><X className="h-3.5 w-3.5" /></button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setEditingVideoId(product.id); setDraftVideo(videoOverrides[product.id] ?? ""); }}
+                          className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium transition-colors ${
+                            videoOverrides[product.id]
+                              ? "border-green-500/40 bg-green-500/10 text-green-400"
+                              : "border-border bg-muted/50 text-muted-foreground hover:bg-muted"
+                          }`}>
+                          <Link className="h-3 w-3" />
+                          {videoOverrides[product.id] ? "Video ✓" : "Video"}
+                        </button>
+                      )}
+
+                      {/* FAQ */}
+                      <button
+                        onClick={() => setEditingFaqId(product.id)}
+                        className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium transition-colors ${
+                          faqOverrides[product.id]?.q1
+                            ? "border-primary/40 bg-primary/10 text-primary"
+                            : "border-border bg-muted/50 text-muted-foreground hover:bg-muted"
+                        }`}>
+                        <HelpCircle className="h-3 w-3" />
+                        {faqOverrides[product.id]?.q1 ? "FAQ ✓" : "FAQ"}
+                      </button>
+
+                      {/* Tags */}
+                      <div className="ml-auto flex flex-wrap gap-1">
                         {product.tags.map((tag) => (
-                          <span key={tag}
-                            className="rounded-full bg-muted px-2 py-0.5 text-[10px] capitalize text-muted-foreground">
+                          <span key={tag} className="rounded-full bg-muted px-2 py-0.5 text-[10px] capitalize text-muted-foreground">
                             {tag}
                           </span>
                         ))}
                       </div>
-
-                      {/* Image upload */}
-                      <div className="mt-3 flex items-center gap-2">
-                        {imageOverrides[product.id] ? (
-                          <>
-                            <img
-                              src={imageOverrides[product.id]}
-                              alt={product.name}
-                              className="h-12 w-20 rounded-lg object-cover border border-border"
-                            />
-                            <span className="text-[10px] text-green-400 font-semibold">Immagine custom</span>
-                            <button
-                              onClick={() => removeProductImage(product.id)}
-                              className="ml-auto flex items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/10 px-2 py-1 text-[10px] text-destructive active:scale-95"
-                            >
-                              <Trash2 className="h-3 w-3" /> Rimuovi
-                            </button>
-                          </>
-                        ) : (
-                          <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:bg-muted active:scale-95">
-                            {uploadingImageId === product.id ? (
-                              <span className="animate-pulse">Caricamento…</span>
-                            ) : (
-                              <>
-                                <Camera className="h-3 w-3" /> Carica immagine
-                              </>
-                            )}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              disabled={uploadingImageId !== null}
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) uploadProductImage(product.id, file);
-                                e.target.value = "";
-                              }}
-                            />
-                          </label>
-                        )}
-                      </div>
-
-                      {/* Video URL */}
-                      <div className="mt-2">
-                        {editingVideoId === product.id ? (
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              autoFocus
-                              value={draftVideo}
-                              onChange={(e) => setDraftVideo(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") saveVideoUrl(product.id, draftVideo);
-                                if (e.key === "Escape") setEditingVideoId(null);
-                              }}
-                              placeholder="https://youtube.com/watch?v=..."
-                              className="flex-1 rounded-lg border border-primary bg-card px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                            />
-                            <button onClick={() => saveVideoUrl(product.id, draftVideo)}
-                              className="rounded-lg bg-primary/20 p-1.5 text-primary hover:bg-primary/30">
-                              <Check className="h-3.5 w-3.5" />
-                            </button>
-                            <button onClick={() => setEditingVideoId(null)}
-                              className="rounded-lg bg-muted p-1.5 text-muted-foreground">
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => { setEditingVideoId(product.id); setDraftVideo(videoOverrides[product.id] ?? ""); }}
-                            className="flex items-center gap-1.5 group"
-                          >
-                            <Link className="h-3 w-3 text-muted-foreground" />
-                            {videoOverrides[product.id] ? (
-                              <>
-                                <span className="text-[10px] text-green-400 font-semibold">Video YouTube ✓</span>
-                                <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </>
-                            ) : (
-                              <span className="text-[10px] text-muted-foreground hover:text-foreground">Aggiungi video YouTube</span>
-                            )}
-                          </button>
-                        )}
-                      </div>
                     </div>
-                    <motion.button
-                      onClick={() => !isSaving && toggleProduct(product.id)}
-                      disabled={isSaving}
-                      className={`shrink-0 flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors disabled:opacity-50 ${
-                        isActive
-                          ? "border-destructive/30 bg-destructive/10 text-destructive active:bg-destructive/20"
-                          : "border-green-500/30 bg-green-500/10 text-green-400 active:bg-green-500/20"
-                      }`}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {isSaving ? (
-                        <span className="animate-pulse">…</span>
-                      ) : isActive ? (
-                        <><PowerOff className="h-3 w-3" /> Disattiva</>
-                      ) : (
-                        <><Power className="h-3 w-3" /> Riattiva</>
-                      )}
-                    </motion.button>
                   </div>
                 </motion.div>
               );
@@ -668,6 +671,23 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           Webi Match · Gestione Catalogo · Webidoo
         </p>
       </div>
+
+      {/* FAQ Modal */}
+      <AnimatePresence>
+        {editingFaqId && (() => {
+          const prod = products.find((p) => p.id === editingFaqId);
+          if (!prod) return null;
+          return (
+            <FaqModal
+              key={editingFaqId}
+              productName={prod.name}
+              initial={faqOverrides[editingFaqId] ?? EMPTY_FAQ}
+              onSave={(data) => saveFaq(editingFaqId, data)}
+              onClose={() => setEditingFaqId(null)}
+            />
+          );
+        })()}
+      </AnimatePresence>
 
       {/* Store selector modal */}
       <AnimatePresence>
