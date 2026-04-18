@@ -272,21 +272,19 @@ export function buildEmailHtml(data: EmailData): string {
             <p style="margin:0 0 10px;font-size:10px;font-weight:700;color:${C.orange};letter-spacing:0.24em;text-transform:uppercase;">Inserisci al checkout</p>
             <p style="margin:0 0 18px;font-size:46px;font-weight:900;color:${C.fg};font-family:'Courier New',Courier,monospace;letter-spacing:0.16em;line-height:1;">${code}</p>
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
-              <tr><td style="padding:0 0 6px;text-align:center;">
-                <span style="display:inline-block;white-space:nowrap;background:${C.orange};border-radius:999px;padding:7px 20px;">
-                  <span style="font-size:12px;font-weight:700;color:#fff;">✓ Valido 24 ore</span>
-                </span>
-              </td></tr>
-              <tr><td style="padding:0 0 6px;text-align:center;">
-                <span style="display:inline-block;white-space:nowrap;background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:7px 20px;">
-                  <span style="font-size:12px;font-weight:600;color:${C.fg};">🏪 Solo in negozio</span>
-                </span>
-              </td></tr>
-              <tr><td style="padding:0;text-align:center;">
-                <span style="display:inline-block;white-space:nowrap;background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:7px 20px;">
-                  <span style="font-size:12px;font-weight:600;color:${C.fg};">1️⃣ Un utilizzo</span>
-                </span>
-              </td></tr>
+              <tr>
+                <td style="background:${C.orange};border-radius:999px;padding:8px 20px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:700;color:#fff;display:inline-block;">✓ Valido 24 ore</span>
+                </td>
+                <td width="12">&nbsp;</td>
+                <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:8px 20px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:600;color:${C.fg};display:inline-block;">🏪 Solo in negozio</span>
+                </td>
+                <td width="12">&nbsp;</td>
+                <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:8px 20px;white-space:nowrap;">
+                  <span style="font-size:12px;font-weight:600;color:${C.fg};display:inline-block;">1️⃣ Un utilizzo</span>
+                </td>
+              </tr>
             </table>
           </td>
         </tr>
