@@ -12,6 +12,7 @@ export interface T {
     chip2: string;
     chip3: string;
     tap: string;
+    chooseLang: string;
   };
   welcome: {
     tagline: string;
@@ -77,12 +78,12 @@ export interface T {
   questions: Record<number, string>;
 }
 
-export const LANGUAGES: { code: Lang; flag: string; label: string }[] = [
-  { code: "it", flag: "🇮🇹", label: "IT" },
-  { code: "en", flag: "🇬🇧", label: "EN" },
-  { code: "pt", flag: "🇧🇷", label: "PT" },
-  { code: "es", flag: "🇪🇸", label: "ES" },
-  { code: "fr", flag: "🇫🇷", label: "FR" },
+export const LANGUAGES: { code: Lang; flag: string; label: string; name: string }[] = [
+  { code: "it", flag: "🇮🇹", label: "IT", name: "Italiano" },
+  { code: "en", flag: "🇬🇧", label: "EN", name: "English" },
+  { code: "pt", flag: "🇧🇷", label: "PT", name: "Português" },
+  { code: "es", flag: "🇪🇸", label: "ES", name: "Español" },
+  { code: "fr", flag: "🇫🇷", label: "FR", name: "Français" },
 ];
 
 export const translations: Record<Lang, T> = {
@@ -99,6 +100,7 @@ export const translations: Record<Lang, T> = {
       chip2: "Scelta personalizzata",
       chip3: "Regalo perfetto",
       tap: "Tocca per iniziare",
+      chooseLang: "Scegli la lingua",
     },
     welcome: {
       tagline: "Trova il tuo gadget perfetto! 🎯",
@@ -183,6 +185,7 @@ export const translations: Record<Lang, T> = {
       chip2: "Personalised choice",
       chip3: "Perfect gift",
       tap: "Tap to start",
+      chooseLang: "Choose language",
     },
     welcome: {
       tagline: "Find your perfect gadget! 🎯",
@@ -267,6 +270,7 @@ export const translations: Record<Lang, T> = {
       chip2: "Escolha personalizada",
       chip3: "Presente perfeito",
       tap: "Toque para começar",
+      chooseLang: "Escolher idioma",
     },
     welcome: {
       tagline: "Encontre o seu gadget perfeito! 🎯",
@@ -351,6 +355,7 @@ export const translations: Record<Lang, T> = {
       chip2: "Elección personalizada",
       chip3: "Regalo perfecto",
       tap: "Toca para empezar",
+      chooseLang: "Elegir idioma",
     },
     welcome: {
       tagline: "¡Encuentra tu gadget perfecto! 🎯",
@@ -435,6 +440,7 @@ export const translations: Record<Lang, T> = {
       chip2: "Choix personnalisé",
       chip3: "Cadeau parfait",
       tap: "Touchez pour commencer",
+      chooseLang: "Choisir la langue",
     },
     welcome: {
       tagline: "Trouvez votre gadget parfait ! 🎯",
