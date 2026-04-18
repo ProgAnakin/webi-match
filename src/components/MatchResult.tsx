@@ -478,14 +478,51 @@ const MatchResult = ({
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.4 }}
+          onClick={handleEmailTap}
         >
           <div
-            className="w-full cursor-default select-none rounded-2xl border border-border bg-card/60 px-4 py-3"
-            onClick={handleEmailTap}
+            className="w-full cursor-default select-none rounded-2xl px-4 py-3.5 relative overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--secondary)/0.6) 100%)",
+              border: "1px solid hsl(var(--primary)/0.25)",
+              boxShadow: "0 0 0 1px hsl(var(--primary)/0.08) inset, 0 2px 12px hsl(var(--primary)/0.06)",
+            }}
           >
-            <p className="text-xs text-muted-foreground mb-1">{t.result.sendTo}</p>
-            <p className="text-sm font-semibold text-foreground truncate">📬 {userEmail}</p>
+            {/* Subtle glow accent */}
+            <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-20"
+              style={{ background: "radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)" }} />
+
+            <div className="flex items-center gap-3">
+              {/* Icon */}
+              <div className="flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-xl"
+                style={{ background: "hsl(var(--primary)/0.12)", border: "1px solid hsl(var(--primary)/0.2)" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="20" height="16" x="2" y="4" rx="2" />
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                </svg>
+              </div>
+
+              {/* Text */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-medium uppercase tracking-widest mb-0.5"
+                  style={{ color: "hsl(var(--primary)/0.7)" }}>
+                  {t.result.sendTo}
+                </p>
+                <p className="text-sm font-bold text-foreground truncate">{userEmail}</p>
+              </div>
+
+              {/* Check badge */}
+              <div className="flex-shrink-0 flex h-6 w-6 items-center justify-center rounded-full"
+                style={{ background: "hsl(142,76%,36%/0.15)", border: "1px solid hsl(142,76%,36%/0.3)" }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                  stroke="hsl(142,76%,50%)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+            </div>
           </div>
+
           <p className="mt-1.5 text-center text-[10px] text-muted-foreground/45 leading-relaxed">
             Email non corretta? Chiedi a un consulente presente in negozio di modificarla.
           </p>
