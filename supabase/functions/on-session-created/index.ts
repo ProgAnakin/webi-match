@@ -119,8 +119,12 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
     @media only screen and (max-width:620px){
       .wrapper{width:100%!important;border-radius:0!important}
       .step-col{display:block!important;width:100%!important;text-align:center!important;
-                padding:12px 20px!important;border-right:none!important;border-bottom:1px solid ${C.border}!important}
+                padding:12px 20px!important;border-right:none!important;border-bottom:1px solid #2a3a68!important}
       .step-col:last-child{border-bottom:none!important}
+      .hide-mobile{display:none!important;max-height:0!important;overflow:hidden!important}
+      .match-ring-td{width:110px!important;height:110px!important;border-radius:55px!important;min-width:110px!important}
+      .match-pct{font-size:32px!important}
+      h1{font-size:22px!important}
     }
   </style>
 </head>
@@ -158,9 +162,9 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
     <td style="background:${C.card};padding:48px 40px 40px;text-align:center;border-top:1px solid ${C.border};">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
         <tr>
-          <td width="140" height="140" align="center" valign="middle"
-              style="width:140px;height:140px;border-radius:70px;border:10px solid ${ringColor};background-color:${ringColor}18;text-align:center;vertical-align:middle;">
-            <p style="margin:0 0 4px;font-size:42px;font-weight:800;color:${ringColor};line-height:1;font-family:'Space Grotesk',Arial,sans-serif;">${pct}%</p>
+          <td class="match-ring-td" width="140" height="140" align="center" valign="middle"
+              style="width:140px;height:140px;min-width:140px;border-radius:70px;border:10px solid ${ringColor};background-color:${ringColor}18;text-align:center;vertical-align:middle;overflow:hidden;">
+            <p class="match-pct" style="margin:0 0 4px;font-size:42px;font-weight:800;color:${ringColor};line-height:1;font-family:'Space Grotesk',Arial,sans-serif;mso-line-height-rule:exactly;">${pct}%</p>
             <p style="margin:0;font-size:9px;font-weight:700;color:${C.muted};letter-spacing:2px;font-family:Arial,sans-serif;">COMPATIBILITÀ</p>
           </td>
         </tr>
@@ -360,21 +364,21 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
       <p style="margin:0 0 18px;font-size:11px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:${C.orange};text-align:center;">AZIONE RICHIESTA</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr valign="top">
-          <td width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
+          <td class="step-col" width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
             <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
               <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:20px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">&#8595;</td></tr>
             </table>
             <p style="margin:10px 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Salva l'email</p>
             <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Avrai il codice a portata di mano</p>
           </td>
-          <td width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
+          <td class="step-col" width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
             <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
               <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:11px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">24h</td></tr>
             </table>
             <p style="margin:10px 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Entro 24 ore</p>
             <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Il codice scade presto</p>
           </td>
-          <td width="33%" style="text-align:center;padding:0 12px;">
+          <td class="step-col" width="33%" style="text-align:center;padding:0 12px;">
             <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
               <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:20px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">&#8594;</td></tr>
             </table>
