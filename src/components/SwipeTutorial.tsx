@@ -40,25 +40,25 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
             </motion.p>
 
             {/* Swipe demo row */}
-            <div className="flex w-full max-w-xs items-center justify-between gap-2">
+            <div className="flex w-full max-w-sm items-center justify-between gap-3">
 
               {/* NO side */}
               <motion.div
-                className="flex flex-col items-center gap-1.5"
+                className="flex flex-col items-center gap-2"
                 animate={{ opacity: step === "no" ? 1 : 0.22, scale: step === "no" ? 1.05 : 0.95 }}
                 transition={{ duration: 0.35 }}
               >
                 <motion.div
-                  className="flex items-center gap-1.5 rounded-2xl border-2 border-destructive/60 bg-destructive/15 px-3.5 py-2"
-                  animate={step === "no" ? { boxShadow: ["0 0 0px hsl(0 84% 60% / 0)", "0 0 18px hsl(0 84% 60% / 0.35)", "0 0 0px hsl(0 84% 60% / 0)"] } : {}}
+                  className="flex items-center gap-2 rounded-2xl border-2 border-destructive/60 bg-destructive/15 px-5 py-3"
+                  animate={step === "no" ? { boxShadow: ["0 0 0px hsl(0 84% 60% / 0)", "0 0 24px hsl(0 84% 60% / 0.4)", "0 0 0px hsl(0 84% 60% / 0)"] } : {}}
                   transition={{ duration: 1.2, repeat: Infinity }}
                 >
-                  <span className="text-lg font-black text-destructive">✕</span>
-                  <span className="text-lg font-black text-destructive">{t.swipe.no}</span>
+                  <span className="text-2xl font-black text-destructive">✕</span>
+                  <span className="text-2xl font-black text-destructive">{t.swipe.no}</span>
                 </motion.div>
                 <motion.span
-                  className="text-2xl"
-                  animate={step === "no" ? { x: [0, -8, 0] } : {}}
+                  className="text-4xl"
+                  animate={step === "no" ? { x: [0, -10, 0] } : {}}
                   transition={{ duration: 0.7, repeat: Infinity }}
                 >
                   ←
@@ -66,17 +66,17 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
               </motion.div>
 
               {/* Demo card */}
-              <div className="relative flex h-32 w-28 items-center justify-center">
+              <div className="relative flex h-48 w-40 items-center justify-center">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={step}
-                    className="gradient-card shadow-card absolute flex h-full w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-border/80"
+                    className="gradient-card shadow-card absolute flex h-full w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-3xl border border-border/80"
                     initial={{ scale: 0.88, opacity: 0 }}
                     animate={{
                       scale: 1,
                       opacity: [1, 1, 0],
-                      x:      step === "no"  ? [0, -110] : [0,  110],
-                      rotate: step === "no"  ? [0,  -20] : [0,   20],
+                      x:      step === "no"  ? [0, -160] : [0,  160],
+                      rotate: step === "no"  ? [0,  -22] : [0,   22],
                     }}
                     exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.15 } }}
                     transition={{
@@ -87,9 +87,9 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
                     }}
                   >
                     {/* Top accent bar */}
-                    <div className="h-1 w-full flex-shrink-0 gradient-primary" />
-                    <span className="mt-1 text-4xl">🤔</span>
-                    <span className="pb-3 text-[10px] font-semibold text-muted-foreground">
+                    <div className="h-1.5 w-full flex-shrink-0 gradient-primary" />
+                    <span className="mt-2 text-6xl">🤔</span>
+                    <span className="pb-4 text-sm font-semibold text-muted-foreground">
                       {step === "no" ? t.swipe.no : t.swipe.yes}?
                     </span>
                   </motion.div>
@@ -98,21 +98,21 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
 
               {/* YES side */}
               <motion.div
-                className="flex flex-col items-center gap-1.5"
+                className="flex flex-col items-center gap-2"
                 animate={{ opacity: step === "yes" ? 1 : 0.22, scale: step === "yes" ? 1.05 : 0.95 }}
                 transition={{ duration: 0.35 }}
               >
                 <motion.div
-                  className="flex items-center gap-1.5 rounded-2xl border-2 border-success/60 bg-success/15 px-3.5 py-2"
-                  animate={step === "yes" ? { boxShadow: ["0 0 0px hsl(145 80% 42% / 0)", "0 0 18px hsl(145 80% 42% / 0.35)", "0 0 0px hsl(145 80% 42% / 0)"] } : {}}
+                  className="flex items-center gap-2 rounded-2xl border-2 border-success/60 bg-success/15 px-5 py-3"
+                  animate={step === "yes" ? { boxShadow: ["0 0 0px hsl(145 80% 42% / 0)", "0 0 24px hsl(145 80% 42% / 0.4)", "0 0 0px hsl(145 80% 42% / 0)"] } : {}}
                   transition={{ duration: 1.2, repeat: Infinity }}
                 >
-                  <span className="text-lg font-black text-success">{t.swipe.yes}</span>
-                  <span className="text-lg font-black text-success">✓</span>
+                  <span className="text-2xl font-black text-success">{t.swipe.yes}</span>
+                  <span className="text-2xl font-black text-success">✓</span>
                 </motion.div>
                 <motion.span
-                  className="text-2xl"
-                  animate={step === "yes" ? { x: [0, 8, 0] } : {}}
+                  className="text-4xl"
+                  animate={step === "yes" ? { x: [0, 10, 0] } : {}}
                   transition={{ duration: 0.7, repeat: Infinity }}
                 >
                   →
@@ -124,7 +124,7 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
             <AnimatePresence mode="wait">
               <motion.p
                 key={step}
-                className="text-sm font-semibold text-foreground/80"
+                className="text-base font-bold text-foreground/80"
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
