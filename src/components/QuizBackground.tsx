@@ -31,13 +31,13 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
   const [primary, secondary] = PALETTE[category] ?? ["hsl(27,92%,55%)", "hsl(45,88%,52%)"];
 
   const particles = useMemo(() =>
-    Array.from({ length: 24 }, (_, i) => ({
+    Array.from({ length: 30 }, (_, i) => ({
       id: i,
       x: sr(i * 7 + 1) * 100,
       y: sr(i * 7 + 2) * 100,
-      size: 1.5 + sr(i * 7 + 3) * 2.5,
-      dur: 10 + sr(i * 7 + 4) * 14,
-      delay: sr(i * 7 + 5) * 8,
+      size: 2.5 + sr(i * 7 + 3) * 4,
+      dur: 9 + sr(i * 7 + 4) * 12,
+      delay: sr(i * 7 + 5) * 7,
       dx: (sr(i * 7 + 6) - 0.5) * 90,
       dy: -(35 + sr(i * 7 + 7) * 95),
       color: i % 3 === 0 ? "secondary" : "primary",
@@ -55,12 +55,12 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
           style={{
             width: 720, height: 720,
             left: "-18%", top: "0%",
-            background: `radial-gradient(circle, ${primary} 0%, transparent 66%)`,
-            filter: "blur(115px)",
+            background: `radial-gradient(circle, ${primary} 0%, transparent 58%)`,
+            filter: "blur(80px)",
           }}
           initial={{ opacity: 0 }}
           animate={{
-            opacity: [0.16, 0.22, 0.16],
+            opacity: [0.34, 0.46, 0.34],
             x: [0, 70, -25, 70],
             y: [0, -55, 35, -55],
           }}
@@ -81,12 +81,12 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
           style={{
             width: 520, height: 520,
             right: "-10%", bottom: "-5%",
-            background: `radial-gradient(circle, ${secondary} 0%, transparent 66%)`,
-            filter: "blur(100px)",
+            background: `radial-gradient(circle, ${secondary} 0%, transparent 58%)`,
+            filter: "blur(72px)",
           }}
           initial={{ opacity: 0 }}
           animate={{
-            opacity: [0.11, 0.17, 0.11],
+            opacity: [0.26, 0.38, 0.26],
             x: [0, -55, 25, -55],
             y: [0, -45, 55, -45],
           }}
@@ -107,12 +107,12 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
           style={{
             width: 340, height: 340,
             right: "8%", top: "-10%",
-            background: `radial-gradient(circle, ${primary} 0%, transparent 66%)`,
-            filter: "blur(85px)",
+            background: `radial-gradient(circle, ${primary} 0%, transparent 58%)`,
+            filter: "blur(62px)",
           }}
           initial={{ opacity: 0 }}
           animate={{
-            opacity: [0.10, 0.16, 0.10],
+            opacity: [0.24, 0.34, 0.24],
             x: [0, 40, -18, 40],
             y: [0, 45, -28, 45],
           }}
@@ -133,12 +133,12 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
           style={{
             width: 220, height: 220,
             left: "18%", bottom: "18%",
-            background: `radial-gradient(circle, ${secondary} 0%, transparent 66%)`,
-            filter: "blur(70px)",
+            background: `radial-gradient(circle, ${secondary} 0%, transparent 58%)`,
+            filter: "blur(52px)",
           }}
           initial={{ opacity: 0 }}
           animate={{
-            opacity: [0.09, 0.14, 0.09],
+            opacity: [0.22, 0.32, 0.22],
             x: [0, -30, 18, -30],
             y: [0, 35, -22, 35],
           }}
@@ -175,7 +175,7 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
               animate={{
                 x:       [0, p.dx * 0.3, p.dx, p.dx * 0.6, 0],
                 y:       [0, p.dy * 0.28, p.dy, p.dy * 0.65, 0],
-                opacity: [0, 0.50, 0.72, 0.38, 0],
+                opacity: [0, 0.70, 0.92, 0.55, 0],
                 scale:   [0.4, 1.0, 1.35, 0.75, 0.4],
               }}
               transition={{
@@ -194,21 +194,21 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
         className="absolute top-0 bottom-0 left-0"
         style={{
           width: "35%",
-          background: `linear-gradient(to right, transparent, ${primary}0E 50%, transparent)`,
+          background: `linear-gradient(to right, transparent, ${primary}30 50%, transparent)`,
           skewX: "-18deg",
         }}
         animate={{ x: ["-35vw", "170vw"] }}
         transition={{
-          duration: 5.5,
+          duration: 5,
           repeat: Infinity,
           ease: "easeInOut",
-          repeatDelay: 10,
+          repeatDelay: 6,
         }}
       />
 
       {/* ── SVG fractal noise grain — adds premium depth ──────────── */}
       <svg
-        className="absolute inset-0 h-full w-full opacity-[0.032]"
+        className="absolute inset-0 h-full w-full opacity-[0.05]"
         xmlns="http://www.w3.org/2000/svg"
       >
         <filter id="qbg-grain">
