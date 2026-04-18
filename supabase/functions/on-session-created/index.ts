@@ -270,22 +270,22 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr valign="top">
           <td class="step-col" width="33%" style="padding:0 16px 0 8px;text-align:center;border-right:1px solid ${C.border};">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
-              <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});width:44px;height:44px;border-radius:50%;text-align:center;vertical-align:middle;line-height:44px;font-size:11px;font-weight:800;color:#fff;">1</td></tr>
+            <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+              <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:14px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">1</td></tr>
             </table>
             <p style="margin:10px 0 4px;font-size:13px;font-weight:700;color:${C.fg};">Mostra l'email</p>
             <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">Al consulente Webidoo in negozio</p>
           </td>
           <td class="step-col" width="33%" style="padding:0 16px;text-align:center;border-right:1px solid ${C.border};">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
-              <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});width:44px;height:44px;border-radius:50%;text-align:center;vertical-align:middle;line-height:44px;font-size:11px;font-weight:800;color:#fff;">2</td></tr>
+            <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+              <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:14px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">2</td></tr>
             </table>
             <p style="margin:10px 0 4px;font-size:13px;font-weight:700;color:${C.fg};">Scegli il prodotto</p>
             <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">Il tuo match o qualsiasi altro</p>
           </td>
           <td class="step-col" width="33%" style="padding:0 8px 0 16px;text-align:center;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
-              <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});width:44px;height:44px;border-radius:50%;text-align:center;vertical-align:middle;line-height:44px;font-size:11px;font-weight:800;color:#fff;">3</td></tr>
+            <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+              <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:14px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">3</td></tr>
             </table>
             <p style="margin:10px 0 4px;font-size:13px;font-weight:700;color:${C.fg};">Applica il codice</p>
             <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">Al checkout — sconto immediato</p>
@@ -306,8 +306,8 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
           </td></tr>` : ""}
           <tr>
             <td style="background:${C.cardHeader};padding:20px;text-align:center;border-radius:${thumbUrl ? "0 0 14px 14px" : "14px"};">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
-                <tr><td style="background:${C.orange};border-radius:50%;width:52px;height:52px;text-align:center;vertical-align:middle;line-height:52px;font-size:20px;color:#fff;padding-left:5px;">&#9658;</td></tr>
+              <table role="presentation" width="52" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+                <tr><td width="52" height="52" align="center" valign="middle" style="width:52px;height:52px;min-width:52px;border-radius:26px;background:${C.orange};text-align:center;vertical-align:middle;font-size:22px;color:#fff;overflow:hidden;line-height:52px;mso-line-height-rule:exactly;padding-left:4px;">&#9658;</td></tr>
               </table>
               <p style="margin:10px 0 3px;font-size:14px;font-weight:700;color:${C.fg};">Guarda la presentazione del consulente</p>
               <p style="margin:0;font-size:11px;color:${C.muted};">30 secondi per scoprire tutto sul tuo prodotto</p>
@@ -361,22 +361,22 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr valign="top">
           <td width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
-              <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});width:44px;height:44px;border-radius:50%;text-align:center;vertical-align:middle;line-height:44px;font-size:20px;font-weight:800;color:#fff;">&#8595;</td></tr>
+            <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+              <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:20px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">&#8595;</td></tr>
             </table>
             <p style="margin:10px 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Salva l'email</p>
             <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Avrai il codice a portata di mano</p>
           </td>
           <td width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
-              <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});width:44px;height:44px;border-radius:50%;text-align:center;vertical-align:middle;line-height:44px;font-size:9px;font-weight:800;color:#fff;letter-spacing:0;">24h</td></tr>
+            <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+              <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:11px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">24h</td></tr>
             </table>
             <p style="margin:10px 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Entro 24 ore</p>
             <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Il codice scade presto</p>
           </td>
           <td width="33%" style="text-align:center;padding:0 12px;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
-              <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});width:44px;height:44px;border-radius:50%;text-align:center;vertical-align:middle;line-height:44px;font-size:20px;font-weight:800;color:#fff;">&#8594;</td></tr>
+            <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+              <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:20px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">&#8594;</td></tr>
             </table>
             <p style="margin:10px 0 4px;font-size:12px;font-weight:700;color:${C.fg};">Vieni in store</p>
             <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Mostra al consulente</p>
