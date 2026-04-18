@@ -88,16 +88,12 @@ function safeUrl(url: string): string {
 }
 
 function progressHtml(pct: number, color: string, muted: string): string {
-  const barW = 200;
-  const filledW = Math.round(pct / 100 * barW);
-  const emptyW = barW - filledW;
+  const filled = Math.round(pct / 10);
+  const dots = '●'.repeat(filled) + '○'.repeat(10 - filled);
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="text-align:center;padding:0;">
       <p style="margin:0;font-size:72px;font-weight:900;color:${color};line-height:1;font-family:Arial,Helvetica,sans-serif;mso-line-height-rule:exactly;">${pct}<span style="font-size:36px;font-weight:900;">%</span></p>
-      <p style="margin:8px 0 20px;font-size:9px;font-weight:700;color:${muted};letter-spacing:0.28em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;text-align:center;">COMPATIBILITÀ</p>
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="${barW}" align="center" style="margin:0 auto;border-radius:5px;overflow:hidden;"><tr>
-        <td width="${filledW}" height="12" bgcolor="${color}" style="width:${filledW}px;height:12px;font-size:0;line-height:0;">&nbsp;</td>
-        ${emptyW > 0 ? `<td width="${emptyW}" height="12" bgcolor="#2a3a68" style="width:${emptyW}px;height:12px;font-size:0;line-height:0;">&nbsp;</td>` : ""}
-      </tr></table>
+      <p style="margin:8px 0 6px;font-size:9px;font-weight:700;color:${muted};letter-spacing:0.28em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;text-align:center;">COMPATIBILITÀ</p>
+      <p style="margin:0;font-size:20px;letter-spacing:4px;color:${color};text-align:center;font-family:Arial,Helvetica,sans-serif;">${dots}</p>
   </td></tr></table>`;
 }
 
@@ -239,19 +235,19 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
         <tr>
           <td style="background:${C.cardHeader};padding:30px 28px 26px;text-align:center;">
             <p style="margin:0 0 10px;font-size:10px;font-weight:700;color:${C.orange};letter-spacing:0.24em;text-transform:uppercase;">Inserisci al checkout</p>
-            <p style="margin:0 0 18px;font-size:46px;font-weight:900;color:${C.fg};font-family:'Courier New',Courier,monospace;letter-spacing:0.16em;line-height:1;">${code}</p>
+            <p style="margin:0 0 18px;font-size:38px;font-weight:900;color:${C.fg};font-family:'Courier New',Courier,monospace;letter-spacing:0.06em;line-height:1;white-space:nowrap;">${code}</p>
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
               <tr>
-                <td style="background:${C.orange};border-radius:999px;padding:8px 20px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:700;color:#fff;display:inline-block;">✓ Valido 24 ore</span>
+                <td style="background:${C.orange};border-radius:999px;padding:5px 10px;white-space:nowrap;">
+                  <span style="font-size:10px;font-weight:700;color:#fff;display:inline-block;white-space:nowrap;">✓ 24 ore</span>
                 </td>
-                <td width="12">&nbsp;</td>
-                <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:8px 20px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:600;color:${C.fg};display:inline-block;">🏪 Solo in negozio</span>
+                <td width="6">&nbsp;</td>
+                <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:5px 10px;white-space:nowrap;">
+                  <span style="font-size:10px;font-weight:600;color:${C.fg};display:inline-block;white-space:nowrap;">🏪 In negozio</span>
                 </td>
-                <td width="12">&nbsp;</td>
-                <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:8px 20px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:600;color:${C.fg};display:inline-block;">1️⃣ Un utilizzo</span>
+                <td width="6">&nbsp;</td>
+                <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:5px 10px;white-space:nowrap;">
+                  <span style="font-size:10px;font-weight:600;color:${C.fg};display:inline-block;white-space:nowrap;">1️⃣ Un uso</span>
                 </td>
               </tr>
             </table>
@@ -280,23 +276,29 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr valign="top">
           <td class="step-col" width="33%" style="padding:0 16px 0 8px;text-align:center;border-right:1px solid ${C.border};">
-            <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
-              <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:14px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">1</td></tr>
-            </table>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="text-align:center;padding:0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:14px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">1</td></tr>
+              </table>
+            </td></tr></table>
             <p style="margin:10px 0 4px;font-size:13px;font-weight:700;color:${C.fg};text-align:center;">Mostra l'email</p>
             <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;text-align:center;">Al consulente Webidoo in negozio</p>
           </td>
           <td class="step-col" width="33%" style="padding:0 16px;text-align:center;border-right:1px solid ${C.border};">
-            <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
-              <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:14px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">2</td></tr>
-            </table>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="text-align:center;padding:0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:14px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">2</td></tr>
+              </table>
+            </td></tr></table>
             <p style="margin:10px 0 4px;font-size:13px;font-weight:700;color:${C.fg};text-align:center;">Scegli il prodotto</p>
             <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;text-align:center;">Il tuo match o qualsiasi altro</p>
           </td>
           <td class="step-col" width="33%" style="padding:0 8px 0 16px;text-align:center;">
-            <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
-              <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:14px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">3</td></tr>
-            </table>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="text-align:center;padding:0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:14px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">3</td></tr>
+              </table>
+            </td></tr></table>
             <p style="margin:10px 0 4px;font-size:13px;font-weight:700;color:${C.fg};text-align:center;">Applica il codice</p>
             <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;text-align:center;">Al checkout — sconto immediato</p>
           </td>
@@ -371,23 +373,29 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr valign="top">
           <td class="step-col" width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
-            <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
-              <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:20px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">&#8595;</td></tr>
-            </table>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="text-align:center;padding:0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:20px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">&#8595;</td></tr>
+              </table>
+            </td></tr></table>
             <p style="margin:10px 0 4px;font-size:12px;font-weight:700;color:${C.fg};text-align:center;">Salva l'email</p>
             <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;text-align:center;">Avrai il codice a portata di mano</p>
           </td>
           <td class="step-col" width="33%" style="text-align:center;padding:0 12px;border-right:1px solid ${C.border};">
-            <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
-              <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:11px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">24h</td></tr>
-            </table>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="text-align:center;padding:0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:11px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">24h</td></tr>
+              </table>
+            </td></tr></table>
             <p style="margin:10px 0 4px;font-size:12px;font-weight:700;color:${C.fg};text-align:center;">Entro 24 ore</p>
             <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;text-align:center;">Il codice scade presto</p>
           </td>
           <td class="step-col" width="33%" style="text-align:center;padding:0 12px;">
-            <table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
-              <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:20px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">&#8594;</td></tr>
-            </table>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="text-align:center;padding:0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr><td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:20px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">&#8594;</td></tr>
+              </table>
+            </td></tr></table>
             <p style="margin:10px 0 4px;font-size:12px;font-weight:700;color:${C.fg};text-align:center;">Vieni in store</p>
             <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;text-align:center;">Mostra al consulente</p>
           </td>
