@@ -32,6 +32,7 @@ export interface T {
   };
   quiz: {
     questionOf: (current: number, total: number) => string;
+    chooseDestiny: string;
   };
   tutorial: {
     no: string;
@@ -120,6 +121,7 @@ export const translations: Record<Lang, T> = {
     },
     quiz: {
       questionOf: (c, t) => `Domanda ${c} di ${t}`,
+      chooseDestiny: "SCEGLI IL TUO DESTINO",
     },
     tutorial: {
       no: "← Swipe per NO",
@@ -205,6 +207,7 @@ export const translations: Record<Lang, T> = {
     },
     quiz: {
       questionOf: (c, t) => `Question ${c} of ${t}`,
+      chooseDestiny: "CHOOSE YOUR DESTINY",
     },
     tutorial: {
       no: "← Swipe for NO",
@@ -290,6 +293,7 @@ export const translations: Record<Lang, T> = {
     },
     quiz: {
       questionOf: (c, t) => `Pergunta ${c} de ${t}`,
+      chooseDestiny: "ESCOLHA O SEU DESTINO",
     },
     tutorial: {
       no: "← Swipe para NÃO",
@@ -375,6 +379,7 @@ export const translations: Record<Lang, T> = {
     },
     quiz: {
       questionOf: (c, t) => `Pregunta ${c} de ${t}`,
+      chooseDestiny: "ELIGE TU DESTINO",
     },
     tutorial: {
       no: "← Swipe para NO",
@@ -460,6 +465,7 @@ export const translations: Record<Lang, T> = {
     },
     quiz: {
       questionOf: (c, t) => `Question ${c} sur ${t}`,
+      chooseDestiny: "CHOISISSEZ VOTRE DESTIN",
     },
     tutorial: {
       no: "← Swipe pour NON",

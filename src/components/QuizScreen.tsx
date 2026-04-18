@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Heart } from "lucide-react";
+import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import SwipeCard from "./SwipeCard";
 import SwipeTutorial from "./SwipeTutorial";
 import QuizBackground from "./QuizBackground";
@@ -111,27 +111,41 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
 
       {/* Buttons */}
       <motion.div
-        className="absolute bottom-10 flex w-full max-w-xs justify-center gap-8"
+        className="absolute bottom-10 flex w-full max-w-sm items-center justify-center gap-3 px-5"
         style={{ pointerEvents: transitioning ? "none" : "auto" }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: transitioning ? 0.35 : 1, y: 0 }}
-        transition={{ duration: transitioning ? 0.1 : 0.3, delay: transitioning ? 0 : 0.3 }}
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: transitioning ? 0.22 : 1, y: 0 }}
+        transition={{ duration: transitioning ? 0.12 : 0.35, delay: transitioning ? 0 : 0.28 }}
       >
+        {/* NO — left arrow */}
         <motion.button
           onClick={() => { haptic(30); handleSwipe("left"); }}
-          className="group flex h-16 w-16 items-center justify-center rounded-full border-2 border-destructive/40 bg-destructive/10 text-destructive shadow-lg backdrop-blur-sm transition-all hover:border-destructive hover:bg-destructive/20"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.88 }}
+          className="flex h-14 w-[120px] items-center justify-center rounded-2xl border-2 border-destructive/60 bg-destructive/10 text-destructive backdrop-blur-sm"
+          style={{ boxShadow: "0 0 22px hsl(0 84% 60% / 0.22), inset 0 0 12px hsl(0 84% 60% / 0.07)" }}
+          whileHover={{ scale: 1.06, boxShadow: "0 0 34px hsl(0 84% 60% / 0.45)" }}
+          whileTap={{ scale: 0.88, boxShadow: "0 0 60px hsl(0 84% 60% / 0.80), inset 0 0 24px hsl(0 84% 60% / 0.38)" }}
         >
-          <X className="h-7 w-7 transition-transform group-hover:scale-110" strokeWidth={3} />
+          <ChevronsLeft className="h-9 w-9" strokeWidth={2.2} />
         </motion.button>
+
+        {/* Center destiny text */}
+        <div className="flex w-[86px] shrink-0 flex-col items-center gap-1">
+          <div className="h-px w-full bg-border/35" />
+          <p className="text-center text-[8px] font-black uppercase leading-tight tracking-[0.13em] text-muted-foreground/55">
+            {t.quiz.chooseDestiny}
+          </p>
+          <div className="h-px w-full bg-border/35" />
+        </div>
+
+        {/* YES — right arrow */}
         <motion.button
           onClick={() => { haptic(45); handleSwipe("right"); }}
-          className="group flex h-16 w-16 items-center justify-center rounded-full border-2 border-success/40 bg-success/10 text-success shadow-lg backdrop-blur-sm transition-all hover:border-success hover:bg-success/20"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.88 }}
+          className="flex h-14 w-[120px] items-center justify-center rounded-2xl border-2 border-success/60 bg-success/10 text-success backdrop-blur-sm"
+          style={{ boxShadow: "0 0 22px hsl(145 80% 42% / 0.22), inset 0 0 12px hsl(145 80% 42% / 0.07)" }}
+          whileHover={{ scale: 1.06, boxShadow: "0 0 34px hsl(145 80% 42% / 0.45)" }}
+          whileTap={{ scale: 0.88, boxShadow: "0 0 60px hsl(145 80% 42% / 0.80), inset 0 0 24px hsl(145 80% 42% / 0.38)" }}
         >
-          <Heart className="h-7 w-7 transition-transform group-hover:scale-110" strokeWidth={2.5} fill="currentColor" />
+          <ChevronsRight className="h-9 w-9" strokeWidth={2.2} />
         </motion.button>
       </motion.div>
     </div>
