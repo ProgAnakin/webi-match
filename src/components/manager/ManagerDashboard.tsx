@@ -71,7 +71,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     setLoading(true);
     const { data } = await supabase
       .from("product_settings")
-      .select("product_id, active, price_override, image_url, video_url, discount_percent")
+      .select("product_id, active, price_override, image_url, video_url, discount_percent, faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3")
       .eq("store_id", storeId);
     if (data) {
       const map: SettingsMap = {};
