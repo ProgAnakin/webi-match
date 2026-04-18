@@ -20,15 +20,11 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.35 } }}
-      onClick={onDismiss}
     >
       {/* Blurred dark overlay */}
       <div className="absolute inset-0 bg-background/82 backdrop-blur-md" />
 
-      <div
-        className="relative z-10 flex flex-col items-center gap-7 px-6"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative z-10 flex flex-col items-center gap-7 px-6">
             {/* Header */}
             <motion.p
               className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground"
