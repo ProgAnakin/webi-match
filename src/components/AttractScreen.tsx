@@ -203,24 +203,29 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
         </motion.button>
 
         {/* CTA button */}
-        <motion.button
-          className="rounded-2xl px-14 py-4 text-lg font-black text-white uppercase tracking-wider"
-          style={{
-            background: "linear-gradient(135deg, hsl(27,92%,55%), hsl(16,100%,48%))",
-            boxShadow: "0 0 40px hsla(27,92%,55%,0.5), 0 8px 32px hsla(0,0%,0%,0.4)",
-            letterSpacing: "0.08em",
-          }}
-          animate={{ scale: [1, 1.03, 1] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          whileTap={{ scale: 0.96 }}
+        <motion.div
           initial={{ opacity: 0, y: 16 }}
-          onClick={onComplete}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
         >
-          {t.splash.tap}{" "}
-          <span style={{ display: "inline-block", animation: "at-arrow-nudge 1s ease-in-out infinite" }}>
-            →
-          </span>
-        </motion.button>
+          <motion.button
+            className="rounded-2xl px-14 py-4 text-lg font-black text-white uppercase tracking-wider"
+            style={{
+              background: "linear-gradient(135deg, hsl(27,92%,55%), hsl(16,100%,48%))",
+              boxShadow: "0 0 40px hsla(27,92%,55%,0.5), 0 8px 32px hsla(0,0%,0%,0.4)",
+              letterSpacing: "0.08em",
+            }}
+            animate={{ scale: [1, 1.03, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            whileTap={{ scale: 0.96 }}
+            onClick={onComplete}
+          >
+            {t.splash.tap}{" "}
+            <span style={{ display: "inline-block", animation: "at-arrow-nudge 1s ease-in-out infinite" }}>
+              →
+            </span>
+          </motion.button>
+        </motion.div>
       </div>
     </div>
   );
