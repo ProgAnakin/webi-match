@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LoginForm } from "@/components/stats/LoginForm";
 import { MfaVerifyForm } from "@/components/stats/MfaVerifyForm";
@@ -19,6 +21,7 @@ const AdminSpinner = () => (
 );
 
 const Stats = () => {
+  const navigate = useNavigate();
   const [authStep, setAuthStep] = useState<AuthStep>("login");
   const [checking, setChecking] = useState(true);
 
@@ -56,6 +59,14 @@ const Stats = () => {
   if (checking) return <AdminSpinner />;
 
   return (
+    <>
+      <button
+        onClick={() => navigate("/")}
+        className="fixed left-4 top-4 z-50 flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground/60 transition-colors hover:text-foreground"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Home
+      </button>
     <AnimatePresence mode="wait">
       {authStep === "login" && (
         <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -82,6 +93,7 @@ const Stats = () => {
         </motion.div>
       )}
     </AnimatePresence>
+    </>
   );
 };
 
