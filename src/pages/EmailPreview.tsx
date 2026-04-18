@@ -62,7 +62,7 @@ export default function EmailPreview() {
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Webi-Match</p>
           <h1 className="text-lg font-bold text-white leading-tight">Email Preview</h1>
-          <p className="text-[11px] text-white/70 mt-0.5">Edita e vê em tempo real</p>
+          <p className="text-[11px] text-white/70 mt-0.5">Modifica e vedi in tempo reale</p>
         </div>
 
         <div className="flex-1 px-4 py-4 space-y-5">
@@ -101,15 +101,15 @@ export default function EmailPreview() {
           </Section>
 
           {/* PRODUTO */}
-          <Section title="📦 Produto">
+          <Section title="📦 Prodotto">
             <Field label="Nome" value={productName} onChange={setProductName} />
-            <Field label="Preço" placeholder="€349.00" value={productPrice} onChange={setProductPrice} />
-            <Field label="Imagem (URL)" placeholder="https://..." value={productImage} onChange={setProductImage} />
-            <Field label="Vídeo YouTube (URL)" placeholder="https://youtube.com/watch?v=..." value={productVideo} onChange={setProductVideo} />
+            <Field label="Prezzo" placeholder="€349.00" value={productPrice} onChange={setProductPrice} />
+            <Field label="Immagine (URL)" placeholder="https://..." value={productImage} onChange={setProductImage} />
+            <Field label="Video YouTube (URL)" placeholder="https://youtube.com/watch?v=..." value={productVideo} onChange={setProductVideo} />
           </Section>
 
-          {/* DESCONTO */}
-          <Section title="🎁 Desconto">
+          {/* SCONTO */}
+          <Section title="🎁 Sconto">
             <div>
               <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">
                 % Sconto
@@ -133,15 +133,15 @@ export default function EmailPreview() {
                 ))}
               </div>
             </div>
-            <Field label="Código gerado" value={discountCode} onChange={setDiscountCode} />
+            <Field label="Codice generato" value={discountCode} onChange={setDiscountCode} />
           </Section>
 
           {/* FAQ */}
-          <Section title="❓ FAQ (3 perguntas)">
+          <Section title="❓ FAQ (3 domande)">
             {faq.map((item, i) => (
               <div key={i} className="space-y-1.5 pb-3 border-b border-white/10 last:border-0 last:pb-0">
                 <p className="text-[10px] font-bold text-orange-400 uppercase tracking-wider">
-                  Pergunta {i + 1}
+                  Domanda {i + 1}
                 </p>
                 <textarea
                   value={item.q}
@@ -175,10 +175,10 @@ export default function EmailPreview() {
                        px-4 py-3 text-sm font-bold text-white shadow-lg
                        hover:from-orange-400 hover:to-orange-500 active:scale-95 transition-all"
           >
-            Copiar HTML completo
+            Copia HTML completo
           </button>
           <p className="text-[10px] text-white/30 text-center mt-2">
-            Cola em mail-tester.com para testar em vários clientes
+            Incolla su mail-tester.com per testare su vari client
           </p>
         </div>
       </aside>
@@ -207,7 +207,7 @@ export default function EmailPreview() {
           srcDoc={html}
           title="Email Preview"
           className="flex-1 w-full border-0 bg-white"
-          sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+          sandbox="allow-popups allow-popups-to-escape-sandbox"
         />
       </main>
     </div>

@@ -629,11 +629,11 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                             <Link className="h-3 w-3 text-muted-foreground" />
                             {videoOverrides[product.id] ? (
                               <>
-                                <span className="text-[10px] text-green-400 font-semibold">Vídeo YouTube ✓</span>
+                                <span className="text-[10px] text-green-400 font-semibold">Video YouTube ✓</span>
                                 <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                               </>
                             ) : (
-                              <span className="text-[10px] text-muted-foreground hover:text-foreground">Adicionar vídeo YouTube</span>
+                              <span className="text-[10px] text-muted-foreground hover:text-foreground">Aggiungi video YouTube</span>
                             )}
                           </button>
                         )}

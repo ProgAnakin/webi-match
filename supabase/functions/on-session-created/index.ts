@@ -73,19 +73,34 @@ function barcodesvg(color: string): string {
   return `<svg width="200" height="30" viewBox="0 0 200 30" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
 }
 
+function escHtml(s: string): string {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function safeUrl(url: string): string {
+  const u = String(url).trim();
+  return /^https:\/\//i.test(u) ? u : "";
+}
+
 function buildEmail(record: Record<string, unknown>, code: string): string {
-  const nome         = String(record.nome    ?? "").trim();
-  const cognome      = String(record.cognome ?? "").trim();
+  const nome         = escHtml(String(record.nome    ?? "").trim());
+  const cognome      = escHtml(String(record.cognome ?? "").trim());
   const pct          = Number(record.match_percent ?? 0);
-  const productName  = String(record.product_name  ?? "Il tuo prodotto");
-  const productPrice = String(record.product_price ?? "");
-  const productImage = String(record.product_image ?? "");
-  const productVideo = String(record.product_video ?? "");
-  const ringColor    = matchColor(pct);
-  const badgeLabel   = matchBadgeLabel(pct);
-  const fullName     = [nome, cognome].filter(Boolean).join(" ");
-  const vidId        = productVideo ? youtubeId(productVideo) : null;
-  const thumbUrl     = vidId ? `https://img.youtube.com/vi/${vidId}/maxresdefault.jpg` : null;
+  const productName  = escHtml(String(record.product_name  ?? "Il tuo prodotto"));
+  const productPrice = escHtml(String(record.product_price ?? ""));
+  const productImage = safeUrl(String(record.product_image ?? ""));
+  const productVideo = safeUrl(String(record.product_video ?? ""));
+  const ringColor      = matchColor(pct);
+  const badgeLabel     = matchBadgeLabel(pct);
+  const fullName       = [nome, cognome].filter(Boolean).join(" ");
+  const recipientEmail = escHtml(String(record.email ?? ""));
+  const vidId          = productVideo ? youtubeId(productVideo) : null;
+  const thumbUrl       = vidId ? `https://img.youtube.com/vi/${vidId}/maxresdefault.jpg` : null;
 
   return `<!DOCTYPE html>
 <html lang="it" xmlns="http://www.w3.org/1999/xhtml">
@@ -322,7 +337,7 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
             <td width="4" style="background:${C.orange};border-radius:4px;padding:0;font-size:0;line-height:0;">&nbsp;</td>
             <td style="padding:4px 0 4px 14px;">
               <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:${C.fg};line-height:1.4;">Posso usare il codice su un prodotto diverso?</p>
-              <p style="margin:0;font-size:13px;color:${C.muted};line-height:1.65;">Si! Il codice può essere applicato su qualsiasi prodotto in negozio, non solo su quello del tuo match. Chiedi al consulente per scoprire le alternative.</p>
+              <p style="margin:0;font-size:13px;color:${C.muted};line-height:1.65;">S&igrave;! Il codice può essere applicato su qualsiasi prodotto in negozio, non solo su quello del tuo match. Chiedi al consulente per scoprire le alternative.</p>
             </td>
           </tr></table>
         </td></tr>
@@ -381,7 +396,7 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
     <td style="background:${C.cardHeader};padding:24px 32px 28px;text-align:center;border-top:1px solid ${C.border};border-radius:0 0 20px 20px;">
       <p style="margin:0 0 4px;font-size:15px;font-weight:800;color:${C.fg};letter-spacing:0.1em;">WEBIDOO STORE</p>
       <p style="margin:0 0 12px;font-size:11px;color:${C.muted};">Powered by Webi-Match</p>
-      ${fullName ? `<p style="margin:0 0 10px;font-size:12px;color:${C.muted};">Inviato a <strong style="color:${C.fg};">${fullName}</strong> · ${String(record.email ?? "")}</p>` : ""}
+      ${fullName ? `<p style="margin:0 0 10px;font-size:12px;color:${C.muted};">Inviato a <strong style="color:${C.fg};">${fullName}</strong>${recipientEmail ? ` · ${recipientEmail}` : ""}</p>` : ""}
       <div style="border-top:1px solid ${C.border};margin:12px auto;max-width:200px;"></div>
       <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.8;">
         Dati crittografati · Conformità GDPR<br/>

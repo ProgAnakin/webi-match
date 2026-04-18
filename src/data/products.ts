@@ -19,8 +19,8 @@ export interface Product {
 export const products: Product[] = [
   {
     id: "blnd-blender",
-    name: "BLND Blender Portátil",
-    image: "/products/blnd-blender.webp",
+    name: "BLND Blender Portatile",
+    image: "/products/blnd-blender.png",
     price: "€49,00",
     rating: 4.6,
     description: "Frullatore portatile senza fili con motore ad alta velocità e lame in acciaio inox. Frulla frutta fresca e cubetti di ghiaccio, ricarica via USB-C, fino a 15 cicli per carica.",
@@ -35,7 +35,7 @@ export const products: Product[] = [
   {
     id: "fitring-air",
     name: "FitRing Air – Anello Smart",
-    image: "/products/fitring-air.webp",
+    image: "/products/fitring-air.png",
     price: "€79,00",
     rating: 4.7,
     description: "Anello smart ultrasottile con monitoraggio continuo di frequenza cardiaca, SpO2 e qualità del sonno 24/7. Resistente all'acqua 5 ATM e fino a 7 giorni di autonomia.",
@@ -50,7 +50,7 @@ export const products: Product[] = [
   {
     id: "head-hdtw01",
     name: "HEAD HDTW01 – Conduzione Ossea",
-    image: "/products/head-hdtw01.webp",
+    image: "/products/head-hdtw01.png",
     price: "€119,00",
     rating: 4.7,
     description: "Auricolari a conduzione ossea impermeabili IPX8 con 32GB di memoria interna. Trasmettono il suono attraverso le ossa lasciando le orecchie libere. Ideali per nuoto e sport all'aperto.",
@@ -65,7 +65,7 @@ export const products: Product[] = [
   {
     id: "ksix-saturn",
     name: "Ksix Anello Saturn Smart",
-    image: "/products/ksix-saturn.webp",
+    image: "/products/ksix-saturn.png",
     price: "€49,00",
     rating: 4.5,
     description: "Anello smart con sensori integrati per frequenza cardiaca, ossigeno nel sangue e qualità del sonno. Si sincronizza con l'app KSIX Ring, resistente 5 ATM, batteria fino a 3 giorni.",
@@ -80,7 +80,7 @@ export const products: Product[] = [
   {
     id: "laifen-neo",
     name: "Laifen NEO – Asciugacapelli",
-    image: "/products/laifen-neo.webp",
+    image: "/products/laifen-neo.png",
     price: "€69,00",
     rating: 4.8,
     description: "Asciugacapelli ad alta velocità con motore brushless da 110.000 RPM e 200 milioni di ioni negativi. Controllo intelligente della temperatura, ultra-leggero (390g) e silenzioso (59dB).",
@@ -95,7 +95,7 @@ export const products: Product[] = [
   {
     id: "muzen-otr",
     name: "MUZEN OTR Metal Speaker",
-    image: "/products/muzen-otr.webp",
+    image: "/products/muzen-otr.png",
     price: "€59,00",
     rating: 4.6,
     description: "Cassa Bluetooth portatile in metallo con design retro e radio FM integrata. Connessione rapida con smartphone e tablet, suono di qualità ovunque tu voglia portarla.",
@@ -110,7 +110,7 @@ export const products: Product[] = [
   {
     id: "outin-nano",
     name: "Outin Nano – Macchina da Caffè",
-    image: "/products/outin-nano.webp",
+    image: "/products/outin-nano.png",
     price: "€129,00",
     rating: 4.8,
     description: "Macchina da espresso portatile con 20 bar di pressione e riscaldamento in 200 secondi. Compatibile con capsule e caffè macinato, batteria da 7.500mAh per più espressi in viaggio.",
@@ -125,7 +125,7 @@ export const products: Product[] = [
   {
     id: "terraillon-massager",
     name: "Terraillon – Massaggiatore a Pistola",
-    image: "/products/terraillon-massager.webp",
+    image: "/products/terraillon-massager.png",
     price: "€79,00",
     rating: 4.6,
     description: "Massaggiatore a pistola con 4 testine in silicone e beccuccio caldo/freddo. Allevia le tensioni muscolari, migliora la circolazione e accelera il recupero dopo l'allenamento.",
@@ -140,7 +140,7 @@ export const products: Product[] = [
   {
     id: "veho-pebble-mg5",
     name: "Veho Pebble MG5 MagSafe",
-    image: "/products/veho-pebble-mg5.webp",
+    image: "/products/veho-pebble-mg5.png",
     price: "€49,00",
     rating: 4.7,
     description: "Power bank MagSafe ultrasottile (8,3mm) da 5.000mAh con ricarica magnetica wireless e porta USB-C PD per ricarica rapida via cavo. Attacca, ricarica, vai.",
@@ -155,7 +155,7 @@ export const products: Product[] = [
   {
     id: "veho-zb7",
     name: "Veho ZB-7 – Cuffie Wireless ANC",
-    image: "/products/veho-zb7.webp",
+    image: "/products/veho-zb7.png",
     price: "€59,00",
     rating: 4.7,
     description: "Cuffie over-ear wireless con cancellazione attiva del rumore (ANC), driver da 40mm, 32 ore di autonomia e Bluetooth 5.0. Padiglioni ultra-morbidi per un ascolto confortevole tutto il giorno.",
