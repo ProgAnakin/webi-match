@@ -102,6 +102,14 @@ function safeUrl(url: string): string {
   return /^https:\/\//i.test(u) ? u : "";
 }
 
+function ringArcSvg(pct: number, color: string, muted: string): string {
+  const r = 55, cx = 70, cy = 70, sw = 12;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100 * circ).toFixed(2);
+  const gap  = (circ - parseFloat(dash)).toFixed(2);
+  return `<svg width="140" height="140" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto;"><circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}15" stroke="${color}28" stroke-width="${sw}"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-dasharray="${dash} ${gap}" stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/><text x="${cx}" y="65" text-anchor="middle" font-size="34" font-weight="800" fill="${color}" font-family="Arial,sans-serif">${pct}%</text><text x="${cx}" y="86" text-anchor="middle" font-size="9" font-weight="700" fill="${muted}" font-family="Arial,sans-serif" letter-spacing="2">COMPATIBILITÀ</text></svg>`;
+}
+
 export function buildEmailHtml(data: EmailData): string {
   const nome        = escHtml((data.nome ?? "").trim());
   const cognome     = escHtml((data.cognome ?? "").trim());
@@ -140,8 +148,8 @@ export function buildEmailHtml(data: EmailData): string {
                 padding:12px 20px!important;border-right:none!important;border-bottom:1px solid #2a3a68!important}
       .step-col:last-child{border-bottom:none!important}
       .hide-mobile{display:none!important;max-height:0!important;overflow:hidden!important}
-      .match-ring-td{width:110px!important;height:110px!important;border-radius:55px!important;min-width:110px!important}
-      .match-pct{font-size:32px!important}
+      .product-name-td{display:block!important;width:100%!important}
+      .product-badge-td{display:block!important;width:100%!important;text-align:center!important;padding:8px 0 0!important}
       h1{font-size:22px!important}
     }
   </style>
@@ -188,16 +196,8 @@ export function buildEmailHtml(data: EmailData): string {
 
   <!-- MATCH RING -->
   <tr>
-    <td style="background:${C.card};padding:48px 40px 40px;text-align:center;border-top:1px solid ${C.border};">
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
-        <tr>
-          <td class="match-ring-td" width="140" height="140" align="center" valign="middle"
-              style="width:140px;height:140px;min-width:140px;border-radius:70px;border:10px solid ${ringColor};background-color:${ringColor}18;text-align:center;vertical-align:middle;overflow:hidden;">
-            <p class="match-pct" style="margin:0 0 4px;font-size:42px;font-weight:800;color:${ringColor};line-height:1;font-family:'Space Grotesk',Arial,sans-serif;mso-line-height-rule:exactly;">${pct}%</p>
-            <p style="margin:0;font-size:9px;font-weight:700;color:${C.muted};letter-spacing:2px;font-family:Arial,sans-serif;">COMPATIBILITÀ</p>
-          </td>
-        </tr>
-      </table>
+    <td style="background:${C.card};padding:40px 40px 36px;text-align:center;border-top:1px solid ${C.border};">
+      ${ringArcSvg(pct, ringColor, C.muted)}
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:18px auto 0;">
         <tr>
           <td style="background:${ringColor}22;border:1.5px solid ${ringColor}66;border-radius:999px;padding:7px 22px;">
@@ -236,12 +236,12 @@ export function buildEmailHtml(data: EmailData): string {
           <td style="padding:20px 32px 28px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr valign="top">
-                <td>
+                <td class="product-name-td" valign="top">
                   <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${C.fg};line-height:1.2;letter-spacing:-0.01em;">${productName}</h2>
                   ${productPrice ? `<p style="margin:0;font-size:26px;font-weight:700;color:${C.orange};line-height:1;">${productPrice}</p>` : ""}
                 </td>
-                <td align="right" valign="top" style="padding-left:12px;white-space:nowrap;">
-                  <span style="display:inline-block;background:${ringColor};color:#000;font-size:12px;font-weight:700;border-radius:999px;padding:5px 14px;letter-spacing:0.04em;">${pct}% match</span>
+                <td class="product-badge-td" align="right" valign="top" style="padding-left:12px;">
+                  <span style="display:inline-block;white-space:nowrap;background:${ringColor};color:#000;font-size:13px;font-weight:700;border-radius:20px;padding:7px 16px;">${pct}% match</span>
                 </td>
               </tr>
             </table>
@@ -272,19 +272,21 @@ export function buildEmailHtml(data: EmailData): string {
             <p style="margin:0 0 10px;font-size:10px;font-weight:700;color:${C.orange};letter-spacing:0.24em;text-transform:uppercase;">Inserisci al checkout</p>
             <p style="margin:0 0 18px;font-size:46px;font-weight:900;color:${C.fg};font-family:'Courier New',Courier,monospace;letter-spacing:0.16em;line-height:1;">${code}</p>
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
-              <tr>
-                <td style="background:${C.orange};border-radius:999px;padding:6px 18px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:700;color:#fff;">Valido 24 ore</span>
-                </td>
-                <td width="8">&nbsp;</td>
-                <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:6px 14px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:600;color:${C.fg};">Solo in negozio</span>
-                </td>
-                <td width="8">&nbsp;</td>
-                <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:6px 14px;white-space:nowrap;">
-                  <span style="font-size:12px;font-weight:600;color:${C.fg};">Un utilizzo</span>
-                </td>
-              </tr>
+              <tr><td style="padding:0 0 6px;text-align:center;">
+                <span style="display:inline-block;white-space:nowrap;background:${C.orange};border-radius:999px;padding:7px 20px;">
+                  <span style="font-size:12px;font-weight:700;color:#fff;">✓ Valido 24 ore</span>
+                </span>
+              </td></tr>
+              <tr><td style="padding:0 0 6px;text-align:center;">
+                <span style="display:inline-block;white-space:nowrap;background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:7px 20px;">
+                  <span style="font-size:12px;font-weight:600;color:${C.fg};">🏪 Solo in negozio</span>
+                </span>
+              </td></tr>
+              <tr><td style="padding:0;text-align:center;">
+                <span style="display:inline-block;white-space:nowrap;background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:7px 20px;">
+                  <span style="font-size:12px;font-weight:600;color:${C.fg};">1️⃣ Un utilizzo</span>
+                </span>
+              </td></tr>
             </table>
           </td>
         </tr>
