@@ -88,20 +88,36 @@ const BARCODE_SVG = (color: string) => `<svg width="200" height="30" viewBox="0 
   <rect x="196" y="0" width="2" height="30" fill="${color}" opacity="0.80"/>
 </svg>`;
 
+function escHtml(s: string): string {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function safeUrl(url: string): string {
+  const u = String(url).trim();
+  return /^https:\/\//i.test(u) ? u : "";
+}
+
 export function buildEmailHtml(data: EmailData): string {
-  const nome        = (data.nome ?? "").trim();
-  const cognome     = (data.cognome ?? "").trim();
+  const nome        = escHtml((data.nome ?? "").trim());
+  const cognome     = escHtml((data.cognome ?? "").trim());
   const pct         = data.match_percent;
-  const productName = data.product_name;
-  const productPrice= data.product_price ?? "";
-  const productImage= data.product_image ?? "";
-  const productVideo= data.product_video ?? "";
-  const code        = data.discount_code;
-  const faq         = (data.faq ?? []).filter(f => f.q.trim() && f.a.trim());
+  const productName = escHtml(data.product_name);
+  const productPrice= escHtml(data.product_price ?? "");
+  const productImage= safeUrl(data.product_image ?? "");
+  const productVideo= safeUrl(data.product_video ?? "");
+  const code        = escHtml(data.discount_code);
+  const recipientEmail = escHtml(data.email ?? "");
+  const faq         = (data.faq ?? []).filter(f => f.q.trim() && f.a.trim())
+                        .map(f => ({ q: escHtml(f.q), a: escHtml(f.a) }));
   const ringColor   = matchColor(pct);
   const badgeLabel  = matchBadgeLabel(pct);
   const fullName    = [nome, cognome].filter(Boolean).join(" ");
-  const vidId       = productVideo ? youtubeId(productVideo) : null;
+  const vidId       = data.product_video ? youtubeId(safeUrl(data.product_video)) : null;
   const thumbUrl    = vidId ? `https://img.youtube.com/vi/${vidId}/maxresdefault.jpg` : null;
 
   return `<!DOCTYPE html>
@@ -413,7 +429,7 @@ export function buildEmailHtml(data: EmailData): string {
     <td style="background:${C.cardHeader};padding:24px 32px 28px;text-align:center;border-top:1px solid ${C.border};border-radius:0 0 20px 20px;">
       <p style="margin:0 0 4px;font-size:15px;font-weight:800;color:${C.fg};letter-spacing:0.1em;">WEBIDOO STORE</p>
       <p style="margin:0 0 12px;font-size:11px;color:${C.muted};">Powered by Webi-Match</p>
-      ${fullName ? `<p style="margin:0 0 10px;font-size:12px;color:${C.muted};">Inviato a <strong style="color:${C.fg};">${fullName}</strong>${data.email ? ` · ${data.email}` : ""}</p>` : ""}
+      ${fullName ? `<p style="margin:0 0 10px;font-size:12px;color:${C.muted};">Inviato a <strong style="color:${C.fg};">${fullName}</strong>${recipientEmail ? ` · ${recipientEmail}` : ""}</p>` : ""}
       <div style="border-top:1px solid ${C.border};margin:12px auto;max-width:200px;"></div>
       <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.8;">
         Dati crittografati · Conformità GDPR<br/>

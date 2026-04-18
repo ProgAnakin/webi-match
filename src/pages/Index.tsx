@@ -67,6 +67,7 @@ const Index = () => {
   const [matchPercent, setMatchPercent] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, boolean>>({});
   const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState(false);
   const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState<number | null>(null);
   const [funnelKey, setFunnelKey] = useState(() => crypto.randomUUID());
   const [activeProductIds, setActiveProductIds] = useState<Set<string> | null>(null);
@@ -145,6 +146,7 @@ const Index = () => {
   // handleClaim fires. We just persist the session and advance to success.
   const handleClaim = async () => {
     if (!matchedProduct || claiming) return;
+    setClaimError(false);
     setClaiming(true);
 
     const payload = {
@@ -173,9 +175,15 @@ const Index = () => {
       if (!error) { lastError = null; break; }
       lastError = error;
     }
-    if (lastError) console.error("[webi-match] quiz_sessions insert failed:", lastError);
+    if (lastError) {
+      console.error("[webi-match] quiz_sessions insert failed:", lastError);
+      setClaiming(false);
+      setClaimError(true);
+      return;
+    }
 
     trackFunnel(funnelKey, "claimed");
+    setClaimError(false);
     setClaiming(false);
     setScreen("success");
   };
@@ -186,6 +194,7 @@ const Index = () => {
     setMatchPercent(0);
     setQuizAnswers({});
     setInactivitySecondsLeft(null);
+    setClaimError(false);
     setFunnelKey(crypto.randomUUID());
     setScreen("splash");
   };
@@ -263,8 +272,9 @@ const Index = () => {
               userName={user.nome}
               userEmail={user.email}
               onClaim={handleClaim}
-              onChangeEmail={() => setScreen("welcome")}
+              onChangeEmail={(email) => setUser((u) => ({ ...u, email }))}
               claiming={claiming}
+              claimError={claimError}
             />
           )}
           {screen === "success" && matchedProduct && (

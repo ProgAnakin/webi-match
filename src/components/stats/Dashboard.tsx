@@ -15,7 +15,7 @@ import {
   DAY_LABELS, productName, formatDate, storeName, exportCSV,
 } from "./types";
 
-const FETCH_LIMIT = 500;
+const FETCH_LIMIT = 5000;
 const PAGE_SIZE = 50;
 const REFRESH_DEBOUNCE_MS = 3000;
 
@@ -70,13 +70,16 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     if (error) setHasError(true);
     else setSessions((data ?? []) as QuizSession[]);
 
-    const { data: funnelData } = await supabase
-      .from("quiz_funnel_events")
-      .select("event_type");
-    if (funnelData) {
-      const count = (type: string) => funnelData.filter((r) => r.event_type === type).length;
-      setFunnel({ started: count("quiz_started"), resultShown: count("result_shown"), claimed: count("claimed") });
-    }
+    const [startedRes, resultRes, claimedRes] = await Promise.all([
+      supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "quiz_started"),
+      supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "result_shown"),
+      supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "claimed"),
+    ]);
+    setFunnel({
+      started:     startedRes.count  ?? 0,
+      resultShown: resultRes.count   ?? 0,
+      claimed:     claimedRes.count  ?? 0,
+    });
 
     setLoading(false);
   }, []);
@@ -364,7 +367,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             {funnel && funnel.started > 0 && (
               <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-                <h2 className="mb-4 font-bold text-foreground">🔽 Funil de abandono</h2>
+                <h2 className="mb-4 font-bold text-foreground">🔽 Funnel di abbandono</h2>
                 {[
                   { label: "Quiz avviati",       value: funnel.started,     color: "bg-blue-500"   },
                   { label: "Risultato mostrato", value: funnel.resultShown, color: "bg-orange-500" },

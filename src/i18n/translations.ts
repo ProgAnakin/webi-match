@@ -104,7 +104,7 @@ export const translations: Record<Lang, T> = {
       tagline: "Trova il tuo gadget perfetto! 🎯",
       firstName: "Nome",
       lastName: "Cognome",
-      emailPlaceholder: "La tua email migliore 📧",
+      emailPlaceholder: "La tua email",
       firstNameError: "Inserisci il nome",
       lastNameError: "Inserisci il cognome",
       emailError: "Per favore, inserisci un'email valida.",

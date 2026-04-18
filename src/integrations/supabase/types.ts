@@ -44,48 +44,114 @@ export type Database = {
       product_settings: {
         Row: {
           product_id: string
+          store_id: string
           active: boolean
+          price_override: string | null
+          image_url: string | null
+          video_url: string | null
+          discount_percent: number | null
           updated_at: string
         }
         Insert: {
           product_id: string
+          store_id?: string
           active?: boolean
+          price_override?: string | null
+          image_url?: string | null
+          video_url?: string | null
+          discount_percent?: number | null
           updated_at?: string
         }
         Update: {
           product_id?: string
+          store_id?: string
           active?: boolean
+          price_override?: string | null
+          image_url?: string | null
+          video_url?: string | null
+          discount_percent?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      quiz_funnel_events: {
+        Row: {
+          id: string
+          funnel_key: string
+          event_type: string
+          store_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          funnel_key: string
+          event_type: string
+          store_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          funnel_key?: string
+          event_type?: string
+          store_id?: string | null
+          created_at?: string
         }
         Relationships: []
       }
       quiz_sessions: {
         Row: {
-          answers: Json
-          created_at: string
-          email: string
-          email_sent: boolean
           id: string
-          match_percent: number
+          email: string
+          nome: string | null
+          cognome: string | null
+          answers: Json
           matched_product_id: string
+          match_percent: number
+          email_sent: boolean
+          store_id: string | null
+          product_name: string | null
+          product_price: string | null
+          product_image: string | null
+          product_video: string | null
+          discount_code: string | null
+          discount_percent: number | null
+          created_at: string
         }
         Insert: {
-          answers?: Json
-          created_at?: string
-          email: string
-          email_sent?: boolean
           id?: string
-          match_percent: number
+          email: string
+          nome?: string | null
+          cognome?: string | null
+          answers?: Json
           matched_product_id: string
+          match_percent: number
+          email_sent?: boolean
+          store_id?: string | null
+          product_name?: string | null
+          product_price?: string | null
+          product_image?: string | null
+          product_video?: string | null
+          discount_code?: string | null
+          discount_percent?: number | null
+          created_at?: string
         }
         Update: {
-          answers?: Json
-          created_at?: string
-          email?: string
-          email_sent?: boolean
           id?: string
-          match_percent?: number
+          email?: string
+          nome?: string | null
+          cognome?: string | null
+          answers?: Json
           matched_product_id?: string
+          match_percent?: number
+          email_sent?: boolean
+          store_id?: string | null
+          product_name?: string | null
+          product_price?: string | null
+          product_image?: string | null
+          product_video?: string | null
+          discount_code?: string | null
+          discount_percent?: number | null
+          created_at?: string
         }
         Relationships: []
       }
@@ -94,7 +160,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_email_cooldown: {
+        Args: { p_email: string }
+        Returns: { in_cooldown: boolean; hours_remaining: number }[]
+      }
+      verify_staff_pin: {
+        Args: { p_pin: string; p_client_id: string; p_user_agent: string }
+        Returns: { valid: boolean; store_id: string | null }[]
+      }
     }
     Enums: {
       [_ in never]: never

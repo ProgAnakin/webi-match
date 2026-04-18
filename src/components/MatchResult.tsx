@@ -1,9 +1,14 @@
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { useEffect, useState, useMemo } from "react";
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import type { Product } from "@/data/products";
 import { useSound } from "@/hooks/useSound";
 import { useDevicePerformance } from "@/hooks/useDevicePerformance";
 import { useLang } from "@/i18n/LanguageContext";
+
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+const CHANGE_PIN    = "9090";
+const EMAIL_TAPS    = 5;
+const PIN_KEYS: (number | "⌫" | "")[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, "", 0, "⌫"];
 
 interface MatchResultProps {
   product: Product;
@@ -11,11 +16,11 @@ interface MatchResultProps {
   userName: string;
   userEmail: string;
   onClaim: () => void;
+  onChangeEmail: (email: string) => void;
   claiming?: boolean;
+  claimError?: boolean;
 }
 
-// Read confetti palette from CSS design tokens at runtime so they stay in sync
-// with the theme without hardcoded hex values. Tokens are defined in index.css.
 function readCssConfettiColors(): string[] {
   const style = getComputedStyle(document.documentElement);
   return Array.from({ length: 12 }, (_, i) => {
@@ -39,7 +44,10 @@ const ConfettiParticle = ({ delay, duration, left, color, size, rotateDeg, xOffs
   />
 );
 
-const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, claiming = false }: MatchResultProps) => {
+const MatchResult = ({
+  product, matchPercent, userName, userEmail,
+  onClaim, onChangeEmail, claiming = false, claimError = false,
+}: MatchResultProps) => {
   const { t } = useLang();
   const [displayPercent, setDisplayPercent] = useState(0);
   const [imgError, setImgError] = useState(false);
@@ -47,10 +55,20 @@ const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, clai
   const { play } = useSound();
   const tier = useDevicePerformance();
 
+  // ── Change-email state ─────────────────────────────────────────────────────
+  const emailTapCount = useRef(0);
+  const emailTapTimer = useRef<ReturnType<typeof setTimeout>>();
+  const [showChangeModal, setShowChangeModal] = useState(false);
+  const [pinVerified, setPinVerified]         = useState(false);
+  const [pinValue, setPinValue]               = useState("");
+  const [pinError, setPinError]               = useState(false);
+  const [newEmail, setNewEmail]               = useState("");
+  const [newEmailTouched, setNewEmailTouched] = useState(false);
+
   const confettiColors = useMemo(() => readCssConfettiColors(), []);
 
   const ringMotionValue = useMotionValue(0);
-  const circumference = 2 * Math.PI * 56;
+  const circumference   = 2 * Math.PI * 56;
   const strokeDashoffset = useTransform(ringMotionValue, [0, 100], [circumference, 0]);
 
   useEffect(() => {
@@ -58,31 +76,22 @@ const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, clai
     const timeout = setTimeout(() => {
       const slotDuration = 900;
       const slotStart = performance.now();
-
       const runSlot = (now: number) => {
-        const elapsed = now - slotStart;
+        const elapsed  = now - slotStart;
         if (elapsed < slotDuration) {
-          // Decelerate the slot machine in the last 300ms — numbers slow down visibly
           const progress = elapsed / slotDuration;
-          const speed = progress > 0.7 ? 1 - ((progress - 0.7) / 0.3) * 0.85 : 1;
-          if (Math.random() < speed) {
-            setDisplayPercent(Math.floor(Math.random() * 99) + 1);
-          }
+          const speed    = progress > 0.7 ? 1 - ((progress - 0.7) / 0.3) * 0.85 : 1;
+          if (Math.random() < speed) setDisplayPercent(Math.floor(Math.random() * 99) + 1);
           frame = requestAnimationFrame(runSlot);
         } else {
           setIsScanning(false);
           play("match");
-
-          animate(ringMotionValue, matchPercent, {
-            duration: 1.8,
-            ease: [0.16, 1, 0.3, 1],
-          });
-
-          const countStart = performance.now();
+          animate(ringMotionValue, matchPercent, { duration: 1.8, ease: [0.16, 1, 0.3, 1] });
+          const countStart    = performance.now();
           const countDuration = 1800;
           const runCount = (now2: number) => {
             const progress = Math.min((now2 - countStart) / countDuration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
+            const eased    = 1 - Math.pow(1 - progress, 3);
             setDisplayPercent(Math.round(eased * matchPercent));
             if (progress < 1) frame = requestAnimationFrame(runCount);
           };
@@ -91,7 +100,6 @@ const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, clai
       };
       frame = requestAnimationFrame(runSlot);
     }, 900);
-
     return () => { cancelAnimationFrame(frame); clearTimeout(timeout); };
   }, [matchPercent]);
 
@@ -99,13 +107,13 @@ const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, clai
   const confettiParticles = useMemo<ConfettiData[]>(() =>
     Array.from({ length: particleCount }, (_, i) => ({
       id: i,
-      delay: Math.random() * 4,
-      duration: 1.8 + Math.random() * 2,
-      left: `${Math.random() * 100}%`,
-      color: confettiColors[i % confettiColors.length],
-      size: 5 + Math.random() * 10,
+      delay:     Math.random() * 4,
+      duration:  1.8 + Math.random() * 2,
+      left:      `${Math.random() * 100}%`,
+      color:     confettiColors[i % confettiColors.length],
+      size:      5 + Math.random() * 10,
       rotateDeg: 360 * (Math.random() > 0.5 ? 1 : -1),
-      xOffset: (Math.random() - 0.5) * 100,
+      xOffset:   (Math.random() - 0.5) * 100,
     })), [particleCount, confettiColors]);
 
   const starCount = Math.floor(product.rating);
@@ -119,6 +127,66 @@ const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, clai
     : matchPercent >= 80 ? "bg-yellow-400 text-gray-900"
     : matchPercent >= 65 ? "bg-orange-400 text-gray-900"
     : "bg-blue-500";
+
+  // ── Email-tap handler ──────────────────────────────────────────────────────
+  const handleEmailTap = useCallback(() => {
+    emailTapCount.current += 1;
+    clearTimeout(emailTapTimer.current);
+    if (emailTapCount.current >= EMAIL_TAPS) {
+      emailTapCount.current = 0;
+      setPinValue("");
+      setPinError(false);
+      setPinVerified(false);
+      setNewEmail("");
+      setNewEmailTouched(false);
+      setShowChangeModal(true);
+    } else {
+      emailTapTimer.current = setTimeout(() => { emailTapCount.current = 0; }, 2000);
+    }
+  }, []);
+
+  // ── PIN keypad handler ─────────────────────────────────────────────────────
+  const handlePinKey = useCallback((key: number | "⌫") => {
+    if (key === "⌫") {
+      setPinValue((p) => p.slice(0, -1));
+      setPinError(false);
+      return;
+    }
+    setPinValue((prev) => {
+      if (prev.length >= 4) return prev;
+      const next = prev + String(key);
+      if (next.length === 4) {
+        if (next === CHANGE_PIN) {
+          setTimeout(() => setPinVerified(true), 150);
+        } else {
+          setPinError(true);
+          setTimeout(() => { setPinValue(""); setPinError(false); }, 700);
+        }
+      }
+      return next;
+    });
+  }, []);
+
+  // ── Save new email ─────────────────────────────────────────────────────────
+  const handleSaveEmail = useCallback(() => {
+    setNewEmailTouched(true);
+    if (!EMAIL_REGEX.test(newEmail.trim())) return;
+    onChangeEmail(newEmail.trim().toLowerCase());
+    setShowChangeModal(false);
+    setPinVerified(false);
+    setPinValue("");
+    setNewEmail("");
+    setNewEmailTouched(false);
+  }, [newEmail, onChangeEmail]);
+
+  const closeModal = useCallback(() => {
+    setShowChangeModal(false);
+    setPinVerified(false);
+    setPinValue("");
+    setPinError(false);
+    setNewEmail("");
+    setNewEmailTouched(false);
+  }, []);
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-10">
@@ -145,6 +213,116 @@ const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, clai
         </motion.div>
       )}
 
+      {/* ── Change-email modal ─────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showChangeModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={closeModal}
+          >
+            <motion.div
+              className="mx-6 w-full max-w-xs rounded-2xl border border-border bg-card p-6 shadow-2xl"
+              initial={{ scale: 0.92, y: 16 }} animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 28 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {!pinVerified ? (
+                <>
+                  <p className="mb-1 text-center text-sm font-bold text-foreground">Accesso consulente</p>
+                  <p className="mb-5 text-center text-xs text-muted-foreground">
+                    Inserisci il PIN per modificare l&apos;email
+                  </p>
+
+                  {/* PIN dots */}
+                  <div className="mb-4 flex justify-center gap-3">
+                    {[0, 1, 2, 3].map((i) => (
+                      <motion.div
+                        key={i}
+                        className={`h-3 w-3 rounded-full transition-all ${
+                          i < pinValue.length
+                            ? pinError ? "bg-destructive" : "bg-primary"
+                            : "bg-border"
+                        }`}
+                        animate={pinError ? { x: [0, -4, 4, -3, 3, 0] } : {}}
+                        transition={{ duration: 0.4 }}
+                      />
+                    ))}
+                  </div>
+                  {pinError && (
+                    <p className="mb-3 text-center text-xs font-medium text-destructive">PIN non corretto</p>
+                  )}
+
+                  {/* Keypad */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {PIN_KEYS.map((key, i) => (
+                      <button
+                        key={i}
+                        disabled={key === ""}
+                        onClick={() => key !== "" && handlePinKey(key as number | "⌫")}
+                        className={`rounded-xl py-3.5 text-lg font-bold transition-all active:scale-95 ${
+                          key === "" ? "invisible" :
+                          key === "⌫" ? "bg-secondary/60 text-muted-foreground hover:bg-secondary" :
+                          "bg-secondary text-foreground hover:bg-secondary/80"
+                        }`}
+                      >
+                        {key}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={closeModal}
+                    className="mt-4 w-full text-center text-xs text-muted-foreground/60 active:opacity-70"
+                  >
+                    Annulla
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="mb-1 text-center text-sm font-bold text-foreground">Modifica email</p>
+                  <p className="mb-1 text-center text-xs text-muted-foreground">Email attuale:</p>
+                  <p className="mb-5 truncate text-center text-xs font-semibold text-foreground">
+                    {userEmail}
+                  </p>
+
+                  <input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveEmail()}
+                    placeholder="nuova@email.com"
+                    autoFocus
+                    className={`w-full rounded-xl border bg-background px-4 py-3 text-center text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary ${
+                      newEmailTouched && !EMAIL_REGEX.test(newEmail.trim())
+                        ? "border-destructive focus:ring-destructive"
+                        : "border-border"
+                    }`}
+                  />
+                  {newEmailTouched && !EMAIL_REGEX.test(newEmail.trim()) && (
+                    <p className="mt-1 text-center text-xs text-destructive">Email non valida</p>
+                  )}
+
+                  <button
+                    onClick={handleSaveEmail}
+                    className="mt-4 w-full rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground active:scale-95 active:opacity-90"
+                  >
+                    Salva email
+                  </button>
+                  <button
+                    onClick={closeModal}
+                    className="mt-2 w-full text-center text-xs text-muted-foreground/60 active:opacity-70"
+                  >
+                    Annulla
+                  </button>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.div
         className="relative z-10 flex w-full max-w-md flex-col items-center gap-5"
         initial={{ opacity: 0, y: 40 }}
@@ -158,9 +336,7 @@ const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, clai
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.4 }}
         >
-          <p className="text-base text-muted-foreground">
-            {t.result.gadgetIntro(userName)}
-          </p>
+          <p className="text-base text-muted-foreground">{t.result.gadgetIntro(userName)}</p>
         </motion.div>
 
         {/* Circular ring */}
@@ -213,9 +389,7 @@ const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, clai
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.35, duration: 0.4, ease: "easeOut" }}
         >
-          <h2 className="text-2xl font-bold tracking-wide text-foreground">
-            {t.result.perfectMatch}
-          </h2>
+          <h2 className="text-2xl font-bold tracking-wide text-foreground">{t.result.perfectMatch}</h2>
         </motion.div>
 
         {/* Product card */}
@@ -257,8 +431,10 @@ const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, clai
               <span className="text-2xl font-bold text-gradient">{product.price}</span>
               <span className="flex items-center gap-0.5">
                 {Array.from({ length: 5 }, (_, i) => (
-                  <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill={i < starCount ? "#FFD700" : "none"}
-                    stroke={i < starCount ? "#FFD700" : "hsl(var(--muted-foreground))"} strokeWidth="1.5">
+                  <svg key={i} width="14" height="14" viewBox="0 0 24 24"
+                    fill={i < starCount ? "#FFD700" : "none"}
+                    stroke={i < starCount ? "#FFD700" : "hsl(var(--muted-foreground))"}
+                    strokeWidth="1.5">
                     <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
                   </svg>
                 ))}
@@ -296,15 +472,23 @@ const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, clai
           ))}
         </motion.div>
 
-        {/* Email reminder */}
+        {/* ── Email reminder (5-tap secret) ─────────────────────────────────── */}
         <motion.div
-          className="w-full rounded-2xl border border-border bg-card/60 px-4 py-3"
+          className="w-full"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.4 }}
         >
-          <p className="text-xs text-muted-foreground mb-1">{t.result.sendTo}</p>
-          <p className="text-sm font-semibold text-foreground truncate">📬 {userEmail}</p>
+          <div
+            className="w-full cursor-default select-none rounded-2xl border border-border bg-card/60 px-4 py-3"
+            onClick={handleEmailTap}
+          >
+            <p className="text-xs text-muted-foreground mb-1">{t.result.sendTo}</p>
+            <p className="text-sm font-semibold text-foreground truncate">📬 {userEmail}</p>
+          </div>
+          <p className="mt-1.5 text-center text-[10px] text-muted-foreground/45 leading-relaxed">
+            Email non corretta? Chiedi a un consulente presente in negozio di modificarla.
+          </p>
         </motion.div>
 
         {/* CTA */}
@@ -319,6 +503,18 @@ const MatchResult = ({ product, matchPercent, userName, userEmail, onClaim, clai
         >
           {claiming ? "…" : t.result.cta}
         </motion.button>
+
+        {/* Claim error feedback */}
+        <AnimatePresence>
+          {claimError && (
+            <motion.p
+              className="text-center text-xs font-medium text-destructive"
+              initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            >
+              Errore di connessione — riprova tra qualche secondo.
+            </motion.p>
+          )}
+        </AnimatePresence>
 
         <motion.p
           className="text-center text-xs text-muted-foreground"
