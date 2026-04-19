@@ -97,7 +97,7 @@ function progressHtml(pct: number, color: string, muted: string): string {
   </td></tr></table>`;
 }
 
-function buildEmail(record: Record<string, unknown>, code: string): string {
+function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ q: string; a: string }>): string {
   const nome         = escHtml(String(record.nome    ?? "").trim());
   const cognome      = escHtml(String(record.cognome ?? "").trim());
   const pct          = Number(record.match_percent ?? 0);
@@ -328,42 +328,25 @@ function buildEmail(record: Record<string, unknown>, code: string): string {
     </td>
   </tr>` : ""}
 
+  ${faq.length > 0 ? `
   <tr>
     <td style="background:${C.cardAlt};padding:28px 24px;border-top:1px solid ${C.border};">
       <p style="margin:0 0 20px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">DOMANDE FREQUENTI</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td style="padding:0 0 0;">
+        ${faq.map((item, i) => `
+        <tr><td style="padding:${i > 0 ? "14px" : "0"} 0 0;">
+          ${i > 0 ? `<div style="border-top:1px solid ${C.border};margin-bottom:14px;"></div>` : ""}
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
             <td width="4" style="background:${C.orange};border-radius:4px;padding:0;font-size:0;line-height:0;">&nbsp;</td>
             <td style="padding:4px 0 4px 14px;">
-              <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:${C.fg};line-height:1.4;">Posso usare il codice sconto online?</p>
-              <p style="margin:0;font-size:13px;color:${C.muted};line-height:1.65;">No, il codice è valido esclusivamente in negozio. Mostra questa email al consulente Webidoo al momento dell'acquisto.</p>
+              <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:${C.fg};line-height:1.4;">${item.q}</p>
+              <p style="margin:0;font-size:13px;color:${C.muted};line-height:1.65;">${item.a}</p>
             </td>
           </tr></table>
-        </td></tr>
-        <tr><td style="padding:14px 0 0;">
-          <div style="border-top:1px solid ${C.border};margin-bottom:14px;"></div>
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td width="4" style="background:${C.orange};border-radius:4px;padding:0;font-size:0;line-height:0;">&nbsp;</td>
-            <td style="padding:4px 0 4px 14px;">
-              <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:${C.fg};line-height:1.4;">Posso usare il codice su un prodotto diverso?</p>
-              <p style="margin:0;font-size:13px;color:${C.muted};line-height:1.65;">S&igrave;! Il codice può essere applicato su qualsiasi prodotto in negozio, non solo su quello del tuo match. Chiedi al consulente per scoprire le alternative.</p>
-            </td>
-          </tr></table>
-        </td></tr>
-        <tr><td style="padding:14px 0 0;">
-          <div style="border-top:1px solid ${C.border};margin-bottom:14px;"></div>
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td width="4" style="background:${C.orange};border-radius:4px;padding:0;font-size:0;line-height:0;">&nbsp;</td>
-            <td style="padding:4px 0 4px 14px;">
-              <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:${C.fg};line-height:1.4;">Il codice è cumulabile con altre offerte?</p>
-              <p style="margin:0;font-size:13px;color:${C.muted};line-height:1.65;">Il codice WEBI-MATCH non è cumulabile con altre promozioni attive. Scade 24 ore dopo la ricezione di questa email.</p>
-            </td>
-          </tr></table>
-        </td></tr>
+        </td></tr>`).join("")}
       </table>
     </td>
-  </tr>
+  </tr>` : ""}
 
   <tr>
     <td style="background:${C.cardAlt};padding:26px 24px;border-top:1px solid ${C.border};">
@@ -468,10 +451,27 @@ serve(async (req) => {
 
   if (dbErr) console.error("[on-session-created] db update failed:", dbErr.message);
 
+  // Fetch product-specific FAQ from product_settings
+  const faq: Array<{ q: string; a: string }> = [];
+  if (record.matched_product_id) {
+    const { data: ps } = await supabase
+      .from("product_settings")
+      .select("faq_q1,faq_a1,faq_q2,faq_a2,faq_q3,faq_a3")
+      .eq("product_id", record.matched_product_id)
+      .maybeSingle();
+    if (ps) {
+      for (const n of [1, 2, 3] as const) {
+        const q = String((ps as Record<string, unknown>)[`faq_q${n}`] ?? "").trim();
+        const a = String((ps as Record<string, unknown>)[`faq_a${n}`] ?? "").trim();
+        if (q && a) faq.push({ q: escHtml(q), a: escHtml(a) });
+      }
+    }
+  }
+
   const nome     = String(record.nome ?? "").trim();
   const pct      = Number(record.match_percent ?? 0);
   const subjName = nome ? `${nome}, il` : "Il";
-  const html     = buildEmail(record, code);
+  const html     = buildEmail(record, code, faq);
 
   const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
