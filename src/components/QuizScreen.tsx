@@ -38,19 +38,18 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
     setAnswers(newAnswers);
 
     if (currentIndex + 1 >= questions.length) {
-      // Last card: call onComplete directly — simple and reliable.
       setTimeout(() => {
         transitioningRef.current = false;
         setTransitioning(false);
         onComplete(newAnswers);
-      }, 480);
+      }, 240);
     } else {
       setTimeout(() => {
         setExitDirection(undefined);
         setCurrentIndex((i) => i + 1);
         transitioningRef.current = false;
         setTransitioning(false);
-      }, 480);
+      }, 240);
     }
   }, [currentIndex, answers, onComplete]);
 
@@ -111,12 +110,9 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
       </AnimatePresence>
 
       {/* Buttons */}
-      <motion.div
+      <div
         className="absolute bottom-10 flex w-full max-w-sm items-center justify-center gap-3 px-5"
-        style={{ pointerEvents: transitioning ? "none" : "auto" }}
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: transitioning ? 0.22 : 1, y: 0 }}
-        transition={{ duration: transitioning ? 0.12 : 0.35, delay: transitioning ? 0 : 0.28 }}
+        style={{ pointerEvents: transitioning ? "none" : "auto", opacity: transitioning ? 0.4 : 1, transition: "opacity 0.15s" }}
       >
         {/* NO — left arrow */}
         <motion.button
@@ -148,7 +144,7 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
         >
           <ChevronsRight className="h-9 w-9" strokeWidth={2.2} />
         </motion.button>
-      </motion.div>
+      </div>
     </div>
   );
 };
