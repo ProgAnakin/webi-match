@@ -106,6 +106,7 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
           question={question}
           onSwipe={handleSwipe}
           exitDirection={exitDirection}
+          index={currentIndex}
         />
       </AnimatePresence>
 
