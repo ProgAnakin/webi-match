@@ -58,28 +58,31 @@ const CATEGORY_CODES: Record<string, string> = {
 
 const ROMAN = ["I","II","III","IV","V","VI","VII","VIII","IX","X"];
 
-// Entry: gentle rise from below with fade — no slam, no rotation wobble
-// Exit: smooth glide off-screen with graceful rotation
+// Single-tween entry — no springs, prevents multi-animation overlap scatto on iPad
+// Exit: easeOutQuint glide off-screen
+const EASE_OUT_QUART = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
+const EASE_OUT_QUINT = [0.22, 1, 0.36, 1] as [number, number, number, number];
+
 const cardVariants = {
-  initial: { scale: 0.90, opacity: 0, y: 42 },
+  initial: { scale: 0.95, opacity: 0, y: 28 },
   animate: {
     scale: 1, opacity: 1, y: 0, x: 0, rotate: 0,
     transition: {
-      scale:   { type: "spring" as const, stiffness: 180, damping: 26, mass: 1.0 },
-      y:       { type: "spring" as const, stiffness: 170, damping: 28, mass: 1.0 },
-      opacity: { duration: 0.42, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+      duration: 0.50,
+      ease: EASE_OUT_QUART,
+      opacity: { duration: 0.32, ease: "easeOut" as const },
     },
   },
   exit: (direction: "left" | "right" | undefined) => ({
-    x: direction === "right" ? 460 : -460,
-    y: 36,
-    rotate: direction === "right" ? 16 : -16,
-    scale: 0.94,
+    x: direction === "right" ? 440 : -440,
+    y: 32,
+    rotate: direction === "right" ? 14 : -14,
+    scale: 0.95,
     opacity: 0,
     transition: {
-      duration: 0.60,
-      ease: [0.22, 1, 0.36, 1] as [number, number, number, number], // easeOutQuint — silky glide
-      opacity: { delay: 0.18, duration: 0.40, ease: "easeOut" as const },
+      duration: 0.58,
+      ease: EASE_OUT_QUINT,
+      opacity: { delay: 0.22, duration: 0.34, ease: "easeOut" as const },
     },
   }),
 };
@@ -164,7 +167,7 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.65}
-        dragTransition={{ bounceStiffness: 480, bounceDamping: 38 }}
+        dragTransition={{ bounceStiffness: 260, bounceDamping: 32 }}
         onDragEnd={handleDragEnd}
         custom={exitDirection}
         variants={cardVariants}
@@ -260,24 +263,23 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
 
           {/* Emoji + glow */}
           <div className="relative flex flex-1 items-center justify-center">
+            {/* Glow delayed — no animation during card entry to avoid GPU overlap */}
             <motion.div className="pointer-events-none absolute rounded-full"
-              style={{ background: accentColor, width: 200, height: 200, filter: "blur(65px)" }}
-              animate={{ opacity: [0.10, 0.30, 0.10], scale: [0.85, 1.12, 0.85] }}
-              transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
+              style={{ background: accentColor, width: 200, height: 200, filter: "blur(65px)", opacity: 0 }}
+              animate={{ opacity: [0.12, 0.28, 0.12], scale: [0.90, 1.08, 0.90] }}
+              transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
             />
+            {/* Emoji — single tween, no spring, starts after card lands */}
             <motion.div className="relative z-10"
-              initial={{ scale: 0.55, rotate: -10, opacity: 0 }}
-              animate={{ scale: 1, rotate: 0, opacity: 1 }}
-              transition={{
-                scale:   { type: "spring", stiffness: 160, damping: 24, mass: 0.95, delay: 0.18 },
-                rotate:  { type: "spring", stiffness: 140, damping: 26, mass: 0.95, delay: 0.18 },
-                opacity: { duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: 0.18 },
-              }}
+              initial={{ scale: 0.78, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.46, ease: EASE_OUT_QUINT, delay: 0.30 }}
             >
+              {/* Gentle breathing — very subtle, starts late */}
               <motion.span className="select-none"
                 style={{ display: "block", fontSize: "118px", lineHeight: 1 }}
-                animate={{ scale: [1, 1.07, 0.97, 1.04, 1], rotate: [0, 3, -2, 1.5, 0] }}
-                transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1.4 }}
+                animate={{ scale: [1, 1.03, 1] }}
+                transition={{ duration: 4.0, repeat: Infinity, ease: "easeInOut", delay: 1.8 }}
               >
                 {question.emoji}
               </motion.span>
