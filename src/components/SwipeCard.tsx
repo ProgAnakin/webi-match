@@ -53,11 +53,16 @@ const cardVariants = {
     },
   },
   exit: (direction: "left" | "right" | undefined) => ({
-    x: direction === "right" ? 750 : -750,
-    y: 80, opacity: 0,
-    rotate: direction === "right" ? 44 : -44,
-    scale: 0.70,
-    transition: { duration: 0.22, ease: [0.65, 0, 0.95, 0.45] as [number, number, number, number] },
+    x: direction === "right" ? 520 : -520,
+    y: 48,
+    rotate: direction === "right" ? 22 : -22,
+    scale: 0.92,
+    opacity: 0,
+    transition: {
+      duration: 0.52,
+      ease: [0.32, 0.14, 0.22, 1.0] as [number, number, number, number],
+      opacity: { delay: 0.10, duration: 0.40, ease: "easeOut" as const },
+    },
   }),
 };
 
