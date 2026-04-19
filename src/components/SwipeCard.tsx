@@ -40,7 +40,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   communication:"Chat",
 };
 
-// 3-letter codes for corner labels (no emoji)
 const CATEGORY_CODES: Record<string, string> = {
   sport:        "SPT",
   audio:        "AUD",
@@ -58,45 +57,14 @@ const CATEGORY_CODES: Record<string, string> = {
 
 const ROMAN = ["I","II","III","IV","V","VI","VII","VIII","IX","X"];
 
-// Single-tween entry — no springs, prevents multi-animation overlap scatto on iPad
-// Exit: easeOutQuint glide off-screen
-const EASE_OUT_QUART = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
-const EASE_OUT_QUINT = [0.22, 1, 0.36, 1] as [number, number, number, number];
-
-const cardVariants = {
-  initial: { scale: 0.95, opacity: 0, y: 28 },
-  animate: {
-    scale: 1, opacity: 1, y: 0, x: 0, rotate: 0,
-    transition: {
-      duration: 0.50,
-      ease: EASE_OUT_QUART,
-      opacity: { duration: 0.32, ease: "easeOut" as const },
-    },
-  },
-  exit: (direction: "left" | "right" | undefined) => ({
-    x: direction === "right" ? 440 : -440,
-    y: 32,
-    rotate: direction === "right" ? 14 : -14,
-    scale: 0.95,
-    opacity: 0,
-    transition: {
-      duration: 0.58,
-      ease: EASE_OUT_QUINT,
-      opacity: { delay: 0.22, duration: 0.34, ease: "easeOut" as const },
-    },
-  }),
-};
-
 function haptic(ms: number) {
   try { navigator.vibrate?.(ms); } catch { /* unsupported */ }
 }
 
-// Decorative corner pip (rotated square — classic card ornament)
 const Pip = ({ color }: { color: string }) => (
   <div style={{ width: 7, height: 7, background: color, opacity: 0.35, transform: "rotate(45deg)" }} />
 );
 
-// Triple-diamond divider — classic card art border
 const CardDivider = ({ color }: { color: string }) => (
   <div className="mx-5 flex items-center gap-1.5">
     <div className="h-px flex-1" style={{ background: `linear-gradient(to right, transparent, ${color}55)` }} />
@@ -112,14 +80,13 @@ const CardDivider = ({ color }: { color: string }) => (
 const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardProps) => {
   const { t } = useLang();
   const x = useMotionValue(0);
-  const rotate = useTransform(x, [-200, 200], [-22, 22]);
-  const noOpacity  = useTransform(x, [-180, -60, 0], [1, 0.4, 0]);
-  const yesOpacity = useTransform(x, [0, 60, 180], [0, 0.4, 1]);
-
-  const cardShadow = useTransform(x, [-180, 0, 180], [
-    "0 32px 90px hsl(0 84% 60% / 0.60), -14px 0 40px hsl(0 84% 60% / 0.36)",
-    "0 32px 90px hsl(0 0% 0% / 0.52)",
-    "0 32px 90px hsl(145 80% 42% / 0.60), 14px 0 40px hsl(145 80% 42% / 0.36)",
+  const rotate = useTransform(x, [-200, 200], [-18, 18]);
+  const noOpacity  = useTransform(x, [-160, -50, 0], [1, 0.3, 0]);
+  const yesOpacity = useTransform(x, [0, 50, 160], [0, 0.3, 1]);
+  const cardShadow = useTransform(x, [-160, 0, 160], [
+    "0 24px 60px hsl(0 84% 60% / 0.50)",
+    "0 24px 60px hsl(0 0% 0% / 0.45)",
+    "0 24px 60px hsl(145 80% 42% / 0.50)",
   ]);
 
   const accentColor   = CATEGORY_COLORS[question.category]  ?? "hsl(27, 92%, 55%)";
@@ -130,7 +97,7 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     const velocityBoost = Math.abs(info.velocity.x) > 400 ? 30 : 0;
-    const threshold = 90 - velocityBoost;
+    const threshold = 85 - velocityBoost;
     if (info.offset.x > threshold)       { haptic(45); onSwipe("right"); }
     else if (info.offset.x < -threshold) { haptic(30); onSwipe("left");  }
   };
@@ -138,161 +105,124 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
   return (
     <div className="relative flex h-[620px] w-full max-w-[375px] items-center justify-center">
 
-      {/* Stack peeks */}
+      {/* Static stack peeks — pure CSS, no animation */}
       <div className="gradient-card absolute h-full w-full rounded-3xl border border-border/25"
-        style={{ transform: "scale(0.84) translateY(40px)", opacity: 0.20, zIndex: -1 }} />
-      <div className="gradient-card absolute h-full w-full rounded-3xl border border-border/35"
-        style={{ transform: "scale(0.92) translateY(20px)", opacity: 0.44, zIndex: 0 }} />
+        style={{ transform: "scale(0.84) translateY(40px)", opacity: 0.18, zIndex: -1 }} />
+      <div className="gradient-card absolute h-full w-full rounded-3xl border border-border/30"
+        style={{ transform: "scale(0.92) translateY(18px)", opacity: 0.40, zIndex: 0 }} />
 
-      {/* NO / YES overlay labels */}
+      {/* NO / YES labels — only visible during drag */}
       <motion.div
-        className="pointer-events-none absolute left-4 top-10 z-20 flex items-center gap-2 rounded-2xl border-[3px] border-destructive/80 bg-destructive/15 px-4 py-2 backdrop-blur-sm"
-        style={{ opacity: noOpacity, rotate: -14 }}
+        className="pointer-events-none absolute left-4 top-10 z-20 flex items-center gap-2 rounded-2xl border-[3px] border-destructive/80 bg-destructive/15 px-4 py-2"
+        style={{ opacity: noOpacity, rotate: -12 }}
       >
         <span className="text-xl font-black text-destructive">✕</span>
         <span className="text-xl font-black tracking-wide text-destructive">{t.swipe.no}</span>
       </motion.div>
       <motion.div
-        className="pointer-events-none absolute right-4 top-10 z-20 flex items-center gap-2 rounded-2xl border-[3px] border-success/80 bg-success/15 px-4 py-2 backdrop-blur-sm"
-        style={{ opacity: yesOpacity, rotate: 14 }}
+        className="pointer-events-none absolute right-4 top-10 z-20 flex items-center gap-2 rounded-2xl border-[3px] border-success/80 bg-success/15 px-4 py-2"
+        style={{ opacity: yesOpacity, rotate: 12 }}
       >
         <span className="text-xl font-black tracking-wide text-success">{t.swipe.yes}</span>
         <span className="text-xl font-black text-success">✓</span>
       </motion.div>
 
-      {/* ── CARD ────────────────────────────────────────────────────── */}
+      {/* ── CARD ── */}
       <motion.div
         className="gradient-card absolute flex h-full w-full cursor-grab flex-col overflow-hidden rounded-3xl border border-white/10 active:cursor-grabbing"
         style={{ x, rotate, boxShadow: cardShadow, zIndex: 1 }}
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.65}
-        dragTransition={{ bounceStiffness: 260, bounceDamping: 32 }}
+        dragElastic={0.55}
+        dragTransition={{ bounceStiffness: 200, bounceDamping: 28 }}
         onDragEnd={handleDragEnd}
-        custom={exitDirection}
-        variants={cardVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        whileDrag={{ scale: 1.02 }}
+        // No entry animation — card is instantly present like Tinder
+        initial={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+        animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+        exit={{
+          x: exitDirection === "right" ? 480 : -480,
+          rotate: exitDirection === "right" ? 18 : -18,
+          opacity: 0,
+          transition: { duration: 0.26, ease: [0.32, 0, 0.67, 0] },
+        }}
+        whileDrag={{ scale: 1.015 }}
       >
-        {/* 3px accent bar */}
+        {/* Accent bar */}
         <div className="relative z-30 h-[3px] w-full flex-shrink-0" style={{ background: accentColor }} />
 
-        {/* Holographic strips — left & right edges */}
+        {/* Side edge highlights */}
         <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-30 w-[2px]"
-          style={{ background: `linear-gradient(to bottom, transparent 8%, ${accentColor}70 40%, ${accentColor}40 65%, transparent 92%)` }} />
+          style={{ background: `linear-gradient(to bottom, transparent 8%, ${accentColor}60 40%, ${accentColor}30 65%, transparent 92%)` }} />
         <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-30 w-[2px]"
-          style={{ background: `linear-gradient(to bottom, transparent 8%, ${accentColor}70 40%, ${accentColor}40 65%, transparent 92%)` }} />
+          style={{ background: `linear-gradient(to bottom, transparent 8%, ${accentColor}60 40%, ${accentColor}30 65%, transparent 92%)` }} />
 
-        {/* Inner card frame */}
+        {/* Inner frame */}
         <div className="pointer-events-none absolute inset-[10px] z-20 rounded-[22px] border"
-          style={{ borderColor: `${accentColor}20` }} />
-
-        {/* Inner frame corner pips (classic card ornament) */}
+          style={{ borderColor: `${accentColor}18` }} />
         <div className="pointer-events-none absolute left-[14px] top-[14px] z-20"><Pip color={accentColor} /></div>
         <div className="pointer-events-none absolute right-[14px] top-[14px] z-20"><Pip color={accentColor} /></div>
         <div className="pointer-events-none absolute left-[14px] bottom-[14px] z-20"><Pip color={accentColor} /></div>
         <div className="pointer-events-none absolute right-[14px] bottom-[14px] z-20"><Pip color={accentColor} /></div>
 
-        {/* Top gradient wash */}
+        {/* Gradients */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-40"
-          style={{ background: `linear-gradient(to bottom, ${accentColor}32, transparent)` }} />
-
-        {/* Bottom dark gradient */}
+          style={{ background: `linear-gradient(to bottom, ${accentColor}28, transparent)` }} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-52"
-          style={{ background: "linear-gradient(to top, hsl(0 0% 0% / 0.80) 0%, transparent 100%)" }} />
+          style={{ background: "linear-gradient(to top, hsl(0 0% 0% / 0.78) 0%, transparent 100%)" }} />
 
-        {/* Diagonal line texture — classic card feel */}
-        <div className="pointer-events-none absolute inset-0 opacity-[0.038]"
-          style={{
-            backgroundImage: `repeating-linear-gradient(45deg, ${accentColor} 0px, ${accentColor} 1px, transparent 1px, transparent 22px)`,
-          }} />
+        {/* Diagonal texture */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.032]"
+          style={{ backgroundImage: `repeating-linear-gradient(45deg, ${accentColor} 0px, ${accentColor} 1px, transparent 1px, transparent 22px)` }} />
 
-        {/* ── TOP-LEFT CORNER: Roman numeral + code ── */}
+        {/* Top-left corner */}
         <div className="absolute left-5 top-6 z-30 flex flex-col items-center gap-0.5">
           <span className="text-[17px] font-black leading-none tracking-tight"
-            style={{ color: accentColor, fontFamily: "Georgia, serif" }}>
-            {roman}
-          </span>
+            style={{ color: accentColor, fontFamily: "Georgia, serif" }}>{roman}</span>
           <div className="h-px w-5" style={{ background: accentColor, opacity: 0.4 }} />
           <span className="text-[8px] font-bold tracking-[0.22em]"
-            style={{ color: accentColor, opacity: 0.55 }}>
-            {categoryCode}
-          </span>
+            style={{ color: accentColor, opacity: 0.55 }}>{categoryCode}</span>
         </div>
 
-        {/* ── TOP-RIGHT CORNER: mirrored 180° ── */}
+        {/* Top-right corner (mirrored) */}
         <div className="absolute right-5 top-6 z-30 flex flex-col items-center gap-0.5"
           style={{ transform: "rotate(180deg)" }}>
           <span className="text-[17px] font-black leading-none tracking-tight"
-            style={{ color: accentColor, fontFamily: "Georgia, serif" }}>
-            {roman}
-          </span>
+            style={{ color: accentColor, fontFamily: "Georgia, serif" }}>{roman}</span>
           <div className="h-px w-5" style={{ background: accentColor, opacity: 0.4 }} />
           <span className="text-[8px] font-bold tracking-[0.22em]"
-            style={{ color: accentColor, opacity: 0.55 }}>
-            {categoryCode}
-          </span>
+            style={{ color: accentColor, opacity: 0.55 }}>{categoryCode}</span>
         </div>
 
-        {/* ── Category badge — rectangular, classic ── */}
+        {/* Category badge */}
         <div className="relative z-30 flex justify-center pt-7">
           <div className="flex items-center gap-2.5 px-5 py-1.5"
-            style={{
-              background: `${accentColor}16`,
-              border: `1px solid ${accentColor}45`,
-              borderRadius: "4px",
-            }}>
+            style={{ background: `${accentColor}14`, border: `1px solid ${accentColor}40`, borderRadius: "4px" }}>
             <div style={{ width: 5, height: 5, background: accentColor, opacity: 0.8, transform: "rotate(45deg)", flexShrink: 0 }} />
-            <span className="text-[11px] font-bold uppercase tracking-[0.28em]"
-              style={{ color: accentColor }}>
+            <span className="text-[11px] font-bold uppercase tracking-[0.28em]" style={{ color: accentColor }}>
               {categoryLabel}
             </span>
             <div style={{ width: 5, height: 5, background: accentColor, opacity: 0.8, transform: "rotate(45deg)", flexShrink: 0 }} />
           </div>
         </div>
 
-        {/* ── Art zone ── */}
+        {/* Art zone */}
         <div className="relative flex flex-1 flex-col">
+          <div className="mt-4 mb-2"><CardDivider color={accentColor} /></div>
 
-          {/* Top triple-diamond divider */}
-          <div className="mt-4 mb-2">
-            <CardDivider color={accentColor} />
-          </div>
-
-          {/* Emoji + glow */}
+          {/* Emoji — static, no animation */}
           <div className="relative flex flex-1 items-center justify-center">
-            {/* Glow delayed — no animation during card entry to avoid GPU overlap */}
-            <motion.div className="pointer-events-none absolute rounded-full"
-              style={{ background: accentColor, width: 200, height: 200, filter: "blur(65px)", opacity: 0 }}
-              animate={{ opacity: [0.12, 0.28, 0.12], scale: [0.90, 1.08, 0.90] }}
-              transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
-            />
-            {/* Emoji — single tween, no spring, starts after card lands */}
-            <motion.div className="relative z-10"
-              initial={{ scale: 0.78, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.46, ease: EASE_OUT_QUINT, delay: 0.30 }}
-            >
-              {/* Gentle breathing — very subtle, starts late */}
-              <motion.span className="select-none"
-                style={{ display: "block", fontSize: "118px", lineHeight: 1 }}
-                animate={{ scale: [1, 1.03, 1] }}
-                transition={{ duration: 4.0, repeat: Infinity, ease: "easeInOut", delay: 1.8 }}
-              >
-                {question.emoji}
-              </motion.span>
-            </motion.div>
+            {/* Static glow */}
+            <div className="pointer-events-none absolute rounded-full"
+              style={{ background: accentColor, width: 180, height: 180, filter: "blur(60px)", opacity: 0.18 }} />
+            <span className="relative z-10 select-none" style={{ display: "block", fontSize: "118px", lineHeight: 1 }}>
+              {question.emoji}
+            </span>
           </div>
 
-          {/* Bottom triple-diamond divider */}
-          <div className="mt-2 mb-3">
-            <CardDivider color={accentColor} />
-          </div>
+          <div className="mt-2 mb-3"><CardDivider color={accentColor} /></div>
         </div>
 
-        {/* ── Question text ── */}
+        {/* Question text */}
         <div className="relative z-20 px-7 pt-1 pb-8 text-center">
           <h2 className="text-[1.2rem] font-bold leading-snug text-white"
             style={{ textShadow: "0 2px 12px rgba(0,0,0,0.95)" }}>
@@ -300,30 +230,22 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
           </h2>
         </div>
 
-        {/* ── BOTTOM-LEFT CORNER: mirrored ── */}
+        {/* Bottom-left corner */}
         <div className="absolute bottom-6 left-5 z-30 flex flex-col-reverse items-center gap-0.5"
           style={{ transform: "rotate(180deg)" }}>
           <span className="text-[17px] font-black leading-none tracking-tight"
-            style={{ color: accentColor, fontFamily: "Georgia, serif" }}>
-            {roman}
-          </span>
+            style={{ color: accentColor, fontFamily: "Georgia, serif" }}>{roman}</span>
           <div className="h-px w-5" style={{ background: accentColor, opacity: 0.4 }} />
           <span className="text-[8px] font-bold tracking-[0.22em]"
-            style={{ color: accentColor, opacity: 0.55 }}>
-            {categoryCode}
-          </span>
+            style={{ color: accentColor, opacity: 0.55 }}>{categoryCode}</span>
         </div>
 
-        {/* ── BOTTOM-RIGHT: Roman progress ── */}
+        {/* Bottom-right: Roman progress */}
         <div className="absolute bottom-6 right-5 z-30 flex items-baseline gap-0.5">
           <span className="text-[13px] font-black leading-none"
-            style={{ color: accentColor, fontFamily: "Georgia, serif" }}>
-            {roman}
-          </span>
+            style={{ color: accentColor, fontFamily: "Georgia, serif" }}>{roman}</span>
           <span className="text-[10px] font-bold leading-none"
-            style={{ color: accentColor, opacity: 0.4, fontFamily: "Georgia, serif" }}>
-            /{romanTotal}
-          </span>
+            style={{ color: accentColor, opacity: 0.4, fontFamily: "Georgia, serif" }}>/{romanTotal}</span>
         </div>
       </motion.div>
     </div>
