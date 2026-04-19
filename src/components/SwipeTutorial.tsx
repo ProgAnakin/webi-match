@@ -32,7 +32,7 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
             >
-              Come funziona?
+              {t.tutorial.header}
             </motion.p>
 
             {/* Swipe demo row */}
@@ -139,7 +139,7 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
               transition={{ delay: 0.4 }}
               whileTap={{ scale: 0.96 }}
             >
-              Sono pronto!
+              {t.tutorial.ready}
             </motion.button>
       </div>
     </motion.div>

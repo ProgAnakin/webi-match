@@ -230,9 +230,9 @@ const MatchResult = ({
             >
               {!pinVerified ? (
                 <>
-                  <p className="mb-1 text-center text-sm font-bold text-foreground">Accesso consulente</p>
+                  <p className="mb-1 text-center text-sm font-bold text-foreground">{t.changeEmail.accessTitle}</p>
                   <p className="mb-5 text-center text-xs text-muted-foreground">
-                    Inserisci il PIN per modificare l&apos;email
+                    {t.changeEmail.pinPrompt}
                   </p>
 
                   {/* PIN dots */}
@@ -251,7 +251,7 @@ const MatchResult = ({
                     ))}
                   </div>
                   {pinError && (
-                    <p className="mb-3 text-center text-xs font-medium text-destructive">PIN non corretto</p>
+                    <p className="mb-3 text-center text-xs font-medium text-destructive">{t.changeEmail.pinError}</p>
                   )}
 
                   {/* Keypad */}
@@ -276,13 +276,13 @@ const MatchResult = ({
                     onClick={closeModal}
                     className="mt-4 w-full text-center text-xs text-muted-foreground/60 active:opacity-70"
                   >
-                    Annulla
+                    {t.changeEmail.cancel}
                   </button>
                 </>
               ) : (
                 <>
-                  <p className="mb-1 text-center text-sm font-bold text-foreground">Modifica email</p>
-                  <p className="mb-1 text-center text-xs text-muted-foreground">Email attuale:</p>
+                  <p className="mb-1 text-center text-sm font-bold text-foreground">{t.changeEmail.editTitle}</p>
+                  <p className="mb-1 text-center text-xs text-muted-foreground">{t.changeEmail.currentEmail}</p>
                   <p className="mb-5 truncate text-center text-xs font-semibold text-foreground">
                     {userEmail}
                   </p>
@@ -301,20 +301,20 @@ const MatchResult = ({
                     }`}
                   />
                   {newEmailTouched && !EMAIL_REGEX.test(newEmail.trim()) && (
-                    <p className="mt-1 text-center text-xs text-destructive">Email non valida</p>
+                    <p className="mt-1 text-center text-xs text-destructive">{t.changeEmail.emailInvalid}</p>
                   )}
 
                   <button
                     onClick={handleSaveEmail}
                     className="mt-4 w-full rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground active:scale-95 active:opacity-90"
                   >
-                    Salva email
+                    {t.changeEmail.save}
                   </button>
                   <button
                     onClick={closeModal}
                     className="mt-2 w-full text-center text-xs text-muted-foreground/60 active:opacity-70"
                   >
-                    Annulla
+                    {t.changeEmail.cancel}
                   </button>
                 </>
               )}
@@ -524,7 +524,7 @@ const MatchResult = ({
           </div>
 
           <p className="mt-1.5 text-center text-[10px] text-muted-foreground/45 leading-relaxed">
-            Email non corretta? Chiedi a un consulente presente in negozio di modificarla.
+            {t.changeEmail.emailHint}
           </p>
         </motion.div>
 
@@ -548,7 +548,7 @@ const MatchResult = ({
               className="text-center text-xs font-medium text-destructive"
               initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             >
-              Errore di connessione — riprova tra qualche secondo.
+              {t.changeEmail.connectionError}
             </motion.p>
           )}
         </AnimatePresence>
