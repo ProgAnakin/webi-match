@@ -8,9 +8,6 @@ export interface T {
     step2: string;
     step3: string;
     step4: string;
-    chip1: string;
-    chip2: string;
-    chip3: string;
     tap: string;
     chooseLang: string;
   };
@@ -35,8 +32,10 @@ export interface T {
     chooseDestiny: string;
   };
   tutorial: {
+    header: string;
     no: string;
     yes: string;
+    ready: string;
   };
   swipe: {
     yes: string;
@@ -55,6 +54,18 @@ export interface T {
     productImageAlt: string;
     sendTo: string;
     changeEmail: string;
+  };
+  changeEmail: {
+    accessTitle: string;
+    pinPrompt: string;
+    pinError: string;
+    editTitle: string;
+    currentEmail: string;
+    emailInvalid: string;
+    save: string;
+    cancel: string;
+    emailHint: string;
+    connectionError: string;
   };
   success: {
     title: (name: string) => string;
@@ -97,9 +108,6 @@ export const translations: Record<Lang, T> = {
       step2: "L'idea regalo ideale",
       step3: "Il gadget che stavi cercando",
       step4: "Il tuo match tech personale",
-      chip1: "Match istantaneo",
-      chip2: "Scelta personalizzata",
-      chip3: "Regalo perfetto",
       tap: "Tocca per iniziare",
       chooseLang: "Scegli la lingua",
     },
@@ -124,8 +132,10 @@ export const translations: Record<Lang, T> = {
       chooseDestiny: "SCEGLI IL TUO DESTINO",
     },
     tutorial: {
+      header: "Come funziona?",
       no: "← Swipe per NO",
       yes: "Swipe per SÌ →",
+      ready: "Sono pronto!",
     },
     swipe: { yes: "SÌ", no: "NO" },
     result: {
@@ -141,6 +151,18 @@ export const translations: Record<Lang, T> = {
       productImageAlt: "Immagine prodotto",
       sendTo: "Il match verrà inviato a:",
       changeEmail: "Cambia email",
+    },
+    changeEmail: {
+      accessTitle: "Accesso consulente",
+      pinPrompt: "Inserisci il PIN per modificare l'email",
+      pinError: "PIN non corretto",
+      editTitle: "Modifica email",
+      currentEmail: "Email attuale:",
+      emailInvalid: "Email non valida",
+      save: "Salva email",
+      cancel: "Annulla",
+      emailHint: "Email non corretta? Chiedi a un consulente presente in negozio di modificarla.",
+      connectionError: "Errore di connessione — riprova tra qualche secondo.",
     },
     success: {
       title: (n) => `Perfetto, ${n}!`,
@@ -183,9 +205,6 @@ export const translations: Record<Lang, T> = {
       step2: "The ideal gift idea",
       step3: "The gadget you were looking for",
       step4: "Your personal tech match",
-      chip1: "Instant match",
-      chip2: "Personalised choice",
-      chip3: "Perfect gift",
       tap: "Tap to start",
       chooseLang: "Choose language",
     },
@@ -193,7 +212,7 @@ export const translations: Record<Lang, T> = {
       tagline: "Find your perfect gadget! 🎯",
       firstName: "First name",
       lastName: "Last name",
-      emailPlaceholder: "Your best email 📧",
+      emailPlaceholder: "Your email",
       firstNameError: "Enter your first name",
       lastNameError: "Enter your last name",
       emailError: "Please enter a valid email address.",
@@ -210,8 +229,10 @@ export const translations: Record<Lang, T> = {
       chooseDestiny: "CHOOSE YOUR DESTINY",
     },
     tutorial: {
+      header: "How does it work?",
       no: "← Swipe for NO",
       yes: "Swipe for YES →",
+      ready: "I'm ready!",
     },
     swipe: { yes: "YES", no: "NO" },
     result: {
@@ -227,6 +248,18 @@ export const translations: Record<Lang, T> = {
       productImageAlt: "Product image",
       sendTo: "Your match will be sent to:",
       changeEmail: "Change email",
+    },
+    changeEmail: {
+      accessTitle: "Consultant access",
+      pinPrompt: "Enter the PIN to change the email",
+      pinError: "Incorrect PIN",
+      editTitle: "Edit email",
+      currentEmail: "Current email:",
+      emailInvalid: "Invalid email",
+      save: "Save email",
+      cancel: "Cancel",
+      emailHint: "Incorrect email? Ask a store consultant to change it.",
+      connectionError: "Connection error — please try again in a moment.",
     },
     success: {
       title: (n) => `Perfect, ${n}!`,
@@ -269,9 +302,6 @@ export const translations: Record<Lang, T> = {
       step2: "A ideia de presente ideal",
       step3: "O gadget que você procurava",
       step4: "O seu match tech pessoal",
-      chip1: "Match instantâneo",
-      chip2: "Escolha personalizada",
-      chip3: "Presente perfeito",
       tap: "Toque para começar",
       chooseLang: "Escolher idioma",
     },
@@ -279,7 +309,7 @@ export const translations: Record<Lang, T> = {
       tagline: "Encontre o seu gadget perfeito! 🎯",
       firstName: "Nome",
       lastName: "Sobrenome",
-      emailPlaceholder: "O seu melhor email 📧",
+      emailPlaceholder: "O seu email",
       firstNameError: "Insira o seu nome",
       lastNameError: "Insira o seu sobrenome",
       emailError: "Por favor, insira um email válido.",
@@ -296,8 +326,10 @@ export const translations: Record<Lang, T> = {
       chooseDestiny: "ESCOLHA O SEU DESTINO",
     },
     tutorial: {
+      header: "Como funciona?",
       no: "← Swipe para NÃO",
       yes: "Swipe para SIM →",
+      ready: "Estou pronto!",
     },
     swipe: { yes: "SIM", no: "NÃO" },
     result: {
@@ -313,6 +345,18 @@ export const translations: Record<Lang, T> = {
       productImageAlt: "Imagem do produto",
       sendTo: "O match será enviado para:",
       changeEmail: "Alterar email",
+    },
+    changeEmail: {
+      accessTitle: "Acesso do consultor",
+      pinPrompt: "Insira o PIN para alterar o email",
+      pinError: "PIN incorreto",
+      editTitle: "Alterar email",
+      currentEmail: "Email atual:",
+      emailInvalid: "Email inválido",
+      save: "Guardar email",
+      cancel: "Cancelar",
+      emailHint: "Email incorreto? Peça a um consultor na loja para alterá-lo.",
+      connectionError: "Erro de ligação — tente novamente em instantes.",
     },
     success: {
       title: (n) => `Perfeito, ${n}!`,
@@ -355,9 +399,6 @@ export const translations: Record<Lang, T> = {
       step2: "La idea de regalo ideal",
       step3: "El gadget que buscabas",
       step4: "Tu match tech personal",
-      chip1: "Match instantáneo",
-      chip2: "Elección personalizada",
-      chip3: "Regalo perfecto",
       tap: "Toca para empezar",
       chooseLang: "Elegir idioma",
     },
@@ -365,7 +406,7 @@ export const translations: Record<Lang, T> = {
       tagline: "¡Encuentra tu gadget perfecto! 🎯",
       firstName: "Nombre",
       lastName: "Apellido",
-      emailPlaceholder: "Tu mejor email 📧",
+      emailPlaceholder: "Tu email",
       firstNameError: "Introduce tu nombre",
       lastNameError: "Introduce tu apellido",
       emailError: "Por favor, introduce un email válido.",
@@ -382,8 +423,10 @@ export const translations: Record<Lang, T> = {
       chooseDestiny: "ELIGE TU DESTINO",
     },
     tutorial: {
+      header: "¿Cómo funciona?",
       no: "← Swipe para NO",
       yes: "Swipe para SÍ →",
+      ready: "¡Estoy listo!",
     },
     swipe: { yes: "SÍ", no: "NO" },
     result: {
@@ -400,6 +443,18 @@ export const translations: Record<Lang, T> = {
       sendTo: "El match se enviará a:",
       changeEmail: "Cambiar email",
     },
+    changeEmail: {
+      accessTitle: "Acceso del consultor",
+      pinPrompt: "Introduce el PIN para cambiar el email",
+      pinError: "PIN incorrecto",
+      editTitle: "Editar email",
+      currentEmail: "Email actual:",
+      emailInvalid: "Email no válido",
+      save: "Guardar email",
+      cancel: "Cancelar",
+      emailHint: "¿Email incorrecto? Pide a un consultor en tienda que lo cambie.",
+      connectionError: "Error de conexión — vuelve a intentarlo en un momento.",
+    },
     success: {
       title: (n) => `¡Perfecto, ${n}!`,
       titleNoName: "¡Felicidades!",
@@ -408,9 +463,9 @@ export const translations: Record<Lang, T> = {
       spamNote: "¿No ves el email? Revisa también la carpeta de spam.",
       restart: "🔄 Jugar de Nuevo",
       benefits: {
-        video:    { title: "Vídeo exclusivo",   desc: "Nuestro consultor te explica todo en 30 segundos" },
-        manual:   { title: "Manual completo",   desc: "Guía paso a paso para empezar ya" },
-        faq:      { title: "FAQ",               desc: "Respuestas a las preguntas más frecuentes" },
+        video:    { title: "Vídeo exclusivo",    desc: "Nuestro consultor te explica todo en 30 segundos" },
+        manual:   { title: "Manual completo",    desc: "Guía paso a paso para empezar ya" },
+        faq:      { title: "FAQ",                desc: "Respuestas a las preguntas más frecuentes" },
         discount: { title: "Descuento especial", desc: "¡Solo para quienes han jugado hoy!" },
       },
     },
@@ -441,9 +496,6 @@ export const translations: Record<Lang, T> = {
       step2: "L'idée cadeau idéale",
       step3: "Le gadget que vous cherchiez",
       step4: "Votre match tech personnel",
-      chip1: "Match instantané",
-      chip2: "Choix personnalisé",
-      chip3: "Cadeau parfait",
       tap: "Touchez pour commencer",
       chooseLang: "Choisir la langue",
     },
@@ -451,7 +503,7 @@ export const translations: Record<Lang, T> = {
       tagline: "Trouvez votre gadget parfait ! 🎯",
       firstName: "Prénom",
       lastName: "Nom",
-      emailPlaceholder: "Votre meilleur email 📧",
+      emailPlaceholder: "Votre email",
       firstNameError: "Entrez votre prénom",
       lastNameError: "Entrez votre nom",
       emailError: "Veuillez entrer une adresse email valide.",
@@ -468,8 +520,10 @@ export const translations: Record<Lang, T> = {
       chooseDestiny: "CHOISISSEZ VOTRE DESTIN",
     },
     tutorial: {
+      header: "Comment ça marche ?",
       no: "← Swipe pour NON",
       yes: "Swipe pour OUI →",
+      ready: "Je suis prêt !",
     },
     swipe: { yes: "OUI", no: "NON" },
     result: {
@@ -486,6 +540,18 @@ export const translations: Record<Lang, T> = {
       sendTo: "Le match sera envoyé à :",
       changeEmail: "Changer l'email",
     },
+    changeEmail: {
+      accessTitle: "Accès consultant",
+      pinPrompt: "Entrez le PIN pour modifier l'email",
+      pinError: "PIN incorrect",
+      editTitle: "Modifier l'email",
+      currentEmail: "Email actuel :",
+      emailInvalid: "Email invalide",
+      save: "Enregistrer l'email",
+      cancel: "Annuler",
+      emailHint: "Email incorrect ? Demandez à un consultant en magasin de le modifier.",
+      connectionError: "Erreur de connexion — réessayez dans un instant.",
+    },
     success: {
       title: (n) => `Parfait, ${n} !`,
       titleNoName: "Félicitations !",
@@ -494,10 +560,10 @@ export const translations: Record<Lang, T> = {
       spamNote: "Vous ne trouvez pas l'email ? Vérifiez aussi le dossier spam.",
       restart: "🔄 Rejouer",
       benefits: {
-        video:    { title: "Vidéo exclusive",   desc: "Notre consultant vous explique tout en 30 secondes" },
-        manual:   { title: "Manuel complet",    desc: "Guide étape par étape pour commencer tout de suite" },
-        faq:      { title: "FAQ",               desc: "Réponses aux questions les plus fréquentes" },
-        discount: { title: "Remise spéciale",   desc: "Réservée uniquement aux joueurs d'aujourd'hui !" },
+        video:    { title: "Vidéo exclusive",  desc: "Notre consultant vous explique tout en 30 secondes" },
+        manual:   { title: "Manuel complet",   desc: "Guide étape par étape pour commencer tout de suite" },
+        faq:      { title: "FAQ",              desc: "Réponses aux questions les plus fréquentes" },
+        discount: { title: "Remise spéciale",  desc: "Réservée uniquement aux joueurs d'aujourd'hui !" },
       },
     },
     inactivity: {
