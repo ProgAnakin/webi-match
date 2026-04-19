@@ -14,6 +14,22 @@ import { getStoredStoreId } from "@/data/stores";
 
 type Screen = "splash" | "welcome" | "quiz" | "result" | "success";
 
+// Fires-and-forgets a row to Google Sheets via Apps Script webhook.
+// Set VITE_GOOGLE_SHEETS_WEBHOOK_URL in Vercel env vars to enable.
+async function sendToGoogleSheets(row: Record<string, string>) {
+  const url = import.meta.env.VITE_GOOGLE_SHEETS_WEBHOOK_URL as string | undefined;
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(row),
+    });
+  } catch {
+    // non-critical — Supabase is the source of truth
+  }
+}
+
 // ── Per-screen directional transitions ────────────────────────────────────────
 const screenAnim: Record<Screen, { initial: object; animate: object; exit: object; transition: object }> = {
   splash: {
@@ -181,6 +197,17 @@ const Index = () => {
       setClaimError(true);
       return;
     }
+
+    // Mirror to Google Sheets CRM (fire-and-forget, non-blocking)
+    sendToGoogleSheets({
+      data:     new Date().toLocaleString("it-IT"),
+      nome:     user.nome,
+      cognome:  user.cognome,
+      email:    user.email,
+      prodotto: matchedProduct.name,
+      match:    `${matchPercent}%`,
+      store_id: getStoredStoreId() ?? "",
+    });
 
     trackFunnel(funnelKey, "claimed");
     setClaimError(false);
