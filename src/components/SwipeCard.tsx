@@ -58,27 +58,28 @@ const CATEGORY_CODES: Record<string, string> = {
 
 const ROMAN = ["I","II","III","IV","V","VI","VII","VIII","IX","X"];
 
+// Entry: gentle rise from below with fade — no slam, no rotation wobble
+// Exit: smooth glide off-screen with graceful rotation
 const cardVariants = {
-  initial: { scale: 0.45, opacity: 0, y: -200, rotate: 12 },
+  initial: { scale: 0.90, opacity: 0, y: 42 },
   animate: {
     scale: 1, opacity: 1, y: 0, x: 0, rotate: 0,
     transition: {
-      scale:   { type: "spring" as const, stiffness: 480, damping: 18, mass: 0.9 },
-      opacity: { duration: 0.06 },
-      y:       { type: "spring" as const, stiffness: 500, damping: 20, mass: 0.85 },
-      rotate:  { type: "spring" as const, stiffness: 360, damping: 14, mass: 0.8 },
+      scale:   { type: "spring" as const, stiffness: 180, damping: 26, mass: 1.0 },
+      y:       { type: "spring" as const, stiffness: 170, damping: 28, mass: 1.0 },
+      opacity: { duration: 0.42, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
     },
   },
   exit: (direction: "left" | "right" | undefined) => ({
-    x: direction === "right" ? 520 : -520,
-    y: 48,
-    rotate: direction === "right" ? 22 : -22,
-    scale: 0.92,
+    x: direction === "right" ? 460 : -460,
+    y: 36,
+    rotate: direction === "right" ? 16 : -16,
+    scale: 0.94,
     opacity: 0,
     transition: {
-      duration: 0.52,
-      ease: [0.32, 0.14, 0.22, 1.0] as [number, number, number, number],
-      opacity: { delay: 0.10, duration: 0.40, ease: "easeOut" as const },
+      duration: 0.60,
+      ease: [0.22, 1, 0.36, 1] as [number, number, number, number], // easeOutQuint — silky glide
+      opacity: { delay: 0.18, duration: 0.40, ease: "easeOut" as const },
     },
   }),
 };
@@ -265,9 +266,13 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
               transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
             />
             <motion.div className="relative z-10"
-              initial={{ scale: 0, rotate: -25 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 340, damping: 10, mass: 0.65, delay: 0.1 }}
+              initial={{ scale: 0.55, rotate: -10, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={{
+                scale:   { type: "spring", stiffness: 160, damping: 24, mass: 0.95, delay: 0.18 },
+                rotate:  { type: "spring", stiffness: 140, damping: 26, mass: 0.95, delay: 0.18 },
+                opacity: { duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: 0.18 },
+              }}
             >
               <motion.span className="select-none"
                 style={{ display: "block", fontSize: "118px", lineHeight: 1 }}
