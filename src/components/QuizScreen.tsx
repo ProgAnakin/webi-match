@@ -43,14 +43,14 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
         transitioningRef.current = false;
         setTransitioning(false);
         onComplete(newAnswers);
-      }, 300);
+      }, 420);
     } else {
       setTimeout(() => {
         setExitDirection(undefined);
         setCurrentIndex((i) => i + 1);
         transitioningRef.current = false;
         setTransitioning(false);
-      }, 300);
+      }, 420);
     }
   }, [currentIndex, answers, onComplete]);
 
