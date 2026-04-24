@@ -6,6 +6,8 @@ import { getStoreById } from "@/data/stores";
 export interface QuizSession {
   id: string;
   email: string;
+  nome?: string | null;
+  cognome?: string | null;
   matched_product_id: string;
   match_percent: number;
   created_at: string;
