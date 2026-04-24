@@ -16,7 +16,8 @@ import {
 } from "./types";
 
 const FETCH_LIMIT = 5000;
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 20;
+const PRODUCT_PAGE_SIZE = 8;
 const REFRESH_DEBOUNCE_MS = 3000;
 
 interface DashboardProps {
@@ -37,6 +38,8 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
   const [showFilters, setShowFilters] = useState(false);
 
   const [page, setPage] = useState(0);
+  const [productPage, setProductPage] = useState(0);
+  const [search, setSearch] = useState("");
   const [hasMfa, setHasMfa] = useState(false);
   const [showMfaModal, setShowMfaModal] = useState(false);
   // GDPR export confirmation — true while awaiting user confirmation
@@ -64,7 +67,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
 
     const { data, error } = await supabase
       .from("quiz_sessions")
-      .select("id, email, matched_product_id, match_percent, created_at, store_id")
+      .select("id, email, nome, cognome, matched_product_id, match_percent, created_at, store_id")
       .order("created_at", { ascending: false })
       .limit(FETCH_LIMIT);
     if (error) setHasError(true);
@@ -86,7 +89,8 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
   // Reset to first page whenever filters change
-  useEffect(() => { setPage(0); }, [dateFrom, dateTo, filterStore]);
+  useEffect(() => { setPage(0); setProductPage(0); }, [dateFrom, dateTo, filterStore]);
+  useEffect(() => { setPage(0); }, [search]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -132,9 +136,24 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     }))
     .sort((a, b) => b.count - a.count);
 
-  // Pagination
-  const pagedSessions = filteredSessions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const totalPages = Math.ceil(filteredSessions.length / PAGE_SIZE);
+  // Product pagination
+  const productTotalPages = Math.ceil(productStats.length / PRODUCT_PAGE_SIZE);
+  const pagedProductStats = productStats.slice(productPage * PRODUCT_PAGE_SIZE, (productPage + 1) * PRODUCT_PAGE_SIZE);
+
+  // Search + pagination for sessions
+  const searchLower = search.toLowerCase().trim();
+  const searchedSessions = searchLower
+    ? filteredSessions.filter((s) => {
+        const name = `${s.nome ?? ""} ${s.cognome ?? ""}`.toLowerCase();
+        return (
+          s.email.toLowerCase().includes(searchLower) ||
+          productName(s.matched_product_id).toLowerCase().includes(searchLower) ||
+          name.includes(searchLower)
+        );
+      })
+    : filteredSessions;
+  const pagedSessions = searchedSessions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const totalPages = Math.ceil(searchedSessions.length / PAGE_SIZE);
 
   const dayCounts: DayCount[] = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
@@ -312,28 +331,64 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {productStats.map((p, i) => (
-                    <div key={p.id}>
-                      <div className="mb-1 flex items-center justify-between text-xs">
-                        <span className="truncate pr-2 font-medium text-foreground">
-                          {["🥇", "🥈", "🥉"][i] ?? "  "} {p.name}
-                        </span>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {p.avgMatch !== undefined && (
-                            <span className="text-muted-foreground">⌀{p.avgMatch}%</span>
-                          )}
-                          <span className="font-bold text-primary">{p.count}x · {p.percent}%</span>
+                <>
+                  <div className="space-y-3">
+                    {pagedProductStats.map((p, i) => {
+                      const globalIdx = productPage * PRODUCT_PAGE_SIZE + i;
+                      return (
+                        <div key={p.id}>
+                          <div className="mb-1 flex items-center justify-between text-xs">
+                            <span className="truncate pr-2 font-medium text-foreground">
+                              {["🥇", "🥈", "🥉"][globalIdx] ?? "  "} {p.name}
+                            </span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {p.avgMatch !== undefined && (
+                                <span className="text-muted-foreground">⌀{p.avgMatch}%</span>
+                              )}
+                              <span className="font-bold text-primary">{p.count}x · {p.percent}%</span>
+                            </div>
+                          </div>
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                            <motion.div className="h-full rounded-full gradient-primary"
+                              initial={{ width: 0 }} animate={{ width: `${p.percent}%` }}
+                              transition={{ duration: 0.6, delay: 0.3 + i * 0.05 }} />
+                          </div>
                         </div>
-                      </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                        <motion.div className="h-full rounded-full gradient-primary"
-                          initial={{ width: 0 }} animate={{ width: `${p.percent}%` }}
-                          transition={{ duration: 0.6, delay: 0.3 + i * 0.05 }} />
-                      </div>
+                      );
+                    })}
+                  </div>
+                  {productTotalPages > 1 && (
+                    <div className="mt-4 flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setProductPage((p) => Math.max(0, p - 1))}
+                        disabled={productPage === 0}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground disabled:opacity-30 active:scale-95"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      {Array.from({ length: productTotalPages }, (_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setProductPage(idx)}
+                          className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold active:scale-95 ${
+                            idx === productPage
+                              ? "border-primary/40 bg-primary/10 text-primary"
+                              : "border-border bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {idx + 1}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setProductPage((p) => Math.min(productTotalPages - 1, p + 1))}
+                        disabled={productPage >= productTotalPages - 1}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground disabled:opacity-30 active:scale-95"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </motion.div>
 
@@ -429,7 +484,9 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                   <h2 className="font-bold text-foreground">🕐 Sessioni</h2>
                   {filteredSessions.length > 0 && (
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {filteredSessions.length} totali
+                      {searchLower
+                        ? `${searchedSessions.length} risultati · ${filteredSessions.length} totali`
+                        : `${filteredSessions.length} totali`}
                       {totalPages > 1 && ` · pagina ${page + 1} di ${totalPages}`}
                     </p>
                   )}
@@ -442,6 +499,17 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                   </button>
                 )}
               </div>
+              {filteredSessions.length > 0 && (
+                <div className="mb-3">
+                  <input
+                    type="search"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Cerca per nome, email o prodotto..."
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              )}
               {filteredSessions.length === 0 ? (
                 <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">
                   <p className="text-2xl mb-2">📭</p>
@@ -454,25 +522,37 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                       : "Avvia il quiz sull'iPad per iniziare a raccogliere dati."}
                   </p>
                 </div>
+              ) : searchedSessions.length === 0 ? (
+                <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">
+                  <p className="text-2xl mb-2">🔍</p>
+                  <p className="text-sm font-medium text-foreground">Nessun risultato trovato</p>
+                  <p className="text-xs text-muted-foreground mt-1">Prova con nome, email o nome prodotto.</p>
+                </div>
               ) : (
                 <>
                   <div className="space-y-3">
-                    {pagedSessions.map((s) => (
-                      <div key={s.id}
-                        className="flex items-center justify-between rounded-xl border border-border bg-background/40 px-4 py-3 text-sm">
-                        <div className="overflow-hidden">
-                          <p className="truncate font-medium text-foreground">{s.email}</p>
-                          <p className="truncate text-xs text-muted-foreground">{productName(s.matched_product_id)}</p>
-                          {s.store_id && (
-                            <p className="text-[10px] text-primary/70 mt-0.5">📍 {storeName(s.store_id)}</p>
-                          )}
+                    {pagedSessions.map((s) => {
+                      const fullName = [s.nome, s.cognome].filter(Boolean).join(" ");
+                      return (
+                        <div key={s.id}
+                          className="flex items-center justify-between rounded-xl border border-border bg-background/40 px-4 py-3 text-sm">
+                          <div className="overflow-hidden">
+                            {fullName && (
+                              <p className="truncate font-semibold text-foreground">{fullName}</p>
+                            )}
+                            <p className="truncate font-medium text-foreground/80">{s.email}</p>
+                            <p className="truncate text-xs text-muted-foreground">{productName(s.matched_product_id)}</p>
+                            {s.store_id && (
+                              <p className="text-[10px] text-primary/70 mt-0.5">📍 {storeName(s.store_id)}</p>
+                            )}
+                          </div>
+                          <div className="ml-3 shrink-0 text-right">
+                            <p className="font-bold text-primary">{s.match_percent}%</p>
+                            <p className="text-[10px] text-muted-foreground">{formatDate(s.created_at)}</p>
+                          </div>
                         </div>
-                        <div className="ml-3 shrink-0 text-right">
-                          <p className="font-bold text-primary">{s.match_percent}%</p>
-                          <p className="text-[10px] text-muted-foreground">{formatDate(s.created_at)}</p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Pagination controls */}
