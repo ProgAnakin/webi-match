@@ -1,4 +1,4 @@
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { motion, useMotionValue, useTransform, animate, useReducedMotion } from "framer-motion";
 import { useEffect } from "react";
 import { useSound } from "@/hooks/useSound";
 import { useLang } from "@/i18n/LanguageContext";
@@ -38,9 +38,11 @@ const EnvelopeIcon = () => (
   </svg>
 );
 
-// Flying paper airplane that loops toward the envelope
+// Flying paper airplane — loops 3 times then stops (avoids infinite GPU load on kiosk iPad)
 const FlyingAirplane = ({ delay, id }: { delay: number; id: number }) => {
-  // Different start positions for variety
+  const reduceMotion = useReducedMotion();
+  if (reduceMotion) return null;
+
   const paths = [
     { startX: -60, startY: -100, midX: 80, midY: -60 },
     { startX: 400, startY: -80, midX: 200, midY: -50 },
@@ -64,7 +66,7 @@ const FlyingAirplane = ({ delay, id }: { delay: number; id: number }) => {
       transition={{
         duration: 2.5,
         delay,
-        repeat: Infinity,
+        repeat: 2,
         repeatDelay: 6,
         ease: "easeInOut",
         times: [0, 0.6, 1],
@@ -80,6 +82,7 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
   const checkOpacity = useTransform(checkScale, [0, 1], [0, 1]);
   const { play } = useSound();
   const { t } = useLang();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     animate(checkScale, 1, { type: "spring", stiffness: 200, damping: 15, delay: 0.5 });
@@ -135,13 +138,15 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
           >
             <EnvelopeIcon />
 
-            {/* Subtle pulse ring around envelope */}
-            <motion.div
-              className="absolute inset-0 rounded-2xl"
-              style={{ border: "2px solid hsl(var(--primary))" }}
-              animate={{ scale: [1, 1.3, 1.5], opacity: [0.4, 0.1, 0] }}
-              transition={{ duration: 2.5, repeat: Infinity, delay: 1.5 }}
-            />
+            {/* Subtle pulse ring around envelope — 3 pulses then stops */}
+            {!reduceMotion && (
+              <motion.div
+                className="absolute inset-0 rounded-2xl"
+                style={{ border: "2px solid hsl(var(--primary))" }}
+                animate={{ scale: [1, 1.3, 1.5], opacity: [0.4, 0.1, 0] }}
+                transition={{ duration: 2.5, repeat: 2, delay: 1.5 }}
+              />
+            )}
           </motion.div>
         </div>
 

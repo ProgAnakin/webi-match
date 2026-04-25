@@ -4,11 +4,18 @@ import type { Product } from "@/data/products";
 import { useSound } from "@/hooks/useSound";
 import { useDevicePerformance } from "@/hooks/useDevicePerformance";
 import { useLang } from "@/i18n/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-const CHANGE_PIN    = "9090";
-const EMAIL_TAPS    = 5;
+const EMAIL_TAPS  = 5;
 const PIN_KEYS: (number | "⌫" | "")[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, "", 0, "⌫"];
+
+function getClientId(): string {
+  const key = "wb_client_id";
+  let id = localStorage.getItem(key);
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem(key, id); }
+  return id;
+}
 
 interface MatchResultProps {
   product: Product;
@@ -62,6 +69,9 @@ const MatchResult = ({
   const [pinVerified, setPinVerified]         = useState(false);
   const [pinValue, setPinValue]               = useState("");
   const [pinError, setPinError]               = useState(false);
+  const [pinVerifying, setPinVerifying]       = useState(false);
+  const [pinLockedSeconds, setPinLockedSeconds] = useState(0);
+  const pinLockRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [newEmail, setNewEmail]               = useState("");
   const [newEmailTouched, setNewEmailTouched] = useState(false);
 
@@ -145,27 +155,53 @@ const MatchResult = ({
     }
   }, []);
 
-  // ── PIN keypad handler ─────────────────────────────────────────────────────
-  const handlePinKey = useCallback((key: number | "⌫") => {
-    if (key === "⌫") {
-      setPinValue((p) => p.slice(0, -1));
-      setPinError(false);
-      return;
-    }
-    setPinValue((prev) => {
-      if (prev.length >= 4) return prev;
-      const next = prev + String(key);
-      if (next.length === 4) {
-        if (next === CHANGE_PIN) {
+  // PIN lockout countdown driven by server response
+  useEffect(() => {
+    if (pinLockedSeconds <= 0) return;
+    if (pinLockRef.current) clearInterval(pinLockRef.current);
+    pinLockRef.current = setInterval(() => {
+      setPinLockedSeconds((s) => {
+        if (s <= 1) { clearInterval(pinLockRef.current!); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+    return () => { if (pinLockRef.current) clearInterval(pinLockRef.current); };
+  }, [pinLockedSeconds]);
+
+  // ── PIN keypad handler — server-side verification ──────────────────────────
+  const handlePinKey = useCallback(async (key: number | "⌫") => {
+    if (pinVerifying || pinLockedSeconds > 0) return;
+    if (key === "⌫") { setPinValue((p) => p.slice(0, -1)); setPinError(false); return; }
+    if (pinValue.length >= 4) return;
+    const next = pinValue + String(key);
+    setPinValue(next);
+    if (next.length === 4) {
+      setPinVerifying(true);
+      try {
+        const { data, error } = await supabase.rpc("verify_staff_pin", {
+          pin_input: next,
+          client_id: getClientId(),
+          user_agent: navigator.userAgent,
+        });
+        const result = data as { valid: boolean; locked_seconds: number } | null;
+        if (!error && result?.valid === true) {
+          setPinVerifying(false);
           setTimeout(() => setPinVerified(true), 150);
         } else {
+          if (result?.locked_seconds && result.locked_seconds > 0) {
+            setPinLockedSeconds(result.locked_seconds);
+          }
           setPinError(true);
           setTimeout(() => { setPinValue(""); setPinError(false); }, 700);
+          setPinVerifying(false);
         }
+      } catch {
+        setPinError(true);
+        setTimeout(() => { setPinValue(""); setPinError(false); }, 700);
+        setPinVerifying(false);
       }
-      return next;
-    });
-  }, []);
+    }
+  }, [pinValue, pinVerifying, pinLockedSeconds]);
 
   // ── Save new email ─────────────────────────────────────────────────────────
   const handleSaveEmail = useCallback(() => {
@@ -184,6 +220,8 @@ const MatchResult = ({
     setPinVerified(false);
     setPinValue("");
     setPinError(false);
+    setPinVerifying(false);
+    setPinLockedSeconds(0);
     setNewEmail("");
     setNewEmailTouched(false);
   }, []);
@@ -235,6 +273,16 @@ const MatchResult = ({
                     {t.changeEmail.pinPrompt}
                   </p>
 
+                  {/* Locked banner */}
+                  <AnimatePresence>
+                    {pinLockedSeconds > 0 && (
+                      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                        className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-center text-xs text-destructive">
+                        Troppi tentativi — riprova tra <strong>{pinLockedSeconds}s</strong>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* PIN dots */}
                   <div className="mb-4 flex justify-center gap-3">
                     {[0, 1, 2, 3].map((i) => (
@@ -250,12 +298,15 @@ const MatchResult = ({
                       />
                     ))}
                   </div>
+                  {pinVerifying && (
+                    <p className="mb-2 text-center text-xs text-muted-foreground animate-pulse">Verifica…</p>
+                  )}
                   {pinError && (
                     <p className="mb-3 text-center text-xs font-medium text-destructive">{t.changeEmail.pinError}</p>
                   )}
 
                   {/* Keypad */}
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className={`grid grid-cols-3 gap-2 ${pinVerifying || pinLockedSeconds > 0 ? "pointer-events-none opacity-40" : ""}`}>
                     {PIN_KEYS.map((key, i) => (
                       <button
                         key={i}

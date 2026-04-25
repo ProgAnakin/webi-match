@@ -124,10 +124,11 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
     setEmailTouched(true);
     if (!isFormValid || checking) return;
 
+    const normalizedEmail = email.trim().toLowerCase();
     setChecking(true);
     try {
       const { data } = await supabase.rpc("check_email_cooldown", {
-        p_email: email.trim().toLowerCase(),
+        p_email: normalizedEmail,
       });
       if (data?.[0]?.in_cooldown) {
         setCooldownHours(Math.ceil(data[0].hours_remaining as number));
@@ -135,11 +136,23 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
         return;
       }
     } catch {
-      // RPC not yet deployed or network failure — allow through, never block a real customer
+      // RPC unavailable or network failure — check sessionStorage as local fallback
+      const ssKey = `wb_cooldown_${normalizedEmail}`;
+      const lastAttempt = sessionStorage.getItem(ssKey);
+      if (lastAttempt) {
+        const diffMs = Date.now() - parseInt(lastAttempt, 10);
+        const cooldownMs = 60 * 60 * 1000; // 1 hour local fallback
+        if (diffMs < cooldownMs) {
+          setCooldownHours(Math.ceil((cooldownMs - diffMs) / 3600000));
+          setChecking(false);
+          return;
+        }
+      }
+      sessionStorage.setItem(ssKey, String(Date.now()));
     }
     setChecking(false);
     play("start");
-    onStart({ nome: nome.trim(), cognome: cognome.trim(), email: email.trim().toLowerCase() });
+    onStart({ nome: nome.trim(), cognome: cognome.trim(), email: normalizedEmail });
   }, [isFormValid, checking, nome, cognome, email, play, onStart]);
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -165,14 +178,14 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
       <div className="flex gap-3">
         <div className="flex-1">
           <input type="text" placeholder={t.welcome.firstName} value={nome}
-            onChange={handleNome} onKeyDown={onKeyDown} className={nomeClass} />
+            onChange={handleNome} onKeyDown={onKeyDown} autoComplete="given-name" className={nomeClass} />
           {showNomeError && (
             <p className="mt-1 text-center text-xs text-destructive">{t.welcome.firstNameError}</p>
           )}
         </div>
         <div className="flex-1">
           <input type="text" placeholder={t.welcome.lastName} value={cognome}
-            onChange={handleCognome} onKeyDown={onKeyDown} className={cognomeClass} />
+            onChange={handleCognome} onKeyDown={onKeyDown} autoComplete="family-name" className={cognomeClass} />
           {showCognomeError && (
             <p className="mt-1 text-center text-xs text-destructive">{t.welcome.lastNameError}</p>
           )}
@@ -184,7 +197,7 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
         <input type="email" placeholder={t.welcome.emailPlaceholder}
           value={email} onChange={handleEmail}
           onBlur={() => setEmailTouched(true)}
-          onKeyDown={onKeyDown} className={emailClass} />
+          onKeyDown={onKeyDown} autoComplete="email" className={emailClass} />
         {showEmailOk && (
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500">
             <CheckCircle2 className="h-5 w-5" />

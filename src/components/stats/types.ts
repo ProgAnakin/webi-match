@@ -12,6 +12,7 @@ export interface QuizSession {
   match_percent: number;
   created_at: string;
   store_id: string | null;
+  email_sent?: boolean | null;
 }
 
 export interface DayCount {
