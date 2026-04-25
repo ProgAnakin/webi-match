@@ -95,6 +95,10 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
   const roman         = ROMAN[index] ?? String(index + 1);
   const romanTotal    = ROMAN[questions.length - 1] ?? String(questions.length);
 
+  // Drag tint overlays — red on left drag, green on right drag
+  const noTintOpacity  = useTransform(x, [-140, -40, 0], [0.28, 0.08, 0]);
+  const yesTintOpacity = useTransform(x, [0, 40, 140], [0, 0.08, 0.28]);
+
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     const velocityBoost = Math.abs(info.velocity.x) > 400 ? 30 : 0;
     const threshold = 85 - velocityBoost;
@@ -149,6 +153,12 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
       >
         {/* Accent bar */}
         <div className="relative z-30 h-[3px] w-full flex-shrink-0" style={{ background: accentColor }} />
+
+        {/* Drag tint overlays */}
+        <motion.div className="pointer-events-none absolute inset-0 z-25 rounded-3xl"
+          style={{ background: "hsl(0 84% 60%)", opacity: noTintOpacity }} />
+        <motion.div className="pointer-events-none absolute inset-0 z-25 rounded-3xl"
+          style={{ background: "hsl(145 80% 42%)", opacity: yesTintOpacity }} />
 
         {/* Side edge highlights */}
         <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-30 w-[2px]"

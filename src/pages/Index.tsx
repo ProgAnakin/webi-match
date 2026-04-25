@@ -14,17 +14,12 @@ import { getStoredStoreId } from "@/data/stores";
 
 type Screen = "splash" | "welcome" | "quiz" | "result" | "success";
 
-// Fires-and-forgets a row to Google Sheets via Apps Script webhook.
-// Set VITE_GOOGLE_SHEETS_WEBHOOK_URL in Vercel env vars to enable.
+// Fires-and-forgets a row to Google Sheets via the server-side relay Edge Function.
+// The actual webhook URL lives in Supabase secrets (GOOGLE_SHEETS_WEBHOOK_URL),
+// never in the client bundle.
 async function sendToGoogleSheets(row: Record<string, string>) {
-  const url = import.meta.env.VITE_GOOGLE_SHEETS_WEBHOOK_URL as string | undefined;
-  if (!url) return;
   try {
-    await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(row),
-    });
+    await supabase.functions.invoke("relay-to-sheets", { body: row });
   } catch {
     // non-critical — Supabase is the source of truth
   }

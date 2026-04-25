@@ -22,7 +22,7 @@ const Manager = () => {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data, error }) => {
+    supabase.auth.getSession().then(async ({ data, error }) => {
       if (error) {
         console.error("[webi-match] getSession failed:", error);
         navigate("/stats", { replace: true });
@@ -30,6 +30,13 @@ const Manager = () => {
         return;
       }
       if (data.session) {
+        // Enforce MFA (aal2) when the account has 2FA configured — same gate as /stats
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal?.nextLevel === "aal2" && aal?.currentLevel !== "aal2") {
+          navigate("/stats", { replace: true });
+          setChecking(false);
+          return;
+        }
         setAuthed(true);
       } else {
         navigate("/stats", { replace: true });

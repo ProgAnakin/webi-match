@@ -67,7 +67,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
 
     const { data, error } = await supabase
       .from("quiz_sessions")
-      .select("id, email, nome, cognome, matched_product_id, match_percent, created_at, store_id")
+      .select("id, email, nome, cognome, matched_product_id, match_percent, created_at, store_id, email_sent")
       .order("created_at", { ascending: false })
       .limit(FETCH_LIMIT);
     if (error) setHasError(true);
@@ -135,6 +135,36 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
       avgMatch: Math.round((productMatchSums[id] ?? 0) / count),
     }))
     .sort((a, b) => b.count - a.count);
+
+  // ─── Extra metrics ───────────────────────────────────────────────────────────
+
+  // Email delivery rate
+  const emailSentCount = filteredSessions.filter((s) => s.email_sent === true).length;
+  const emailDeliveryRate = total ? Math.round((emailSentCount / total) * 100) : 0;
+
+  // Hourly distribution (0–23) using ALL sessions (no date filter) for full picture
+  const hourlyCounts: number[] = Array.from({ length: 24 }, (_, h) =>
+    sessions.filter((s) => new Date(s.created_at).getHours() === h).length
+  );
+  const maxHourly = Math.max(...hourlyCounts, 1);
+  const peakHour = hourlyCounts.indexOf(Math.max(...hourlyCounts));
+
+  // Match % histogram — 4 brackets
+  const matchBrackets = [
+    { label: "45–60%", min: 45, max: 60, color: "bg-blue-500"   },
+    { label: "61–75%", min: 61, max: 75, color: "bg-yellow-500" },
+    { label: "76–90%", min: 76, max: 90, color: "bg-orange-500" },
+    { label: "91–98%", min: 91, max: 98, color: "bg-green-500"  },
+  ].map((b) => ({
+    ...b,
+    count: filteredSessions.filter((s) => s.match_percent >= b.min && s.match_percent <= b.max).length,
+  }));
+  const maxBracket = Math.max(...matchBrackets.map((b) => b.count), 1);
+
+  // Duplicate emails (returning visitors)
+  const emailFreq: Record<string, number> = {};
+  filteredSessions.forEach((s) => { emailFreq[s.email.toLowerCase()] = (emailFreq[s.email.toLowerCase()] ?? 0) + 1; });
+  const returningCount = Object.values(emailFreq).filter((n) => n > 1).length;
 
   // Product pagination
   const productTotalPages = Math.ceil(productStats.length / PRODUCT_PAGE_SIZE);
@@ -311,6 +341,8 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
               <StatCard label="Email raccolte" value={uniqueEmails} sub={isFiltered ? "nel periodo" : undefined} />
               <StatCard label="Match medio" value={`${avgMatch}%`} />
               <StatCard label="Oggi" value={todaySessions} sub="sessioni" />
+              <StatCard label="Email consegnate" value={`${emailDeliveryRate}%`} sub={`${emailSentCount} / ${total}`} />
+              <StatCard label="Visitatori tornati" value={returningCount} sub="email duplicate" />
             </motion.div>
 
             {/* Top products */}
@@ -417,6 +449,63 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                 ))}
               </div>
             </motion.div>
+
+            {/* Hourly distribution */}
+            {sessions.length > 0 && (
+              <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
+                <h2 className="mb-1 font-bold text-foreground">🕐 Orario di picco</h2>
+                <p className="mb-4 text-[11px] text-muted-foreground">
+                  Distribuzione sessioni per ora del giorno · picco alle <strong className="text-foreground">{peakHour}:00</strong>
+                </p>
+                <div className="flex h-20 items-end gap-[3px]">
+                  {hourlyCounts.map((count, h) => (
+                    <div key={h} className="flex flex-1 flex-col items-center gap-0.5">
+                      <div className="w-full rounded-t" style={{ height: "64px", position: "relative" }}>
+                        <motion.div
+                          className={`absolute bottom-0 w-full rounded-t ${h === peakHour ? "gradient-primary" : "bg-primary/40"}`}
+                          initial={{ height: 0 }}
+                          animate={{ height: `${(count / maxHourly) * 64}px` }}
+                          transition={{ duration: 0.5, delay: 0.33 + h * 0.01 }}
+                        />
+                      </div>
+                      {h % 6 === 0 && (
+                        <span className="text-[8px] text-muted-foreground">{h}h</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Match % histogram */}
+            {total > 0 && (
+              <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34 }}>
+                <h2 className="mb-1 font-bold text-foreground">🎯 Distribuzione Match %</h2>
+                <p className="mb-4 text-[11px] text-muted-foreground">Quanti utenti ricadono in ogni fascia di compatibilità</p>
+                <div className="space-y-3">
+                  {matchBrackets.map((b) => (
+                    <div key={b.label}>
+                      <div className="mb-1 flex items-center justify-between text-xs">
+                        <span className="font-medium text-foreground">{b.label}</span>
+                        <span className="font-bold text-primary">
+                          {b.count} · {total ? Math.round((b.count / total) * 100) : 0}%
+                        </span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <motion.div
+                          className={`h-full rounded-full ${b.color}`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${maxBracket ? (b.count / maxBracket) * 100 : 0}%` }}
+                          transition={{ duration: 0.6, delay: 0.35 }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
             {/* Funnel */}
             {funnel && funnel.started > 0 && (
