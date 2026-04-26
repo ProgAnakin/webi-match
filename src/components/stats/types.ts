@@ -74,8 +74,10 @@ export function exportCSV(
   fromDate?: string,
   toDate?: string,
 ): void {
-  const header = ["Email", "Prodotto", "Match %", "Sede", "Data"];
+  const header = ["Nome", "Cognome", "Email", "Prodotto", "Match %", "Sede", "Data"];
   const rows = sessions.map((s) => [
+    `"${csvSafe(s.nome ?? "")}"`,
+    `"${csvSafe(s.cognome ?? "")}"`,
     `"${csvSafe(s.email)}"`,
     `"${csvSafe(productName(s.matched_product_id))}"`,
     s.match_percent,

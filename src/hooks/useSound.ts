@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 
 /**
  * Unified sound system — Web Audio API, singleton AudioContext.
@@ -145,7 +145,7 @@ export function useSound() {
     };
   }, []);
 
-  const play = (sound: SoundType) => {
+  const play = useCallback((sound: SoundType) => {
     try {
       switch (sound) {
         case "swipe_yes": playSwipeYes(); break;
@@ -157,6 +157,6 @@ export function useSound() {
     } catch {
       // Silently ignore — AudioContext blocked or unavailable
     }
-  };
+  }, []);
   return { play };
 }
