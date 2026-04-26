@@ -27,19 +27,22 @@ function sr(seed: number) {
   return x - Math.floor(x);
 }
 
+const ENTER = { duration: 0.22, ease: "easeOut" };
+const EXIT  = { duration: 0.18, ease: "easeIn"  };
+
 const QuizBackground = ({ category }: QuizBackgroundProps) => {
   const [primary, secondary] = PALETTE[category] ?? ["hsl(27,92%,55%)", "hsl(45,88%,52%)"];
 
   const particles = useMemo(() =>
-    Array.from({ length: 30 }, (_, i) => ({
+    Array.from({ length: 50 }, (_, i) => ({
       id: i,
       x: sr(i * 7 + 1) * 100,
       y: sr(i * 7 + 2) * 100,
-      size: 2.5 + sr(i * 7 + 3) * 4,
-      dur: 9 + sr(i * 7 + 4) * 12,
-      delay: sr(i * 7 + 5) * 7,
-      dx: (sr(i * 7 + 6) - 0.5) * 90,
-      dy: -(35 + sr(i * 7 + 7) * 95),
+      size: 3 + sr(i * 7 + 3) * 5.5,
+      dur: 6 + sr(i * 7 + 4) * 9,
+      delay: sr(i * 7 + 5) * 3.5,
+      dx: (sr(i * 7 + 6) - 0.5) * 120,
+      dy: -(40 + sr(i * 7 + 7) * 105),
       color: i % 3 === 0 ? "secondary" : "primary",
     })),
   []);
@@ -47,119 +50,136 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
 
-      {/* ── Orb 1 — hero, large, left-center ─────────────────────── */}
-      <AnimatePresence mode="wait">
+      {/* ── Burst flash — fires the instant category changes ───────── */}
+      <AnimatePresence>
+        <motion.div
+          key={`burst-${category}`}
+          className="absolute inset-0"
+          style={{ background: `radial-gradient(ellipse at 50% 52%, ${primary}80 0%, transparent 58%)` }}
+          initial={{ opacity: 0, scale: 0.55 }}
+          animate={{ opacity: [0.95, 0], scale: [0.55, 1.9] }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        />
+      </AnimatePresence>
+
+      {/* ── Orb 1 — hero, left ────────────────────────────────────── */}
+      <AnimatePresence>
         <motion.div
           key={`o1-${category}`}
           className="absolute rounded-full"
           style={{
-            width: 720, height: 720,
-            left: "-18%", top: "0%",
-            background: `radial-gradient(circle, ${primary} 0%, transparent 58%)`,
-            filter: "blur(80px)",
+            width: 820, height: 820,
+            left: "-20%", top: "-8%",
+            background: `radial-gradient(circle, ${primary} 0%, transparent 60%)`,
+            filter: "blur(68px)",
           }}
           initial={{ opacity: 0 }}
-          animate={{
-            opacity: [0.34, 0.46, 0.34],
-            x: [0, 70, -25, 70],
-            y: [0, -55, 35, -55],
-          }}
-          exit={{ opacity: 0, transition: { duration: 0.8 } }}
+          animate={{ opacity: [0.60, 0.76, 0.60], x: [0, 72, -26, 72], y: [0, -58, 36, -58] }}
+          exit={{ opacity: 0, transition: EXIT }}
           transition={{
-            opacity: { duration: 0.9 },
+            opacity: { ...ENTER },
             x: { duration: 24, repeat: Infinity, ease: "easeInOut" },
             y: { duration: 28, repeat: Infinity, ease: "easeInOut" },
           }}
         />
       </AnimatePresence>
 
-      {/* ── Orb 2 — medium, secondary, bottom-right ───────────────── */}
-      <AnimatePresence mode="wait">
+      {/* ── Orb 2 — bottom-right secondary ───────────────────────── */}
+      <AnimatePresence>
         <motion.div
           key={`o2-${category}`}
           className="absolute rounded-full"
           style={{
-            width: 520, height: 520,
-            right: "-10%", bottom: "-5%",
-            background: `radial-gradient(circle, ${secondary} 0%, transparent 58%)`,
-            filter: "blur(72px)",
+            width: 620, height: 620,
+            right: "-12%", bottom: "-10%",
+            background: `radial-gradient(circle, ${secondary} 0%, transparent 60%)`,
+            filter: "blur(62px)",
           }}
           initial={{ opacity: 0 }}
-          animate={{
-            opacity: [0.26, 0.38, 0.26],
-            x: [0, -55, 25, -55],
-            y: [0, -45, 55, -45],
-          }}
-          exit={{ opacity: 0, transition: { duration: 0.8 } }}
+          animate={{ opacity: [0.50, 0.66, 0.50], x: [0, -58, 26, -58], y: [0, -46, 56, -46] }}
+          exit={{ opacity: 0, transition: EXIT }}
           transition={{
-            opacity: { duration: 1.1 },
+            opacity: { ...ENTER },
             x: { duration: 20, repeat: Infinity, ease: "easeInOut", delay: 5 },
             y: { duration: 25, repeat: Infinity, ease: "easeInOut", delay: 2 },
           }}
         />
       </AnimatePresence>
 
-      {/* ── Orb 3 — small primary, top-right ──────────────────────── */}
-      <AnimatePresence mode="wait">
+      {/* ── Orb 3 — top-right primary ────────────────────────────── */}
+      <AnimatePresence>
         <motion.div
           key={`o3-${category}`}
           className="absolute rounded-full"
           style={{
-            width: 340, height: 340,
-            right: "8%", top: "-10%",
-            background: `radial-gradient(circle, ${primary} 0%, transparent 58%)`,
-            filter: "blur(62px)",
+            width: 420, height: 420,
+            right: "4%", top: "-14%",
+            background: `radial-gradient(circle, ${primary} 0%, transparent 60%)`,
+            filter: "blur(52px)",
           }}
           initial={{ opacity: 0 }}
-          animate={{
-            opacity: [0.24, 0.34, 0.24],
-            x: [0, 40, -18, 40],
-            y: [0, 45, -28, 45],
-          }}
-          exit={{ opacity: 0, transition: { duration: 0.8 } }}
+          animate={{ opacity: [0.45, 0.60, 0.45], x: [0, 42, -20, 42], y: [0, 46, -30, 46] }}
+          exit={{ opacity: 0, transition: EXIT }}
           transition={{
-            opacity: { duration: 1.0 },
+            opacity: { ...ENTER },
             x: { duration: 17, repeat: Infinity, ease: "easeInOut", delay: 8 },
             y: { duration: 21, repeat: Infinity, ease: "easeInOut", delay: 3 },
           }}
         />
       </AnimatePresence>
 
-      {/* ── Orb 4 — tiny secondary accent, mid-left ───────────────── */}
-      <AnimatePresence mode="wait">
+      {/* ── Orb 4 — mid-left secondary ────────────────────────────── */}
+      <AnimatePresence>
         <motion.div
           key={`o4-${category}`}
           className="absolute rounded-full"
           style={{
-            width: 220, height: 220,
-            left: "18%", bottom: "18%",
-            background: `radial-gradient(circle, ${secondary} 0%, transparent 58%)`,
-            filter: "blur(52px)",
+            width: 300, height: 300,
+            left: "14%", bottom: "14%",
+            background: `radial-gradient(circle, ${secondary} 0%, transparent 60%)`,
+            filter: "blur(46px)",
           }}
           initial={{ opacity: 0 }}
-          animate={{
-            opacity: [0.22, 0.32, 0.22],
-            x: [0, -30, 18, -30],
-            y: [0, 35, -22, 35],
-          }}
-          exit={{ opacity: 0, transition: { duration: 0.8 } }}
+          animate={{ opacity: [0.42, 0.56, 0.42], x: [0, -32, 20, -32], y: [0, 36, -24, 36] }}
+          exit={{ opacity: 0, transition: EXIT }}
           transition={{
-            opacity: { duration: 1.2 },
+            opacity: { ...ENTER },
             x: { duration: 15, repeat: Infinity, ease: "easeInOut", delay: 1 },
             y: { duration: 19, repeat: Infinity, ease: "easeInOut", delay: 7 },
           }}
         />
       </AnimatePresence>
 
-      {/* ── Particle field — tiny data dots ───────────────────────── */}
-      <AnimatePresence mode="wait">
+      {/* ── Orb 5 — center ambient pulse ──────────────────────────── */}
+      <AnimatePresence>
+        <motion.div
+          key={`o5-${category}`}
+          className="absolute rounded-full"
+          style={{
+            width: 540, height: 540,
+            left: "calc(50% - 270px)", top: "calc(50% - 270px)",
+            background: `radial-gradient(circle, ${primary} 0%, transparent 55%)`,
+            filter: "blur(90px)",
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0.22, 0.34, 0.22] }}
+          exit={{ opacity: 0, transition: EXIT }}
+          transition={{
+            opacity: { ...ENTER, duration: 3.8, repeat: Infinity, ease: "easeInOut" },
+          }}
+        />
+      </AnimatePresence>
+
+      {/* ── Particle field ────────────────────────────────────────── */}
+      <AnimatePresence>
         <motion.div
           key={`pts-${category}`}
           className="absolute inset-0"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={ENTER}
         >
           {particles.map((p) => (
             <motion.div
@@ -175,49 +195,43 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
               animate={{
                 x:       [0, p.dx * 0.3, p.dx, p.dx * 0.6, 0],
                 y:       [0, p.dy * 0.28, p.dy, p.dy * 0.65, 0],
-                opacity: [0, 0.70, 0.92, 0.55, 0],
-                scale:   [0.4, 1.0, 1.35, 0.75, 0.4],
+                opacity: [0, 0.88, 1.0, 0.68, 0],
+                scale:   [0.5, 1.1, 1.55, 0.9, 0.5],
               }}
-              transition={{
-                duration: p.dur,
-                repeat: Infinity,
-                delay: p.delay,
-                ease: "easeInOut",
-              }}
+              transition={{ duration: p.dur, repeat: Infinity, delay: p.delay, ease: "easeInOut" }}
             />
           ))}
         </motion.div>
       </AnimatePresence>
 
-      {/* ── Diagonal light-beam sweep (periodic) ──────────────────── */}
+      {/* ── Light sweep 1 — primary, every ~7.5s ──────────────────── */}
       <motion.div
         className="absolute top-0 bottom-0 left-0"
         style={{
-          width: "35%",
-          background: `linear-gradient(to right, transparent, ${primary}30 50%, transparent)`,
+          width: "42%",
+          background: `linear-gradient(to right, transparent, ${primary}55 50%, transparent)`,
           skewX: "-18deg",
         }}
-        animate={{ x: ["-35vw", "170vw"] }}
-        transition={{
-          duration: 5,
-          repeat: Infinity,
-          ease: "easeInOut",
-          repeatDelay: 6,
-        }}
+        animate={{ x: ["-42vw", "180vw"] }}
+        transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", repeatDelay: 3.5 }}
       />
 
-      {/* ── SVG fractal noise grain — adds premium depth ──────────── */}
-      <svg
-        className="absolute inset-0 h-full w-full opacity-[0.05]"
-        xmlns="http://www.w3.org/2000/svg"
-      >
+      {/* ── Light sweep 2 — secondary, offset ─────────────────────── */}
+      <motion.div
+        className="absolute top-0 bottom-0 left-0"
+        style={{
+          width: "22%",
+          background: `linear-gradient(to right, transparent, ${secondary}42 50%, transparent)`,
+          skewX: "-13deg",
+        }}
+        animate={{ x: ["-22vw", "180vw"] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 2.2, repeatDelay: 5 }}
+      />
+
+      {/* ── SVG fractal grain ─────────────────────────────────────── */}
+      <svg className="absolute inset-0 h-full w-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
         <filter id="qbg-grain">
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.68"
-            numOctaves="4"
-            stitchTiles="stitch"
-          />
+          <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch" />
           <feColorMatrix type="saturate" values="0" />
         </filter>
         <rect width="100%" height="100%" filter="url(#qbg-grain)" />
