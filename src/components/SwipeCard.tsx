@@ -224,9 +224,9 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
           <div className="mt-2 mb-3"><CardDivider color={accentColor} /></div>
         </div>
 
-        {/* Question text */}
-        <div className="relative z-20 px-7 pt-1 pb-8 text-center">
-          <h2 className="text-[1.2rem] font-bold leading-snug text-white"
+        {/* Question text — fixed height so all cards align identically */}
+        <div className="relative z-20 flex h-[90px] items-center justify-center px-7 text-center">
+          <h2 className="text-[1.15rem] font-bold leading-snug text-white"
             style={{ textShadow: "0 2px 12px rgba(0,0,0,0.95)" }}>
             {t.questions[question.id] ?? question.text}
           </h2>
