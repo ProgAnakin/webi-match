@@ -21,55 +21,99 @@ const Plane = ({ size = 38, opacity = 1 }: { size?: number; opacity?: number }) 
   </svg>
 );
 
-// ── Magma background — 4 slow organic blobs in Webidoo orange + navy ────────
+// ── Lava-lamp background — dark navy liquid + glowing orange wax blobs ───────
 const SuccessBackground = ({ skip }: { skip: boolean }) => (
-  <div className="pointer-events-none absolute inset-0 overflow-hidden">
-    {/* Blob 1 — large orange, upper-left */}
-    <motion.div className="absolute"
-      style={{ width: 660, height: 600, left: "-16%", top: "-8%", filter: "blur(95px)",
-        background: "hsl(27,92%,55%)", opacity: 0.44 }}
-      animate={skip ? {} : {
-        x: [0, 55, -28, 55], y: [0, 38, -18, 38],
-        borderRadius: ["50%", "44% 56% 60% 40% / 50% 44% 56% 50%", "54% 46% 44% 56% / 46% 54% 48% 52%", "50%"],
-        scale: [1, 1.07, 0.95, 1.07],
-      }}
-      transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", times: [0, 0.33, 0.67, 1] }}
+  <div
+    className="pointer-events-none absolute inset-0 overflow-hidden"
+    style={{ background: "hsl(228,65%,7%)" }}
+  >
+    {/* Heat source — warm orange glow rising from the bottom */}
+    <div className="absolute bottom-0 left-0 right-0 h-[38%]"
+      style={{ background: "radial-gradient(ellipse 90% 100% at 50% 100%, hsl(27,95%,52% / 0.50) 0%, hsl(27,85%,42% / 0.18) 52%, transparent 78%)" }}
     />
-    {/* Blob 2 — deep navy, lower-right */}
+
+    {/* Blob 1 — large, rises from bottom-center, slow */}
     <motion.div className="absolute"
-      style={{ width: 600, height: 560, right: "-14%", bottom: "-6%", filter: "blur(88px)",
-        background: "hsl(235,62%,28%)", opacity: 0.60 }}
+      style={{ left: "28%", width: 240, height: 230,
+        background: "hsl(27,92%,55%)", filter: "blur(38px)", opacity: 0.90 }}
       animate={skip ? {} : {
-        x: [0, -48, 22, -48], y: [0, -32, 18, -32],
-        borderRadius: ["50%", "56% 44% 40% 60% / 48% 58% 42% 52%", "46% 54% 58% 42% / 54% 44% 52% 48%", "50%"],
-        scale: [1, 0.93, 1.08, 0.93],
+        y: [680, 80, 480, 680],
+        x: [0, 55, -35, 0],
+        borderRadius: [
+          "50% 50% 46% 54% / 55% 45% 55% 45%",
+          "42% 58% 55% 45% / 48% 52% 50% 50%",
+          "60% 40% 48% 52% / 52% 48% 58% 42%",
+          "50% 50% 46% 54% / 55% 45% 55% 45%",
+        ],
+        scale: [1, 0.82, 1.18, 1],
       }}
-      transition={{ duration: 26, repeat: Infinity, ease: "easeInOut", delay: 5, times: [0, 0.33, 0.67, 1] }}
+      transition={{ duration: 20, repeat: Infinity, ease: [0.45, 0.05, 0.55, 0.95], times: [0, 0.38, 0.72, 1] }}
     />
-    {/* Blob 3 — amber, lower-left drift upward */}
+
+    {/* Blob 2 — medium, already floating high, drifts down and back */}
     <motion.div className="absolute"
-      style={{ width: 440, height: 420, left: "18%", bottom: "8%", filter: "blur(105px)",
-        background: "hsl(20,95%,46%)", opacity: 0.32 }}
+      style={{ right: "20%", top: "8%", width: 170, height: 160,
+        background: "hsl(20,90%,52%)", filter: "blur(30px)", opacity: 0.85 }}
       animate={skip ? {} : {
-        x: [0, 38, -42, 38], y: [0, -55, 28, -55],
-        borderRadius: ["50%", "40% 60% 54% 46% / 56% 42% 58% 44%", "58% 42% 46% 54% / 44% 56% 46% 54%", "50%"],
-        scale: [1, 1.11, 0.91, 1.11],
+        y: [0, 380, 520, 200, 0],
+        x: [0, -55, 30, -25, 0],
+        borderRadius: [
+          "50%",
+          "44% 56% 60% 40% / 52% 48% 54% 46%",
+          "58% 42% 44% 56% / 46% 54% 48% 52%",
+          "62% 38% 50% 50% / 50% 52% 46% 54%",
+          "50%",
+        ],
+        scale: [1, 1.22, 0.78, 1.10, 1],
       }}
-      transition={{ duration: 19, repeat: Infinity, ease: "easeInOut", delay: 9, times: [0, 0.33, 0.67, 1] }}
+      transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 6, times: [0, 0.28, 0.55, 0.80, 1] }}
     />
-    {/* Blob 4 — indigo accent, upper-right */}
+
+    {/* Blob 3 — small teardrop, pinches off and floats fast */}
     <motion.div className="absolute"
-      style={{ width: 380, height: 350, right: "6%", top: "4%", filter: "blur(82px)",
-        background: "hsl(228,58%,33%)", opacity: 0.42 }}
+      style={{ left: "48%", bottom: "18%", width: 115, height: 108,
+        background: "hsl(30,96%,58%)", filter: "blur(26px)", opacity: 0.80 }}
       animate={skip ? {} : {
-        x: [0, -38, 18, -38], y: [0, 42, -22, 42],
-        borderRadius: ["50%", "60% 40% 44% 56% / 46% 58% 42% 54%", "42% 58% 60% 40% / 54% 44% 56% 46%", "50%"],
-        scale: [1, 0.95, 1.09, 0.95],
+        y: [0, -320, -620, -240, 0],
+        x: [0, 45, -28, 62, 0],
+        borderRadius: [
+          "50% 50% 52% 48%",
+          "38% 62% 55% 45% / 50% 44% 56% 50%",
+          "60% 40% 44% 56% / 46% 54% 48% 52%",
+          "44% 56% 58% 42%",
+          "50% 50% 52% 48%",
+        ],
+        scale: [1, 0.68, 1.32, 0.88, 1],
       }}
-      transition={{ duration: 24, repeat: Infinity, ease: "easeInOut", delay: 13, times: [0, 0.33, 0.67, 1] }}
+      transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 11, times: [0, 0.28, 0.58, 0.82, 1] }}
     />
+
+    {/* Blob 4 — large slow one up top, sinks then rises */}
+    <motion.div className="absolute"
+      style={{ right: "8%", top: "-4%", width: 290, height: 270,
+        background: "hsl(27,88%,50%)", filter: "blur(44px)", opacity: 0.75 }}
+      animate={skip ? {} : {
+        y: [0, 220, 460, 180, 0],
+        x: [0, -65, 28, -42, 0],
+        borderRadius: [
+          "54% 46% 48% 52% / 52% 50% 50% 48%",
+          "42% 58% 56% 44% / 46% 54% 48% 52%",
+          "60% 40% 44% 56% / 54% 46% 52% 48%",
+          "48% 52% 58% 42% / 50% 52% 46% 54%",
+          "54% 46% 48% 52% / 52% 50% 50% 48%",
+        ],
+        scale: [1, 1.14, 0.86, 1.08, 1],
+      }}
+      transition={{ duration: 23, repeat: Infinity, ease: "easeInOut", delay: 2, times: [0, 0.25, 0.55, 0.80, 1] }}
+    />
+
+    {/* Top inner glow — cool blue tint at the cap */}
+    <div className="absolute top-0 left-0 right-0 h-[22%]"
+      style={{ background: "radial-gradient(ellipse 70% 100% at 50% 0%, hsl(228,55%,22% / 0.55) 0%, transparent 80%)" }}
+    />
+
     {/* Grain */}
-    <svg className="absolute inset-0 h-full w-full opacity-[0.045]">
+    <svg className="absolute inset-0 h-full w-full opacity-[0.05]">
       <filter id="ss-grain">
         <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch" />
         <feColorMatrix type="saturate" values="0" />
