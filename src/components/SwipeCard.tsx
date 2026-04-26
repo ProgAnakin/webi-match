@@ -207,29 +207,28 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
           </div>
         </div>
 
-        {/* Art zone */}
+        {/* Art zone — emoji fixed-height + text centered in remaining space */}
         <div className="relative flex flex-1 flex-col">
-          <div className="mt-4 mb-2"><CardDivider color={accentColor} /></div>
+          <div className="mt-3 mb-2"><CardDivider color={accentColor} /></div>
 
-          {/* Emoji — static, no animation */}
-          <div className="relative flex flex-1 items-center justify-center">
-            {/* Static glow */}
+          {/* Emoji — fixed height so text zone always gets the same space */}
+          <div className="relative flex flex-shrink-0 items-center justify-center" style={{ height: 185 }}>
             <div className="pointer-events-none absolute rounded-full"
-              style={{ background: accentColor, width: 180, height: 180, filter: "blur(60px)", opacity: 0.18 }} />
-            <span className="relative z-10 select-none" style={{ display: "block", fontSize: "118px", lineHeight: 1 }}>
+              style={{ background: accentColor, width: 175, height: 175, filter: "blur(60px)", opacity: 0.18 }} />
+            <span className="relative z-10 select-none" style={{ display: "block", fontSize: "112px", lineHeight: 1 }}>
               {question.emoji}
             </span>
           </div>
 
-          <div className="mt-2 mb-3"><CardDivider color={accentColor} /></div>
-        </div>
+          <div className="mt-2 mb-2"><CardDivider color={accentColor} /></div>
 
-        {/* Question text — fixed height so all cards align identically */}
-        <div className="relative z-20 flex h-[90px] items-center justify-center px-7 text-center">
-          <h2 className="text-[1.15rem] font-bold leading-snug text-white"
-            style={{ textShadow: "0 2px 12px rgba(0,0,0,0.95)" }}>
-            {t.questions[question.id] ?? question.text}
-          </h2>
+          {/* Question text — flex-1 centers it in the remaining space = always same Y position */}
+          <div className="relative z-20 flex flex-1 items-center justify-center overflow-hidden px-7 pb-8 text-center">
+            <h2 className="text-[1.05rem] font-bold leading-snug text-white"
+              style={{ textShadow: "0 2px 12px rgba(0,0,0,0.95)" }}>
+              {t.questions[question.id] ?? question.text}
+            </h2>
+          </div>
         </div>
 
         {/* Bottom-left corner */}
