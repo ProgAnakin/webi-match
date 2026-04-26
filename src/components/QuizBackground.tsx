@@ -200,35 +200,6 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
         </motion.div>
       </AnimatePresence>
 
-      {/* ── Light sweeps — movement never stops, color updates via style ─ */}
-      <motion.div
-        className="absolute top-0 bottom-0 left-0"
-        style={{ width: "42%", skewX: "-18deg" }}
-        animate={{ x: ["-42vw", "180vw"] }}
-        transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", repeatDelay: 3.5 }}
-      >
-        <motion.div
-          className="h-full w-full"
-          animate={{ backgroundColor: primary }}
-          style={{ opacity: 0.28, maskImage: "linear-gradient(to right, transparent, white 50%, transparent)" }}
-          transition={{ backgroundColor: COLOR_MORPH }}
-        />
-      </motion.div>
-
-      <motion.div
-        className="absolute top-0 bottom-0 left-0"
-        style={{ width: "22%", skewX: "-13deg" }}
-        animate={{ x: ["-22vw", "180vw"] }}
-        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 2.2, repeatDelay: 5 }}
-      >
-        <motion.div
-          className="h-full w-full"
-          animate={{ backgroundColor: secondary }}
-          style={{ opacity: 0.22, maskImage: "linear-gradient(to right, transparent, white 50%, transparent)" }}
-          transition={{ backgroundColor: COLOR_MORPH }}
-        />
-      </motion.div>
-
       {/* ── SVG fractal grain ─────────────────────────────────────── */}
       <svg className="absolute inset-0 h-full w-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
         <filter id="qbg-grain">
