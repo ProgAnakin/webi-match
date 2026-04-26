@@ -364,7 +364,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                 </div>
               ) : (
                 <>
-                  <div className="space-y-3">
+                  <div className="space-y-3" style={{ minHeight: `${PRODUCT_PAGE_SIZE * 38}px` }}>
                     {pagedProductStats.map((p, i) => {
                       const globalIdx = productPage * PRODUCT_PAGE_SIZE + i;
                       return (
