@@ -27,27 +27,56 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
     className="pointer-events-none absolute inset-0 overflow-hidden"
     style={{ background: "hsl(228,65%,7%)" }}
   >
-    {/* Gooey filter: blurs then sharpens alpha so overlapping blobs fuse organically */}
+    {/* SVG filters */}
     <svg style={{ position: "absolute", width: 0, height: 0 }}>
       <defs>
-        <filter id="ss-lava" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur" />
+        {/* Gooey: blurs then thresholds alpha so nearby blobs fuse organically */}
+        <filter id="ss-lava" x="-25%" y="-25%" width="150%" height="150%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="13" result="blur" />
           <feColorMatrix in="blur" mode="matrix"
-            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 26 -12"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -11"
             result="goo" />
+        </filter>
+        {/* Smoke: heavy blur, no threshold — stays soft */}
+        <filter id="ss-smoke" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="38" />
         </filter>
       </defs>
     </svg>
+
+    {/* ── Smoke / haze layer — low opacity, covers the whole background ── */}
+    <div className="absolute inset-0" style={{ filter: "url(#ss-smoke)", opacity: 0.28 }}>
+      <motion.div className="absolute rounded-full"
+        style={{ left: "10%", top: "15%", width: 380, height: 320, background: "hsl(27,85%,50%)" }}
+        animate={skip ? {} : { x: [0, 60, -40, 0], y: [0, -80, 50, 0] }}
+        transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div className="absolute rounded-full"
+        style={{ right: "5%", top: "30%", width: 320, height: 360, background: "hsl(28,80%,48%)" }}
+        animate={skip ? {} : { x: [0, -70, 30, 0], y: [0, 90, -60, 0] }}
+        transition={{ duration: 32, repeat: Infinity, ease: "easeInOut", delay: 7 }}
+      />
+      <motion.div className="absolute rounded-full"
+        style={{ left: "35%", bottom: "10%", width: 420, height: 300, background: "hsl(22,90%,46%)" }}
+        animate={skip ? {} : { x: [0, -50, 80, 0], y: [0, -100, 40, 0] }}
+        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 14 }}
+      />
+      <motion.div className="absolute rounded-full"
+        style={{ left: "55%", top: "5%", width: 290, height: 340, background: "hsl(30,88%,52%)" }}
+        animate={skip ? {} : { x: [0, 45, -60, 0], y: [0, 120, -50, 0] }}
+        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut", delay: 20 }}
+      />
+    </div>
 
     {/* Bottom heat source */}
     <div className="absolute bottom-0 left-0 right-0 h-2/5"
       style={{ background: "radial-gradient(ellipse 85% 100% at 50% 100%, hsl(27,95%,52% / 0.52) 0%, hsl(27,88%,42% / 0.18) 50%, transparent 78%)" }}
     />
 
-    {/* Blob layer — all children share the gooey filter so they fuse when close */}
+    {/* ── Wax blob layer — gooey filter fuses blobs on contact ── */}
     <div className="absolute inset-0" style={{ filter: "url(#ss-lava)" }}>
 
-      {/* A: large main blob — rises slowly from bottom, stretches tall as it climbs */}
+      {/* A: large — rises from bottom, stretches tall as it climbs */}
       <motion.div className="absolute rounded-full"
         style={{ left: "30%", width: 210, height: 200, background: "hsl(27,92%,55%)" }}
         animate={skip ? {} : {
@@ -59,7 +88,7 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", times: [0, 0.25, 0.52, 0.76, 1] }}
       />
 
-      {/* B: medium blob — already high, drifts down and back, merges with A */}
+      {/* B: medium — already high, drifts down, merges with A */}
       <motion.div className="absolute rounded-full"
         style={{ right: "22%", width: 155, height: 148, background: "hsl(27,90%,52%)" }}
         animate={skip ? {} : {
@@ -83,7 +112,7 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
         transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 10, times: [0, 0.30, 0.58, 0.80, 1] }}
       />
 
-      {/* D: large slow mass at top — sinks, merges with rising blobs, re-floats */}
+      {/* D: large mass at top — sinks, merges with rising blobs, re-floats */}
       <motion.div className="absolute rounded-full"
         style={{ left: "12%", top: -20, width: 258, height: 242, background: "hsl(28,88%,50%)" }}
         animate={skip ? {} : {
@@ -95,7 +124,7 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
         transition={{ duration: 27, repeat: Infinity, ease: "easeInOut", delay: 2, times: [0, 0.30, 0.58, 0.82, 1] }}
       />
 
-      {/* E: small satellite — breaks off, floats fast independently */}
+      {/* E: small satellite — breaks off, floats fast */}
       <motion.div className="absolute rounded-full"
         style={{ left: "46%", width: 88, height: 88, background: "hsl(32,96%,58%)" }}
         animate={skip ? {} : {
@@ -106,9 +135,45 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
         }}
         transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 8, times: [0, 0.28, 0.57, 0.80, 1] }}
       />
+
+      {/* F: right-side drip — thin column rising from right edge */}
+      <motion.div className="absolute rounded-full"
+        style={{ right: "10%", width: 92, height: 130, background: "hsl(25,93%,53%)" }}
+        animate={skip ? {} : {
+          y: [740, 320, 80, 440, 740],
+          x: [0, -40, 18, -55, 0],
+          scaleX: [1, 0.58, 1.42, 0.72, 1],
+          scaleY: [1, 1.52, 0.72, 1.28, 1],
+        }}
+        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 14, times: [0, 0.28, 0.55, 0.80, 1] }}
+      />
+
+      {/* G: small left drip — quick rise, sticks to D then breaks free */}
+      <motion.div className="absolute rounded-full"
+        style={{ left: "18%", width: 72, height: 95, background: "hsl(30,95%,56%)" }}
+        animate={skip ? {} : {
+          y: [700, 320, 140, 380, 700],
+          x: [0, 30, -15, 45, 0],
+          scaleX: [1, 0.62, 1.38, 0.78, 1],
+          scaleY: [1, 1.45, 0.75, 1.22, 1],
+        }}
+        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 3, times: [0, 0.30, 0.58, 0.80, 1] }}
+      />
+
+      {/* H: wide flat mass at mid-screen — slowly oscillates */}
+      <motion.div className="absolute rounded-full"
+        style={{ left: "38%", width: 178, height: 120, background: "hsl(27,91%,53%)" }}
+        animate={skip ? {} : {
+          y: [400, 180, 550, 310, 400],
+          x: [0, -45, 35, -30, 0],
+          scaleX: [1, 1.40, 0.72, 1.18, 1],
+          scaleY: [1, 0.74, 1.38, 0.88, 1],
+        }}
+        transition={{ duration: 21, repeat: Infinity, ease: "easeInOut", delay: 17, times: [0, 0.28, 0.55, 0.80, 1] }}
+      />
     </div>
 
-    {/* Top cool tint — the glass cap of the lamp */}
+    {/* Top cool tint — the glass cap */}
     <div className="absolute top-0 left-0 right-0 h-1/5"
       style={{ background: "radial-gradient(ellipse 65% 100% at 50% 0%, hsl(228,55%,22% / 0.52) 0%, transparent 80%)" }}
     />
