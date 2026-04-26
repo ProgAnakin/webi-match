@@ -1,5 +1,5 @@
 import { motion, useMotionValue, useTransform, animate, useReducedMotion } from "framer-motion";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useSound } from "@/hooks/useSound";
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -21,98 +21,63 @@ const Plane = ({ size = 38, opacity = 1 }: { size?: number; opacity?: number }) 
   </svg>
 );
 
-// ── Deterministic pseudo-random ─────────────────────────────────────────────
-function sr(seed: number) {
-  const x = Math.sin(seed) * 43758.5453;
-  return x - Math.floor(x);
-}
-
-// ── Animated background ─────────────────────────────────────────────────────
-const SuccessBackground = ({ skip }: { skip: boolean }) => {
-  const P = "hsl(27,92%,55%)";
-  const S = "hsl(45,88%,52%)";
-
-  const confetti = useMemo(() =>
-    Array.from({ length: 28 }, (_, i) => ({
-      id: i,
-      x: 4 + sr(i * 11 + 1) * 92,
-      w: 5 + sr(i * 11 + 3) * 7,
-      h: 3 + sr(i * 11 + 8) * 5,
-      dur: 7 + sr(i * 11 + 4) * 9,
-      delay: sr(i * 11 + 5) * 6,
-      dy: -(50 + sr(i * 11 + 7) * 90),
-      dx: (sr(i * 11 + 6) - 0.5) * 80,
-      rot: sr(i * 11 + 9) * 720 - 360,
-      color: [
-        "hsl(27,92%,65%)", "hsl(45,90%,62%)", "hsl(200,80%,68%)",
-        "hsl(280,70%,72%)", "hsl(145,75%,58%)", "hsl(340,80%,70%)",
-      ][i % 6],
-    })),
-  []);
-
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {/* Orb left hero */}
-      <motion.div className="absolute rounded-full"
-        style={{ width: 700, height: 700, left: "-18%", top: "-12%", filter: "blur(75px)", backgroundColor: P }}
-        animate={{ opacity: [0.55, 0.72, 0.55], x: [0, 45, -20, 45], y: [0, -35, 22, -35] }}
-        transition={{ opacity: { duration: 5, repeat: Infinity, ease: "easeInOut" }, x: { duration: 18, repeat: Infinity, ease: "easeInOut" }, y: { duration: 22, repeat: Infinity, ease: "easeInOut" } }}
-      />
-      {/* Orb right */}
-      <motion.div className="absolute rounded-full"
-        style={{ width: 520, height: 520, right: "-12%", bottom: "-8%", filter: "blur(68px)", backgroundColor: S }}
-        animate={{ opacity: [0.42, 0.60, 0.42], x: [0, -32, 16, -32], y: [0, -28, 32, -28] }}
-        transition={{ opacity: { duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }, x: { duration: 15, repeat: Infinity, ease: "easeInOut", delay: 3 }, y: { duration: 20, repeat: Infinity, ease: "easeInOut", delay: 1 } }}
-      />
-      {/* Center glow */}
-      <motion.div className="absolute rounded-full"
-        style={{ width: 460, height: 460, left: "calc(50% - 230px)", top: "calc(50% - 230px)", filter: "blur(100px)", backgroundColor: P }}
-        animate={{ opacity: [0.18, 0.30, 0.18] }}
-        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-      />
-      {/* Top accent */}
-      <motion.div className="absolute rounded-full"
-        style={{ width: 320, height: 320, right: "5%", top: "-8%", filter: "blur(58px)", backgroundColor: S }}
-        animate={{ opacity: [0.30, 0.48, 0.30], x: [0, 25, -12, 25], y: [0, 30, -18, 30] }}
-        transition={{ opacity: { duration: 4, repeat: Infinity, ease: "easeInOut" }, x: { duration: 13, repeat: Infinity, ease: "easeInOut", delay: 4 }, y: { duration: 17, repeat: Infinity, ease: "easeInOut", delay: 2 } }}
-      />
-
-      {/* Light sweep */}
-      {!skip && (
-        <motion.div className="absolute top-0 bottom-0 left-0" style={{ width: "40%", skewX: "-16deg" }}
-          animate={{ x: ["-40vw", "185vw"] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", repeatDelay: 4.5 }}>
-          <div className="h-full w-full" style={{ backgroundColor: P, opacity: 0.26, maskImage: "linear-gradient(to right, transparent, white 50%, transparent)" }} />
-        </motion.div>
-      )}
-      {!skip && (
-        <motion.div className="absolute top-0 bottom-0 left-0" style={{ width: "22%", skewX: "-12deg" }}
-          animate={{ x: ["-22vw", "185vw"] }}
-          transition={{ duration: 3.3, repeat: Infinity, ease: "easeInOut", delay: 2.5, repeatDelay: 6 }}>
-          <div className="h-full w-full" style={{ backgroundColor: S, opacity: 0.20, maskImage: "linear-gradient(to right, transparent, white 50%, transparent)" }} />
-        </motion.div>
-      )}
-
-      {/* Confetti rising */}
-      {!skip && confetti.map((p) => (
-        <motion.div key={p.id} className="absolute rounded-sm"
-          style={{ left: `${p.x}%`, bottom: "-4%", width: p.w, height: p.h, backgroundColor: p.color }}
-          animate={{ y: [0, p.dy], x: [0, p.dx], opacity: [0, 0.9, 0.7, 0], rotate: [0, p.rot] }}
-          transition={{ duration: p.dur, repeat: Infinity, delay: p.delay, ease: "easeOut", times: [0, 0.5, 0.85, 1] }}
-        />
-      ))}
-
-      {/* Grain */}
-      <svg className="absolute inset-0 h-full w-full opacity-[0.045]" xmlns="http://www.w3.org/2000/svg">
-        <filter id="ss-grain">
-          <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch" />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#ss-grain)" />
-      </svg>
-    </div>
-  );
-};
+// ── Magma background — 4 slow organic blobs in Webidoo orange + navy ────────
+const SuccessBackground = ({ skip }: { skip: boolean }) => (
+  <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    {/* Blob 1 — large orange, upper-left */}
+    <motion.div className="absolute"
+      style={{ width: 660, height: 600, left: "-16%", top: "-8%", filter: "blur(95px)",
+        background: "hsl(27,92%,55%)", opacity: 0.44 }}
+      animate={skip ? {} : {
+        x: [0, 55, -28, 55], y: [0, 38, -18, 38],
+        borderRadius: ["50%", "44% 56% 60% 40% / 50% 44% 56% 50%", "54% 46% 44% 56% / 46% 54% 48% 52%", "50%"],
+        scale: [1, 1.07, 0.95, 1.07],
+      }}
+      transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", times: [0, 0.33, 0.67, 1] }}
+    />
+    {/* Blob 2 — deep navy, lower-right */}
+    <motion.div className="absolute"
+      style={{ width: 600, height: 560, right: "-14%", bottom: "-6%", filter: "blur(88px)",
+        background: "hsl(235,62%,28%)", opacity: 0.60 }}
+      animate={skip ? {} : {
+        x: [0, -48, 22, -48], y: [0, -32, 18, -32],
+        borderRadius: ["50%", "56% 44% 40% 60% / 48% 58% 42% 52%", "46% 54% 58% 42% / 54% 44% 52% 48%", "50%"],
+        scale: [1, 0.93, 1.08, 0.93],
+      }}
+      transition={{ duration: 26, repeat: Infinity, ease: "easeInOut", delay: 5, times: [0, 0.33, 0.67, 1] }}
+    />
+    {/* Blob 3 — amber, lower-left drift upward */}
+    <motion.div className="absolute"
+      style={{ width: 440, height: 420, left: "18%", bottom: "8%", filter: "blur(105px)",
+        background: "hsl(20,95%,46%)", opacity: 0.32 }}
+      animate={skip ? {} : {
+        x: [0, 38, -42, 38], y: [0, -55, 28, -55],
+        borderRadius: ["50%", "40% 60% 54% 46% / 56% 42% 58% 44%", "58% 42% 46% 54% / 44% 56% 46% 54%", "50%"],
+        scale: [1, 1.11, 0.91, 1.11],
+      }}
+      transition={{ duration: 19, repeat: Infinity, ease: "easeInOut", delay: 9, times: [0, 0.33, 0.67, 1] }}
+    />
+    {/* Blob 4 — indigo accent, upper-right */}
+    <motion.div className="absolute"
+      style={{ width: 380, height: 350, right: "6%", top: "4%", filter: "blur(82px)",
+        background: "hsl(228,58%,33%)", opacity: 0.42 }}
+      animate={skip ? {} : {
+        x: [0, -38, 18, -38], y: [0, 42, -22, 42],
+        borderRadius: ["50%", "60% 40% 44% 56% / 46% 58% 42% 54%", "42% 58% 60% 40% / 54% 44% 56% 46%", "50%"],
+        scale: [1, 0.95, 1.09, 0.95],
+      }}
+      transition={{ duration: 24, repeat: Infinity, ease: "easeInOut", delay: 13, times: [0, 0.33, 0.67, 1] }}
+    />
+    {/* Grain */}
+    <svg className="absolute inset-0 h-full w-full opacity-[0.045]">
+      <filter id="ss-grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch" />
+        <feColorMatrix type="saturate" values="0" />
+      </filter>
+      <rect width="100%" height="100%" filter="url(#ss-grain)" />
+    </svg>
+  </div>
+);
 
 // ── Airplane config ─────────────────────────────────────────────────────────
 // Each plane: startX/Y from center (envelope), arc midpoint, rotation at start/end, size
