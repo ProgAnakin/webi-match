@@ -110,11 +110,8 @@ const Index = () => {
           const discounts: Record<string, number> = {};
           data.forEach((r) => {
             if (r.price_override) prices[r.product_id] = r.price_override;
-            // @ts-ignore — columns added via migration
             if (r.image_url) images[r.product_id] = r.image_url;
-            // @ts-ignore
             if (r.video_url) videos[r.product_id] = r.video_url;
-            // @ts-ignore
             if (r.discount_percent) discounts[r.product_id] = r.discount_percent;
           });
           setActiveProductIds(active);
@@ -166,7 +163,6 @@ const Index = () => {
       matched_product_id: matchedProduct.id,
       match_percent: matchPercent,
       email_sent: false,
-      // @ts-ignore — columns added via migration; gracefully ignored if not yet applied
       nome: user.nome,
       cognome: user.cognome,
       store_id: getStoredStoreId(),

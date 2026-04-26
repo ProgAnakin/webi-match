@@ -83,11 +83,8 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
       data.forEach((row) => {
         map[row.product_id] = row.active;
         if (row.price_override) prices[row.product_id] = row.price_override;
-        // @ts-ignore — columns added via migration
         if (row.image_url) images[row.product_id] = row.image_url;
-        // @ts-ignore
         if (row.video_url) videos[row.product_id] = row.video_url;
-        // @ts-ignore
         if (row.discount_percent) discounts[row.product_id] = row.discount_percent;
         // @ts-ignore
         const { faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3 } = row as Record<string, string>;
@@ -236,7 +233,6 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     await supabase.from("product_settings").upsert({
       product_id: productId,
       store_id: storeId,
-      // @ts-ignore
       image_url: imageUrl,
       updated_at: new Date().toISOString(),
     });
@@ -249,7 +245,6 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     await supabase.from("product_settings").upsert({
       product_id: productId,
       store_id: storeId,
-      // @ts-ignore
       image_url: null,
       updated_at: new Date().toISOString(),
     });
@@ -261,7 +256,6 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   };
 
   const saveDiscount = async (productId: string, pct: DiscountOption) => {
-    // @ts-ignore — column added via migration
     await supabase.from("product_settings").upsert({
       product_id: productId,
       store_id: storeId,
@@ -276,7 +270,6 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     await supabase.from("product_settings").upsert({
       product_id: productId,
       store_id: storeId,
-      // @ts-ignore
       video_url: trimmed || null,
       updated_at: new Date().toISOString(),
     });

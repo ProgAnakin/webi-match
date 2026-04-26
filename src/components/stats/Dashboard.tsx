@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LogOut, RefreshCw, Package, Download, Shield, ShieldCheck,
@@ -97,104 +97,109 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     onLogout();
   };
 
-  // ─── Filtered + computed data ────────────────────────────────────────────────
+  // ─── Filtered + computed data (all memoized to avoid re-computing on unrelated renders) ──
 
-  const filteredSessions = sessions.filter((s) => {
+  const filteredSessions = useMemo(() => sessions.filter((s) => {
     const d = s.created_at.slice(0, 10);
     if (dateFrom && d < dateFrom) return false;
     if (dateTo && d > dateTo) return false;
     if (filterStore && s.store_id !== filterStore) return false;
     return true;
-  });
+  }), [sessions, dateFrom, dateTo, filterStore]);
 
   const isFiltered = dateFrom !== "" || dateTo !== "" || filterStore !== null;
   const total = filteredSessions.length;
   const globalTotal = sessions.length;
-  const uniqueEmails = new Set(filteredSessions.map((s) => s.email.toLowerCase())).size;
-  const avgMatch = total
-    ? Math.round(filteredSessions.reduce((sum, s) => sum + s.match_percent, 0) / total)
-    : 0;
-  const todaySessions = filteredSessions.filter(
-    (s) => new Date(s.created_at).toDateString() === new Date().toDateString()
-  ).length;
 
-  const productCounts: Record<string, number> = {};
-  filteredSessions.forEach((s) => {
-    productCounts[s.matched_product_id] = (productCounts[s.matched_product_id] ?? 0) + 1;
-  });
-  // Average match % per product
-  const productMatchSums: Record<string, number> = {};
-  filteredSessions.forEach((s) => {
-    productMatchSums[s.matched_product_id] = (productMatchSums[s.matched_product_id] ?? 0) + s.match_percent;
-  });
-
-  const productStats: ProductStat[] = Object.entries(productCounts)
-    .map(([id, count]) => ({
-      id, name: productName(id), count,
-      percent: total ? Math.round((count / total) * 100) : 0,
-      avgMatch: Math.round((productMatchSums[id] ?? 0) / count),
-    }))
-    .sort((a, b) => b.count - a.count);
+  const { uniqueEmails, avgMatch, todaySessions, productStats } = useMemo(() => {
+    const uniqueEmails = new Set(filteredSessions.map((s) => s.email.toLowerCase())).size;
+    const avgMatch = total
+      ? Math.round(filteredSessions.reduce((sum, s) => sum + s.match_percent, 0) / total)
+      : 0;
+    const todaySessions = filteredSessions.filter(
+      (s) => new Date(s.created_at).toDateString() === new Date().toDateString()
+    ).length;
+    const productCounts: Record<string, number> = {};
+    const productMatchSums: Record<string, number> = {};
+    filteredSessions.forEach((s) => {
+      productCounts[s.matched_product_id] = (productCounts[s.matched_product_id] ?? 0) + 1;
+      productMatchSums[s.matched_product_id] = (productMatchSums[s.matched_product_id] ?? 0) + s.match_percent;
+    });
+    const productStats: ProductStat[] = Object.entries(productCounts)
+      .map(([id, count]) => ({
+        id, name: productName(id), count,
+        percent: total ? Math.round((count / total) * 100) : 0,
+        avgMatch: Math.round((productMatchSums[id] ?? 0) / count),
+      }))
+      .sort((a, b) => b.count - a.count);
+    return { uniqueEmails, avgMatch, todaySessions, productStats };
+  }, [filteredSessions, total]);
 
   // ─── Extra metrics ───────────────────────────────────────────────────────────
 
-  // Email delivery rate
-  const emailSentCount = filteredSessions.filter((s) => s.email_sent === true).length;
-  const emailDeliveryRate = total ? Math.round((emailSentCount / total) * 100) : 0;
+  const { emailSentCount, emailDeliveryRate, hourlyCounts, peakHour, maxHourly,
+          matchBrackets, maxBracket, returningCount, dayCounts, maxDay } = useMemo(() => {
+    const emailSentCount = filteredSessions.filter((s) => s.email_sent === true).length;
+    const emailDeliveryRate = total ? Math.round((emailSentCount / total) * 100) : 0;
 
-  // Hourly distribution (0–23) using ALL sessions (no date filter) for full picture
-  const hourlyCounts: number[] = Array.from({ length: 24 }, (_, h) =>
-    sessions.filter((s) => new Date(s.created_at).getHours() === h).length
-  );
-  const maxHourly = Math.max(...hourlyCounts, 1);
-  const peakHour = hourlyCounts.indexOf(Math.max(...hourlyCounts));
+    // Hourly distribution — follows active filters for consistency
+    const hourlyCounts: number[] = Array.from({ length: 24 }, (_, h) =>
+      filteredSessions.filter((s) => new Date(s.created_at).getHours() === h).length
+    );
+    const maxHourly = Math.max(...hourlyCounts, 1);
+    const peakHour = hourlyCounts.indexOf(Math.max(...hourlyCounts));
 
-  // Match % histogram — 4 brackets
-  const matchBrackets = [
-    { label: "45–60%", min: 45, max: 60, color: "bg-blue-500"   },
-    { label: "61–75%", min: 61, max: 75, color: "bg-yellow-500" },
-    { label: "76–90%", min: 76, max: 90, color: "bg-orange-500" },
-    { label: "91–98%", min: 91, max: 98, color: "bg-green-500"  },
-  ].map((b) => ({
-    ...b,
-    count: filteredSessions.filter((s) => s.match_percent >= b.min && s.match_percent <= b.max).length,
-  }));
-  const maxBracket = Math.max(...matchBrackets.map((b) => b.count), 1);
+    const matchBrackets = [
+      { label: "45–60%", min: 45, max: 60, color: "bg-blue-500"   },
+      { label: "61–75%", min: 61, max: 75, color: "bg-yellow-500" },
+      { label: "76–90%", min: 76, max: 90, color: "bg-orange-500" },
+      { label: "91–98%", min: 91, max: 98, color: "bg-green-500"  },
+    ].map((b) => ({
+      ...b,
+      count: filteredSessions.filter((s) => s.match_percent >= b.min && s.match_percent <= b.max).length,
+    }));
+    const maxBracket = Math.max(...matchBrackets.map((b) => b.count), 1);
 
-  // Duplicate emails (returning visitors)
-  const emailFreq: Record<string, number> = {};
-  filteredSessions.forEach((s) => { emailFreq[s.email.toLowerCase()] = (emailFreq[s.email.toLowerCase()] ?? 0) + 1; });
-  const returningCount = Object.values(emailFreq).filter((n) => n > 1).length;
+    const emailFreq: Record<string, number> = {};
+    filteredSessions.forEach((s) => { emailFreq[s.email.toLowerCase()] = (emailFreq[s.email.toLowerCase()] ?? 0) + 1; });
+    const returningCount = Object.values(emailFreq).filter((n) => n > 1).length;
+
+    // 7-day chart follows active filters for consistency with other metrics
+    const dayCounts: DayCount[] = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      const date = d.toISOString().slice(0, 10);
+      return {
+        day: DAY_LABELS[d.getDay()], date,
+        count: filteredSessions.filter((s) => s.created_at.slice(0, 10) === date).length,
+      };
+    });
+    const maxDay = Math.max(...dayCounts.map((d) => d.count), 1);
+
+    return { emailSentCount, emailDeliveryRate, hourlyCounts, peakHour, maxHourly,
+             matchBrackets, maxBracket, returningCount, dayCounts, maxDay };
+  }, [filteredSessions, total]);
 
   // Product pagination
   const productTotalPages = Math.ceil(productStats.length / PRODUCT_PAGE_SIZE);
   const pagedProductStats = productStats.slice(productPage * PRODUCT_PAGE_SIZE, (productPage + 1) * PRODUCT_PAGE_SIZE);
 
   // Search + pagination for sessions
-  const searchLower = search.toLowerCase().trim();
-  const searchedSessions = searchLower
-    ? filteredSessions.filter((s) => {
-        const name = `${s.nome ?? ""} ${s.cognome ?? ""}`.toLowerCase();
-        return (
-          s.email.toLowerCase().includes(searchLower) ||
-          productName(s.matched_product_id).toLowerCase().includes(searchLower) ||
-          name.includes(searchLower)
-        );
-      })
-    : filteredSessions;
+  const searchedSessions = useMemo(() => {
+    const searchLower = search.toLowerCase().trim();
+    if (!searchLower) return filteredSessions;
+    return filteredSessions.filter((s) => {
+      const name = `${s.nome ?? ""} ${s.cognome ?? ""}`.toLowerCase();
+      return (
+        s.email.toLowerCase().includes(searchLower) ||
+        productName(s.matched_product_id).toLowerCase().includes(searchLower) ||
+        name.includes(searchLower)
+      );
+    });
+  }, [filteredSessions, search]);
+
   const pagedSessions = searchedSessions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const totalPages = Math.ceil(searchedSessions.length / PAGE_SIZE);
-
-  const dayCounts: DayCount[] = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const date = d.toISOString().slice(0, 10);
-    return {
-      day: DAY_LABELS[d.getDay()], date,
-      count: sessions.filter((s) => s.created_at.slice(0, 10) === date).length,
-    };
-  });
-  const maxDay = Math.max(...dayCounts.map((d) => d.count), 1);
 
   // ─── Render ──────────────────────────────────────────────────────────────────
 

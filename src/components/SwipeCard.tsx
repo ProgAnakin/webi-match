@@ -34,10 +34,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   tech:         "Tech",
   style:        "Stile",
   recovery:     "Recupero",
-  fitness:      "Fitness",
-  camera:       "Foto",
-  gaming:       "Gaming",
-  communication:"Chat",
 };
 
 const CATEGORY_CODES: Record<string, string> = {
@@ -49,10 +45,6 @@ const CATEGORY_CODES: Record<string, string> = {
   tech:         "TCH",
   style:        "STL",
   recovery:     "RCV",
-  fitness:      "FIT",
-  camera:       "CAM",
-  gaming:       "GMG",
-  communication:"COM",
 };
 
 const ROMAN = ["I","II","III","IV","V","VI","VII","VIII","IX","X"];

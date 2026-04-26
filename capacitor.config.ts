@@ -6,8 +6,6 @@ const config: CapacitorConfig = {
   appName: "Webi Match",
   // Vite build output directory
   webDir: "dist",
-  // Bundle the web assets inside the native app (no live server needed)
-  bundledWebRuntime: false,
   server: {
     // Set to true only during development on a device connected to the same Wi-Fi
     // as your machine; comment out for production builds.
