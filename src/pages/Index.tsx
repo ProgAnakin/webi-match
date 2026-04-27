@@ -9,6 +9,7 @@ import { getMatchedProduct, type Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import { useInactivityReset } from "@/hooks/useInactivityReset";
 import { useWakeLock } from "@/hooks/useWakeLock";
+import { useBgMusic } from "@/hooks/useBgMusic";
 import { useLang } from "@/i18n/LanguageContext";
 import { getStoredStoreId } from "@/data/stores";
 
@@ -218,6 +219,7 @@ const Index = () => {
   };
 
   useWakeLock();
+  useBgMusic(screen === "quiz");
   const { dismiss } = useInactivityReset({
     enabled: screen !== "welcome" && screen !== "splash",
     onWarn:    (seconds) => setInactivitySecondsLeft(seconds),
