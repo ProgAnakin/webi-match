@@ -71,17 +71,6 @@ const LanguageModal = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-// ── Sonar ring — expands and fades from around the CTA button ─────────────────
-const SonarRing = ({ delay }: { delay: number }) => (
-  <div
-    className="pointer-events-none absolute inset-0 rounded-2xl border-2"
-    style={{
-      borderColor: "hsla(27,92%,55%,0.55)",
-      animation: `at-sonar 2.5s ease-out ${delay}s infinite`,
-    }}
-  />
-);
-
 // ── Main attract screen ────────────────────────────────────────────────────────
 interface AttractScreenProps {
   onComplete: () => void;
@@ -212,24 +201,35 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
           <span style={{ color: "hsl(27,92%,65%)" }}>match perfeito ✓</span>
         </motion.div>
 
-        {/* CTA with sonar rings */}
+        {/* CTA — breathing light glow */}
         <motion.div
           className="relative mt-1"
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.58, duration: 0.5 }}
         >
-          <SonarRing delay={0} />
-          <SonarRing delay={0.83} />
-          <SonarRing delay={1.66} />
+          {/* Soft halo behind the button that breathes */}
+          <motion.div
+            className="pointer-events-none absolute -inset-3 rounded-3xl"
+            style={{ background: "radial-gradient(ellipse at 50% 60%, hsla(27,92%,55%,0.45) 0%, transparent 72%)", filter: "blur(12px)" }}
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+          />
           <motion.button
             className="relative rounded-2xl px-14 py-4 text-lg font-black text-white uppercase tracking-wider"
             style={{
-              background: "linear-gradient(135deg, hsl(27,92%,55%), hsl(16,100%,48%))",
-              boxShadow: "0 0 42px hsla(27,92%,55%,0.55), 0 8px 32px hsla(0,0%,0%,0.4)",
+              background: "linear-gradient(135deg, hsl(27,92%,58%), hsl(16,100%,50%))",
               letterSpacing: "0.08em",
             }}
-            whileTap={{ scale: 0.95 }}
+            animate={{
+              boxShadow: [
+                "0 0 28px hsla(27,92%,55%,0.38), 0 8px 28px hsla(0,0%,0%,0.38)",
+                "0 0 64px hsla(27,92%,55%,0.80), 0 0 100px hsla(27,92%,55%,0.22), 0 8px 28px hsla(0,0%,0%,0.38)",
+                "0 0 28px hsla(27,92%,55%,0.38), 0 8px 28px hsla(0,0%,0%,0.38)",
+              ],
+            }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+            whileTap={{ scale: 0.96 }}
             onClick={onComplete}
           >
             {t.splash.tap}{" "}

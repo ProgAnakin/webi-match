@@ -219,7 +219,7 @@ const Index = () => {
   };
 
   useWakeLock();
-  useBgMusic(screen === "quiz");
+  useBgMusic(screen !== "success");
   const { dismiss } = useInactivityReset({
     enabled: screen !== "welcome" && screen !== "splash",
     onWarn:    (seconds) => setInactivitySecondsLeft(seconds),
