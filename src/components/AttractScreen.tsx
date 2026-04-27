@@ -36,7 +36,6 @@ const LanguageModal = ({ onClose }: { onClose: () => void }) => {
         <p className="mb-6 text-center text-xs font-semibold uppercase tracking-widest text-white/40">
           🌍 Lingua / Language
         </p>
-
         <div className="flex flex-col gap-3">
           {LANGUAGES.map(({ code, flag, name }) => {
             const active = lang === code;
@@ -72,6 +71,17 @@ const LanguageModal = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
+// ── Sonar ring — expands and fades from around the CTA button ─────────────────
+const SonarRing = ({ delay }: { delay: number }) => (
+  <div
+    className="pointer-events-none absolute inset-0 rounded-2xl border-2"
+    style={{
+      borderColor: "hsla(27,92%,55%,0.55)",
+      animation: `at-sonar 2.5s ease-out ${delay}s infinite`,
+    }}
+  />
+);
+
 // ── Main attract screen ────────────────────────────────────────────────────────
 interface AttractScreenProps {
   onComplete: () => void;
@@ -104,120 +114,122 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
     >
       <AttractBackground />
 
-      {/* Language modal */}
       <AnimatePresence>
         {showLangModal && <LanguageModal onClose={() => setShowLangModal(false)} />}
       </AnimatePresence>
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col items-center gap-7 px-6 text-center">
+      <div className="relative z-10 flex flex-col items-center gap-5 px-6 text-center">
 
-        {/* Logo with glow halo */}
+        {/* Logo — brand mark with glow halo */}
         <motion.div
           className="relative"
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          initial={{ opacity: 0, scale: 0.65, y: -24 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
         >
           <div style={{
-            position: "absolute", inset: "-40%",
-            background: "radial-gradient(circle, hsla(27,92%,55%,0.55) 0%, transparent 70%)",
-            filter: "blur(30px)",
+            position: "absolute", inset: "-45%",
+            background: "radial-gradient(circle, hsla(27,92%,55%,0.65) 0%, transparent 70%)",
+            filter: "blur(28px)",
             borderRadius: "50%",
           }} />
           <img
             src={webidooLogo}
             alt="Webidoo Store"
-            className="relative h-44 w-auto"
+            className="relative h-28 w-auto"
             style={{ animation: "at-logo-glow 3s ease-in-out infinite" }}
           />
         </motion.div>
 
-        {/* WEBI MATCH headline */}
+        {/* WEBI MATCH — each word flies in from opposite sides */}
         <motion.h1
-          className="text-7xl font-black uppercase leading-none"
-          style={{ letterSpacing: "0.12em" }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2 }}
+          className="leading-none font-black uppercase"
+          style={{ fontSize: "clamp(4rem,13vw,6rem)", letterSpacing: "0.09em" }}
         >
-          <span style={{ color: "hsl(27,92%,55%)" }}>WEBI</span>
-          <span className="text-white"> MATCH</span>
+          <motion.span
+            style={{ color: "hsl(27,92%,55%)", display: "inline-block" }}
+            initial={{ opacity: 0, x: -55, rotate: -10 }}
+            animate={{ opacity: 1, x: 0, rotate: 0 }}
+            transition={{ delay: 0.15, type: "spring", stiffness: 260, damping: 20 }}
+          >
+            WEBI
+          </motion.span>
+          <motion.span
+            className="text-white"
+            style={{ display: "inline-block" }}
+            initial={{ opacity: 0, x: 55, rotate: 10 }}
+            animate={{ opacity: 1, x: 0, rotate: 0 }}
+            transition={{ delay: 0.28, type: "spring", stiffness: 260, damping: 20 }}
+          >
+            {" "}MATCH
+          </motion.span>
         </motion.h1>
 
-        {/* Cycling message */}
-        <div className="h-12 flex items-center justify-center">
+        {/* Hook subheadline */}
+        <motion.div
+          className="space-y-0.5"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.48 }}
+        >
+          <p className="text-xl font-bold text-white/85">{t.splash.headline}</p>
+          <p className="text-base font-semibold" style={{ color: "hsl(27,92%,65%)" }}>
+            {t.splash.sub} ✦
+          </p>
+        </motion.div>
+
+        {/* Cycling message — spring bounce pop */}
+        <div className="flex h-[72px] items-center justify-center">
           <AnimatePresence mode="wait">
             <motion.div
               key={`${msgIndex}-${lang}`}
-              className="flex items-center gap-3"
-              initial={{ opacity: 0, y: 12, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -12, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
+              className="flex flex-col items-center gap-1"
+              initial={{ opacity: 0, scale: 0.5, rotate: -8 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              exit={{ opacity: 0, scale: 0.65, rotate: 6 }}
+              transition={{ type: "spring", stiffness: 400, damping: 22 }}
             >
-              <span className="text-2xl">{messages[msgIndex].emoji}</span>
-              <span className="text-lg font-semibold text-white/90">
+              <span style={{ fontSize: 30, lineHeight: 1 }}>{messages[msgIndex].emoji}</span>
+              <span className="text-base font-semibold text-white/85">
                 {messages[msgIndex].text}
               </span>
             </motion.div>
           </AnimatePresence>
         </div>
 
-        {/* Progress dots */}
-        <div className="flex gap-2">
-          {messages.map((_, i) => (
-            <motion.div
-              key={i}
-              className="rounded-full"
-              animate={{
-                width: i === msgIndex ? 20 : 6,
-                opacity: i === msgIndex ? 1 : 0.35,
-                background: i === msgIndex ? "hsl(27,92%,55%)" : "rgba(255,255,255,0.5)",
-              }}
-              style={{ height: 6 }}
-              transition={{ duration: 0.3 }}
-            />
-          ))}
-        </div>
-
-        {/* Language button */}
-        <motion.button
-          className="flex items-center gap-2.5 rounded-2xl px-6 py-3 transition-all duration-200 active:scale-95"
-          style={{
-            background: "rgba(255,255,255,0.07)",
-            border: "1px solid rgba(255,255,255,0.15)",
-          }}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45, duration: 0.5 }}
-          onClick={() => setShowLangModal(true)}
-        >
-          <span className="text-xl leading-none">{currentLang.flag}</span>
-          <span className="text-sm font-semibold text-white/80">{t.splash.chooseLang}</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-            stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-            className="ml-0.5">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </motion.button>
-
-        {/* CTA button */}
+        {/* Feature strip */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
+          className="flex items-center gap-3 text-xs font-semibold"
+          style={{ color: "rgba(255,255,255,0.42)" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.68, duration: 0.5 }}
         >
+          <span>8 swipe</span>
+          <span style={{ color: "hsl(27,92%,55%)", fontSize: 18, lineHeight: 1 }}>·</span>
+          <span>2 min</span>
+          <span style={{ color: "hsl(27,92%,55%)", fontSize: 18, lineHeight: 1 }}>·</span>
+          <span style={{ color: "hsl(27,92%,65%)" }}>match perfeito ✓</span>
+        </motion.div>
+
+        {/* CTA with sonar rings */}
+        <motion.div
+          className="relative mt-1"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.58, duration: 0.5 }}
+        >
+          <SonarRing delay={0} />
+          <SonarRing delay={0.83} />
+          <SonarRing delay={1.66} />
           <motion.button
-            className="rounded-2xl px-14 py-4 text-lg font-black text-white uppercase tracking-wider"
+            className="relative rounded-2xl px-14 py-4 text-lg font-black text-white uppercase tracking-wider"
             style={{
               background: "linear-gradient(135deg, hsl(27,92%,55%), hsl(16,100%,48%))",
-              boxShadow: "0 0 40px hsla(27,92%,55%,0.5), 0 8px 32px hsla(0,0%,0%,0.4)",
+              boxShadow: "0 0 42px hsla(27,92%,55%,0.55), 0 8px 32px hsla(0,0%,0%,0.4)",
               letterSpacing: "0.08em",
             }}
-            animate={{ scale: [1, 1.03, 1] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            whileTap={{ scale: 0.96 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onComplete}
           >
             {t.splash.tap}{" "}
@@ -226,6 +238,27 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
             </span>
           </motion.button>
         </motion.div>
+
+        {/* Language button */}
+        <motion.button
+          className="flex items-center gap-2.5 rounded-2xl px-6 py-3 transition-all duration-200 active:scale-95"
+          style={{
+            background: "rgba(255,255,255,0.07)",
+            border: "1px solid rgba(255,255,255,0.14)",
+          }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.78, duration: 0.5 }}
+          onClick={() => setShowLangModal(true)}
+        >
+          <span className="text-xl leading-none">{currentLang.flag}</span>
+          <span className="text-sm font-semibold text-white/75">{t.splash.chooseLang}</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            className="ml-0.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </motion.button>
       </div>
     </div>
   );

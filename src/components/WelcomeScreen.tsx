@@ -334,11 +334,11 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: "easeOut" }}
       >
-        {/* Logo */}
+        {/* Logo — compact signature */}
         <motion.img
           src={webidooLogo}
           alt="Webidoo Store"
-          className="h-36 w-auto"
+          className="h-24 w-auto"
           onClick={handleLogoTap}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -356,11 +356,33 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
             <span className="text-gradient">WEBI</span>
             <span className="text-foreground"> MATCH</span>
           </h1>
-          <p className="text-base text-muted-foreground">{t.welcome.tagline}</p>
+          <p className="text-sm text-muted-foreground">{t.welcome.tagline}</p>
         </motion.div>
 
-        {/* Feature badges */}
-        <FeatureBadges />
+        {/* Step indicator — you are here */}
+        <motion.div
+          className="flex items-center gap-2"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+        >
+          <div className="h-1.5 w-8 rounded-full" style={{ background: "hsl(27,92%,55%)" }} />
+          <div className="h-1 w-5 rounded-full bg-muted-foreground/25" />
+          <div className="h-1 w-5 rounded-full bg-muted-foreground/25" />
+          <span className="ml-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
+            step 1
+          </span>
+        </motion.div>
+
+        {/* Subtitle — focused instruction */}
+        <motion.p
+          className="text-center text-sm text-muted-foreground/80 leading-relaxed px-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.38 }}
+        >
+          {t.welcome.subtitle}
+        </motion.p>
 
         {/* Form — nome + cognome + email */}
         <WelcomeForm onStart={onStart} />
