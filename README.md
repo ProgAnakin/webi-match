@@ -1,61 +1,35 @@
 # Webi-Match
-### AI Product Matching Kiosk · Live in Production · 4 Retail Stores
 
-> **Swipe. Match. Buy.**
+**Interactive product discovery kiosk for Webidoo retail stores.**
 
-Built while working full-time as a sales specialist at Webidoo Store, Milan.
-Deployed on iPads across all store locations. Operational in production.
-
-[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Supabase](https://img.shields.io/badge/Supabase-2.101-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
-[![Vercel](https://img.shields.io/badge/Deployed-Vercel-000000?style=flat-square&logo=vercel&logoColor=white)](https://vercel.com)
+Customers swipe through 8 personalised questions — Tinder-style — and receive an instant product recommendation with a dedicated discount and a personalised video from a consultant. Email is captured for CRM and newsletter integration.
 
 ---
 
-## What is this?
+## Overview
 
-A retail kiosk application deployed on iPads across all 4 Webidoo Store locations in Milan.
+Webi-Match is a touchscreen kiosk experience designed for iPad deployment in Webidoo electronics retail stores. The app guides customers through a short preference quiz and produces a tailored gadget recommendation, driving both in-store conversion and post-visit engagement via automated email follow-up.
 
-Customers answer 8 lifestyle questions via a Tinder-style swipe interface.
-The app returns a personalised product recommendation with:
-
-- A compatibility score (45–98%)
-- An exclusive discount code
-- A consultant video
-- A personalised email with dynamic FAQs
+**Flow:**
+`Attract Screen → Language Selection → Welcome + Data Capture → Quiz (8 swipes) → Match Result → Success + Email Delivery`
 
 ---
 
-## How It Works
+## Features
 
-```
-AttractScreen (idle kiosk)
-    ↓ tap
-SplashScreen (language selection)
-    ↓
-WelcomeScreen (name + email + validation)
-    ↓
-QuizScreen (8 swipe cards)
-    ↓
-MatchResult (matched product + compatibility score + CTA)
-    ↓
-SuccessScreen (email sent confirmation)
-    ↓ inactivity
-AttractScreen
-```
-
----
-
-## Business Impact
-
-| Metric | Detail |
-|--------|--------|
-| **Lead capture** | Every session collects name + email directly into CRM |
-| **Locations** | Corso Vercelli · 5 Giornate · Verona · Bergamo |
-| **Analytics** | Real-time funnel conversion dashboard |
-| **Languages** | 5 — Italian, English, Portuguese, Spanish, French |
-| **Email automation** | Transactional email with discount code on every match |
+- **Tinder-style swipe interface** — gesture-based quiz with haptic feedback
+- **Smart matching algorithm** — weighted scoring across 8 product categories
+- **5 languages** — Italian, English, Portuguese, Spanish, French
+- **Automated email delivery** — personalised email with product info, consultant video, and discount code via Brevo
+- **CRM integration** — real-time data relay to Google Sheets
+- **Multi-store support** — per-store product activation, pricing, and discount configuration
+- **Manager dashboard** — product settings, pricing overrides, image/video URLs, store management
+- **Analytics dashboard** — session funnels, match distribution, lead volume, per-store stats
+- **Anti-spam cooldown** — 1-hour email-level cooldown to prevent duplicate leads
+- **Inactivity reset** — auto-resets to attract screen after 45 seconds of inactivity
+- **Synthesised ambient soundtrack** — Web Audio API generative music during the quiz
+- **PWA-ready** — offline capable, installable, service worker caching
+- **Wake lock** — prevents iPad screen from sleeping during deployment
 
 ---
 
@@ -63,41 +37,136 @@ AttractScreen
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 18 · TypeScript 5 · Vite |
-| Styling | Tailwind CSS · Framer Motion · shadcn/ui |
-| Backend | Supabase (PostgreSQL · RLS · Edge Functions) |
-| Email | Brevo API · Deno runtime |
-| Deploy | Vercel |
-| Testing | Vitest · Playwright · Testing Library |
-| Native | Capacitor (iOS/Android ready) |
+| Framework | React 18 + TypeScript |
+| Build | Vite + SWC |
+| Animations | Framer Motion |
+| Styling | Tailwind CSS + shadcn/ui |
+| Backend | Supabase (PostgreSQL + Edge Functions + RLS) |
+| Email | Brevo API |
+| CRM | Google Sheets via Supabase Edge Function relay |
+| Audio | Web Audio API (synthesised ambient loop) |
+| Deploy | Vercel (auto-deploy on push to `main`) |
+| Native | Capacitor (iOS + Android builds supported) |
 
 ---
 
-## Kiosk Features
+## Store Locations
 
-| Feature | Detail |
-|---------|--------|
-| Inactivity reset | 30s countdown → haptic feedback → auto reset |
-| Wake Lock | Screen always on — no iPad sleep |
-| Haptic feedback | On every swipe |
-| Sound effects | YES/NO audio via Web Audio API |
-| Anti-spam | Same email blocked for N hours |
-| PWA | Installable on iPad via Safari |
-| i18n | 5 languages — full UI coverage |
+| Store ID | Location |
+|----------|----------|
+| `corso-vercelli` | Milano — Corso Vercelli |
+| `cinque-giornate` | Milano — 5 Giornate |
+| `verona` | Verona |
+| `bergamo` | Bergamo |
 
----
-
-## Codebase
-
-| Metric | Value |
-|--------|-------|
-| Source lines | ~5,100 |
-| React components | 22 |
-| Custom hooks | 7 |
-| Routes | 5 |
-| Languages supported | 5 |
-| Products in catalogue | 10 |
+Each store has independent product activation, price overrides, discount percentages, and image/video URLs managed via the Manager Dashboard.
 
 ---
 
-*Built on the shop floor. Shipped to production.*
+## Project Structure
+
+```
+src/
+├── assets/              # Static brand assets (logo, envelope image)
+├── components/
+│   ├── ui/              # shadcn/ui base components
+│   ├── manager/         # Manager dashboard components
+│   ├── stats/           # Analytics dashboard components
+│   ├── AttractScreen    # Idle attract loop
+│   ├── WelcomeScreen    # Language selection + data capture
+│   ├── QuizScreen       # 8-question swipe quiz orchestrator
+│   ├── SwipeCard        # Individual Tinder-style card
+│   ├── MatchResult      # Product recommendation display
+│   └── SuccessScreen    # Post-claim confirmation
+├── data/
+│   ├── products.ts      # Product catalog + matching algorithm
+│   ├── questions.ts     # Quiz question definitions
+│   └── stores.ts        # Store configuration
+├── hooks/               # Custom React hooks (music, wake lock, inactivity, sound)
+├── i18n/                # Full translations in 5 languages
+├── integrations/        # Supabase client + generated types
+├── lib/                 # Email template engine, utilities
+└── pages/               # Route-level page components
+
+supabase/
+├── functions/
+│   ├── on-session-created/   # Triggered on quiz completion — sends email via Brevo
+│   └── relay-to-sheets/      # Google Sheets CRM relay
+└── migrations/               # 19 versioned SQL migrations
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm
+- Supabase project (URL + anon key)
+
+### Local Setup
+
+```bash
+git clone https://github.com/proganakin/webi-match.git
+cd webi-match
+npm install
+cp .env.example .env
+# Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+npm run dev
+```
+
+### Environment Variables
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+---
+
+## Deployment
+
+The project auto-deploys to Vercel on every push to `main`. No CI pipeline configuration is required.
+
+```bash
+git push origin main   # triggers Vercel production deploy automatically
+```
+
+Security headers, CSP, HSTS, and SPA routing are configured in `vercel.json`.
+
+---
+
+## Database
+
+| Table | Purpose |
+|-------|---------|
+| `quiz_sessions` | One row per completed quiz — email, answers, matched product, store |
+| `product_settings` | Per-store product activation, prices, images, videos, discounts |
+| `quiz_funnel_events` | Conversion funnel tracking (started / result shown / claimed) |
+| `manager_audit_log` | Dashboard action audit trail |
+| `admin_access_log` | PIN access tracking with user-agent logging |
+
+All tables use Row-Level Security. Rate limiting is enforced at the database function level.
+
+---
+
+## Admin Routes
+
+| Route | Access | Purpose |
+|-------|--------|---------|
+| `/manager` | PIN-protected | Product and store configuration |
+| `/stats` | MFA-protected | Session data, funnel metrics, product performance |
+| `/email-preview` | Internal | Email template renderer |
+
+---
+
+## Product Images
+
+Place product images in `public/products/` and reference them in `src/data/products.ts`. Recommended format: PNG, 600×600px, transparent background.
+
+---
+
+## License
+
+Proprietary — © Webidoo. All rights reserved.

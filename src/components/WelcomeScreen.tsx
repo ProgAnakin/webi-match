@@ -54,33 +54,6 @@ const LanguageSelector = () => {
   );
 };
 
-// ─── Feature Badges (localised via splash translation keys) ───────────────────
-const FeatureBadges = () => {
-  const { t } = useLang();
-  return (
-    <motion.div
-      className="flex items-center justify-center gap-2 flex-wrap"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.25 }}
-    >
-      {[
-        { icon: "⚡", label: t.splash.step1 },
-        { icon: "🎯", label: t.splash.step2 },
-        { icon: "🎁", label: t.splash.step3 },
-      ].map((badge, i) => (
-        <span
-          key={i}
-          className="flex items-center gap-1 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs font-semibold text-muted-foreground backdrop-blur-sm"
-        >
-          <span>{badge.icon}</span>
-          <span>{badge.label}</span>
-        </span>
-      ))}
-    </motion.div>
-  );
-};
-
 // ─── Welcome Form ─────────────────────────────────────────────────────────────
 const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const { t } = useLang();
