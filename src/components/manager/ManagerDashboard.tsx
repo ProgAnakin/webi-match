@@ -60,10 +60,24 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   // Undo last toggle — auto-dismisses after 8 s
   const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [userRole, setUserRole] = useState<{ role: string; store_id: string | null } | null>(null);
 
   const currentStore = getStoreById(storeId);
 
   useIdleLogout(onLogout);
+
+  // Fetch the logged-in user's store role; lock store selector for consulente.
+  useEffect(() => {
+    supabase.rpc("get_my_store_role").then(({ data }) => {
+      if (!data || data.length === 0) return;
+      const r = data[0] as { role: string; store_id: string | null };
+      setUserRole(r);
+      if (r.role === "consulente_responsabile" && r.store_id) {
+        setStoreIdState(r.store_id);
+        setStoredStoreId(r.store_id);
+      }
+    });
+  }, []);
 
   const allTags = Array.from(new Set(products.flatMap((p) => p.tags))).sort();
 
@@ -341,11 +355,12 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           <div>
             <h1 className="text-2xl font-bold text-foreground">📦 Catalogo</h1>
             <button
-              onClick={() => setShowStoreModal(true)}
-              className="mt-0.5 flex items-center gap-1 text-xs text-primary hover:underline"
+              onClick={() => userRole?.role !== "consulente_responsabile" && setShowStoreModal(true)}
+              className={`mt-0.5 flex items-center gap-1 text-xs ${userRole?.role === "consulente_responsabile" ? "text-muted-foreground cursor-default" : "text-primary hover:underline"}`}
             >
               <MapPin className="h-3 w-3" />
               {currentStore?.shortName ?? storeId}
+              {userRole?.role === "consulente_responsabile" && <span className="ml-1 opacity-50">(bloccata)</span>}
             </button>
             <p className="text-xs text-muted-foreground">
               {loading ? "Caricamento…" : `${activeCount} di ${products.length} prodotti attivi nel quiz`}
