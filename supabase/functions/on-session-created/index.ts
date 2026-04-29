@@ -10,11 +10,18 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const BREVO_KEY    = Deno.env.get("BREVO_API_KEY") ?? "";
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const PII_KEY      = Deno.env.get("PII_ENCRYPTION_KEY") ?? "";
+const BREVO_KEY      = Deno.env.get("BREVO_API_KEY") ?? "";
+const SUPABASE_URL   = Deno.env.get("SUPABASE_URL") ?? "";
+const SERVICE_KEY    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const PII_KEY        = Deno.env.get("PII_ENCRYPTION_KEY") ?? "";
 const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
+
+// Comma-separated list of emails that bypass the 1-email-per-hour rate limit.
+// Set via Supabase secret WHITELIST_EMAILS. Remove when testing is complete.
+const WHITELIST_EMAILS = new Set(
+  (Deno.env.get("WHITELIST_EMAILS") ?? "").split(",")
+    .map((e) => e.trim().toLowerCase()).filter(Boolean)
+);
 
 const C = {
   bg:         "#0d1228",
@@ -501,7 +508,8 @@ serve(async (req) => {
     .neq("id", String(record.id))
     .gte("created_at", oneHourAgo);
 
-  if ((recentEmails ?? 0) >= 1) {
+  const emailNorm = String(record.email).trim().toLowerCase();
+  if ((recentEmails ?? 0) >= 1 && !WHITELIST_EMAILS.has(emailNorm)) {
     await supabase.from("quiz_sessions").update({ discount_code: code }).eq("id", record.id);
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
