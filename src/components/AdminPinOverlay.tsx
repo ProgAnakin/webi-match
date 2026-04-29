@@ -74,12 +74,12 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
 
     if (next.length === 4) {
       setVerifying(true);
-      const { data, error } = await supabase.rpc("verify_staff_pin", {
-        pin_input: next,
-        client_id: getClientId(),
-        // user_agent is a secondary fingerprint — even if localStorage is
-        // cleared (resetting client_id), the same browser/device stays blocked.
-        user_agent: navigator.userAgent,
+      const { data, error } = await supabase.functions.invoke("verify-pin", {
+        body: {
+          pin_input:  next,
+          client_id:  getClientId(),
+          user_agent: navigator.userAgent,
+        },
       });
       setVerifying(false);
 
