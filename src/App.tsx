@@ -13,7 +13,6 @@ import { LanguageProvider } from "@/i18n/LanguageContext";
 const Stats         = lazy(() => import("./pages/Stats.tsx"));
 const Manager       = lazy(() => import("./pages/Manager.tsx"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
-const EmailPreview  = lazy(() => import("./pages/EmailPreview.tsx"));
 
 const AdminFallback = () => (
   <div className="flex min-h-screen items-center justify-center bg-background">
@@ -46,10 +45,6 @@ const App = () => (
             } />
             <Route path="/reset-password" element={
               <Suspense fallback={<AdminFallback />}><ResetPassword /></Suspense>
-            } />
-
-            <Route path="/email-preview" element={
-              <Suspense fallback={<AdminFallback />}><EmailPreview /></Suspense>
             } />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
