@@ -10,15 +10,17 @@ import { useLang } from "@/i18n/LanguageContext";
 
 const KEYS = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
 
-// Persistent device ID — used server-side to track lockout per device.
+// Device ID rotated daily — limits long-term cross-session tracking on shared kiosks.
 function getClientId(): string {
-  const key = "wb_client_id";
-  let id = localStorage.getItem(key);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(key, id);
+  const idKey  = "wb_client_id";
+  const tsKey  = "wb_client_id_rotated";
+  const dayMs  = 86_400_000;
+  const lastTs = Number(localStorage.getItem(tsKey) ?? 0);
+  if (!localStorage.getItem(idKey) || Date.now() - lastTs > dayMs) {
+    localStorage.setItem(idKey, crypto.randomUUID());
+    localStorage.setItem(tsKey, String(Date.now()));
   }
-  return id;
+  return localStorage.getItem(idKey)!;
 }
 
 type Step = "pin" | "store";

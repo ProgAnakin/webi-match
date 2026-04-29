@@ -49,13 +49,17 @@ function youtubeId(url: string): string | null {
   return m ? m[1] : null;
 }
 
-// Format: WEBI-XXXX05 / WEBI-XXXX08 / WEBI-XXXX10
-// Last 2 digits encode the discount %, readable by the consultant at checkout.
-function genDiscountCode(sessionId: string, discountPct: number): string {
-  const hex    = sessionId.replace(/-/g, "").slice(-4).toUpperCase();
-  const suffix = String(discountPct).padStart(2, "0");
-  return `WEBI-${hex}${suffix}`;
+// Format: WEBI-XXXXXXXX05 — last 2 digits encode the discount % for consultant readability.
+// 4 random bytes (2^32 space) makes enumeration attacks computationally impractical.
+function genDiscountCode(discountPct: number): string {
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+  return `WEBI-${hex}${String(discountPct).padStart(2, "0")}`;
 }
+
+// Known valid store IDs — requests from unknown sources are silently dropped.
+const VALID_STORE_IDS = new Set(["corso-vercelli", "5-giornate", "verona", "bergamo"]);
 
 const BARCODE_RECTS = [
   [2,3,.55],[7,1,.80],[10,4,.50],[16,2,.70],[20,5,.55],[27,1,.85],[30,3,.50],
@@ -103,13 +107,16 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
   const pct          = Number(record.match_percent ?? 0);
   const productName  = escHtml(String(record.product_name  ?? "Il tuo prodotto"));
   const productPrice = escHtml(String(record.product_price ?? ""));
-  const productImage = safeUrl(String(record.product_image ?? ""));
-  const productVideo = safeUrl(String(record.product_video ?? ""));
+  // Keep raw URLs for YouTube ID extraction, then HTML-escape for use in attributes.
+  const productImageRaw = safeUrl(String(record.product_image ?? ""));
+  const productVideoRaw = safeUrl(String(record.product_video ?? ""));
+  const productImage = escHtml(productImageRaw);
+  const productVideo = escHtml(productVideoRaw);
   const ringColor      = matchColor(pct);
   const badgeLabel     = matchBadgeLabel(pct);
   const fullName       = [nome, cognome].filter(Boolean).join(" ");
   const recipientEmail = escHtml(String(record.email ?? ""));
-  const vidId          = productVideo ? youtubeId(productVideo) : null;
+  const vidId          = productVideoRaw ? youtubeId(productVideoRaw) : null;
   const thumbUrl       = vidId ? `https://img.youtube.com/vi/${vidId}/maxresdefault.jpg` : null;
 
   return `<!DOCTYPE html>
@@ -437,13 +444,36 @@ serve(async (req) => {
 
   const record = payload.record as Record<string, unknown>;
   if (!record?.email) {
-    return new Response("no email", { status: 200 });
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  }
+
+  // Silently ignore sessions from unknown store IDs — they were not created by our app.
+  if (record.store_id && !VALID_STORE_IDS.has(String(record.store_id))) {
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 
   const discountPct = Number(record.discount_percent ?? 5);
-  const code = genDiscountCode(String(record.id), discountPct);
+  const code = genDiscountCode(discountPct);
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  // Server-side email rate limit — bypass-proof regardless of how the session was created.
+  // If this email already received an email in the last hour, save the code to DB
+  // but silently skip sending. The customer experience is unaffected; only abusers are blocked.
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { count: recentEmails } = await supabase
+    .from("quiz_sessions")
+    .select("id", { count: "exact", head: true })
+    .eq("email", String(record.email))
+    .eq("email_sent", true)
+    .neq("id", String(record.id))
+    .gte("created_at", oneHourAgo);
+
+  if ((recentEmails ?? 0) >= 1) {
+    await supabase.from("quiz_sessions").update({ discount_code: code }).eq("id", record.id);
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  }
+
   const { error: dbErr } = await supabase
     .from("quiz_sessions")
     .update({ discount_code: code, email_sent: true })

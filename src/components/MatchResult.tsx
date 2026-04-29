@@ -11,10 +11,15 @@ const EMAIL_TAPS  = 5;
 const PIN_KEYS: (number | "⌫" | "")[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, "", 0, "⌫"];
 
 function getClientId(): string {
-  const key = "wb_client_id";
-  let id = localStorage.getItem(key);
-  if (!id) { id = crypto.randomUUID(); localStorage.setItem(key, id); }
-  return id;
+  const idKey  = "wb_client_id";
+  const tsKey  = "wb_client_id_rotated";
+  const dayMs  = 86_400_000;
+  const lastTs = Number(localStorage.getItem(tsKey) ?? 0);
+  if (!localStorage.getItem(idKey) || Date.now() - lastTs > dayMs) {
+    localStorage.setItem(idKey, crypto.randomUUID());
+    localStorage.setItem(tsKey, String(Date.now()));
+  }
+  return localStorage.getItem(idKey)!;
 }
 
 interface MatchResultProps {
