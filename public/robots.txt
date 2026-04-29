@@ -1,18 +1,28 @@
 User-agent: *
 Disallow: /stats
+Disallow: /manager
+Disallow: /reset-password
 
 User-agent: Googlebot
 Allow: /
 Disallow: /stats
+Disallow: /manager
+Disallow: /reset-password
 
 User-agent: Bingbot
 Allow: /
 Disallow: /stats
+Disallow: /manager
+Disallow: /reset-password
 
 User-agent: Twitterbot
 Allow: /
 Disallow: /stats
+Disallow: /manager
+Disallow: /reset-password
 
 User-agent: facebookexternalhit
 Allow: /
 Disallow: /stats
+Disallow: /manager
+Disallow: /reset-password

@@ -51,6 +51,7 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
         setTransitioning(false);
       }, 240);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, answers, onComplete]);
 
   const question = questions[currentIndex];

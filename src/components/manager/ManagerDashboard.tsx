@@ -60,10 +60,24 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   // Undo last toggle — auto-dismisses after 8 s
   const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [userRole, setUserRole] = useState<{ role: string; store_id: string | null } | null>(null);
 
   const currentStore = getStoreById(storeId);
 
   useIdleLogout(onLogout);
+
+  // Fetch the logged-in user's store role; lock store selector for consulente.
+  useEffect(() => {
+    supabase.rpc("get_my_store_role").then(({ data }) => {
+      if (!data || data.length === 0) return;
+      const r = data[0] as { role: string; store_id: string | null };
+      setUserRole(r);
+      if (r.role === "consulente_responsabile" && r.store_id) {
+        setStoreIdState(r.store_id);
+        setStoredStoreId(r.store_id);
+      }
+    });
+  }, []);
 
   const allTags = Array.from(new Set(products.flatMap((p) => p.tags))).sort();
 
@@ -86,7 +100,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         if (row.image_url) images[row.product_id] = row.image_url;
         if (row.video_url) videos[row.product_id] = row.video_url;
         if (row.discount_percent) discounts[row.product_id] = row.discount_percent;
-        // @ts-ignore
+        // @ts-expect-error — faq columns added via migration 20260418000002, not yet in generated types
         const { faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3 } = row as Record<string, string>;
         if (faq_q1 || faq_q2 || faq_q3) {
           faqs[row.product_id] = {
@@ -133,6 +147,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         user_email: data.user.email,
         product_id: productId,
         new_active: targetActive,
+        store_id: storeId,
       });
     });
 
@@ -281,7 +296,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   };
 
   const saveFaq = async (productId: string, faq: FaqData) => {
-    // @ts-ignore — columns added via migration 20260418000002
+    // @ts-expect-error — faq columns added via migration 20260418000002, not yet in generated types
     await supabase.from("product_settings").upsert({
       product_id: productId,
       store_id: storeId,
@@ -341,11 +356,12 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           <div>
             <h1 className="text-2xl font-bold text-foreground">📦 Catalogo</h1>
             <button
-              onClick={() => setShowStoreModal(true)}
-              className="mt-0.5 flex items-center gap-1 text-xs text-primary hover:underline"
+              onClick={() => userRole?.role !== "consulente_responsabile" && setShowStoreModal(true)}
+              className={`mt-0.5 flex items-center gap-1 text-xs ${userRole?.role === "consulente_responsabile" ? "text-muted-foreground cursor-default" : "text-primary hover:underline"}`}
             >
               <MapPin className="h-3 w-3" />
               {currentStore?.shortName ?? storeId}
+              {userRole?.role === "consulente_responsabile" && <span className="ml-1 opacity-50">(bloccata)</span>}
             </button>
             <p className="text-xs text-muted-foreground">
               {loading ? "Caricamento…" : `${activeCount} di ${products.length} prodotti attivi nel quiz`}

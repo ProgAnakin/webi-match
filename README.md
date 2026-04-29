@@ -157,7 +157,6 @@ All tables use Row-Level Security. Rate limiting is enforced at the database fun
 |-------|--------|---------|
 | `/manager` | PIN-protected | Product and store configuration |
 | `/stats` | MFA-protected | Session data, funnel metrics, product performance |
-| `/email-preview` | Internal | Email template renderer |
 
 ---
 

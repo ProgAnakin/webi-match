@@ -19,21 +19,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   tech:         "hsl(240, 75%, 60%)",
   style:        "hsl(335, 80%, 60%)",
   recovery:     "hsl(260, 65%, 55%)",
-  fitness:      "hsl(145, 80%, 42%)",
-  camera:       "hsl(45, 90%, 55%)",
-  gaming:       "hsl(330, 75%, 55%)",
-  communication:"hsl(210, 80%, 55%)",
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  sport:        "Sport",
-  audio:        "Audio",
-  productivity: "Produttività",
-  wellness:     "Benessere",
-  travel:       "Viaggio",
-  tech:         "Tech",
-  style:        "Stile",
-  recovery:     "Recupero",
 };
 
 const CATEGORY_CODES: Record<string, string> = {
@@ -81,9 +66,9 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
     "0 24px 60px hsl(145 80% 42% / 0.50)",
   ]);
 
-  const accentColor   = CATEGORY_COLORS[question.category]  ?? "hsl(27, 92%, 55%)";
-  const categoryLabel = CATEGORY_LABELS[question.category]  ?? question.category;
-  const categoryCode  = CATEGORY_CODES[question.category]   ?? "???";
+  const accentColor   = CATEGORY_COLORS[question.category] ?? "hsl(27, 92%, 55%)";
+  const categoryLabel = t.categories[question.category]    ?? question.category;
+  const categoryCode  = CATEGORY_CODES[question.category]  ?? "???";
   const roman         = ROMAN[index] ?? String(index + 1);
   const romanTotal    = ROMAN[questions.length - 1] ?? String(questions.length);
 

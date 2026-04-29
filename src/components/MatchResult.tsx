@@ -11,10 +11,15 @@ const EMAIL_TAPS  = 5;
 const PIN_KEYS: (number | "⌫" | "")[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, "", 0, "⌫"];
 
 function getClientId(): string {
-  const key = "wb_client_id";
-  let id = localStorage.getItem(key);
-  if (!id) { id = crypto.randomUUID(); localStorage.setItem(key, id); }
-  return id;
+  const idKey  = "wb_client_id";
+  const tsKey  = "wb_client_id_rotated";
+  const dayMs  = 86_400_000;
+  const lastTs = Number(localStorage.getItem(tsKey) ?? 0);
+  if (!localStorage.getItem(idKey) || Date.now() - lastTs > dayMs) {
+    localStorage.setItem(idKey, crypto.randomUUID());
+    localStorage.setItem(tsKey, String(Date.now()));
+  }
+  return localStorage.getItem(idKey)!;
 }
 
 interface MatchResultProps {
@@ -278,7 +283,7 @@ const MatchResult = ({
                     {pinLockedSeconds > 0 && (
                       <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                         className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-center text-xs text-destructive">
-                        Troppi tentativi — riprova tra <strong>{pinLockedSeconds}s</strong>
+                        {t.changeEmail.tooManyAttempts(pinLockedSeconds)}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -299,7 +304,7 @@ const MatchResult = ({
                     ))}
                   </div>
                   {pinVerifying && (
-                    <p className="mb-2 text-center text-xs text-muted-foreground animate-pulse">Verifica…</p>
+                    <p className="mb-2 text-center text-xs text-muted-foreground animate-pulse">{t.changeEmail.verifying}</p>
                   )}
                   {pinError && (
                     <p className="mb-3 text-center text-xs font-medium text-destructive">{t.changeEmail.pinError}</p>
@@ -343,7 +348,7 @@ const MatchResult = ({
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSaveEmail()}
-                    placeholder="nuova@email.com"
+                    placeholder={t.changeEmail.newEmailPlaceholder}
                     autoFocus
                     className={`w-full rounded-xl border bg-background px-4 py-3 text-center text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary ${
                       newEmailTouched && !EMAIL_REGEX.test(newEmail.trim())

@@ -208,6 +208,11 @@ const Index = () => {
   };
 
   const handleRestart = () => {
+    // Wipe the previous visitor's cooldown marker so the next person on
+    // this shared kiosk starts completely fresh (no false cooldown carry-over).
+    try {
+      if (user.email) sessionStorage.removeItem(`wb_cooldown_${user.email.trim().toLowerCase()}`);
+    } catch { /* storage unavailable */ }
     setUser({ nome: "", cognome: "", email: "" });
     setMatchedProduct(null);
     setMatchPercent(0);

@@ -216,6 +216,7 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
     animate(checkScale, 1, { type: "spring", stiffness: 200, damping: 15, delay: 0.5 });
     const timer = setTimeout(() => play("success"), 350);
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const benefits = [

@@ -3,23 +3,38 @@
 //
 // Required secret (set via Supabase Dashboard → Edge Functions → Secrets):
 //   GOOGLE_SHEETS_WEBHOOK_URL — the Apps Script doPost URL
+//
+// Optional secret:
+//   ALLOWED_ORIGIN — restrict CORS to a specific domain (e.g. https://your-app.vercel.app)
+//                    defaults to "*" if not set (backward-compatible)
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 
-const WEBHOOK_URL = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL") ?? "";
-
-const CORS = {
-  "Access-Control-Allow-Origin":  "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+const WEBHOOK_URL    = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL") ?? "";
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
 
 serve(async (req) => {
+  const CORS = {
+    "Access-Control-Allow-Origin":  ALLOWED_ORIGIN,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: CORS });
 
+  // If ALLOWED_ORIGIN is locked down, silently reject unexpected origins
+  // without leaking any information about why the request failed.
+  if (ALLOWED_ORIGIN !== "*") {
+    const origin = req.headers.get("origin") ?? "";
+    if (origin && origin !== ALLOWED_ORIGIN) {
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
+  }
+
   if (!WEBHOOK_URL) {
-    // Secret not configured — silently succeed so the client never blocks
     return new Response(JSON.stringify({ ok: true, skipped: true }), {
       headers: { ...CORS, "Content-Type": "application/json" },
     });
@@ -32,7 +47,7 @@ serve(async (req) => {
     return new Response("Bad Request", { status: 400, headers: CORS });
   }
 
-  // Basic allowlist: only forward expected string fields, nothing else
+  // Strict allowlist — only forward expected string fields, nothing else.
   const allowed = ["data", "nome", "cognome", "email", "prodotto", "match", "store_id"] as const;
   const safe: Record<string, string> = {};
   if (body && typeof body === "object") {

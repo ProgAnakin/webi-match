@@ -59,14 +59,18 @@ export interface T {
     accessTitle: string;
     pinPrompt: string;
     pinError: string;
+    tooManyAttempts: (seconds: number) => string;
+    verifying: string;
     editTitle: string;
     currentEmail: string;
+    newEmailPlaceholder: string;
     emailInvalid: string;
     save: string;
     cancel: string;
     emailHint: string;
     connectionError: string;
   };
+  categories: Record<string, string>;
   success: {
     title: (name: string) => string;
     titleNoName: string;
@@ -156,13 +160,21 @@ export const translations: Record<Lang, T> = {
       accessTitle: "Accesso consulente",
       pinPrompt: "Inserisci il PIN per modificare l'email",
       pinError: "PIN non corretto",
+      tooManyAttempts: (s) => `Troppi tentativi — riprova tra ${s}s`,
+      verifying: "Verifica…",
       editTitle: "Modifica email",
       currentEmail: "Email attuale:",
+      newEmailPlaceholder: "nuova@email.com",
       emailInvalid: "Email non valida",
       save: "Salva email",
       cancel: "Annulla",
       emailHint: "Email non corretta? Chiedi a un consulente presente in negozio di modificarla.",
       connectionError: "Errore di connessione — riprova tra qualche secondo.",
+    },
+    categories: {
+      sport: "Sport", audio: "Audio", productivity: "Produttività",
+      wellness: "Benessere", travel: "Viaggio", tech: "Tech",
+      style: "Stile", recovery: "Recupero",
     },
     success: {
       title: (n) => `Perfetto, ${n}!`,
@@ -253,13 +265,21 @@ export const translations: Record<Lang, T> = {
       accessTitle: "Consultant access",
       pinPrompt: "Enter the PIN to change the email",
       pinError: "Incorrect PIN",
+      tooManyAttempts: (s) => `Too many attempts — try again in ${s}s`,
+      verifying: "Verifying…",
       editTitle: "Edit email",
       currentEmail: "Current email:",
+      newEmailPlaceholder: "new@email.com",
       emailInvalid: "Invalid email",
       save: "Save email",
       cancel: "Cancel",
       emailHint: "Incorrect email? Ask a store consultant to change it.",
       connectionError: "Connection error — please try again in a moment.",
+    },
+    categories: {
+      sport: "Sport", audio: "Audio", productivity: "Productivity",
+      wellness: "Wellness", travel: "Travel", tech: "Tech",
+      style: "Style", recovery: "Recovery",
     },
     success: {
       title: (n) => `Perfect, ${n}!`,
@@ -350,13 +370,21 @@ export const translations: Record<Lang, T> = {
       accessTitle: "Acesso do consultor",
       pinPrompt: "Insira o PIN para alterar o email",
       pinError: "PIN incorreto",
+      tooManyAttempts: (s) => `Demasiadas tentativas — tente novamente em ${s}s`,
+      verifying: "A verificar…",
       editTitle: "Alterar email",
       currentEmail: "Email atual:",
+      newEmailPlaceholder: "novo@email.com",
       emailInvalid: "Email inválido",
       save: "Guardar email",
       cancel: "Cancelar",
       emailHint: "Email incorreto? Peça a um consultor na loja para alterá-lo.",
       connectionError: "Erro de ligação — tente novamente em instantes.",
+    },
+    categories: {
+      sport: "Esporte", audio: "Áudio", productivity: "Produtividade",
+      wellness: "Bem-estar", travel: "Viagem", tech: "Tech",
+      style: "Estilo", recovery: "Recuperação",
     },
     success: {
       title: (n) => `Perfeito, ${n}!`,
@@ -447,13 +475,21 @@ export const translations: Record<Lang, T> = {
       accessTitle: "Acceso del consultor",
       pinPrompt: "Introduce el PIN para cambiar el email",
       pinError: "PIN incorrecto",
+      tooManyAttempts: (s) => `Demasiados intentos — inténtalo de nuevo en ${s}s`,
+      verifying: "Verificando…",
       editTitle: "Editar email",
       currentEmail: "Email actual:",
+      newEmailPlaceholder: "nuevo@email.com",
       emailInvalid: "Email no válido",
       save: "Guardar email",
       cancel: "Cancelar",
       emailHint: "¿Email incorrecto? Pide a un consultor en tienda que lo cambie.",
       connectionError: "Error de conexión — vuelve a intentarlo en un momento.",
+    },
+    categories: {
+      sport: "Deporte", audio: "Audio", productivity: "Productividad",
+      wellness: "Bienestar", travel: "Viaje", tech: "Tech",
+      style: "Estilo", recovery: "Recuperación",
     },
     success: {
       title: (n) => `¡Perfecto, ${n}!`,
@@ -544,13 +580,21 @@ export const translations: Record<Lang, T> = {
       accessTitle: "Accès consultant",
       pinPrompt: "Entrez le PIN pour modifier l'email",
       pinError: "PIN incorrect",
+      tooManyAttempts: (s) => `Trop de tentatives — réessayez dans ${s}s`,
+      verifying: "Vérification…",
       editTitle: "Modifier l'email",
       currentEmail: "Email actuel :",
+      newEmailPlaceholder: "nouveau@email.com",
       emailInvalid: "Email invalide",
       save: "Enregistrer l'email",
       cancel: "Annuler",
       emailHint: "Email incorrect ? Demandez à un consultant en magasin de le modifier.",
       connectionError: "Erreur de connexion — réessayez dans un instant.",
+    },
+    categories: {
+      sport: "Sport", audio: "Audio", productivity: "Productivité",
+      wellness: "Bien-être", travel: "Voyage", tech: "Tech",
+      style: "Style", recovery: "Récupération",
     },
     success: {
       title: (n) => `Parfait, ${n} !`,

@@ -3,21 +3,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { STORES, setStoredStoreId, getStoredStoreId } from "@/data/stores";
 import { supabase } from "@/integrations/supabase/client";
+import { useLang } from "@/i18n/LanguageContext";
 
 // PIN validation is server-side via Supabase RPC (verify_staff_pin).
 // Lockout + attempt logging are also managed server-side.
 
 const KEYS = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
 
-// Persistent device ID — used server-side to track lockout per device.
+// Device ID rotated daily — limits long-term cross-session tracking on shared kiosks.
 function getClientId(): string {
-  const key = "wb_client_id";
-  let id = localStorage.getItem(key);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(key, id);
+  const idKey  = "wb_client_id";
+  const tsKey  = "wb_client_id_rotated";
+  const dayMs  = 86_400_000;
+  const lastTs = Number(localStorage.getItem(tsKey) ?? 0);
+  if (!localStorage.getItem(idKey) || Date.now() - lastTs > dayMs) {
+    localStorage.setItem(idKey, crypto.randomUUID());
+    localStorage.setItem(tsKey, String(Date.now()));
   }
-  return id;
+  return localStorage.getItem(idKey)!;
 }
 
 type Step = "pin" | "store";
@@ -27,6 +30,7 @@ interface AdminPinOverlayProps {
 }
 
 const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
+  const { t } = useLang();
   const [step, setStep] = useState<Step>("pin");
   const [pin, setPin] = useState("");
   const [shake, setShake] = useState(false);
@@ -70,12 +74,12 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
 
     if (next.length === 4) {
       setVerifying(true);
-      const { data, error } = await supabase.rpc("verify_staff_pin", {
-        pin_input: next,
-        client_id: getClientId(),
-        // user_agent is a secondary fingerprint — even if localStorage is
-        // cleared (resetting client_id), the same browser/device stays blocked.
-        user_agent: navigator.userAgent,
+      const { data, error } = await supabase.functions.invoke("verify-pin", {
+        body: {
+          pin_input:  next,
+          client_id:  getClientId(),
+          user_agent: navigator.userAgent,
+        },
       });
       setVerifying(false);
 
@@ -225,7 +229,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
               exit={{ opacity: 0 }}
               className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-center text-xs text-destructive"
             >
-              Troppi tentativi. Riprova tra <strong>{lockedSeconds}s</strong>.
+              {t.changeEmail.tooManyAttempts(lockedSeconds)}
             </motion.div>
           )}
         </AnimatePresence>
@@ -251,7 +255,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
 
         {/* Verifying indicator */}
         {verifying && (
-          <p className="mb-3 text-center text-xs text-muted-foreground animate-pulse">Verifica in corso…</p>
+          <p className="mb-3 text-center text-xs text-muted-foreground animate-pulse">{t.changeEmail.verifying}</p>
         )}
 
         {/* Numeric keypad */}
