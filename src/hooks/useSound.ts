@@ -21,7 +21,7 @@ let _unlocked = false;
 function getCtx(): AudioContext | null {
   try {
     if (!_ctx || _ctx.state === "closed") {
-      _ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      _ctx = new (window.AudioContext || (window as unknown as Record<string, typeof AudioContext>).webkitAudioContext)();
     }
     if (_ctx.state === "suspended") {
       _ctx.resume(); // async, best-effort — real unlock happens via unlockAudio()

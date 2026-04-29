@@ -233,7 +233,7 @@ export function getMatchedProduct(
   // Fallback to pool[0] then products[0] to guarantee a non-null result.
   const bestProduct = tied[Math.floor(Math.random() * tied.length)] ?? pool[0] ?? products[0];
 
-  const totalTags = activeTags.length || 1;
+  const totalTags = bestProduct.tags.length || 1;
   const rawPercent = Math.round((bestScore / totalTags) * 100);
   const matchPercent = Math.min(MATCH_MAX, Math.max(MATCH_MIN, rawPercent));
 

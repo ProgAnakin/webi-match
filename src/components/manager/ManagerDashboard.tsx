@@ -86,7 +86,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         if (row.image_url) images[row.product_id] = row.image_url;
         if (row.video_url) videos[row.product_id] = row.video_url;
         if (row.discount_percent) discounts[row.product_id] = row.discount_percent;
-        // @ts-ignore
+        // @ts-expect-error — faq columns added via migration 20260418000002, not yet in generated types
         const { faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3 } = row as Record<string, string>;
         if (faq_q1 || faq_q2 || faq_q3) {
           faqs[row.product_id] = {
@@ -281,7 +281,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   };
 
   const saveFaq = async (productId: string, faq: FaqData) => {
-    // @ts-ignore — columns added via migration 20260418000002
+    // @ts-expect-error — faq columns added via migration 20260418000002, not yet in generated types
     await supabase.from("product_settings").upsert({
       product_id: productId,
       store_id: storeId,

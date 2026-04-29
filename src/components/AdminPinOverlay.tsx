@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { STORES, setStoredStoreId, getStoredStoreId } from "@/data/stores";
 import { supabase } from "@/integrations/supabase/client";
+import { useLang } from "@/i18n/LanguageContext";
 
 // PIN validation is server-side via Supabase RPC (verify_staff_pin).
 // Lockout + attempt logging are also managed server-side.
@@ -27,6 +28,7 @@ interface AdminPinOverlayProps {
 }
 
 const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
+  const { t } = useLang();
   const [step, setStep] = useState<Step>("pin");
   const [pin, setPin] = useState("");
   const [shake, setShake] = useState(false);
@@ -225,7 +227,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
               exit={{ opacity: 0 }}
               className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-center text-xs text-destructive"
             >
-              Troppi tentativi. Riprova tra <strong>{lockedSeconds}s</strong>.
+              {t.changeEmail.tooManyAttempts(lockedSeconds)}
             </motion.div>
           )}
         </AnimatePresence>
@@ -251,7 +253,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
 
         {/* Verifying indicator */}
         {verifying && (
-          <p className="mb-3 text-center text-xs text-muted-foreground animate-pulse">Verifica in corso…</p>
+          <p className="mb-3 text-center text-xs text-muted-foreground animate-pulse">{t.changeEmail.verifying}</p>
         )}
 
         {/* Numeric keypad */}

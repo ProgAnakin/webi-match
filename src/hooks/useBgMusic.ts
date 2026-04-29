@@ -233,6 +233,7 @@ export function useBgMusic(active: boolean, track: MusicTrack = "quiz") {
 
       return () => {
         if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+        if (ctxRef.current) { ctxRef.current.close().catch(() => {}); ctxRef.current = null; destRef.current = null; }
       };
     } else {
       if (destRef.current && ctxRef.current) {

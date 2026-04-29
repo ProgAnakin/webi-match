@@ -103,8 +103,8 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
       const { data } = await supabase.rpc("check_email_cooldown", {
         p_email: normalizedEmail,
       });
-      if (data?.[0]?.in_cooldown) {
-        setCooldownHours(Math.ceil(data[0].hours_remaining as number));
+      if (data?.[0]?.in_cooldown && (data[0].hours_remaining as number) > 0) {
+        setCooldownHours(Math.max(1, Math.ceil(data[0].hours_remaining as number)));
         setChecking(false);
         return;
       }
@@ -343,7 +343,7 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
           <div className="h-1 w-5 rounded-full bg-muted-foreground/25" />
           <div className="h-1 w-5 rounded-full bg-muted-foreground/25" />
           <span className="ml-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
-            step 1
+            01
           </span>
         </motion.div>
 
