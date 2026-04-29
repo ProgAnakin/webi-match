@@ -10,6 +10,12 @@ import { LANGUAGES } from "@/i18n/translations";
 import { getStoredStoreId, getStoreById } from "@/data/stores";
 import { supabase } from "@/integrations/supabase/client";
 
+// Staff / test emails that bypass the 1-hour participation cooldown.
+// Remove an entry here when the account should be subject to normal rules.
+const COOLDOWN_BYPASS = new Set([
+  "costanzobruno.annichini@webidoo.com",
+]);
+
 export interface UserInfo {
   nome: string;
   cognome: string;
@@ -98,32 +104,35 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
     if (!isFormValid || checking) return;
 
     const normalizedEmail = email.trim().toLowerCase();
-    setChecking(true);
-    try {
-      const { data } = await supabase.rpc("check_email_cooldown", {
-        p_email: normalizedEmail,
-      });
-      if (data?.[0]?.in_cooldown && (data[0].hours_remaining as number) > 0) {
-        setCooldownHours(Math.max(1, Math.ceil(data[0].hours_remaining as number)));
-        setChecking(false);
-        return;
-      }
-    } catch {
-      // RPC unavailable or network failure — check sessionStorage as local fallback
-      const ssKey = `wb_cooldown_${normalizedEmail}`;
-      const lastAttempt = sessionStorage.getItem(ssKey);
-      if (lastAttempt) {
-        const diffMs = Date.now() - parseInt(lastAttempt, 10);
-        const cooldownMs = 60 * 60 * 1000; // 1 hour local fallback
-        if (diffMs < cooldownMs) {
-          setCooldownHours(Math.ceil((cooldownMs - diffMs) / 3600000));
+
+    if (!COOLDOWN_BYPASS.has(normalizedEmail)) {
+      setChecking(true);
+      try {
+        const { data } = await supabase.rpc("check_email_cooldown", {
+          p_email: normalizedEmail,
+        });
+        if (data?.[0]?.in_cooldown && (data[0].hours_remaining as number) > 0) {
+          setCooldownHours(Math.max(1, Math.ceil(data[0].hours_remaining as number)));
           setChecking(false);
           return;
         }
+      } catch {
+        // RPC unavailable or network failure — check sessionStorage as local fallback
+        const ssKey = `wb_cooldown_${normalizedEmail}`;
+        const lastAttempt = sessionStorage.getItem(ssKey);
+        if (lastAttempt) {
+          const diffMs = Date.now() - parseInt(lastAttempt, 10);
+          const cooldownMs = 60 * 60 * 1000; // 1 hour local fallback
+          if (diffMs < cooldownMs) {
+            setCooldownHours(Math.ceil((cooldownMs - diffMs) / 3600000));
+            setChecking(false);
+            return;
+          }
+        }
+        sessionStorage.setItem(ssKey, String(Date.now()));
       }
-      sessionStorage.setItem(ssKey, String(Date.now()));
+      setChecking(false);
     }
-    setChecking(false);
     play("start");
     onStart({ nome: nome.trim(), cognome: cognome.trim(), email: normalizedEmail });
   }, [isFormValid, checking, nome, cognome, email, play, onStart]);
