@@ -147,6 +147,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         user_email: data.user.email,
         product_id: productId,
         new_active: targetActive,
+        store_id: storeId,
       });
     });
 

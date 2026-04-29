@@ -10,10 +10,11 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const BREVO_KEY   = Deno.env.get("BREVO_API_KEY") ?? "";
+const BREVO_KEY    = Deno.env.get("BREVO_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const PII_KEY      = Deno.env.get("PII_ENCRYPTION_KEY") ?? "";
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
 
 const C = {
   bg:         "#0d1228",
@@ -428,6 +429,21 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
 }
 
 serve(async (req) => {
+  const origin = req.headers.get("origin") ?? "";
+
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: {
+      "Access-Control-Allow-Origin":  ALLOWED_ORIGIN === "*" ? "*" : origin,
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
+    }});
+  }
+
+  // Silent CORS rejection for unexpected origins
+  if (ALLOWED_ORIGIN !== "*" && origin && origin !== ALLOWED_ORIGIN) {
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  }
+
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
