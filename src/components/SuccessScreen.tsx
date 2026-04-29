@@ -38,80 +38,69 @@ const SPARKLES = Array.from({ length: 32 }, (_, i) => ({
 const SuccessBackground = ({ skip }: { skip: boolean }) => (
   <div
     className="pointer-events-none absolute inset-0 overflow-hidden"
-    style={{ background: "hsl(228,72%,3%)" }}
+    style={{ background: "linear-gradient(160deg, hsl(225,70%,13%) 0%, hsl(240,60%,16%) 50%, hsl(220,65%,11%) 100%)" }}
   >
-    {/* Orb layer — screen blend makes colours add like real light */}
+    {/* Warm light burst — centre top, like sunlight through a window */}
+    <div className="absolute inset-0"
+      style={{ background: "radial-gradient(ellipse 70% 55% at 50% -5%, hsl(38,100%,68% / 0.22) 0%, transparent 70%)" }}
+    />
+
+    {/* Orb layer — screen blend for additive colour mixing */}
     <div className="absolute inset-0" style={{ mixBlendMode: "screen" }}>
 
-      {/* Orb 1 — brand orange, top-left quadrant */}
+      {/* Orb 1 — brand orange, top-left */}
       <motion.div className="absolute rounded-full"
         style={{
-          left: "0%", top: "0%",
-          width: 760, height: 760,
-          background: "radial-gradient(circle, hsl(27,95%,56%) 0%, transparent 68%)",
-          filter: "blur(70px)",
-          opacity: 0.55,
+          left: "-5%", top: "-5%",
+          width: 780, height: 780,
+          background: "radial-gradient(circle, hsl(27,98%,62%) 0%, transparent 65%)",
+          filter: "blur(60px)", opacity: 0.72,
         }}
-        animate={skip ? {} : {
-          x: [0, 80, 140, 80, 0, -40, 0],
-          y: [0, 60, -10, -70, -30, 30, 0],
-        }}
+        animate={skip ? {} : { x: [0, 90, 150, 80, 0, -30, 0], y: [0, 50, -20, -80, -20, 40, 0] }}
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Orb 2 — electric blue, bottom-right quadrant */}
+      {/* Orb 2 — cyan-blue, bottom-right */}
       <motion.div className="absolute rounded-full"
         style={{
-          right: "-8%", bottom: "10%",
-          width: 680, height: 680,
-          background: "radial-gradient(circle, hsl(216,92%,64%) 0%, transparent 68%)",
-          filter: "blur(80px)",
-          opacity: 0.50,
+          right: "-10%", bottom: "5%",
+          width: 700, height: 700,
+          background: "radial-gradient(circle, hsl(200,95%,65%) 0%, transparent 65%)",
+          filter: "blur(70px)", opacity: 0.62,
         }}
-        animate={skip ? {} : {
-          x: [0, -90, -50, 50, 0],
-          y: [0, -70, 60, 30, 0],
-        }}
-        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+        animate={skip ? {} : { x: [0, -100, -60, 40, 0], y: [0, -80, 60, 20, 0] }}
+        transition={{ duration: 23, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Orb 3 — coral, top-right */}
+      {/* Orb 3 — warm coral, top-right */}
       <motion.div className="absolute rounded-full"
         style={{
-          right: "5%", top: "5%",
-          width: 520, height: 520,
-          background: "radial-gradient(circle, hsl(10,90%,62%) 0%, transparent 68%)",
-          filter: "blur(64px)",
-          opacity: 0.45,
+          right: "0%", top: "0%",
+          width: 560, height: 560,
+          background: "radial-gradient(circle, hsl(12,95%,66%) 0%, transparent 65%)",
+          filter: "blur(56px)", opacity: 0.58,
         }}
-        animate={skip ? {} : {
-          x: [0, -70, -110, -70, 0],
-          y: [0, 90, 50, -50, 0],
-        }}
+        animate={skip ? {} : { x: [0, -80, -120, -70, 0], y: [0, 100, 60, -40, 0] }}
         transition={{ duration: 17, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Orb 4 — violet, bottom-left */}
       <motion.div className="absolute rounded-full"
         style={{
-          left: "5%", bottom: "5%",
-          width: 580, height: 580,
-          background: "radial-gradient(circle, hsl(264,74%,66%) 0%, transparent 68%)",
-          filter: "blur(76px)",
-          opacity: 0.42,
+          left: "0%", bottom: "0%",
+          width: 620, height: 620,
+          background: "radial-gradient(circle, hsl(270,80%,72%) 0%, transparent 65%)",
+          filter: "blur(68px)", opacity: 0.52,
         }}
-        animate={skip ? {} : {
-          x: [0, 70, 110, 50, 0],
-          y: [0, -60, -100, -40, 0],
-        }}
-        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+        animate={skip ? {} : { x: [0, 80, 120, 60, 0], y: [0, -70, -110, -50, 0] }}
+        transition={{ duration: 21, repeat: Infinity, ease: "easeInOut" }}
       />
     </div>
 
-    {/* Vignette — keeps central content readable without killing the aurora */}
+    {/* Soft vignette — lighter than before so background colour shows through */}
     <div className="absolute inset-0"
       style={{
-        background: "radial-gradient(ellipse 85% 75% at 50% 50%, transparent 15%, hsl(228,72%,3% / 0.72) 100%)",
+        background: "radial-gradient(ellipse 90% 80% at 50% 50%, transparent 25%, hsl(228,65%,10% / 0.55) 100%)",
       }}
     />
 

@@ -42,17 +42,38 @@ function readCssConfettiColors(): string[] {
 }
 
 interface ConfettiData {
-  id: number; delay: number; duration: number;
-  left: string; color: string; size: number;
-  rotateDeg: number; xOffset: number;
+  id: number;
+  shape: "ribbon" | "square" | "circle";
+  delay: number; duration: number;
+  left: string; color: string;
+  w: number; h: number;
+  rotStart: number; rotSpeed: number;
+  wave: number; drift: number;
 }
 
-const ConfettiParticle = ({ delay, duration, left, color, size, rotateDeg, xOffset }: ConfettiData) => (
+const ConfettiParticle = ({ shape, delay, duration, left, color, w, h, rotStart, rotSpeed, wave, drift }: ConfettiData) => (
   <motion.div
-    className="absolute rounded-sm pointer-events-none"
-    style={{ left, top: "-5%", width: size, height: size * 0.6, backgroundColor: color }}
-    animate={{ y: ["0vh", "110vh"], rotate: [0, rotateDeg], x: [0, xOffset], opacity: [1, 1, 0.4] }}
-    transition={{ duration, repeat: Infinity, delay, ease: "easeIn" }}
+    className="absolute pointer-events-none"
+    style={{
+      left, top: "-6%",
+      width: w, height: h,
+      backgroundColor: color,
+      borderRadius: shape === "circle" ? "50%" : shape === "ribbon" ? "2px" : "3px",
+      willChange: "transform, opacity",
+    }}
+    animate={{
+      y: ["0vh", "108vh"],
+      rotate: [rotStart, rotStart + rotSpeed],
+      x: [0, wave, -wave * 0.6, wave * 0.4, drift],
+      opacity: [0, 1, 1, 1, 0],
+    }}
+    transition={{
+      duration,
+      repeat: Infinity,
+      delay,
+      ease: "linear",
+      times: [0, 0.08, 0.45, 0.82, 1],
+    }}
   />
 );
 
@@ -119,17 +140,28 @@ const MatchResult = ({
   }, [matchPercent]);
 
   const particleCount = tier === "high" ? 55 : tier === "mid" ? 28 : 12;
-  const confettiParticles = useMemo<ConfettiData[]>(() =>
-    Array.from({ length: particleCount }, (_, i) => ({
-      id: i,
-      delay:     Math.random() * 4,
-      duration:  1.8 + Math.random() * 2,
-      left:      `${Math.random() * 100}%`,
-      color:     confettiColors[i % confettiColors.length],
-      size:      5 + Math.random() * 10,
-      rotateDeg: 360 * (Math.random() > 0.5 ? 1 : -1),
-      xOffset:   (Math.random() - 0.5) * 100,
-    })), [particleCount, confettiColors]);
+  const confettiParticles = useMemo<ConfettiData[]>(() => {
+    const shapes: ConfettiData["shape"][] = ["ribbon", "ribbon", "square", "circle"];
+    return Array.from({ length: particleCount }, (_, i) => {
+      const shape = shapes[i % shapes.length];
+      const isRibbon = shape === "ribbon";
+      const baseW = isRibbon ? 4 + (i % 3) * 2 : 6 + (i % 4) * 2;
+      return {
+        id: i,
+        shape,
+        delay:    (i / particleCount) * 3.5,
+        duration: 2.4 + (i % 7) * 0.35,
+        left:     `${3 + (i * 31 % 94)}%`,
+        color:    confettiColors[i % confettiColors.length],
+        w:        baseW,
+        h:        isRibbon ? baseW * 3.5 : baseW,
+        rotStart:  (i * 47) % 360,
+        rotSpeed:  (i % 2 === 0 ? 1 : -1) * (360 + (i % 4) * 180),
+        wave:      20 + (i % 5) * 14,
+        drift:     (i % 2 === 0 ? 1 : -1) * (10 + (i % 6) * 8),
+      };
+    });
+  }, [particleCount, confettiColors]);
 
   const starCount = Math.floor(product.rating);
 
