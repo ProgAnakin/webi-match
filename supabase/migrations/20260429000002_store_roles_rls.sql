@@ -147,35 +147,6 @@ CREATE POLICY "consulente_read_sessions"
     )
   );
 
--- ── 5. manager_audit_log — same pattern ──────────────────────────────────────
-DO $$
-BEGIN
-  DROP POLICY IF EXISTS "staff_read_audit_log"     ON public.manager_audit_log;
-  DROP POLICY IF EXISTS "manager_read_audit_log"   ON public.manager_audit_log;
-  DROP POLICY IF EXISTS "consulente_read_audit_log" ON public.manager_audit_log;
-END $$;
-
-CREATE POLICY "manager_read_audit_log"
-  ON public.manager_audit_log
-  FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.store_roles sr
-      WHERE sr.user_id = auth.uid()
-        AND sr.role = 'manager'
-    )
-  );
-
-CREATE POLICY "consulente_read_audit_log"
-  ON public.manager_audit_log
-  FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.store_roles sr
-      WHERE sr.user_id = auth.uid()
-        AND sr.role = 'consulente_responsabile'
-        AND sr.store_id = manager_audit_log.store_id
-    )
-  );
+-- ── 5. manager_audit_log — existing policy kept ──────────────────────────────
+-- manager_audit_log has no store_id column; all authenticated managers see all
+-- entries via the existing "audit_log_select_authenticated" policy.
