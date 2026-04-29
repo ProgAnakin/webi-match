@@ -13,6 +13,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const BREVO_KEY   = Deno.env.get("BREVO_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const PII_KEY      = Deno.env.get("PII_ENCRYPTION_KEY") ?? "";
 
 const C = {
   bg:         "#0d1228",
@@ -456,6 +457,21 @@ serve(async (req) => {
   const code = genDiscountCode(discountPct);
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  // Encrypt PII at rest — runs only when PII_ENCRYPTION_KEY secret is configured.
+  // nome/cognome → AES-encrypted bytea; email → SHA-256 hash for future lookups.
+  // Fire-and-forget: encryption failure must never block email delivery.
+  if (PII_KEY) {
+    supabase.rpc("encrypt_session_pii", {
+      p_session_id: String(record.id),
+      p_nome:       String(record.nome    ?? ""),
+      p_cognome:    String(record.cognome ?? ""),
+      p_email:      String(record.email   ?? ""),
+      p_key:        PII_KEY,
+    }).then(({ error }) => {
+      if (error) console.error("[on-session-created] pii encrypt failed:", error.message);
+    });
+  }
 
   // Server-side email rate limit — bypass-proof regardless of how the session was created.
   // If this email already received an email in the last hour, save the code to DB
