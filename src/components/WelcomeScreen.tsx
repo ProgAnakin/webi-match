@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 // Remove an entry here when the account should be subject to normal rules.
 const COOLDOWN_BYPASS = new Set([
   "costanzobruno.annichini@webidoo.com",
+  "costatocb@gmail.com",
 ]);
 
 export interface UserInfo {
