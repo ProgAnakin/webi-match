@@ -578,7 +578,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                   <h2 className="font-bold text-foreground">🕐 Sessioni</h2>
                   {filteredSessions.length > 0 && (
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {searchLower
+                      {search.trim()
                         ? `${searchedSessions.length} risultati · ${filteredSessions.length} totali`
                         : `${filteredSessions.length} totali`}
                       {totalPages > 1 && ` · pagina ${page + 1} di ${totalPages}`}
