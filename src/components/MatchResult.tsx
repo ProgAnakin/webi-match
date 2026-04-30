@@ -33,10 +33,15 @@ interface MatchResultProps {
   claimError?: boolean;
 }
 
+// Brand-aligned confetti subset — only warm/celebratory tokens that match
+// the Webidoo identity. Excludes purple, pink, teal, magenta to keep the
+// fireworks visually consistent with the rest of the app.
+const BRAND_CONFETTI_INDEXES = [1, 2, 3, 4, 5, 9, 12]; // orange, light orange, success green ×2, amber, yellow, orange-red
+
 function readCssConfettiColors(): string[] {
   const style = getComputedStyle(document.documentElement);
-  return Array.from({ length: 12 }, (_, i) => {
-    const raw = style.getPropertyValue(`--confetti-${i + 1}`).trim();
+  return BRAND_CONFETTI_INDEXES.map((i) => {
+    const raw = style.getPropertyValue(`--confetti-${i}`).trim();
     return raw ? `hsl(${raw})` : "#888";
   });
 }
@@ -44,20 +49,15 @@ function readCssConfettiColors(): string[] {
 // ── Firework burst — particles explode outward from a fixed point ────────────
 interface BurstCfg { bx: number; by: number; startDelay: number; cycle: number; count: number; }
 
-// 12 positions spread across the screen; each fires independently
+// 6 positions, well staggered so only 1–2 are visible at any moment
+// (was 12 — reduced to keep the product card as the visual protagonist)
 const BURST_POSITIONS: BurstCfg[] = [
-  { bx: 10, by: 14, startDelay: 0.0, cycle: 4.5, count: 24 },
-  { bx: 84, by: 10, startDelay: 1.1, cycle: 5.5, count: 20 },
-  { bx: 50, by: 28, startDelay: 2.3, cycle: 6.2, count: 30 }, // centre — biggest
-  { bx: 16, by: 70, startDelay: 0.7, cycle: 4.8, count: 22 },
-  { bx: 80, by: 65, startDelay: 1.8, cycle: 5.1, count: 24 },
-  { bx: 63, by: 20, startDelay: 3.1, cycle: 4.2, count: 20 },
-  { bx: 92, by: 80, startDelay: 0.4, cycle: 5.8, count: 20 },
-  { bx: 30, by: 86, startDelay: 2.7, cycle: 4.6, count: 18 },
-  { bx: 45, by: 58, startDelay: 1.5, cycle: 5.0, count: 26 },
-  { bx: 70, by: 44, startDelay: 3.5, cycle: 4.3, count: 20 },
-  { bx:  5, by: 44, startDelay: 2.0, cycle: 5.7, count: 18 },
-  { bx: 75, by: 90, startDelay: 0.9, cycle: 4.9, count: 22 },
+  { bx: 14, by: 16, startDelay: 0.0, cycle: 5.5, count: 16 },
+  { bx: 86, by: 14, startDelay: 1.6, cycle: 6.0, count: 16 },
+  { bx: 50, by: 8,  startDelay: 3.0, cycle: 5.8, count: 18 }, // top centre
+  { bx: 18, by: 78, startDelay: 4.2, cycle: 5.4, count: 14 },
+  { bx: 82, by: 76, startDelay: 2.4, cycle: 5.6, count: 14 },
+  { bx: 50, by: 92, startDelay: 0.8, cycle: 6.2, count: 16 }, // bottom centre
 ];
 
 // Stable per-particle pseudo-random (no Math.random at render time)
@@ -298,10 +298,53 @@ const MatchResult = ({
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-10">
 
-      {/* Firework bursts — random explosions around the screen */}
+      {/* Atmospheric ambient layer — uses ringColor so the warmer the match, the warmer the room.
+          This is the "stage" that frames the product card, not a competing distraction. */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <motion.div
+          className="absolute rounded-full"
+          style={{
+            left: "50%", top: "38%",
+            width: "max(720px, 90vw)",
+            height: "max(720px, 90vw)",
+            marginLeft: "max(-360px, -45vw)",
+            marginTop:  "max(-360px, -45vw)",
+            background: `radial-gradient(circle, ${ringColor}66 0%, transparent 60%)`,
+            filter: "blur(70px)",
+            opacity: 0.42,
+          }}
+          animate={{ scale: [1, 1.06, 1] }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+        />
+        {/* Brand orange anchor — keeps Webidoo identity present regardless of match tier */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            left: "-15%", top: "-15%",
+            width: "max(520px, 55vw)",
+            height: "max(520px, 55vw)",
+            background: "radial-gradient(circle, hsl(27,92%,55%) 0%, transparent 70%)",
+            filter: "blur(80px)",
+            opacity: 0.18,
+          }}
+        />
+        <div
+          className="absolute rounded-full"
+          style={{
+            right: "-15%", bottom: "-15%",
+            width: "max(480px, 50vw)",
+            height: "max(480px, 50vw)",
+            background: "radial-gradient(circle, hsl(15,88%,58%) 0%, transparent 70%)",
+            filter: "blur(80px)",
+            opacity: 0.14,
+          }}
+        />
+      </div>
+
+      {/* Firework bursts — staggered so only 1–2 are visible at any moment */}
       {tier !== "low" && (
         <div className="pointer-events-none absolute inset-0">
-          {BURST_POSITIONS.slice(0, tier === "high" ? 12 : 7).map((cfg) => (
+          {BURST_POSITIONS.slice(0, tier === "high" ? 6 : 4).map((cfg) => (
             <FireworkBurst key={`${cfg.bx}-${cfg.by}`} {...cfg} colors={confettiColors} />
           ))}
         </div>
