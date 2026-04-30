@@ -15,7 +15,6 @@ export interface Product {
   faq: { q: string; a: string }[];
 }
 
-// ⚠️ Verifica i prezzi prima del deploy in produzione
 export const products: Product[] = [
   {
     id: "blnd-blender",
@@ -191,19 +190,23 @@ const TAG_MAP: Record<number, string> = {
   8: "recovery",
 };
 
-/**
- * Returns the best-matching product for a set of quiz answers.
- * @param answers       Map of questionId → boolean (yes/no)
- * @param activeIds     Optional set of active product IDs from Supabase.
- *                      When provided, only products in the set are considered.
- *                      Falls back to the full catalogue if the set is empty or undefined.
- */
+// Deterministic tie-break: djb2 hash of the sorted answer string ensures
+// identical quiz answers always produce the same product recommendation.
+function deterministicTiePick(answers: Record<number, boolean>, len: number): number {
+  if (len <= 1) return 0;
+  const key = Object.keys(answers)
+    .sort((a, b) => Number(a) - Number(b))
+    .map((k) => `${k}${answers[Number(k)] ? 1 : 0}`)
+    .join("");
+  let h = 5381;
+  for (let i = 0; i < key.length; i++) h = ((h * 33) ^ key.charCodeAt(i)) | 0;
+  return Math.abs(h) % len;
+}
+
 export function getMatchedProduct(
   answers: Record<number, boolean>,
   activeIds?: Set<string>,
 ): { product: Product; matchPercent: number } {
-  // Use only active products; fall back to full catalogue if none are configured
-  // or if the filtered set is empty (e.g. Supabase has stale/outdated product IDs).
   const filtered =
     activeIds && activeIds.size > 0
       ? products.filter((p) => activeIds.has(p.id))
@@ -229,9 +232,8 @@ export function getMatchedProduct(
     }
   });
 
-  // Pick randomly among tied products so different users see variety.
-  // Fallback to pool[0] then products[0] to guarantee a non-null result.
-  const bestProduct = tied[Math.floor(Math.random() * tied.length)] ?? pool[0] ?? products[0];
+  // Deterministic pick among tied products — same answers always yield the same product.
+  const bestProduct = tied[deterministicTiePick(answers, tied.length)] ?? pool[0] ?? products[0];
 
   const totalTags = bestProduct.tags.length || 1;
   const rawPercent = Math.round((bestScore / totalTags) * 100);

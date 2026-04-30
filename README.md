@@ -18,15 +18,16 @@ Webi-Match is a touchscreen kiosk experience designed for iPad deployment in Web
 ## Features
 
 - **Tinder-style swipe interface** — gesture-based quiz with haptic feedback
-- **Smart matching algorithm** — weighted scoring across 8 product categories
+- **Smart matching algorithm** — deterministic weighted scoring across 8 product categories
 - **5 languages** — Italian, English, Portuguese, Spanish, French
 - **Automated email delivery** — personalised email with product info, consultant video, and discount code via Brevo
-- **CRM integration** — real-time data relay to Google Sheets
+- **CRM integration** — real-time data relay to Google Sheets (server-side only)
 - **Multi-store support** — per-store product activation, pricing, and discount configuration
 - **Manager dashboard** — product settings, pricing overrides, image/video URLs, store management
+- **Sessions dashboard** — per-session email status (enviada / processando / falhou) and discount code tracking
 - **Analytics dashboard** — session funnels, match distribution, lead volume, per-store stats
 - **Anti-spam cooldown** — 1-hour email-level cooldown to prevent duplicate leads
-- **Inactivity reset** — auto-resets to attract screen after 45 seconds of inactivity
+- **Inactivity reset** — auto-resets to attract screen after 45 seconds of inactivity (90 seconds on result screen)
 - **Synthesised ambient soundtrack** — Web Audio API generative music during the quiz
 - **PWA-ready** — offline capable, installable, service worker caching
 - **Wake lock** — prevents iPad screen from sleeping during deployment
@@ -43,23 +44,10 @@ Webi-Match is a touchscreen kiosk experience designed for iPad deployment in Web
 | Styling | Tailwind CSS + shadcn/ui |
 | Backend | Supabase (PostgreSQL + Edge Functions + RLS) |
 | Email | Brevo API |
-| CRM | Google Sheets via Supabase Edge Function relay |
+| CRM | Google Sheets (server-side relay via Edge Function) |
 | Audio | Web Audio API (synthesised ambient loop) |
 | Deploy | Vercel (auto-deploy on push to `main`) |
 | Native | Capacitor (iOS + Android builds supported) |
-
----
-
-## Store Locations
-
-| Store ID | Location |
-|----------|----------|
-| `corso-vercelli` | Milano — Corso Vercelli |
-| `cinque-giornate` | Milano — 5 Giornate |
-| `verona` | Verona |
-| `bergamo` | Bergamo |
-
-Each store has independent product activation, price overrides, discount percentages, and image/video URLs managed via the Manager Dashboard.
 
 ---
 
@@ -77,7 +65,8 @@ src/
 │   ├── QuizScreen       # 8-question swipe quiz orchestrator
 │   ├── SwipeCard        # Individual Tinder-style card
 │   ├── MatchResult      # Product recommendation display
-│   └── SuccessScreen    # Post-claim confirmation
+│   ├── SuccessScreen    # Post-claim confirmation
+│   └── ErrorBoundary    # App-level crash recovery screen
 ├── data/
 │   ├── products.ts      # Product catalog + matching algorithm
 │   ├── questions.ts     # Quiz question definitions
@@ -90,9 +79,10 @@ src/
 
 supabase/
 ├── functions/
-│   ├── on-session-created/   # Triggered on quiz completion — sends email via Brevo
-│   └── relay-to-sheets/      # Google Sheets CRM relay
-└── migrations/               # 19 versioned SQL migrations
+│   ├── on-session-created/   # Triggered on quiz completion — sends email via Brevo + CRM relay
+│   ├── verify-pin/           # Staff PIN verification with IP-based lockout
+│   └── relay-to-sheets/      # Google Sheets CRM relay (JWT-authenticated)
+└── migrations/               # Versioned SQL migrations
 ```
 
 ---
@@ -108,7 +98,7 @@ supabase/
 ### Local Setup
 
 ```bash
-git clone https://github.com/proganakin/webi-match.git
+git clone <repository-url>
 cd webi-match
 npm install
 cp .env.example .env
@@ -127,13 +117,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 
 ## Deployment
 
-The project auto-deploys to Vercel on every push to `main`. No CI pipeline configuration is required.
-
-```bash
-git push origin main   # triggers Vercel production deploy automatically
-```
-
-Security headers, CSP, HSTS, and SPA routing are configured in `vercel.json`.
+The project auto-deploys on every push to the production branch. Security headers, CSP, HSTS, and SPA routing are configured in `vercel.json`.
 
 ---
 
@@ -145,7 +129,8 @@ Security headers, CSP, HSTS, and SPA routing are configured in `vercel.json`.
 | `product_settings` | Per-store product activation, prices, images, videos, discounts |
 | `quiz_funnel_events` | Conversion funnel tracking (started / result shown / claimed) |
 | `manager_audit_log` | Dashboard action audit trail |
-| `admin_access_log` | PIN access tracking with user-agent logging |
+| `admin_access_log` | PIN access tracking with IP and user-agent logging |
+| `app_settings` | Encrypted application secrets (PIN hash) |
 
 All tables use Row-Level Security. Rate limiting is enforced at the database function level.
 
@@ -155,14 +140,14 @@ All tables use Row-Level Security. Rate limiting is enforced at the database fun
 
 | Route | Access | Purpose |
 |-------|--------|---------|
-| `/manager` | PIN-protected | Product and store configuration |
+| `/manager` | PIN-protected | Product and store configuration + session/code tracking |
 | `/stats` | MFA-protected | Session data, funnel metrics, product performance |
 
 ---
 
 ## Product Images
 
-Place product images in `public/products/` and reference them in `src/data/products.ts`. Recommended format: PNG, 600×600px, transparent background.
+Place product images in `public/products/` and reference them in `src/data/products.ts`. Recommended format: PNG, 600×600px, transparent background. Per-store images can be overridden via the Manager Dashboard (uploaded to Supabase Storage).
 
 ---
 

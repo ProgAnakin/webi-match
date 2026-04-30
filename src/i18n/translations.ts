@@ -30,6 +30,8 @@ export interface T {
   quiz: {
     questionOf: (current: number, total: number) => string;
     chooseDestiny: string;
+    loadingCards: string;
+    loadingCardsSub: string;
   };
   tutorial: {
     header: string;
@@ -139,6 +141,8 @@ export const translations: Record<Lang, T> = {
     quiz: {
       questionOf: (c, t) => `Domanda ${c} di ${t}`,
       chooseDestiny: "SCEGLI IL TUO DESTINO",
+      loadingCards: "Stiamo mischiando le carte…",
+      loadingCardsSub: "Preparati a rispondere a qualche domanda!",
     },
     tutorial: {
       header: "Come funziona?",
@@ -249,6 +253,8 @@ export const translations: Record<Lang, T> = {
     quiz: {
       questionOf: (c, t) => `Question ${c} of ${t}`,
       chooseDestiny: "CHOOSE YOUR DESTINY",
+      loadingCards: "Shuffling the cards…",
+      loadingCardsSub: "Get ready to answer a few questions!",
     },
     tutorial: {
       header: "How does it work?",
@@ -359,6 +365,8 @@ export const translations: Record<Lang, T> = {
     quiz: {
       questionOf: (c, t) => `Pergunta ${c} de ${t}`,
       chooseDestiny: "ESCOLHA O SEU DESTINO",
+      loadingCards: "Estamos embaralhando as cartas…",
+      loadingCardsSub: "Prepare-se para responder algumas perguntinhas!",
     },
     tutorial: {
       header: "Como funciona?",
@@ -469,6 +477,8 @@ export const translations: Record<Lang, T> = {
     quiz: {
       questionOf: (c, t) => `Pregunta ${c} de ${t}`,
       chooseDestiny: "ELIGE TU DESTINO",
+      loadingCards: "Mezclando las cartas…",
+      loadingCardsSub: "¡Prepárate para responder algunas preguntas!",
     },
     tutorial: {
       header: "¿Cómo funciona?",
@@ -579,6 +589,8 @@ export const translations: Record<Lang, T> = {
     quiz: {
       questionOf: (c, t) => `Question ${c} sur ${t}`,
       chooseDestiny: "CHOISISSEZ VOTRE DESTIN",
+      loadingCards: "On mélange les cartes…",
+      loadingCardsSub: "Préparez-vous à répondre à quelques questions !",
     },
     tutorial: {
       header: "Comment ça marche ?",

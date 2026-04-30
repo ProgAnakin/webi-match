@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { LanguageProvider } from "@/i18n/LanguageContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Admin/analytics pages are lazy-loaded — never included in the kiosk bundle.
 // They're only accessed by staff via the /stats and /manager routes.
@@ -26,6 +27,7 @@ const AdminFallback = () => (
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <TooltipProvider>
@@ -54,6 +56,7 @@ const App = () => (
       </TooltipProvider>
     </LanguageProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

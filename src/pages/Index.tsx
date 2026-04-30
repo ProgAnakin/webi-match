@@ -12,22 +12,18 @@ import { useWakeLock } from "@/hooks/useWakeLock";
 import { useBgMusic } from "@/hooks/useBgMusic";
 import { useLang } from "@/i18n/LanguageContext";
 import { getStoredStoreId } from "@/data/stores";
+import { RESULT_INACTIVITY_TIMEOUT_MS } from "@/config/timings";
 
-type Screen = "splash" | "welcome" | "quiz" | "result" | "success";
-
-// Fires-and-forgets a row to Google Sheets via the server-side relay Edge Function.
-// The actual webhook URL lives in Supabase secrets (GOOGLE_SHEETS_WEBHOOK_URL),
-// never in the client bundle.
-async function sendToGoogleSheets(row: Record<string, string>) {
-  try {
-    await supabase.functions.invoke("relay-to-sheets", { body: row });
-  } catch {
-    // non-critical — Supabase is the source of truth
-  }
-}
+type Screen = "splash" | "welcome" | "loading_quiz" | "quiz" | "result" | "success";
 
 // ── Per-screen directional transitions ────────────────────────────────────────
 const screenAnim: Record<Screen, { initial: object; animate: object; exit: object; transition: object }> = {
+  loading_quiz: {
+    initial:    { opacity: 0 },
+    animate:    { opacity: 1 },
+    exit:       { opacity: 0, y: -16 },
+    transition: { duration: 0.3, ease: "easeOut" },
+  },
   splash: {
     initial:    { opacity: 0 },
     animate:    { opacity: 1 },
@@ -88,6 +84,7 @@ const Index = () => {
   const [videoOverrides, setVideoOverrides] = useState<Record<string, string>>({});
   const [discountOverrides, setDiscountOverrides] = useState<Record<string, number>>({});
   const [settingsLoadFailed, setSettingsLoadFailed] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
     const storeId = getStoredStoreId() ?? "corso-vercelli";
@@ -99,9 +96,7 @@ const Index = () => {
         if (error) {
           console.error("[webi-match] product_settings fetch failed:", error);
           setSettingsLoadFailed(true);
-          return;
-        }
-        if (data && data.length > 0) {
+        } else if (data && data.length > 0) {
           const active = new Set(
             data.filter((r) => r.active !== false).map((r) => r.product_id),
           );
@@ -121,8 +116,14 @@ const Index = () => {
           setImageOverrides(images);
           setDiscountOverrides(discounts);
         }
+        setSettingsLoaded(true);
       });
   }, []);
+
+  // Transition out of loading screen once settings are ready
+  useEffect(() => {
+    if (settingsLoaded && screen === "loading_quiz") setScreen("quiz");
+  }, [settingsLoaded, screen]);
 
   const handleSplashComplete = () => {
     setScreen("welcome");
@@ -131,7 +132,9 @@ const Index = () => {
   const handleStart = (userInfo: UserInfo) => {
     setUser(userInfo);
     trackFunnel(funnelKey, "quiz_started");
-    setScreen("quiz");
+    // If product settings haven't loaded yet, show a brief loading screen
+    // so the quiz always starts with the correct active-product set.
+    setScreen(settingsLoaded ? "quiz" : "loading_quiz");
   };
 
   const handleQuizComplete = (answers: Record<number, boolean>) => {
@@ -190,17 +193,7 @@ const Index = () => {
       return;
     }
 
-    // Mirror to Google Sheets CRM (fire-and-forget, non-blocking)
-    sendToGoogleSheets({
-      data:     new Date().toLocaleString("it-IT"),
-      nome:     user.nome,
-      cognome:  user.cognome,
-      email:    user.email,
-      prodotto: matchedProduct.name,
-      match:    `${matchPercent}%`,
-      store_id: getStoredStoreId() ?? "",
-    });
-
+    // Google Sheets relay is handled server-side in the on-session-created Edge Function.
     trackFunnel(funnelKey, "claimed");
     setClaimError(false);
     setClaiming(false);
@@ -224,11 +217,12 @@ const Index = () => {
   };
 
   useWakeLock();
-  useBgMusic(screen === "splash",                          "attract");
-  useBgMusic(screen === "welcome",                         "welcome");
-  useBgMusic(screen === "quiz" || screen === "result",     "quiz");
+  useBgMusic(screen === "splash",                                          "attract");
+  useBgMusic(screen === "welcome",                                         "welcome");
+  useBgMusic(screen === "quiz" || screen === "result",                     "quiz");
   const { dismiss } = useInactivityReset({
-    enabled: screen !== "welcome" && screen !== "splash",
+    enabled: screen !== "welcome" && screen !== "splash" && screen !== "loading_quiz",
+    timeout: screen === "result" ? RESULT_INACTIVITY_TIMEOUT_MS : undefined,
     onWarn:    (seconds) => setInactivitySecondsLeft(seconds),
     onReset:   handleRestart,
     onDismiss: () => setInactivitySecondsLeft(null),
@@ -291,6 +285,33 @@ const Index = () => {
         >
           {screen === "splash" && <AttractScreen onComplete={handleSplashComplete} />}
           {screen === "welcome" && <WelcomeScreen onStart={handleStart} settingsLoadFailed={settingsLoadFailed} />}
+          {screen === "loading_quiz" && (
+            <div className="fixed inset-0 flex flex-col items-center justify-center bg-background p-8 text-center">
+              <div className="max-w-xs w-full space-y-8">
+                <motion.div
+                  className="text-7xl"
+                  animate={{ rotate: [0, -14, 14, -10, 10, 0] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  🃏
+                </motion.div>
+                <div className="space-y-2">
+                  <p className="text-lg font-bold text-foreground">{t.quiz.loadingCards}</p>
+                  <p className="text-sm text-muted-foreground">{t.quiz.loadingCardsSub}</p>
+                </div>
+                <div className="flex justify-center gap-2">
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      className="h-2 w-2 rounded-full bg-primary"
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ duration: 1, delay: i * 0.22, repeat: Infinity }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           {screen === "quiz" && <QuizScreen onComplete={handleQuizComplete} />}
           {screen === "result" && matchedProduct && (
             <MatchResult
