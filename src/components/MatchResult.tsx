@@ -33,27 +33,104 @@ interface MatchResultProps {
   claimError?: boolean;
 }
 
+// Brand-aligned confetti subset — only warm/celebratory tokens that match
+// the Webidoo identity. Excludes purple, pink, teal, magenta to keep the
+// fireworks visually consistent with the rest of the app.
+const BRAND_CONFETTI_INDEXES = [1, 2, 3, 4, 5, 9, 12]; // orange, light orange, success green ×2, amber, yellow, orange-red
+
 function readCssConfettiColors(): string[] {
   const style = getComputedStyle(document.documentElement);
-  return Array.from({ length: 12 }, (_, i) => {
-    const raw = style.getPropertyValue(`--confetti-${i + 1}`).trim();
+  return BRAND_CONFETTI_INDEXES.map((i) => {
+    const raw = style.getPropertyValue(`--confetti-${i}`).trim();
     return raw ? `hsl(${raw})` : "#888";
   });
 }
 
-interface ConfettiData {
-  id: number; delay: number; duration: number;
-  left: string; color: string; size: number;
-  rotateDeg: number; xOffset: number;
+// ── Firework burst — particles explode outward from a fixed point ────────────
+interface BurstCfg { bx: number; by: number; startDelay: number; cycle: number; count: number; }
+
+// 6 positions, well staggered so only 1–2 are visible at any moment
+// (was 12 — reduced to keep the product card as the visual protagonist)
+const BURST_POSITIONS: BurstCfg[] = [
+  { bx: 14, by: 16, startDelay: 0.0, cycle: 5.5, count: 16 },
+  { bx: 86, by: 14, startDelay: 1.6, cycle: 6.0, count: 16 },
+  { bx: 50, by: 8,  startDelay: 3.0, cycle: 5.8, count: 18 }, // top centre
+  { bx: 18, by: 78, startDelay: 4.2, cycle: 5.4, count: 14 },
+  { bx: 82, by: 76, startDelay: 2.4, cycle: 5.6, count: 14 },
+  { bx: 50, by: 92, startDelay: 0.8, cycle: 6.2, count: 16 }, // bottom centre
+];
+
+// Stable per-particle pseudo-random (no Math.random at render time)
+function rnd(seed: number, salt: number): number {
+  const x = Math.sin((seed + salt) * 9301 + 49297) * 233280;
+  return x - Math.floor(x); // 0–1
 }
 
-const ConfettiParticle = ({ delay, duration, left, color, size, rotateDeg, xOffset }: ConfettiData) => (
-  <motion.div
-    className="absolute rounded-sm pointer-events-none"
-    style={{ left, top: "-5%", width: size, height: size * 0.6, backgroundColor: color }}
-    animate={{ y: ["0vh", "110vh"], rotate: [0, rotateDeg], x: [0, xOffset], opacity: [1, 1, 0.4] }}
-    transition={{ duration, repeat: Infinity, delay, ease: "easeIn" }}
-  />
+const FireworkBurst = ({ bx, by, startDelay, cycle, count, colors }: BurstCfg & { colors: string[] }) => (
+  <div className="pointer-events-none absolute" style={{ left: `${bx}%`, top: `${by}%` }}>
+    {Array.from({ length: count }, (_, i) => {
+      const s = i * 7 + Math.floor(bx) * 13 + Math.floor(by) * 3;
+
+      // Angle: evenly distributed + random jitter ±18°
+      const angle = (i / count) * Math.PI * 2 + (rnd(s, 1) - 0.5) * 0.63;
+      // Distance: 38–130 px
+      const dist  = 38 + rnd(s, 2) * 92;
+      const tx    = Math.cos(angle) * dist;
+      const ty    = Math.sin(angle) * dist;
+      // Gravity tail drift varies per particle
+      const gravity = 18 + rnd(s, 3) * 55;
+
+      // Shape selection
+      const sr      = rnd(s, 4);
+      const isCircle = sr < 0.15;
+      const isTail   = sr < 0.30 && !isCircle; // long thin streak
+      const isSquare = sr < 0.48 && !isCircle && !isTail;
+      // else: ribbon
+
+      const w = isCircle ? 5 + rnd(s, 5) * 5
+              : isTail   ? 2 + rnd(s, 5) * 2
+              : isSquare ? 5 + rnd(s, 5) * 4
+              :            3 + rnd(s, 5) * 3;
+      const h = isCircle ? w
+              : isTail   ? 14 + rnd(s, 6) * 14 // 14–28 px streak
+              : isSquare ? w
+              :            w * (2.5 + rnd(s, 6) * 2.2); // ribbon 2.5×–4.7×
+
+      const color    = colors[Math.floor(rnd(s, 7) * colors.length)];
+      const dur      = 0.85 + rnd(s, 8) * 0.65; // 0.85–1.5 s
+      const rotSpeed = (rnd(s, 9) > 0.5 ? 1 : -1) * (200 + rnd(s, 10) * 480);
+      const br       = isCircle ? "50%" : isSquare ? "3px" : "2px";
+      const sideWind = (rnd(s, 11) - 0.5) * 28; // random lateral drift at end
+
+      return (
+        <motion.div key={i}
+          className="absolute"
+          style={{
+            width: w, height: h,
+            marginLeft: -w / 2, marginTop: -h / 2,
+            backgroundColor: color,
+            borderRadius: br,
+            willChange: "transform, opacity",
+          }}
+          animate={{
+            x:       [0, tx * 0.3, tx, tx + sideWind],
+            y:       [0, ty * 0.3, ty, ty + gravity],
+            opacity: [0, 1, 0.88, 0],
+            scale:   [0, 1.5, 1, 0.15],
+            rotate:  [0, rotSpeed * 0.4, rotSpeed],
+          }}
+          transition={{
+            duration: dur,
+            delay: startDelay + i * 0.022,
+            repeat: Infinity,
+            repeatDelay: cycle,
+            ease: [0.1, 0.55, 0.6, 1],
+            times: [0, 0.18, 0.72, 1],
+          }}
+        />
+      );
+    })}
+  </div>
 );
 
 const MatchResult = ({
@@ -117,19 +194,6 @@ const MatchResult = ({
     }, 900);
     return () => { cancelAnimationFrame(frame); clearTimeout(timeout); };
   }, [matchPercent]);
-
-  const particleCount = tier === "high" ? 55 : tier === "mid" ? 28 : 12;
-  const confettiParticles = useMemo<ConfettiData[]>(() =>
-    Array.from({ length: particleCount }, (_, i) => ({
-      id: i,
-      delay:     Math.random() * 4,
-      duration:  1.8 + Math.random() * 2,
-      left:      `${Math.random() * 100}%`,
-      color:     confettiColors[i % confettiColors.length],
-      size:      5 + Math.random() * 10,
-      rotateDeg: 360 * (Math.random() > 0.5 ? 1 : -1),
-      xOffset:   (Math.random() - 0.5) * 100,
-    })), [particleCount, confettiColors]);
 
   const starCount = Math.floor(product.rating);
 
@@ -234,26 +298,56 @@ const MatchResult = ({
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-10">
 
-      {/* Confetti */}
+      {/* Atmospheric ambient layer — uses ringColor so the warmer the match, the warmer the room.
+          This is the "stage" that frames the product card, not a competing distraction. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {confettiParticles.map((p) => <ConfettiParticle key={p.id} {...p} />)}
+        <motion.div
+          className="absolute rounded-full"
+          style={{
+            left: "50%", top: "38%",
+            width: "max(720px, 90vw)",
+            height: "max(720px, 90vw)",
+            marginLeft: "max(-360px, -45vw)",
+            marginTop:  "max(-360px, -45vw)",
+            background: `radial-gradient(circle, ${ringColor}66 0%, transparent 60%)`,
+            filter: "blur(70px)",
+            opacity: 0.42,
+          }}
+          animate={{ scale: [1, 1.06, 1] }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+        />
+        {/* Brand orange anchor — keeps Webidoo identity present regardless of match tier */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            left: "-15%", top: "-15%",
+            width: "max(520px, 55vw)",
+            height: "max(520px, 55vw)",
+            background: "radial-gradient(circle, hsl(27,92%,55%) 0%, transparent 70%)",
+            filter: "blur(80px)",
+            opacity: 0.18,
+          }}
+        />
+        <div
+          className="absolute rounded-full"
+          style={{
+            right: "-15%", bottom: "-15%",
+            width: "max(480px, 50vw)",
+            height: "max(480px, 50vw)",
+            background: "radial-gradient(circle, hsl(15,88%,58%) 0%, transparent 70%)",
+            filter: "blur(80px)",
+            opacity: 0.14,
+          }}
+        />
       </div>
 
-      {/* Burst */}
+      {/* Firework bursts — staggered so only 1–2 are visible at any moment */}
       {tier !== "low" && (
-        <motion.div
-          className="pointer-events-none absolute inset-0 flex items-center justify-center"
-          initial={{ opacity: 1 }} animate={{ opacity: 0 }}
-          transition={{ delay: 0.6, duration: 0.4 }}
-        >
-          {confettiColors.slice(0, tier === "mid" ? 6 : 10).map((color, i) => (
-            <motion.div key={i} className="absolute h-2 w-2 rounded-full" style={{ backgroundColor: color }}
-              initial={{ scale: 0, x: 0, y: 0 }}
-              animate={{ scale: [0, 1.5, 0], x: Math.cos((i * 36 * Math.PI) / 180) * 140, y: Math.sin((i * 36 * Math.PI) / 180) * 140 }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
-            />
+        <div className="pointer-events-none absolute inset-0">
+          {BURST_POSITIONS.slice(0, tier === "high" ? 6 : 4).map((cfg) => (
+            <FireworkBurst key={`${cfg.bx}-${cfg.by}`} {...cfg} colors={confettiColors} />
           ))}
-        </motion.div>
+        </div>
       )}
 
       {/* ── Change-email modal ─────────────────────────────────────────────── */}
@@ -410,7 +504,7 @@ const MatchResult = ({
               transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
             />
           )}
-          <svg width="160" height="160" viewBox="0 0 120 120">
+          <svg width="160" height="160" viewBox="0 0 120 120" style={{ overflow: "visible" }}>
             <circle cx="60" cy="60" r="56" fill="none" stroke="hsl(var(--muted))" strokeWidth="7" opacity="0.25" />
             <motion.circle
               cx="60" cy="60" r="56" fill="none"

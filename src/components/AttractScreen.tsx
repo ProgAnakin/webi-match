@@ -194,11 +194,11 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.68, duration: 0.5 }}
         >
-          <span>8 swipe</span>
+          <span>{t.attract.swipes}</span>
           <span style={{ color: "hsl(27,92%,55%)", fontSize: 18, lineHeight: 1 }}>·</span>
-          <span>2 min</span>
+          <span>{t.attract.minutes}</span>
           <span style={{ color: "hsl(27,92%,55%)", fontSize: 18, lineHeight: 1 }}>·</span>
-          <span style={{ color: "hsl(27,92%,65%)" }}>match perfeito ✓</span>
+          <span style={{ color: "hsl(27,92%,65%)" }}>{t.attract.perfect}</span>
         </motion.div>
 
         {/* CTA — breathing light glow */}

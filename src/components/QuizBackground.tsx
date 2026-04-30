@@ -6,19 +6,17 @@ interface QuizBackgroundProps {
   category: string;
 }
 
+// Brand-anchored palette: PRIMARY is always brand orange/amber (Webidoo identity),
+// SECONDARY adds gentle category accent without breaking the warm visual DNA.
 const PALETTE: Record<string, [string, string]> = {
-  sport:         ["hsl(145,80%,42%)",  "hsl(185,70%,45%)"],
-  audio:         ["hsl(280,70%,55%)",  "hsl(240,70%,60%)"],
-  productivity:  ["hsl(200,80%,50%)",  "hsl(220,75%,55%)"],
-  wellness:      ["hsl(160,70%,50%)",  "hsl(120,60%,45%)"],
-  travel:        ["hsl(190,85%,50%)",  "hsl(215,80%,55%)"],
-  tech:          ["hsl(240,75%,60%)",  "hsl(200,80%,55%)"],
-  style:         ["hsl(335,80%,60%)",  "hsl(300,65%,55%)"],
-  recovery:      ["hsl(260,65%,55%)",  "hsl(230,70%,55%)"],
-  fitness:       ["hsl(145,80%,42%)",  "hsl(100,60%,45%)"],
-  camera:        ["hsl(45,90%,55%)",   "hsl(30,85%,50%)"],
-  gaming:        ["hsl(330,75%,55%)",  "hsl(280,70%,55%)"],
-  communication: ["hsl(210,80%,55%)",  "hsl(185,75%,50%)"],
+  sport:         ["hsl(27,92%,55%)",  "hsl(15,88%,58%)"],   // orange + orange-red
+  audio:         ["hsl(27,92%,55%)",  "hsl(270,55%,58%)"],  // orange + warm violet
+  productivity:  ["hsl(40,95%,58%)",  "hsl(210,55%,55%)"],  // amber + sky
+  wellness:      ["hsl(27,92%,55%)",  "hsl(340,65%,62%)"],  // orange + warm rose
+  travel:        ["hsl(40,95%,58%)",  "hsl(200,65%,55%)"],  // amber + sky blue
+  tech:          ["hsl(27,92%,55%)",  "hsl(220,70%,60%)"],  // orange + electric blue
+  style:         ["hsl(27,92%,55%)",  "hsl(320,60%,60%)"],  // orange + magenta-coral
+  recovery:      ["hsl(40,95%,58%)",  "hsl(265,55%,58%)"],  // amber + soft violet
 };
 
 // Duration for color morphing between categories
@@ -33,7 +31,7 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
   const [primary, secondary] = PALETTE[category] ?? ["hsl(27,92%,55%)", "hsl(45,88%,52%)"];
 
   const particles = useMemo(() =>
-    Array.from({ length: 50 }, (_, i) => ({
+    Array.from({ length: 18 }, (_, i) => ({
       id: i,
       x: sr(i * 7 + 1) * 100,
       y: sr(i * 7 + 2) * 100,
@@ -54,9 +52,9 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
         <motion.div
           key={`burst-${category}`}
           className="absolute inset-0"
-          style={{ background: `radial-gradient(ellipse at 50% 52%, ${primary}80 0%, transparent 58%)` }}
+          style={{ background: `radial-gradient(ellipse at 50% 52%, ${primary}55 0%, transparent 58%)` }}
           initial={{ opacity: 0, scale: 0.55 }}
-          animate={{ opacity: [0.95, 0], scale: [0.55, 1.9] }}
+          animate={{ opacity: [0.55, 0], scale: [0.55, 1.9] }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
         />
@@ -80,7 +78,7 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
         <motion.div
           className="h-full w-full rounded-full"
           style={{ filter: "blur(68px)" }}
-          animate={{ backgroundColor: primary, opacity: [0.60, 0.76, 0.60] }}
+          animate={{ backgroundColor: primary, opacity: [0.32, 0.42, 0.32] }}
           transition={{
             backgroundColor: COLOR_MORPH,
             opacity: { duration: 24, repeat: Infinity, ease: "easeInOut" },
@@ -101,7 +99,7 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
         <motion.div
           className="h-full w-full rounded-full"
           style={{ filter: "blur(62px)" }}
-          animate={{ backgroundColor: secondary, opacity: [0.50, 0.66, 0.50] }}
+          animate={{ backgroundColor: secondary, opacity: [0.26, 0.36, 0.26] }}
           transition={{
             backgroundColor: COLOR_MORPH,
             opacity: { duration: 20, repeat: Infinity, ease: "easeInOut", delay: 3 },
@@ -122,7 +120,7 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
         <motion.div
           className="h-full w-full rounded-full"
           style={{ filter: "blur(52px)" }}
-          animate={{ backgroundColor: primary, opacity: [0.44, 0.58, 0.44] }}
+          animate={{ backgroundColor: primary, opacity: [0.22, 0.32, 0.22] }}
           transition={{
             backgroundColor: COLOR_MORPH,
             opacity: { duration: 17, repeat: Infinity, ease: "easeInOut" },
@@ -143,7 +141,7 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
         <motion.div
           className="h-full w-full rounded-full"
           style={{ filter: "blur(46px)" }}
-          animate={{ backgroundColor: secondary, opacity: [0.42, 0.56, 0.42] }}
+          animate={{ backgroundColor: secondary, opacity: [0.22, 0.30, 0.22] }}
           transition={{
             backgroundColor: COLOR_MORPH,
             opacity: { duration: 15, repeat: Infinity, ease: "easeInOut", delay: 4 },
@@ -159,7 +157,7 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
         <motion.div
           className="h-full w-full rounded-full"
           style={{ filter: "blur(90px)" }}
-          animate={{ backgroundColor: primary, opacity: [0.20, 0.32, 0.20] }}
+          animate={{ backgroundColor: primary, opacity: [0.10, 0.18, 0.10] }}
           transition={{
             backgroundColor: COLOR_MORPH,
             opacity: { duration: 3.8, repeat: Infinity, ease: "easeInOut" },

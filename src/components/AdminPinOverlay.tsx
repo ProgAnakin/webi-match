@@ -74,22 +74,44 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
 
     if (next.length === 4) {
       setVerifying(true);
-      const { data, error } = await supabase.functions.invoke("verify-pin", {
-        body: {
-          pin_input:  next,
-          client_id:  getClientId(),
-          user_agent: navigator.userAgent,
-        },
-      });
+
+      let result: { valid: boolean; locked_seconds: number } | null = null;
+
+      // Attempt 1: Edge Function (captures real IP for brute-force lockout)
+      try {
+        const { data: fnData, error: fnError } = await supabase.functions.invoke("verify-pin", {
+          body: {
+            pin_input:  next,
+            client_id:  getClientId(),
+            user_agent: navigator.userAgent,
+          },
+        });
+        if (!fnError && fnData && typeof (fnData as Record<string, unknown>).valid === "boolean") {
+          result = fnData as { valid: boolean; locked_seconds: number };
+        }
+      } catch {
+        // Edge Function unreachable — fall through to direct RPC
+      }
+
+      // Attempt 2: direct RPC fallback (no IP capture, but always available)
+      if (!result) {
+        try {
+          const { data: rpcData } = await supabase.rpc("verify_staff_pin", {
+            pin_input:  next,
+            client_id:  getClientId(),
+            user_agent: navigator.userAgent,
+          });
+          result = rpcData as { valid: boolean; locked_seconds: number } | null;
+        } catch {
+          // network failure — result stays null, treated as invalid
+        }
+      }
+
       setVerifying(false);
 
-      // data is JSON: { valid: boolean, locked_seconds: number }
-      const result = data as { valid: boolean; locked_seconds: number } | null;
-
-      if (!error && result?.valid === true) {
+      if (result?.valid === true) {
         setTimeout(() => setStep("store"), 300);
       } else {
-        // If server returned a lockout, apply it
         if (result?.locked_seconds && result.locked_seconds > 0) {
           setLockedSeconds(result.locked_seconds);
         }
