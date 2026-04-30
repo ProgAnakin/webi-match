@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, Search, X, Copy, Check, Mail, Clock, AlertCircle, XCircle } from "lucide-react";
+import { RefreshCw, Search, X, Copy, Check, Mail, Clock, AlertCircle, XCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import { STORES } from "@/data/stores";
@@ -16,6 +16,8 @@ interface Session {
   discount_code: string | null;
   created_at: string;
   store_id: string | null;
+  code_redeemed: boolean;
+  code_redeemed_at: string | null;
 }
 
 type StatusFilter = "all" | "enviada" | "processando" | "falhou";
@@ -54,7 +56,7 @@ const STATUS_META = {
 
 interface SessionsTabProps {
   storeId: string;
-  isGlobal: boolean; // true = super-admin, show all stores
+  isGlobal: boolean;
 }
 
 export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
@@ -64,12 +66,13 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [negadoCount, setNegadoCount] = useState(0);
+  const [redeemingId, setRedeemingId] = useState<string | null>(null);
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
     let query = supabase
       .from("quiz_sessions")
-      .select("id, email, nome, cognome, matched_product_id, match_percent, email_sent, discount_code, created_at, store_id")
+      .select("id, email, nome, cognome, matched_product_id, match_percent, email_sent, discount_code, created_at, store_id, code_redeemed, code_redeemed_at")
       .order("created_at", { ascending: false })
       .limit(300);
 
@@ -102,6 +105,29 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     } catch { /* clipboard unavailable */ }
   };
 
+  const markRedeemed = async (s: Session) => {
+    if (redeemingId) return;
+    setRedeemingId(s.id);
+    const { error } = await supabase
+      .from("quiz_sessions")
+      .update({
+        code_redeemed: true,
+        code_redeemed_at: new Date().toISOString(),
+      })
+      .eq("id", s.id);
+
+    if (!error) {
+      setSessions((prev) =>
+        prev.map((row) =>
+          row.id === s.id
+            ? { ...row, code_redeemed: true, code_redeemed_at: new Date().toISOString() }
+            : row
+        )
+      );
+    }
+    setRedeemingId(null);
+  };
+
   const filtered = sessions.filter((s) => {
     const q = search.toLowerCase().trim();
     const matchSearch = !q ||
@@ -120,7 +146,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   };
 
   const expiredReusable = sessions.filter(
-    (s) => isCodeExpired(s) && s.discount_code
+    (s) => isCodeExpired(s) && s.discount_code && !s.code_redeemed
   ).length;
 
   return (
@@ -228,6 +254,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
               const expired = isCodeExpired(s);
               const fullName = [s.nome, s.cognome].filter(Boolean).join(" ");
               const StatusIcon = meta.icon;
+              const isRedeeming = redeemingId === s.id;
 
               return (
                 <motion.div
@@ -263,32 +290,62 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
                       {/* Discount code */}
                       {s.discount_code ? (
-                        <div className="flex items-center gap-1.5">
-                          <code className={`rounded-lg px-2 py-1 text-[11px] font-mono font-bold ${
-                            expired
-                              ? "bg-muted text-muted-foreground line-through"
-                              : "bg-primary/10 text-primary"
-                          }`}>
-                            {s.discount_code}
-                          </code>
-                          {expired ? (
-                            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground uppercase">
-                              scaduto
-                            </span>
-                          ) : (
-                            <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold text-green-400 uppercase">
-                              valido
-                            </span>
+                        <div className="flex flex-col items-end gap-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <code className={`rounded-lg px-2 py-1 text-[11px] font-mono font-bold ${
+                              s.code_redeemed
+                                ? "bg-muted text-muted-foreground line-through"
+                                : expired
+                                ? "bg-muted text-muted-foreground line-through"
+                                : "bg-primary/10 text-primary"
+                            }`}>
+                              {s.discount_code}
+                            </code>
+
+                            {s.code_redeemed ? (
+                              <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold text-green-400 uppercase">
+                                usato
+                              </span>
+                            ) : expired ? (
+                              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground uppercase">
+                                scaduto
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold text-green-400 uppercase">
+                                valido
+                              </span>
+                            )}
+
+                            <button
+                              onClick={() => copyCode(s.discount_code!)}
+                              className="rounded-lg border border-border bg-muted/50 p-1 text-muted-foreground hover:text-foreground active:scale-95 transition-colors"
+                              title="Copia codice"
+                            >
+                              {copiedCode === s.discount_code
+                                ? <Check className="h-3 w-3 text-green-400" />
+                                : <Copy className="h-3 w-3" />}
+                            </button>
+                          </div>
+
+                          {/* Mark as redeemed button — only shown if not yet redeemed */}
+                          {!s.code_redeemed && (
+                            <button
+                              onClick={() => markRedeemed(s)}
+                              disabled={isRedeeming}
+                              className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-400 active:scale-95 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Segna codice come utilizzato dal cliente"
+                            >
+                              <CheckCircle2 className="h-3 w-3" />
+                              {isRedeeming ? "…" : "Marcar como usado"}
+                            </button>
                           )}
-                          <button
-                            onClick={() => copyCode(s.discount_code!)}
-                            className="rounded-lg border border-border bg-muted/50 p-1 text-muted-foreground hover:text-foreground active:scale-95 transition-colors"
-                            title="Copia codice"
-                          >
-                            {copiedCode === s.discount_code
-                              ? <Check className="h-3 w-3 text-green-400" />
-                              : <Copy className="h-3 w-3" />}
-                          </button>
+
+                          {/* Redemption timestamp */}
+                          {s.code_redeemed && s.code_redeemed_at && (
+                            <p className="text-[9px] text-muted-foreground/50">
+                              Usato il {formatDate(s.code_redeemed_at)}
+                            </p>
+                          )}
                         </div>
                       ) : (
                         <span className="flex items-center gap-1 text-[10px] text-muted-foreground/50">
