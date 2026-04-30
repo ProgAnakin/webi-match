@@ -41,65 +41,91 @@ function readCssConfettiColors(): string[] {
   });
 }
 
-interface ConfettiData {
-  id: number;
-  shape: "ribbon" | "square" | "circle";
-  delay: number; duration: number;
-  left: string; color: string;
-  w: number; h: number;
-  rotStart: number; rotSpeed: number;
-  wave: number; drift: number;
+// ── Firework burst — particles explode outward from a fixed point ────────────
+interface BurstCfg { bx: number; by: number; startDelay: number; cycle: number; count: number; }
+
+// 12 positions spread across the screen; each fires independently
+const BURST_POSITIONS: BurstCfg[] = [
+  { bx: 10, by: 14, startDelay: 0.0, cycle: 4.5, count: 24 },
+  { bx: 84, by: 10, startDelay: 1.1, cycle: 5.5, count: 20 },
+  { bx: 50, by: 28, startDelay: 2.3, cycle: 6.2, count: 30 }, // centre — biggest
+  { bx: 16, by: 70, startDelay: 0.7, cycle: 4.8, count: 22 },
+  { bx: 80, by: 65, startDelay: 1.8, cycle: 5.1, count: 24 },
+  { bx: 63, by: 20, startDelay: 3.1, cycle: 4.2, count: 20 },
+  { bx: 92, by: 80, startDelay: 0.4, cycle: 5.8, count: 20 },
+  { bx: 30, by: 86, startDelay: 2.7, cycle: 4.6, count: 18 },
+  { bx: 45, by: 58, startDelay: 1.5, cycle: 5.0, count: 26 },
+  { bx: 70, by: 44, startDelay: 3.5, cycle: 4.3, count: 20 },
+  { bx:  5, by: 44, startDelay: 2.0, cycle: 5.7, count: 18 },
+  { bx: 75, by: 90, startDelay: 0.9, cycle: 4.9, count: 22 },
+];
+
+// Stable per-particle pseudo-random (no Math.random at render time)
+function rnd(seed: number, salt: number): number {
+  const x = Math.sin((seed + salt) * 9301 + 49297) * 233280;
+  return x - Math.floor(x); // 0–1
 }
 
-// ── Firework burst — particles explode outward from a fixed point ────────────
-interface BurstCfg { bx: number; by: number; startDelay: number; }
-const BURST_POSITIONS: BurstCfg[] = [
-  { bx: 12, by: 18, startDelay: 0.0 },
-  { bx: 82, by: 12, startDelay: 1.1 },
-  { bx: 48, by: 35, startDelay: 2.3 },
-  { bx: 20, by: 72, startDelay: 0.7 },
-  { bx: 78, by: 68, startDelay: 1.8 },
-  { bx: 60, by: 22, startDelay: 3.1 },
-  { bx: 90, by: 82, startDelay: 0.4 },
-  { bx: 35, by: 85, startDelay: 2.7 },
-];
-const PER_BURST = 14;
-const BURST_CYCLE = 5.0;
-
-const FireworkBurst = ({ bx, by, startDelay, colors }: BurstCfg & { colors: string[] }) => (
+const FireworkBurst = ({ bx, by, startDelay, cycle, count, colors }: BurstCfg & { colors: string[] }) => (
   <div className="pointer-events-none absolute" style={{ left: `${bx}%`, top: `${by}%` }}>
-    {Array.from({ length: PER_BURST }, (_, i) => {
-      const angle  = (i / PER_BURST) * Math.PI * 2;
-      const dist   = 55 + (i % 5) * 18;
-      const tx     = Math.cos(angle) * dist;
-      const ty     = Math.sin(angle) * dist;
-      const isCirc = i % 5 === 0;
-      const w      = isCirc ? 7 : 4 + (i % 3);
-      const h      = isCirc ? 7 : w * 2.8;
+    {Array.from({ length: count }, (_, i) => {
+      const s = i * 7 + Math.floor(bx) * 13 + Math.floor(by) * 3;
+
+      // Angle: evenly distributed + random jitter ±18°
+      const angle = (i / count) * Math.PI * 2 + (rnd(s, 1) - 0.5) * 0.63;
+      // Distance: 38–130 px
+      const dist  = 38 + rnd(s, 2) * 92;
+      const tx    = Math.cos(angle) * dist;
+      const ty    = Math.sin(angle) * dist;
+      // Gravity tail drift varies per particle
+      const gravity = 18 + rnd(s, 3) * 55;
+
+      // Shape selection
+      const sr      = rnd(s, 4);
+      const isCircle = sr < 0.15;
+      const isTail   = sr < 0.30 && !isCircle; // long thin streak
+      const isSquare = sr < 0.48 && !isCircle && !isTail;
+      // else: ribbon
+
+      const w = isCircle ? 5 + rnd(s, 5) * 5
+              : isTail   ? 2 + rnd(s, 5) * 2
+              : isSquare ? 5 + rnd(s, 5) * 4
+              :            3 + rnd(s, 5) * 3;
+      const h = isCircle ? w
+              : isTail   ? 14 + rnd(s, 6) * 14 // 14–28 px streak
+              : isSquare ? w
+              :            w * (2.5 + rnd(s, 6) * 2.2); // ribbon 2.5×–4.7×
+
+      const color    = colors[Math.floor(rnd(s, 7) * colors.length)];
+      const dur      = 0.85 + rnd(s, 8) * 0.65; // 0.85–1.5 s
+      const rotSpeed = (rnd(s, 9) > 0.5 ? 1 : -1) * (200 + rnd(s, 10) * 480);
+      const br       = isCircle ? "50%" : isSquare ? "3px" : "2px";
+      const sideWind = (rnd(s, 11) - 0.5) * 28; // random lateral drift at end
+
       return (
         <motion.div key={i}
           className="absolute"
           style={{
             width: w, height: h,
             marginLeft: -w / 2, marginTop: -h / 2,
-            backgroundColor: colors[(i + Math.floor(bx)) % colors.length],
-            borderRadius: isCirc ? "50%" : "2px",
+            backgroundColor: color,
+            borderRadius: br,
             willChange: "transform, opacity",
           }}
           animate={{
-            x:       [0, tx * 0.5, tx, tx * 1.1],
-            y:       [0, ty * 0.5, ty, ty * 1.1 + 30],
-            opacity: [0, 1, 0.9, 0],
-            scale:   [0, 1.3, 1, 0.3],
-            rotate:  [0, (i % 2 === 0 ? 1 : -1) * (180 + i * 20)],
+            x:       [0, tx * 0.3, tx, tx + sideWind],
+            y:       [0, ty * 0.3, ty, ty + gravity],
+            opacity: [0, 1, 0.88, 0],
+            scale:   [0, 1.5, 1, 0.15],
+            rotate:  [0, rotSpeed * 0.4, rotSpeed],
           }}
           transition={{
-            duration: 1.0 + (i % 4) * 0.15,
-            delay: startDelay + i * 0.03,
+            duration: dur,
+            delay: startDelay + i * 0.022,
             repeat: Infinity,
-            repeatDelay: BURST_CYCLE,
-            ease: [0.15, 0.5, 0.7, 1],
-            times: [0, 0.25, 0.75, 1],
+            repeatDelay: cycle,
+            ease: [0.1, 0.55, 0.6, 1],
+            times: [0, 0.18, 0.72, 1],
           }}
         />
       );
@@ -168,30 +194,6 @@ const MatchResult = ({
     }, 900);
     return () => { cancelAnimationFrame(frame); clearTimeout(timeout); };
   }, [matchPercent]);
-
-  const particleCount = tier === "high" ? 55 : tier === "mid" ? 28 : 12;
-  const confettiParticles = useMemo<ConfettiData[]>(() => {
-    const shapes: ConfettiData["shape"][] = ["ribbon", "ribbon", "square", "circle"];
-    return Array.from({ length: particleCount }, (_, i) => {
-      const shape = shapes[i % shapes.length];
-      const isRibbon = shape === "ribbon";
-      const baseW = isRibbon ? 4 + (i % 3) * 2 : 6 + (i % 4) * 2;
-      return {
-        id: i,
-        shape,
-        delay:    (i / particleCount) * 3.5,
-        duration: 2.4 + (i % 7) * 0.35,
-        left:     `${3 + (i * 31 % 94)}%`,
-        color:    confettiColors[i % confettiColors.length],
-        w:        baseW,
-        h:        isRibbon ? baseW * 3.5 : baseW,
-        rotStart:  (i * 47) % 360,
-        rotSpeed:  (i % 2 === 0 ? 1 : -1) * (360 + (i % 4) * 180),
-        wave:      20 + (i % 5) * 14,
-        drift:     (i % 2 === 0 ? 1 : -1) * (10 + (i % 6) * 8),
-      };
-    });
-  }, [particleCount, confettiColors]);
 
   const starCount = Math.floor(product.rating);
 
@@ -299,8 +301,8 @@ const MatchResult = ({
       {/* Firework bursts — random explosions around the screen */}
       {tier !== "low" && (
         <div className="pointer-events-none absolute inset-0">
-          {BURST_POSITIONS.slice(0, tier === "high" ? 8 : 5).map((cfg) => (
-            <FireworkBurst key={cfg.startDelay} {...cfg} colors={confettiColors} />
+          {BURST_POSITIONS.slice(0, tier === "high" ? 12 : 7).map((cfg) => (
+            <FireworkBurst key={`${cfg.bx}-${cfg.by}`} {...cfg} colors={confettiColors} />
           ))}
         </div>
       )}
