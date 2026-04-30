@@ -91,6 +91,11 @@ export interface T {
     dismiss: string;
     restart: string;
   };
+  attract: {
+    swipes: string;
+    minutes: string;
+    perfect: string;
+  };
   questions: Record<number, string>;
 }
 
@@ -195,6 +200,11 @@ export const translations: Record<Lang, T> = {
       countdown: "Il quiz si azzererà tra",
       dismiss: "Sono ancora qui! Continua →",
       restart: "Ricomincia dall'inizio",
+    },
+    attract: {
+      swipes: "8 swipe",
+      minutes: "2 min",
+      perfect: "match perfetto ✓",
     },
     questions: {
       1: "Ti alleni regolarmente o pratichi sport?",
@@ -301,6 +311,11 @@ export const translations: Record<Lang, T> = {
       dismiss: "I'm still here! Continue →",
       restart: "Restart from the beginning",
     },
+    attract: {
+      swipes: "8 swipes",
+      minutes: "2 min",
+      perfect: "perfect match ✓",
+    },
     questions: {
       1: "Do you exercise or play sports regularly?",
       2: "Is music always with you, even during workouts?",
@@ -405,6 +420,11 @@ export const translations: Record<Lang, T> = {
       countdown: "O quiz será reiniciado em",
       dismiss: "Ainda estou aqui! Continuar →",
       restart: "Recomeçar do início",
+    },
+    attract: {
+      swipes: "8 swipe",
+      minutes: "2 min",
+      perfect: "match perfeito ✓",
     },
     questions: {
       1: "Você pratica esportes ou se exercita regularmente?",
@@ -511,6 +531,11 @@ export const translations: Record<Lang, T> = {
       dismiss: "¡Sigo aquí! Continuar →",
       restart: "Volver a empezar desde el inicio",
     },
+    attract: {
+      swipes: "8 swipes",
+      minutes: "2 min",
+      perfect: "match perfecto ✓",
+    },
     questions: {
       1: "¿Practicas deporte o haces ejercicio regularmente?",
       2: "¿La música siempre te acompaña, incluso en tus entrenamientos?",
@@ -615,6 +640,11 @@ export const translations: Record<Lang, T> = {
       countdown: "Le quiz sera réinitialisé dans",
       dismiss: "Je suis encore là ! Continuer →",
       restart: "Recommencer depuis le début",
+    },
+    attract: {
+      swipes: "8 swipes",
+      minutes: "2 min",
+      perfect: "match parfait ✓",
     },
     questions: {
       1: "Faites-vous du sport ou de l'exercice régulièrement ?",
