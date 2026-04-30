@@ -56,8 +56,8 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
           background: "radial-gradient(circle, hsl(27,98%,62%) 0%, transparent 65%)",
           filter: "blur(60px)", opacity: 0.72,
         }}
-        animate={skip ? {} : { x: [0, 90, 150, 80, 0, -30, 0], y: [0, 50, -20, -80, -20, 40, 0] }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+        animate={skip ? {} : { x: [0, 130, 220, 160, 60, -50, -20, 0], y: [0, 80, -40, -130, -60, 60, 30, 0] }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Orb 2 — cyan-blue, bottom-right */}
@@ -68,8 +68,8 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
           background: "radial-gradient(circle, hsl(200,95%,65%) 0%, transparent 65%)",
           filter: "blur(70px)", opacity: 0.62,
         }}
-        animate={skip ? {} : { x: [0, -100, -60, 40, 0], y: [0, -80, 60, 20, 0] }}
-        transition={{ duration: 23, repeat: Infinity, ease: "easeInOut" }}
+        animate={skip ? {} : { x: [0, -150, -110, 50, 80, -30, 0], y: [0, -120, 90, 40, -60, -100, 0] }}
+        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Orb 3 — warm coral, top-right */}
@@ -80,8 +80,8 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
           background: "radial-gradient(circle, hsl(12,95%,66%) 0%, transparent 65%)",
           filter: "blur(56px)", opacity: 0.58,
         }}
-        animate={skip ? {} : { x: [0, -80, -120, -70, 0], y: [0, 100, 60, -40, 0] }}
-        transition={{ duration: 17, repeat: Infinity, ease: "easeInOut" }}
+        animate={skip ? {} : { x: [0, -110, -180, -130, -60, 20, 0], y: [0, 140, 100, -50, -80, 60, 0] }}
+        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Orb 4 — violet, bottom-left */}
@@ -92,8 +92,34 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
           background: "radial-gradient(circle, hsl(270,80%,72%) 0%, transparent 65%)",
           filter: "blur(68px)", opacity: 0.52,
         }}
-        animate={skip ? {} : { x: [0, 80, 120, 60, 0], y: [0, -70, -110, -50, 0] }}
-        transition={{ duration: 21, repeat: Infinity, ease: "easeInOut" }}
+        animate={skip ? {} : { x: [0, 110, 170, 90, -20, 40, 0], y: [0, -100, -160, -80, 30, -50, 0] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* Orb 5 — teal-green elongated horizontal ellipse, centre */}
+      <motion.div className="absolute"
+        style={{
+          left: "20%", top: "35%",
+          width: 700, height: 260,
+          borderRadius: "50%",
+          background: "radial-gradient(ellipse, hsl(165,85%,58%) 0%, transparent 65%)",
+          filter: "blur(72px)", opacity: 0.44,
+        }}
+        animate={skip ? {} : { x: [0, -80, 60, 120, -40, 0], y: [0, 90, 160, 60, -70, 0], rotate: [0, 15, -10, 20, -5, 0] }}
+        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* Orb 6 — magenta soft blob, centre-right, tall ellipse */}
+      <motion.div className="absolute"
+        style={{
+          right: "15%", top: "15%",
+          width: 320, height: 640,
+          borderRadius: "40% 60% 55% 45% / 50% 40% 60% 50%",
+          background: "radial-gradient(ellipse, hsl(315,90%,68%) 0%, transparent 60%)",
+          filter: "blur(64px)", opacity: 0.38,
+        }}
+        animate={skip ? {} : { x: [0, -100, -60, 40, 80, 20, 0], y: [0, -60, -140, -80, 30, 70, 0], rotate: [0, -20, 10, -30, 15, 0] }}
+        transition={{ duration: 19, repeat: Infinity, ease: "easeInOut" }}
       />
     </div>
 

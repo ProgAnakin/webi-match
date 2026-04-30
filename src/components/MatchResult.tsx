@@ -51,30 +51,60 @@ interface ConfettiData {
   wave: number; drift: number;
 }
 
-const ConfettiParticle = ({ shape, delay, duration, left, color, w, h, rotStart, rotSpeed, wave, drift }: ConfettiData) => (
-  <motion.div
-    className="absolute pointer-events-none"
-    style={{
-      left, top: "-6%",
-      width: w, height: h,
-      backgroundColor: color,
-      borderRadius: shape === "circle" ? "50%" : shape === "ribbon" ? "2px" : "3px",
-      willChange: "transform, opacity",
-    }}
-    animate={{
-      y: ["0vh", "108vh"],
-      rotate: [rotStart, rotStart + rotSpeed],
-      x: [0, wave, -wave * 0.6, wave * 0.4, drift],
-      opacity: [0, 1, 1, 1, 0],
-    }}
-    transition={{
-      duration,
-      repeat: Infinity,
-      delay,
-      ease: "linear",
-      times: [0, 0.08, 0.45, 0.82, 1],
-    }}
-  />
+// ── Firework burst — particles explode outward from a fixed point ────────────
+interface BurstCfg { bx: number; by: number; startDelay: number; }
+const BURST_POSITIONS: BurstCfg[] = [
+  { bx: 12, by: 18, startDelay: 0.0 },
+  { bx: 82, by: 12, startDelay: 1.1 },
+  { bx: 48, by: 35, startDelay: 2.3 },
+  { bx: 20, by: 72, startDelay: 0.7 },
+  { bx: 78, by: 68, startDelay: 1.8 },
+  { bx: 60, by: 22, startDelay: 3.1 },
+  { bx: 90, by: 82, startDelay: 0.4 },
+  { bx: 35, by: 85, startDelay: 2.7 },
+];
+const PER_BURST = 14;
+const BURST_CYCLE = 5.0;
+
+const FireworkBurst = ({ bx, by, startDelay, colors }: BurstCfg & { colors: string[] }) => (
+  <div className="pointer-events-none absolute" style={{ left: `${bx}%`, top: `${by}%` }}>
+    {Array.from({ length: PER_BURST }, (_, i) => {
+      const angle  = (i / PER_BURST) * Math.PI * 2;
+      const dist   = 55 + (i % 5) * 18;
+      const tx     = Math.cos(angle) * dist;
+      const ty     = Math.sin(angle) * dist;
+      const isCirc = i % 5 === 0;
+      const w      = isCirc ? 7 : 4 + (i % 3);
+      const h      = isCirc ? 7 : w * 2.8;
+      return (
+        <motion.div key={i}
+          className="absolute"
+          style={{
+            width: w, height: h,
+            marginLeft: -w / 2, marginTop: -h / 2,
+            backgroundColor: colors[(i + Math.floor(bx)) % colors.length],
+            borderRadius: isCirc ? "50%" : "2px",
+            willChange: "transform, opacity",
+          }}
+          animate={{
+            x:       [0, tx * 0.5, tx, tx * 1.1],
+            y:       [0, ty * 0.5, ty, ty * 1.1 + 30],
+            opacity: [0, 1, 0.9, 0],
+            scale:   [0, 1.3, 1, 0.3],
+            rotate:  [0, (i % 2 === 0 ? 1 : -1) * (180 + i * 20)],
+          }}
+          transition={{
+            duration: 1.0 + (i % 4) * 0.15,
+            delay: startDelay + i * 0.03,
+            repeat: Infinity,
+            repeatDelay: BURST_CYCLE,
+            ease: [0.15, 0.5, 0.7, 1],
+            times: [0, 0.25, 0.75, 1],
+          }}
+        />
+      );
+    })}
+  </div>
 );
 
 const MatchResult = ({
@@ -266,26 +296,13 @@ const MatchResult = ({
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-10">
 
-      {/* Confetti */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {confettiParticles.map((p) => <ConfettiParticle key={p.id} {...p} />)}
-      </div>
-
-      {/* Burst */}
+      {/* Firework bursts — random explosions around the screen */}
       {tier !== "low" && (
-        <motion.div
-          className="pointer-events-none absolute inset-0 flex items-center justify-center"
-          initial={{ opacity: 1 }} animate={{ opacity: 0 }}
-          transition={{ delay: 0.6, duration: 0.4 }}
-        >
-          {confettiColors.slice(0, tier === "mid" ? 6 : 10).map((color, i) => (
-            <motion.div key={i} className="absolute h-2 w-2 rounded-full" style={{ backgroundColor: color }}
-              initial={{ scale: 0, x: 0, y: 0 }}
-              animate={{ scale: [0, 1.5, 0], x: Math.cos((i * 36 * Math.PI) / 180) * 140, y: Math.sin((i * 36 * Math.PI) / 180) * 140 }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
-            />
+        <div className="pointer-events-none absolute inset-0">
+          {BURST_POSITIONS.slice(0, tier === "high" ? 8 : 5).map((cfg) => (
+            <FireworkBurst key={cfg.startDelay} {...cfg} colors={confettiColors} />
           ))}
-        </motion.div>
+        </div>
       )}
 
       {/* ── Change-email modal ─────────────────────────────────────────────── */}
@@ -442,7 +459,7 @@ const MatchResult = ({
               transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
             />
           )}
-          <svg width="160" height="160" viewBox="0 0 120 120">
+          <svg width="160" height="160" viewBox="0 0 120 120" style={{ overflow: "visible" }}>
             <circle cx="60" cy="60" r="56" fill="none" stroke="hsl(var(--muted))" strokeWidth="7" opacity="0.25" />
             <motion.circle
               cx="60" cy="60" r="56" fill="none"
