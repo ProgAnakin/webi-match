@@ -59,7 +59,7 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
 
   return (
     <div className="relative flex h-dvh flex-col items-center justify-center px-6">
-      <QuizBackground emoji={question.emoji} category={question.category} />
+      <QuizBackground />
 
       {showTutorial && <SwipeTutorial onDismiss={() => setShowTutorial(false)} />}
 
