@@ -55,19 +55,19 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Confetti palette — drives MatchResult confetti via CSS variables */
-    --confetti-1:  27  92% 55%;   /* primary orange          */
-    --confetti-2:  27  92% 72%;   /* primary orange light    */
-    --confetti-3:  145 80% 42%;   /* success green           */
-    --confetti-4:  145 80% 62%;   /* success green light     */
-    --confetti-5:  40  95% 58%;   /* warm amber              */
-    --confetti-6:  210 80% 62%;   /* sky blue                */
-    --confetti-7:  280 65% 62%;   /* purple                  */
-    --confetti-8:  330 75% 62%;   /* pink                    */
-    --confetti-9:  50  90% 55%;   /* yellow                  */
-    --confetti-10: 185 70% 48%;   /* teal                    */
-    --confetti-11: 300 60% 58%;   /* magenta                 */
-    --confetti-12: 15  88% 58%;   /* orange-red              */
+    /* Confetti palette — Webidoo brand colors */
+    --confetti-1:  20  86% 52%;   /* Webidoo orange — primary */
+    --confetti-2:  25  90% 68%;   /* orange light / peach     */
+    --confetti-3:  18  92% 60%;   /* orange-coral             */
+    --confetti-4:  22  95% 72%;   /* pale peach               */
+    --confetti-5:  228 65% 58%;   /* Webidoo navy (lifted)    */
+    --confetti-6:  224 80% 72%;   /* sky-blue accent          */
+    --confetti-7:  228 55% 78%;   /* periwinkle               */
+    --confetti-8:  38  96% 60%;   /* warm amber               */
+    --confetti-9:  35  92% 50%;   /* deep amber-gold          */
+    --confetti-10: 0   0%  96%;   /* white sparkle            */
+    --confetti-11: 15  88% 45%;   /* dark burnt orange        */
+    --confetti-12: 228 70% 42%;   /* deep navy                */
   }
 }
 

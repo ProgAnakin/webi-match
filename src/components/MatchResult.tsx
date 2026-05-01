@@ -33,10 +33,9 @@ interface MatchResultProps {
   claimError?: boolean;
 }
 
-// Brand-aligned confetti subset — only warm/celebratory tokens that match
-// the Webidoo identity. Excludes purple, pink, teal, magenta to keep the
-// fireworks visually consistent with the rest of the app.
-const BRAND_CONFETTI_INDEXES = [1, 2, 3, 4, 5, 9, 12]; // orange, light orange, success green ×2, amber, yellow, orange-red
+// Webidoo brand confetti: oranges, blues, amber, white. All indexes map to
+// the --confetti-N variables in index.css.
+const BRAND_CONFETTI_INDEXES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // orange range + navy blues + amber + white
 
 function readCssConfettiColors(): string[] {
   const style = getComputedStyle(document.documentElement);
