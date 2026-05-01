@@ -52,6 +52,13 @@ function isCodeExpired(s: Session): boolean {
   return (Date.now() - new Date(s.created_at).getTime()) > 24 * 3_600_000;
 }
 
+/** Returns hours left until expiry (based on 24h from created_at). Returns null if already expired. */
+function hoursUntilExpiry(s: Session): number | null {
+  const msLeft = (new Date(s.created_at).getTime() + 24 * 3_600_000) - Date.now();
+  if (msLeft <= 0) return null;
+  return Math.ceil(msLeft / 3_600_000);
+}
+
 const STATUS_META = {
   enviada:     { label: "ENVIADA",     icon: Mail,        cls: "border-green-500/40 bg-green-500/10 text-green-400"       },
   processando: { label: "PROCESSANDO", icon: Clock,       cls: "border-amber-500/40 bg-amber-500/10 text-amber-400"       },
@@ -89,6 +96,8 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   }, [storeId, isGlobal]);
 
   const fetchNegado = useCallback(async () => {
+    // NOTE: negadoCount uses quiz_funnel_events which may span a different time window
+    // than the session list (300-session limit). See localNegado below for a session-derived metric.
     const [shownRes, claimedRes] = await Promise.all([
       supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "result_shown"),
       supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "claimed"),
@@ -155,12 +164,31 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     (s) => isCodeExpired(s) && s.discount_code && !s.code_redeemed
   ).length;
 
+  // Redemption rate KPI
+  const sessionsWithCode = sessions.filter((s) => s.discount_code !== null);
+  const sessionsRedeemed = sessions.filter((s) => s.code_redeemed === true);
+  const redemptionTotal = sessionsWithCode.length;
+  const redemptionUsed = sessionsRedeemed.length;
+  const redemptionPct = redemptionTotal > 0 ? Math.round((redemptionUsed / redemptionTotal) * 100) : 0;
+  const redemptionColor =
+    redemptionPct > 50 ? "text-green-400" :
+    redemptionPct >= 20 ? "text-amber-400" :
+    "text-muted-foreground";
+  const redemptionBorderBg =
+    redemptionPct > 50 ? "border-green-500/20 bg-green-500/5" :
+    redemptionPct >= 20 ? "border-amber-500/20 bg-amber-500/5" :
+    "border-border bg-muted/20";
+
+  // Local negado derived from current session list (may differ from funnel-event count)
+  // Sessions where the user didn't proceed to claim (no email_sent and no discount_code)
+  const localNegado = sessions.length - sessions.filter((s) => s.email_sent || s.discount_code).length;
+
   return (
     <div className="space-y-5">
 
       {/* Summary KPIs */}
       <motion.div
-        className="grid grid-cols-2 gap-3 sm:grid-cols-5"
+        className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       >
         <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4 text-center">
@@ -182,6 +210,14 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         <div className="rounded-2xl border border-border bg-muted/20 p-4 text-center">
           <p className="text-2xl font-bold text-foreground">{negadoCount}</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Match negado</p>
+          {/* Local metric: sessions where user declined before claiming (may differ from funnel count above) */}
+          <p className="mt-0.5 text-[9px] text-muted-foreground/50">({localNegado} da lista)</p>
+        </div>
+        {/* Redemption rate KPI */}
+        <div className={`rounded-2xl border p-4 text-center ${redemptionBorderBg}`}>
+          <p className={`text-2xl font-bold ${redemptionColor}`}>{redemptionUsed}/{redemptionTotal}</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Codici usati</p>
+          <p className={`mt-0.5 text-[9px] font-semibold ${redemptionColor}`}>{redemptionPct}%</p>
         </div>
       </motion.div>
 
@@ -264,6 +300,8 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
               const status = getSessionStatus(s);
               const meta = STATUS_META[status];
               const expired = isCodeExpired(s);
+              const hrsLeft = s.discount_code && !expired ? hoursUntilExpiry(s) : null;
+              const expiringSoon = hrsLeft !== null && hrsLeft <= 4 && hrsLeft > 0;
               const fullName = [s.nome, s.cognome].filter(Boolean).join(" ");
               const StatusIcon = meta.icon;
               const isRedeeming = redeemingId === s.id;
@@ -321,6 +359,10 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                             ) : expired ? (
                               <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground uppercase">
                                 scaduto
+                              </span>
+                            ) : expiringSoon ? (
+                              <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 text-[9px] font-bold text-amber-400 uppercase">
+                                scade in {hrsLeft}h
                               </span>
                             ) : (
                               <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold text-green-400 uppercase">

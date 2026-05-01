@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BarChart2, Camera, Check, HelpCircle, Home, Link, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download, Inbox } from "lucide-react";
+import { BarChart2, Camera, Check, HelpCircle, History, Home, Link, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download, Inbox } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
-import { getStoredStoreId, setStoredStoreId, getStoreById } from "@/data/stores";
+import { getStoredStoreId, setStoredStoreId, getStoreById, STORES } from "@/data/stores";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 import { StoreSelectorModal } from "./StoreSelectorModal";
 import { FaqModal, FaqData, EMPTY_FAQ } from "./FaqModal";
 import { SessionsTab } from "./SessionsTab";
 
-type ActiveTab = "catalogo" | "sessioni";
+type ActiveTab = "catalogo" | "sessioni" | "storico";
 
 /** product_id → active boolean, loaded from Supabase */
 type SettingsMap = Record<string, boolean>;
@@ -24,14 +24,64 @@ type VideoMap = Record<string, string>;
 type DiscountMap = Record<string, number>;
 /** product_id → FAQ data */
 type FaqMap = Record<string, FaqData>;
+/** product_id → updated_at ISO string */
+type UpdatedAtMap = Record<string, string>;
 
 const DISCOUNT_OPTIONS = [5, 8, 10] as const;
 type DiscountOption = typeof DISCOUNT_OPTIONS[number];
 
 interface UndoEntry { productId: string; restoredValue: boolean; }
 
+interface AuditLogEntry {
+  id: string;
+  created_at: string;
+  action: string | null;
+  product_id: string | null;
+  old_active: boolean | null;
+  new_active: boolean | null;
+  store_id: string | null;
+  user_id: string | null;
+}
+
 interface ManagerDashboardProps {
   onLogout: () => void;
+}
+
+/** Format a timestamp as "oggi", "ieri", "X giorni fa", "X settimane fa" */
+function formatUpdatedAt(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffDays = Math.floor(diffMs / 86_400_000);
+  if (diffDays === 0) return "oggi";
+  if (diffDays === 1) return "ieri";
+  if (diffDays < 14) return `${diffDays} giorni fa`;
+  const weeks = Math.floor(diffDays / 7);
+  return `${weeks} settimane fa`;
+}
+
+/** Validate price formats: "€49,00", "49.00", "49,00", "€49" */
+function isValidPrice(value: string): boolean {
+  const trimmed = value.trim();
+  if (trimmed === "") return true; // allow clearing
+  return /^€?\d+([.,]\d{1,2})?$/.test(trimmed);
+}
+
+/** Validate video URL — must contain youtube.com, youtu.be, or vimeo.com */
+function isValidVideoUrl(url: string): boolean {
+  const trimmed = url.trim();
+  if (trimmed === "") return true; // allow clearing
+  return trimmed.includes("youtube.com") || trimmed.includes("youtu.be") || trimmed.includes("vimeo.com");
+}
+
+function formatAuditDate(iso: string): string {
+  return new Date(iso).toLocaleString("it-IT", {
+    day: "2-digit", month: "2-digit", year: "2-digit",
+    hour: "2-digit", minute: "2-digit",
+  });
+}
+
+function auditStoreName(id: string | null): string {
+  if (!id) return "—";
+  return STORES.find((s) => s.id === id)?.shortName ?? id;
 }
 
 export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
@@ -42,15 +92,18 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const [videoOverrides, setVideoOverrides] = useState<VideoMap>({});
   const [discountOverrides, setDiscountOverrides] = useState<DiscountMap>({});
   const [faqOverrides, setFaqOverrides] = useState<FaqMap>({});
+  const [updatedAtMap, setUpdatedAtMap] = useState<UpdatedAtMap>({});
   const [editingFaqId, setEditingFaqId] = useState<string | null>(null);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
   const [draftVideo, setDraftVideo] = useState("");
+  const [videoError, setVideoError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [draftPrice, setDraftPrice] = useState("");
+  const [priceError, setPriceError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [storeId, setStoreIdState] = useState<string>(
@@ -58,13 +111,21 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   );
   const [showStoreModal, setShowStoreModal] = useState(false);
   const [bulkSelection, setBulkSelection] = useState<Set<string>>(new Set());
+  const [bulkConfirm, setBulkConfirm] = useState<{ enable: boolean; count: number } | null>(null);
   const [showCsvModal, setShowCsvModal] = useState(false);
   const [csvPreview, setCsvPreview] = useState<{ productId: string; newPrice: string }[]>([]);
   // Undo last toggle — auto-dismisses after 8 s
   const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
+  const [undoCountdown, setUndoCountdown] = useState(8);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const undoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [userRole, setUserRole] = useState<{ role: string; store_id: string | null } | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("catalogo");
+
+  // Storico (audit log) state
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState(false);
 
   const currentStore = getStoreById(storeId);
 
@@ -89,7 +150,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     setLoading(true);
     const { data } = await supabase
       .from("product_settings")
-      .select("product_id, active, price_override, image_url, video_url, discount_percent, faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3")
+      .select("product_id, active, price_override, image_url, video_url, discount_percent, faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3, updated_at")
       .eq("store_id", storeId);
     if (data) {
       const map: SettingsMap = {};
@@ -98,14 +159,15 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
       const videos: VideoMap = {};
       const discounts: DiscountMap = {};
       const faqs: FaqMap = {};
+      const updatedAt: UpdatedAtMap = {};
       data.forEach((row) => {
         map[row.product_id] = row.active;
         if (row.price_override) prices[row.product_id] = row.price_override;
         if (row.image_url) images[row.product_id] = row.image_url;
         if (row.video_url) videos[row.product_id] = row.video_url;
         if (row.discount_percent) discounts[row.product_id] = row.discount_percent;
-        // @ts-expect-error — faq columns added via migration 20260418000002, not yet in generated types
-        const { faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3 } = row as Record<string, string>;
+        // @ts-expect-error — faq/updated_at columns added via migration 20260418000002, not yet in generated types
+        const { faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3, updated_at: ua } = row as Record<string, string>;
         if (faq_q1 || faq_q2 || faq_q3) {
           faqs[row.product_id] = {
             q1: faq_q1 ?? "", a1: faq_a1 ?? "",
@@ -113,6 +175,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             q3: faq_q3 ?? "", a3: faq_a3 ?? "",
           };
         }
+        if (ua) updatedAt[row.product_id] = ua;
       });
       setSettings(map);
       setPriceOverrides(prices);
@@ -120,11 +183,37 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
       setVideoOverrides(videos);
       setDiscountOverrides(discounts);
       setFaqOverrides(faqs);
+      setUpdatedAtMap(updatedAt);
     }
     setLoading(false);
   }, [storeId]);
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
+
+  // Fetch audit log when storico tab is active
+  const fetchAuditLog = useCallback(async () => {
+    setAuditLoading(true);
+    setAuditError(false);
+    try {
+      const { data, error } = await supabase
+        .from("manager_audit_log")
+        .select("id, created_at, action, product_id, old_active, new_active, store_id, user_id")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) {
+        setAuditError(true);
+      } else {
+        setAuditLog((data ?? []) as AuditLogEntry[]);
+      }
+    } catch {
+      setAuditError(true);
+    }
+    setAuditLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "storico") fetchAuditLog();
+  }, [activeTab, fetchAuditLog]);
 
   /** Core upsert — does NOT create an undo entry. Used by both toggleProduct and handleUndo. */
   const saveProductActive = async (productId: string, targetActive: boolean) => {
@@ -164,15 +253,31 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     const ok = await saveProductActive(productId, !current);
     if (!ok) return;
 
-    // Arm 8-second undo window
+    // Arm 8-second undo window with countdown
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
     setUndoEntry({ productId, restoredValue: current });
-    undoTimerRef.current = setTimeout(() => setUndoEntry(null), 8000);
+    setUndoCountdown(8);
+
+    let remaining = 8;
+    undoIntervalRef.current = setInterval(() => {
+      remaining -= 1;
+      setUndoCountdown(remaining);
+      if (remaining <= 0) {
+        if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
+      }
+    }, 1000);
+
+    undoTimerRef.current = setTimeout(() => {
+      setUndoEntry(null);
+      if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
+    }, 8000);
   };
 
   const handleUndo = async () => {
     if (!undoEntry) return;
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
     const entry = undoEntry;
     setUndoEntry(null);
     await saveProductActive(entry.productId, entry.restoredValue);
@@ -180,6 +285,11 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
 
   const savePriceOverride = async (productId: string, price: string) => {
     const trimmed = price.trim();
+    if (trimmed !== "" && !isValidPrice(trimmed)) {
+      setPriceError("Formato non valido (es. €49,00)");
+      return;
+    }
+    setPriceError(null);
     const { error } = await supabase
       .from("product_settings")
       .upsert({
@@ -197,11 +307,36 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     setEditingPriceId(null);
   };
 
+  const saveVideoUrl = async (productId: string, url: string) => {
+    const trimmed = url.trim();
+    if (trimmed !== "" && !isValidVideoUrl(trimmed)) {
+      setVideoError("URL non valido — usa YouTube o Vimeo");
+      return;
+    }
+    setVideoError(null);
+    await supabase.from("product_settings").upsert({
+      product_id: productId,
+      store_id: storeId,
+      video_url: trimmed || null,
+      updated_at: new Date().toISOString(),
+    });
+    setVideoOverrides((prev) => {
+      if (!trimmed) { const n = { ...prev }; delete n[productId]; return n; }
+      return { ...prev, [productId]: trimmed };
+    });
+    setEditingVideoId(null);
+  };
+
+  const requestBulkToggle = (enable: boolean) => {
+    setBulkConfirm({ enable, count: bulkSelection.size });
+  };
+
   const handleBulkToggle = async (enable: boolean) => {
     for (const productId of bulkSelection) {
       await saveProductActive(productId, enable);
     }
     setBulkSelection(new Set());
+    setBulkConfirm(null);
   };
 
   const handleCsvUpload = async (file: File) => {
@@ -284,21 +419,6 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     setDiscountOverrides((prev) => ({ ...prev, [productId]: pct }));
   };
 
-  const saveVideoUrl = async (productId: string, url: string) => {
-    const trimmed = url.trim();
-    await supabase.from("product_settings").upsert({
-      product_id: productId,
-      store_id: storeId,
-      video_url: trimmed || null,
-      updated_at: new Date().toISOString(),
-    });
-    setVideoOverrides((prev) => {
-      if (!trimmed) { const n = { ...prev }; delete n[productId]; return n; }
-      return { ...prev, [productId]: trimmed };
-    });
-    setEditingVideoId(null);
-  };
-
   const saveFaq = async (productId: string, faq: FaqData) => {
     // @ts-expect-error — faq columns added via migration 20260418000002, not yet in generated types
     await supabase.from("product_settings").upsert({
@@ -348,6 +468,23 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
 
   const activeCount = products.filter((p) => settings[p.id] !== false).length;
 
+  // Select-all: true if all filtered products are in bulkSelection
+  const allFilteredSelected =
+    filteredProducts.length > 0 &&
+    filteredProducts.every((p) => bulkSelection.has(p.id));
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const newSet = new Set(bulkSelection);
+      filteredProducts.forEach((p) => newSet.add(p.id));
+      setBulkSelection(newSet);
+    } else {
+      const newSet = new Set(bulkSelection);
+      filteredProducts.forEach((p) => newSet.delete(p.id));
+      setBulkSelection(newSet);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background px-4 py-8">
       <div className="mx-auto max-w-2xl space-y-6">
@@ -375,11 +512,11 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           <div className="flex gap-2 flex-wrap justify-end">
             {bulkSelection.size > 0 && (
               <>
-                <button onClick={() => handleBulkToggle(false)}
+                <button onClick={() => requestBulkToggle(false)}
                   className="flex items-center gap-1 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-400 active:scale-95">
                   <PowerOff className="h-3 w-3" /> Disattiva {bulkSelection.size}
                 </button>
-                <button onClick={() => handleBulkToggle(true)}
+                <button onClick={() => requestBulkToggle(true)}
                   className="flex items-center gap-1 rounded-xl border border-green-500/40 bg-green-500/10 px-3 py-2 text-xs text-green-400 active:scale-95">
                   <Power className="h-3 w-3" /> Attiva {bulkSelection.size}
                 </button>
@@ -433,6 +570,34 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           )}
         </AnimatePresence>
 
+        {/* Bulk confirm inline banner */}
+        <AnimatePresence>
+          {bulkConfirm && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm"
+            >
+              <p className="text-amber-300 font-semibold mb-2">
+                Stai per {bulkConfirm.enable ? "attivare" : "disattivare"} {bulkConfirm.count} prodotti. Confermi?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleBulkToggle(bulkConfirm.enable)}
+                  className="rounded-xl border border-amber-500/40 bg-amber-500/20 px-4 py-1.5 text-xs font-semibold text-amber-300 active:scale-95"
+                >
+                  Conferma
+                </button>
+                <button
+                  onClick={() => setBulkConfirm(null)}
+                  className="rounded-xl border border-border bg-card px-4 py-1.5 text-xs text-muted-foreground active:scale-95"
+                >
+                  Annulla
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Tab switcher */}
         <motion.div
           className="flex gap-1 rounded-2xl border border-border bg-muted/30 p-1"
@@ -458,6 +623,16 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           >
             <Inbox className="h-3.5 w-3.5" /> Sessioni &amp; Codici
           </button>
+          <button
+            onClick={() => setActiveTab("storico")}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+              activeTab === "storico"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <History className="h-3.5 w-3.5" /> Storico
+          </button>
         </motion.div>
 
         {/* Sessions tab */}
@@ -466,6 +641,58 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             storeId={storeId}
             isGlobal={userRole?.role !== "consulente_responsabile"}
           />
+        )}
+
+        {/* Storico (audit log) tab */}
+        {activeTab === "storico" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">Storico modifiche catalogo</h2>
+              <button
+                onClick={fetchAuditLog}
+                className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground active:scale-95"
+              >
+                <RotateCcw className="h-3 w-3" /> Aggiorna
+              </button>
+            </div>
+
+            {auditLoading ? (
+              <div className="py-16 text-center text-muted-foreground text-sm">Caricamento storico…</div>
+            ) : auditError || auditLog.length === 0 ? (
+              <div className="rounded-2xl border border-border bg-muted/20 py-12 text-center">
+                <p className="text-2xl mb-2">📋</p>
+                <p className="text-sm font-medium text-foreground">Nessuno storico disponibile</p>
+                <p className="text-xs text-muted-foreground mt-1">Le modifiche future appariranno qui.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {auditLog.map((entry) => {
+                  const prodName = entry.product_id
+                    ? (products.find((p) => p.id === entry.product_id)?.name ?? entry.product_id)
+                    : "—";
+                  const isActivated = entry.new_active === true;
+                  return (
+                    <div
+                      key={entry.id}
+                      className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3"
+                    >
+                      <span className={`shrink-0 text-sm font-bold ${isActivated ? "text-green-400" : "text-destructive"}`}>
+                        {isActivated ? "✓" : "✗"}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">{prodName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {isActivated ? "Attivato" : "Disattivato"}
+                          {entry.store_id && <span className="ml-1.5">· {auditStoreName(entry.store_id)}</span>}
+                        </p>
+                      </div>
+                      <p className="shrink-0 text-[10px] text-muted-foreground/60">{formatAuditDate(entry.created_at)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
 
         {/* Catalogo-only sections below */}
@@ -526,9 +753,27 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           </div>
         ) : (
           <div className="space-y-3">
+            {/* Select-all header */}
+            <div className="flex items-center gap-2 px-1">
+              <input
+                type="checkbox"
+                id="select-all-checkbox"
+                checked={allFilteredSelected}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="h-4 w-4 cursor-pointer"
+              />
+              <label htmlFor="select-all-checkbox" className="cursor-pointer text-xs text-muted-foreground select-none">
+                Seleziona tutti ({filteredProducts.length})
+              </label>
+            </div>
+
             {filteredProducts.map((product, i) => {
               const isActive = settings[product.id] !== false;
               const isSaving = savingId === product.id;
+              const faqData = faqOverrides[product.id];
+              const faqComplete = !!(faqData?.q1 && faqData?.a1);
+              const faqPartial = !!(faqData?.q1 && !faqData?.a1);
+              const updatedAt = updatedAtMap[product.id];
               return (
                 <motion.div
                   key={product.id}
@@ -564,6 +809,11 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                           {isActive ? "Attivo" : "In pausa"}
                         </span>
                         <h3 className="text-sm font-bold leading-snug text-foreground">{product.name}</h3>
+                        {updatedAt && (
+                          <p className="mt-0.5 text-[10px] text-muted-foreground/50">
+                            Aggiornato: {formatUpdatedAt(updatedAt)}
+                          </p>
+                        )}
                       </div>
                       <motion.button
                         onClick={() => !isSaving && toggleProduct(product.id)}
@@ -585,30 +835,35 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                     <div className="ml-7 mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
                       {/* Price */}
                       {editingPriceId === product.id ? (
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            autoFocus
-                            value={draftPrice}
-                            onChange={(e) => setDraftPrice(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") savePriceOverride(product.id, draftPrice);
-                              if (e.key === "Escape") setEditingPriceId(null);
-                            }}
-                            className="w-28 rounded-lg border border-primary bg-card px-2 py-1 text-sm font-semibold text-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                            placeholder="€0,00"
-                          />
-                          <button onClick={() => savePriceOverride(product.id, draftPrice)}
-                            className="rounded-lg bg-primary/20 p-1.5 text-primary hover:bg-primary/30">
-                            <Check className="h-3.5 w-3.5" />
-                          </button>
-                          <button onClick={() => setEditingPriceId(null)}
-                            className="rounded-lg bg-muted p-1.5 text-muted-foreground">
-                            <X className="h-3.5 w-3.5" />
-                          </button>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              autoFocus
+                              value={draftPrice}
+                              onChange={(e) => { setDraftPrice(e.target.value); setPriceError(null); }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") savePriceOverride(product.id, draftPrice);
+                                if (e.key === "Escape") { setEditingPriceId(null); setPriceError(null); }
+                              }}
+                              className="w-28 rounded-lg border border-primary bg-card px-2 py-1 text-sm font-semibold text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                              placeholder="€0,00"
+                            />
+                            <button onClick={() => savePriceOverride(product.id, draftPrice)}
+                              className="rounded-lg bg-primary/20 p-1.5 text-primary hover:bg-primary/30">
+                              <Check className="h-3.5 w-3.5" />
+                            </button>
+                            <button onClick={() => { setEditingPriceId(null); setPriceError(null); }}
+                              className="rounded-lg bg-muted p-1.5 text-muted-foreground">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                          {priceError && (
+                            <p className="text-[10px] text-destructive">{priceError}</p>
+                          )}
                         </div>
                       ) : (
                         <button
-                          onClick={() => { setEditingPriceId(product.id); setDraftPrice(priceOverrides[product.id] ?? product.price); }}
+                          onClick={() => { setEditingPriceId(product.id); setDraftPrice(priceOverrides[product.id] ?? product.price); setPriceError(null); }}
                           className="group flex items-center gap-1.5"
                         >
                           <span className="text-sm font-bold text-primary">
@@ -667,19 +922,25 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
 
                       {/* Video */}
                       {editingVideoId === product.id ? (
-                        <div className="flex flex-1 items-center gap-1.5">
-                          <input autoFocus value={draftVideo} onChange={(e) => setDraftVideo(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === "Enter") saveVideoUrl(product.id, draftVideo); if (e.key === "Escape") setEditingVideoId(null); }}
-                            placeholder="https://youtube.com/watch?v=..."
-                            className="flex-1 rounded-lg border border-primary bg-card px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-                          <button onClick={() => saveVideoUrl(product.id, draftVideo)}
-                            className="rounded-lg bg-primary/20 p-1.5 text-primary"><Check className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => setEditingVideoId(null)}
-                            className="rounded-lg bg-muted p-1.5 text-muted-foreground"><X className="h-3.5 w-3.5" /></button>
+                        <div className="flex flex-col gap-1 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <input autoFocus value={draftVideo}
+                              onChange={(e) => { setDraftVideo(e.target.value); setVideoError(null); }}
+                              onKeyDown={(e) => { if (e.key === "Enter") saveVideoUrl(product.id, draftVideo); if (e.key === "Escape") { setEditingVideoId(null); setVideoError(null); } }}
+                              placeholder="https://youtube.com/watch?v=..."
+                              className="flex-1 rounded-lg border border-primary bg-card px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                            <button onClick={() => saveVideoUrl(product.id, draftVideo)}
+                              className="rounded-lg bg-primary/20 p-1.5 text-primary"><Check className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => { setEditingVideoId(null); setVideoError(null); }}
+                              className="rounded-lg bg-muted p-1.5 text-muted-foreground"><X className="h-3.5 w-3.5" /></button>
+                          </div>
+                          {videoError && (
+                            <p className="text-[10px] text-destructive">{videoError}</p>
+                          )}
                         </div>
                       ) : (
                         <button
-                          onClick={() => { setEditingVideoId(product.id); setDraftVideo(videoOverrides[product.id] ?? ""); }}
+                          onClick={() => { setEditingVideoId(product.id); setDraftVideo(videoOverrides[product.id] ?? ""); setVideoError(null); }}
                           className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium transition-colors ${
                             videoOverrides[product.id]
                               ? "border-green-500/40 bg-green-500/10 text-green-400"
@@ -694,12 +955,14 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                       <button
                         onClick={() => setEditingFaqId(product.id)}
                         className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium transition-colors ${
-                          faqOverrides[product.id]?.q1
+                          faqComplete
                             ? "border-primary/40 bg-primary/10 text-primary"
+                            : faqPartial
+                            ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
                             : "border-border bg-muted/50 text-muted-foreground hover:bg-muted"
                         }`}>
                         <HelpCircle className="h-3 w-3" />
-                        {faqOverrides[product.id]?.q1 ? "FAQ ✓" : "FAQ"}
+                        {faqComplete ? "FAQ ✓" : faqPartial ? "FAQ ⚠" : "FAQ"}
                       </button>
 
                       {/* Tags */}
@@ -818,7 +1081,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
               onClick={handleUndo}
               className="flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary active:scale-95"
             >
-              <Undo2 className="h-3.5 w-3.5" /> Annulla
+              <Undo2 className="h-3.5 w-3.5" /> Annulla ({undoCountdown}s)
             </button>
           </motion.div>
         )}
