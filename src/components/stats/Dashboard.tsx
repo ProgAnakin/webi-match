@@ -4,7 +4,7 @@ import {
   LogOut, RefreshCw, Package, Download, Shield, ShieldCheck,
   Calendar, ChevronDown, ChevronUp, Home, ChevronLeft, ChevronRight, TrendingUp,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { STORES, getStoreById } from "@/data/stores";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
@@ -24,17 +24,70 @@ interface DashboardProps {
   onLogout: () => void;
 }
 
+// ─── Date helpers ─────────────────────────────────────────────────────────────
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+function daysAgoStr(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+function startOfMonthStr(): string {
+  const d = new Date();
+  d.setDate(1);
+  return d.toISOString().slice(0, 10);
+}
+
 export const Dashboard = ({ onLogout }: DashboardProps) => {
   const navigate = useNavigate();
+
+  // ── 2. URL persistence for filters (replaces useState for dateFrom/dateTo/filterStore) ──
+  const [searchParams, setSearchParams] = useSearchParams();
+  const dateFrom = searchParams.get("from") ?? "";
+  const dateTo = searchParams.get("to") ?? "";
+  const filterStore = searchParams.get("store") ?? null;
+
+  const setDateFrom = (val: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (val) next.set("from", val); else next.delete("from");
+      return next;
+    }, { replace: true });
+  };
+  const setDateTo = (val: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (val) next.set("to", val); else next.delete("to");
+      return next;
+    }, { replace: true });
+  };
+  const setFilterStore = (val: string | null) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (val) next.set("store", val); else next.delete("store");
+      return next;
+    }, { replace: true });
+  };
+  const clearAllFilters = () => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("from");
+      next.delete("to");
+      next.delete("store");
+      return next;
+    }, { replace: true });
+  };
+
+  // ── 9. Date filter validation ──────────────────────────────────────────────
+  const dateRangeInvalid = !!(dateFrom && dateTo && dateTo < dateFrom);
+
   const [sessions, setSessions] = useState<QuizSession[]>([]);
   const [funnel, setFunnel] = useState<FunnelCounts | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const lastFetchRef = useRef<number>(0);
 
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [filterStore, setFilterStore] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   const [page, setPage] = useState(0);
@@ -60,19 +113,34 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     });
   }, []);
 
+  // ── 6. Server-side filtering ───────────────────────────────────────────────
   const fetchData = useCallback(async (isManual = false) => {
     if (isManual && Date.now() - lastFetchRef.current < REFRESH_DEBOUNCE_MS) return;
     lastFetchRef.current = Date.now();
     setLoading(true); setHasError(false);
 
-    const { data, error } = await supabase
+    // Only fetch if dates are valid (or no date filter)
+    if (dateRangeInvalid) {
+      setLoading(false);
+      return;
+    }
+
+    let query = supabase
       .from("quiz_sessions")
-      .select("id, email, nome, cognome, matched_product_id, match_percent, created_at, store_id, email_sent")
+      .select("id, email, nome, cognome, matched_product_id, match_percent, created_at, store_id, email_sent, discount_code, code_redeemed")
       .order("created_at", { ascending: false })
       .limit(FETCH_LIMIT);
+
+    // Server-side date filters
+    if (dateFrom) query = query.gte("created_at", dateFrom);
+    if (dateTo)   query = query.lte("created_at", dateTo + "T23:59:59");
+    if (filterStore) query = query.eq("store_id", filterStore);
+
+    const { data, error } = await query;
     if (error) setHasError(true);
     else setSessions((data ?? []) as QuizSession[]);
 
+    // Funnel counts (global, not date-filtered — kept as-is for overall funnel shape)
     const [startedRes, resultRes, claimedRes] = await Promise.all([
       supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "quiz_started"),
       supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "result_shown"),
@@ -85,7 +153,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     });
 
     setLoading(false);
-  }, []);
+  }, [dateFrom, dateTo, filterStore, dateRangeInvalid]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
   // Reset to first page whenever filters change
@@ -98,15 +166,9 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
   };
 
   // ─── Filtered + computed data (all memoized to avoid re-computing on unrelated renders) ──
+  // Since server now applies date/store filters, client-side filtering is only needed for search
 
-  const filteredSessions = useMemo(() => sessions.filter((s) => {
-    const d = s.created_at.slice(0, 10);
-    if (dateFrom && d < dateFrom) return false;
-    if (dateTo && d > dateTo) return false;
-    if (filterStore && s.store_id !== filterStore) return false;
-    return true;
-  }), [sessions, dateFrom, dateTo, filterStore]);
-
+  const filteredSessions = sessions; // server already filtered by date+store
   const isFiltered = dateFrom !== "" || dateTo !== "" || filterStore !== null;
   const total = filteredSessions.length;
   const globalTotal = sessions.length;
@@ -135,12 +197,27 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     return { uniqueEmails, avgMatch, todaySessions, productStats };
   }, [filteredSessions, total]);
 
+  // ── 3. Trend indicators ────────────────────────────────────────────────────
+  // Trends require a previous period to compare against. Since we now use server-side
+  // filtering and sessions only contain the current period window, trend badges are
+  // shown as null (hidden) — a future enhancement could do a second Supabase query
+  // for the previous period. The StatCard component renders nothing when trend is null.
+  const trendMetrics = useMemo(
+    () => ({ trendTotal: null as number | null, trendToday: null as number | null, trendAvgMatch: null as number | null }),
+    [],
+  );
+
   // ─── Extra metrics ───────────────────────────────────────────────────────────
 
   const { emailSentCount, emailDeliveryRate, hourlyCounts, peakHour, maxHourly,
-          matchBrackets, maxBracket, returningCount, dayCounts, maxDay } = useMemo(() => {
+          matchBrackets, maxBracket, returningCount, dayCounts, maxDay,
+          codesGenerated, codesUsed } = useMemo(() => {
     const emailSentCount = filteredSessions.filter((s) => s.email_sent === true).length;
     const emailDeliveryRate = total ? Math.round((emailSentCount / total) * 100) : 0;
+
+    // Discount code metrics (for redemption rate — improvement #8)
+    const codesGenerated = filteredSessions.filter((s) => s.discount_code != null).length;
+    const codesUsed = filteredSessions.filter((s) => s.code_redeemed === true).length;
 
     // Hourly distribution — follows active filters for consistency
     const hourlyCounts: number[] = Array.from({ length: 24 }, (_, h) =>
@@ -177,14 +254,25 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     const maxDay = Math.max(...dayCounts.map((d) => d.count), 1);
 
     return { emailSentCount, emailDeliveryRate, hourlyCounts, peakHour, maxHourly,
-             matchBrackets, maxBracket, returningCount, dayCounts, maxDay };
+             matchBrackets, maxBracket, returningCount, dayCounts, maxDay,
+             codesGenerated, codesUsed };
   }, [filteredSessions, total]);
+
+  // ── 4. Conversion rate (Tasso claim) ─────────────────────────────────────
+  const tassoClaimPct = funnel && funnel.resultShown > 0
+    ? Math.round((funnel.claimed / funnel.resultShown) * 100)
+    : null;
+  const tassoClaimColor: "green" | "amber" | "red" =
+    tassoClaimPct == null ? "red"
+    : tassoClaimPct > 30 ? "green"
+    : tassoClaimPct >= 15 ? "amber"
+    : "red";
 
   // Product pagination
   const productTotalPages = Math.ceil(productStats.length / PRODUCT_PAGE_SIZE);
   const pagedProductStats = productStats.slice(productPage * PRODUCT_PAGE_SIZE, (productPage + 1) * PRODUCT_PAGE_SIZE);
 
-  // Search + pagination for sessions
+  // Search + pagination for sessions (client-side text search only)
   const searchedSessions = useMemo(() => {
     const searchLower = search.toLowerCase().trim();
     if (!searchLower) return filteredSessions;
@@ -200,6 +288,9 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
 
   const pagedSessions = searchedSessions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const totalPages = Math.ceil(searchedSessions.length / PAGE_SIZE);
+
+  // Redemption rate line (#8)
+  const redemptionPct = codesGenerated > 0 ? Math.round((codesUsed / codesGenerated) * 100) : 0;
 
   // ─── Render ──────────────────────────────────────────────────────────────────
 
@@ -269,6 +360,29 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
                   Filtra per data
                 </p>
+
+                {/* 1. Date shortcuts */}
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: "Oggi",        from: todayStr(),       to: todayStr() },
+                    { label: "7 giorni",    from: daysAgoStr(6),    to: todayStr() },
+                    { label: "30 giorni",   from: daysAgoStr(29),   to: todayStr() },
+                    { label: "Questo mese", from: startOfMonthStr(), to: todayStr() },
+                  ].map((s) => (
+                    <button
+                      key={s.label}
+                      onClick={() => { setDateFrom(s.from); setDateTo(s.to); }}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                        dateFrom === s.from && dateTo === s.to
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="flex gap-3">
                   <div className="flex-1">
                     <label className="text-xs text-muted-foreground mb-1 block">Da</label>
@@ -280,9 +394,21 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                     <label className="text-xs text-muted-foreground mb-1 block">A</label>
                     <input type="date" value={dateTo}
                       onChange={(e) => setDateTo(e.target.value)}
-                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+                      className={`w-full rounded-xl border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 ${
+                        dateRangeInvalid
+                          ? "border-destructive focus:ring-destructive"
+                          : "border-border focus:ring-primary"
+                      }`} />
                   </div>
                 </div>
+
+                {/* 9. Date range validation error */}
+                {dateRangeInvalid && (
+                  <p className="text-xs font-medium text-destructive">
+                    La data finale deve essere ≥ alla data iniziale
+                  </p>
+                )}
+
                 <div>
                   <p className="text-xs text-muted-foreground mb-1.5">Sede</p>
                   <div className="flex flex-wrap gap-1.5">
@@ -304,12 +430,12 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                   </div>
                 </div>
                 {isFiltered && (
-                  <button onClick={() => { setDateFrom(""); setDateTo(""); setFilterStore(null); }}
+                  <button onClick={clearAllFilters}
                     className="text-xs text-primary underline underline-offset-2">
                     Rimuovi tutti i filtri
                   </button>
                 )}
-                {isFiltered && (
+                {isFiltered && !dateRangeInvalid && (
                   <p className="text-xs text-muted-foreground">
                     <span className="font-semibold text-foreground">{filteredSessions.length}</span>
                     {filterStore ? ` sessioni · ${getStoreById(filterStore)?.shortName ?? filterStore}` : " sessioni nel periodo"}
@@ -323,7 +449,28 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
           )}
         </AnimatePresence>
 
-        {loading && <div className="py-20 text-center text-muted-foreground">Caricamento...</div>}
+        {/* 9. Hard block when date range invalid */}
+        {dateRangeInvalid && (
+          <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-center">
+            <p className="text-sm font-medium text-destructive">
+              La data finale deve essere ≥ alla data iniziale. Correggi il filtro per visualizzare i dati.
+            </p>
+          </div>
+        )}
+
+        {/* 5. Skeleton loader */}
+        {loading && !dateRangeInvalid && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="animate-pulse bg-muted/40 rounded-2xl h-28" />
+              ))}
+            </div>
+            <div className="animate-pulse bg-muted/40 rounded-2xl h-40" />
+            <div className="animate-pulse bg-muted/40 rounded-2xl h-40" />
+          </div>
+        )}
+
         {hasError && (
           <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center">
             <p className="text-sm text-destructive">Impossibile caricare i dati. Riprova o contatta l'amministratore.</p>
@@ -331,24 +478,64 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
           </div>
         )}
 
-        {!loading && !hasError && (
+        {!loading && !hasError && !dateRangeInvalid && (
           <>
             {/* KPI cards */}
             <motion.div className="grid grid-cols-2 gap-4"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              {/* 3. Trend indicators: pass trendMetrics props (null when no prev period available) */}
               <StatCard
                 label="Sessioni totali"
                 value={total}
+                trend={trendMetrics.trendTotal}
                 sub={filterStore
                   ? `${getStoreById(filterStore)?.shortName} · ${globalTotal} globale`
                   : (isFiltered ? "nel periodo" : undefined)}
               />
-              <StatCard label="Email raccolte" value={uniqueEmails} sub={isFiltered ? "nel periodo" : undefined} />
-              <StatCard label="Match medio" value={`${avgMatch}%`} />
+              <StatCard label="Email raccolte" value={uniqueEmails} trend={trendMetrics.trendTotal} sub={isFiltered ? "nel periodo" : undefined} />
+              <StatCard label="Match medio" value={`${avgMatch}%`} trend={trendMetrics.trendAvgMatch} />
               <StatCard label="Oggi" value={todaySessions} sub="sessioni" />
               <StatCard label="Email consegnate" value={`${emailDeliveryRate}%`} sub={`${emailSentCount} / ${total}`} />
               <StatCard label="Visitatori tornati" value={returningCount} sub="email duplicate" />
+
+              {/* 4. Conversion rate KPI card */}
+              {tassoClaimPct !== null && (
+                <StatCard
+                  label="Tasso claim"
+                  value={`${tassoClaimPct}%`}
+                  sub="claim / risultato mostrato"
+                />
+              )}
+              {tassoClaimPct === null && funnel && (
+                <div className="rounded-2xl border border-border bg-card p-5 text-center shadow-card">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Tasso claim</p>
+                  <p className="text-4xl font-bold text-muted-foreground/40">—</p>
+                  <p className="mt-1 text-xs text-muted-foreground">nessun dato funnel</p>
+                </div>
+              )}
             </motion.div>
+
+            {/* Tasso claim color indicator strip */}
+            {tassoClaimPct !== null && (
+              <motion.div
+                className={`flex items-center justify-between rounded-xl px-4 py-2 text-xs font-medium ${
+                  tassoClaimColor === "green"
+                    ? "bg-green-500/10 text-green-600 border border-green-500/20"
+                    : tassoClaimColor === "amber"
+                    ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                    : "bg-destructive/10 text-destructive border border-destructive/20"
+                }`}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
+                <span>
+                  {tassoClaimColor === "green" ? "✅" : tassoClaimColor === "amber" ? "⚠️" : "❌"}&nbsp;
+                  Tasso claim: <strong>{tassoClaimPct}%</strong>
+                  {tassoClaimColor === "green" ? " — ottimo!" : tassoClaimColor === "amber" ? " — nella media" : " — da migliorare"}
+                </span>
+                <span className="text-muted-foreground">
+                  {funnel?.claimed ?? 0} / {funnel?.resultShown ?? 0}
+                </span>
+              </motion.div>
+            )}
 
             {/* Top products */}
             <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
@@ -357,7 +544,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                 <h2 className="font-bold text-foreground">🏆 Prodotti più reclamati</h2>
                 <TrendingUp className="h-4 w-4 text-primary" />
               </div>
-              <p className="mb-4 text-[11px] text-muted-foreground">Ogni sessione = un utente che ha completato il claim</p>
+              <p className="mb-4 text-[11px] text-muted-foreground">Ogni sessione = un utente che ha completato il claim · clicca per filtrare sessioni</p>
               {productStats.length === 0 ? (
                 <div className="text-center py-3">
                   <p className="text-sm font-medium text-foreground">
@@ -373,7 +560,11 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                     {pagedProductStats.map((p, i) => {
                       const globalIdx = productPage * PRODUCT_PAGE_SIZE + i;
                       return (
-                        <div key={p.id}>
+                        <div key={p.id}
+                          // 7. Product drill-down: click sets search filter to product name
+                          className="cursor-pointer rounded-lg p-1 transition-colors hover:bg-primary/10"
+                          onClick={() => setSearch(p.name)}
+                        >
                           <div className="mb-1 flex items-center justify-between text-xs">
                             <span className="truncate pr-2 font-medium text-foreground">
                               {["🥇", "🥈", "🥉"][globalIdx] ?? "  "} {p.name}
@@ -593,8 +784,20 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                   </button>
                 )}
               </div>
+
+              {/* 8. Redemption rate line */}
+              {codesGenerated > 0 && (
+                <p className="mb-3 text-xs text-muted-foreground">
+                  <span className="font-semibold text-foreground">{codesGenerated}</span> codici generati ·{" "}
+                  <span className="font-semibold text-foreground">{codesUsed}</span> usati{" "}
+                  <span className={`font-semibold ${redemptionPct >= 30 ? "text-green-500" : redemptionPct >= 15 ? "text-amber-500" : "text-destructive"}`}>
+                    ({redemptionPct}%)
+                  </span>
+                </p>
+              )}
+
               {filteredSessions.length > 0 && (
-                <div className="mb-3">
+                <div className="mb-3 flex gap-2">
                   <input
                     type="search"
                     value={search}
@@ -602,6 +805,14 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                     placeholder="Cerca per nome, email o prodotto..."
                     className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
+                  {search && (
+                    <button
+                      onClick={() => setSearch("")}
+                      className="rounded-xl border border-border bg-muted px-3 py-2 text-xs text-muted-foreground active:scale-95 shrink-0"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
               )}
               {filteredSessions.length === 0 ? (
@@ -643,6 +854,11 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                           <div className="ml-3 shrink-0 text-right">
                             <p className="font-bold text-primary">{s.match_percent}%</p>
                             <p className="text-[10px] text-muted-foreground">{formatDate(s.created_at)}</p>
+                            {s.discount_code && (
+                              <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                                {s.code_redeemed ? "✅ usato" : "🎟 generato"}
+                              </p>
+                            )}
                           </div>
                         </div>
                       );
