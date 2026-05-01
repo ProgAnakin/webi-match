@@ -6,21 +6,18 @@ interface QuizBackgroundProps {
   category: string;
 }
 
-// Brand-anchored palette: PRIMARY is always brand orange/amber (Webidoo identity),
-// SECONDARY adds gentle category accent without breaking the warm visual DNA.
+// Each category has a distinct primary+secondary pair so the background
+// shifts color clearly on every card swipe — customers notice the change.
 const PALETTE: Record<string, [string, string]> = {
-  sport:         ["hsl(27,92%,55%)",  "hsl(15,88%,58%)"],   // orange + orange-red
-  audio:         ["hsl(27,92%,55%)",  "hsl(270,55%,58%)"],  // orange + warm violet
-  productivity:  ["hsl(40,95%,58%)",  "hsl(210,55%,55%)"],  // amber + sky
-  wellness:      ["hsl(27,92%,55%)",  "hsl(340,65%,62%)"],  // orange + warm rose
-  travel:        ["hsl(40,95%,58%)",  "hsl(200,65%,55%)"],  // amber + sky blue
-  tech:          ["hsl(27,92%,55%)",  "hsl(220,70%,60%)"],  // orange + electric blue
-  style:         ["hsl(27,92%,55%)",  "hsl(320,60%,60%)"],  // orange + magenta-coral
-  recovery:      ["hsl(40,95%,58%)",  "hsl(265,55%,58%)"],  // amber + soft violet
+  sport:        ["hsl(27,92%,58%)",   "hsl(15,90%,52%)"],   // orange + red-orange
+  audio:        ["hsl(27,92%,55%)",   "hsl(262,65%,62%)"],  // orange + violet
+  productivity: ["hsl(40,95%,58%)",   "hsl(205,80%,58%)"],  // amber + sky
+  wellness:     ["hsl(27,92%,55%)",   "hsl(340,70%,62%)"],  // orange + rose
+  travel:       ["hsl(40,95%,58%)",   "hsl(195,80%,52%)"],  // amber + teal-blue
+  tech:         ["hsl(27,92%,55%)",   "hsl(215,80%,62%)"],  // orange + electric blue
+  style:        ["hsl(27,92%,55%)",   "hsl(315,65%,62%)"],  // orange + magenta
+  recovery:     ["hsl(40,95%,58%)",   "hsl(260,60%,62%)"],  // amber + indigo
 };
-
-// Duration for color morphing between categories
-const COLOR_MORPH = { duration: 1.1, ease: "easeInOut" } as const;
 
 function sr(seed: number) {
   const x = Math.sin(seed) * 43758.5453;
@@ -30,16 +27,17 @@ function sr(seed: number) {
 const QuizBackground = ({ category }: QuizBackgroundProps) => {
   const [primary, secondary] = PALETTE[category] ?? ["hsl(27,92%,55%)", "hsl(45,88%,52%)"];
 
+  // 26 small particles — positioned in %, drift in px (small enough to look fine at any size)
   const particles = useMemo(() =>
-    Array.from({ length: 18 }, (_, i) => ({
+    Array.from({ length: 26 }, (_, i) => ({
       id: i,
       x: sr(i * 7 + 1) * 100,
       y: sr(i * 7 + 2) * 100,
-      size: 3 + sr(i * 7 + 3) * 5.5,
-      dur: 6 + sr(i * 7 + 4) * 9,
-      delay: sr(i * 7 + 5) * 3.5,
-      dx: (sr(i * 7 + 6) - 0.5) * 120,
-      dy: -(40 + sr(i * 7 + 7) * 105),
+      size: 1.5 + sr(i * 7 + 3) * 2.8,
+      dur: 7 + sr(i * 7 + 4) * 10,
+      delay: sr(i * 7 + 5) * 5,
+      dx: (sr(i * 7 + 6) - 0.5) * 90,
+      dy: -(18 + sr(i * 7 + 7) * 75),
       isPrimary: i % 3 !== 0,
     })),
   []);
@@ -47,130 +45,102 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
 
-      {/* ── Burst flash — fires instantly on card change ─────────── */}
+      {/* ── 1. Edge vignette — always present, frames the card ─────── */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 75% at 50% 50%, transparent 35%, hsl(230,58%,10%)55 100%)",
+        }}
+      />
+
+      {/* ── 2. Category edge glows — crossfade on card change ──────── */}
       <AnimatePresence>
         <motion.div
-          key={`burst-${category}`}
+          key={`glows-${category}`}
           className="absolute inset-0"
-          style={{ background: `radial-gradient(ellipse at 50% 52%, ${primary}55 0%, transparent 58%)` }}
-          initial={{ opacity: 0, scale: 0.55 }}
-          animate={{ opacity: [0.55, 0], scale: [0.55, 1.9] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-        />
+          transition={{ duration: 0.85, ease: "easeInOut" }}
+        >
+          {/* Bottom glow — primary colour bleeds up from floor */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: "42%",
+              background: `radial-gradient(ellipse 100% 75% at 50% 100%, ${primary}35 0%, transparent 70%)`,
+            }}
+          />
+          {/* Top glow — secondary colour bleeds down from ceiling */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: "32%",
+              background: `radial-gradient(ellipse 90% 70% at 50% 0%, ${secondary}25 0%, transparent 70%)`,
+            }}
+          />
+          {/* Left glow */}
+          <div
+            className="absolute left-0 top-0 bottom-0"
+            style={{
+              width: "28%",
+              background: `radial-gradient(ellipse 100% 65% at 0% 42%, ${primary}22 0%, transparent 72%)`,
+            }}
+          />
+          {/* Right glow */}
+          <div
+            className="absolute right-0 top-0 bottom-0"
+            style={{
+              width: "28%",
+              background: `radial-gradient(ellipse 100% 65% at 100% 58%, ${secondary}18 0%, transparent 72%)`,
+            }}
+          />
+        </motion.div>
       </AnimatePresence>
 
-      {/* ══════════════════════════════════════════════════════════
-          Orbs — outer div owns the floating movement (never changes),
-          inner div owns backgroundColor which Framer morphs smoothly.
-         ══════════════════════════════════════════════════════════ */}
-
-      {/* Orb 1 — hero, left */}
+      {/* ── 3. Pulsing edge strips — live breathing effect ─────────── */}
       <motion.div
-        className="absolute rounded-full"
-        style={{ width: "min(820px, 85vmin)", height: "min(820px, 85vmin)", left: "-20%", top: "-8%" }}
-        animate={{ x: [0, 72, -26, 72], y: [0, -58, 36, -58] }}
-        transition={{
-          x: { duration: 24, repeat: Infinity, ease: "easeInOut" },
-          y: { duration: 28, repeat: Infinity, ease: "easeInOut" },
-        }}
-      >
-        <motion.div
-          className="h-full w-full rounded-full"
-          style={{ filter: "blur(clamp(40px, 7vmin, 68px))" }}
-          animate={{ backgroundColor: primary, opacity: [0.28, 0.38, 0.28] }}
-          transition={{
-            backgroundColor: COLOR_MORPH,
-            opacity: { duration: 24, repeat: Infinity, ease: "easeInOut" },
-          }}
-        />
-      </motion.div>
-
-      {/* Orb 2 — bottom-right secondary */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{ width: "min(620px, 65vmin)", height: "min(620px, 65vmin)", right: "-12%", bottom: "-10%" }}
-        animate={{ x: [0, -58, 26, -58], y: [0, -46, 56, -46] }}
-        transition={{
-          x: { duration: 20, repeat: Infinity, ease: "easeInOut", delay: 5 },
-          y: { duration: 25, repeat: Infinity, ease: "easeInOut", delay: 2 },
-        }}
-      >
-        <motion.div
-          className="h-full w-full rounded-full"
-          style={{ filter: "blur(clamp(36px, 6vmin, 62px))" }}
-          animate={{ backgroundColor: secondary, opacity: [0.22, 0.32, 0.22] }}
-          transition={{
-            backgroundColor: COLOR_MORPH,
-            opacity: { duration: 20, repeat: Infinity, ease: "easeInOut", delay: 3 },
-          }}
-        />
-      </motion.div>
-
-      {/* Orb 3 — top-right primary */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{ width: "min(420px, 44vmin)", height: "min(420px, 44vmin)", right: "4%", top: "-14%" }}
-        animate={{ x: [0, 42, -20, 42], y: [0, 46, -30, 46] }}
-        transition={{
-          x: { duration: 17, repeat: Infinity, ease: "easeInOut", delay: 8 },
-          y: { duration: 21, repeat: Infinity, ease: "easeInOut", delay: 3 },
-        }}
-      >
-        <motion.div
-          className="h-full w-full rounded-full"
-          style={{ filter: "blur(clamp(28px, 5vmin, 52px))" }}
-          animate={{ backgroundColor: primary, opacity: [0.18, 0.28, 0.18] }}
-          transition={{
-            backgroundColor: COLOR_MORPH,
-            opacity: { duration: 17, repeat: Infinity, ease: "easeInOut" },
-          }}
-        />
-      </motion.div>
-
-      {/* Orb 4 — mid-left secondary */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{ width: "min(300px, 32vmin)", height: "min(300px, 32vmin)", left: "14%", bottom: "14%" }}
-        animate={{ x: [0, -32, 20, -32], y: [0, 36, -24, 36] }}
-        transition={{
-          x: { duration: 15, repeat: Infinity, ease: "easeInOut", delay: 1 },
-          y: { duration: 19, repeat: Infinity, ease: "easeInOut", delay: 7 },
-        }}
-      >
-        <motion.div
-          className="h-full w-full rounded-full"
-          style={{ filter: "blur(clamp(24px, 4.5vmin, 46px))" }}
-          animate={{ backgroundColor: secondary, opacity: [0.18, 0.26, 0.18] }}
-          transition={{
-            backgroundColor: COLOR_MORPH,
-            opacity: { duration: 15, repeat: Infinity, ease: "easeInOut", delay: 4 },
-          }}
-        />
-      </motion.div>
-
-      {/* Orb 5 — center ambient pulse */}
-      <div
-        className="absolute rounded-full"
+        className="absolute left-0 top-0 bottom-0"
         style={{
-          width: "min(540px, 56vmin)",
-          height: "min(540px, 56vmin)",
-          left: "calc(50% - min(270px, 28vmin))",
-          top: "calc(50% - min(270px, 28vmin))",
+          width: "10%",
+          background: `linear-gradient(to right, ${primary}28, transparent)`,
         }}
-      >
-        <motion.div
-          className="h-full w-full rounded-full"
-          style={{ filter: "blur(clamp(50px, 9vmin, 90px))" }}
-          animate={{ backgroundColor: primary, opacity: [0.08, 0.15, 0.08] }}
-          transition={{
-            backgroundColor: COLOR_MORPH,
-            opacity: { duration: 3.8, repeat: Infinity, ease: "easeInOut" },
-          }}
-        />
-      </div>
+        animate={{ opacity: [0.4, 1, 0.4] }}
+        transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute right-0 top-0 bottom-0"
+        style={{
+          width: "10%",
+          background: `linear-gradient(to left, ${secondary}22, transparent)`,
+        }}
+        animate={{ opacity: [1, 0.4, 1] }}
+        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1.8 }}
+      />
 
-      {/* ── Particle field — cross-fades on change (50 particles) ─── */}
+      {/* ── 4. Diagonal shimmer sweep — catches the eye every ~8 s ─── */}
+      <motion.div
+        className="absolute"
+        style={{
+          width: "3px",
+          height: "220%",
+          top: "-60%",
+          background: `linear-gradient(to bottom, transparent 0%, ${primary}55 45%, ${secondary}55 55%, transparent 100%)`,
+          filter: "blur(6px)",
+          transform: "rotate(28deg)",
+          transformOrigin: "top center",
+        }}
+        animate={{ left: ["-8%", "115%"] }}
+        transition={{
+          duration: 2.2,
+          repeat: Infinity,
+          repeatDelay: 6.5,
+          ease: [0.4, 0, 0.6, 1],
+        }}
+      />
+
+      {/* ── 5. Particle field — crossfades per category ────────────── */}
       <AnimatePresence>
         <motion.div
           key={`pts-${category}`}
@@ -178,7 +148,7 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.7, ease: "easeInOut" }}
+          transition={{ duration: 0.65, ease: "easeInOut" }}
         >
           {particles.map((p) => (
             <motion.div
@@ -192,10 +162,10 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
                 backgroundColor: p.isPrimary ? primary : secondary,
               }}
               animate={{
-                x:       [0, p.dx * 0.3, p.dx, p.dx * 0.6, 0],
-                y:       [0, p.dy * 0.28, p.dy, p.dy * 0.65, 0],
-                opacity: [0, 0.88, 1.0, 0.68, 0],
-                scale:   [0.5, 1.1, 1.55, 0.9, 0.5],
+                x:       [0, p.dx * 0.3, p.dx, p.dx * 0.55, 0],
+                y:       [0, p.dy * 0.25, p.dy, p.dy * 0.6,  0],
+                opacity: [0, 0.9, 1.0, 0.65, 0],
+                scale:   [0.4, 1.2, 1.7, 0.85, 0.4],
               }}
               transition={{ duration: p.dur, repeat: Infinity, delay: p.delay, ease: "easeInOut" }}
             />
@@ -203,8 +173,23 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
         </motion.div>
       </AnimatePresence>
 
-      {/* ── SVG fractal grain ─────────────────────────────────────── */}
-      <svg className="absolute inset-0 h-full w-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
+      {/* ── 6. Card-change burst flash — instant energy on swipe ────── */}
+      <AnimatePresence>
+        <motion.div
+          key={`burst-${category}`}
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(ellipse at 50% 52%, ${primary}60 0%, transparent 55%)`,
+          }}
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: [0.6, 0], scale: [0.5, 2.0] }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        />
+      </AnimatePresence>
+
+      {/* ── 7. SVG fractal grain — subtle texture ───────────────────── */}
+      <svg className="absolute inset-0 h-full w-full opacity-[0.055]" xmlns="http://www.w3.org/2000/svg">
         <filter id="qbg-grain">
           <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch" />
           <feColorMatrix type="saturate" values="0" />
