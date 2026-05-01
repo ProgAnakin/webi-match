@@ -20,7 +20,7 @@ interface Session {
   code_redeemed_at: string | null;
 }
 
-type StatusFilter = "all" | "enviada" | "processando" | "falhou";
+type StatusFilter = "all" | "enviada" | "processando" | "sem_email" | "falhou";
 
 function productName(id: string) {
   return products.find((p) => p.id === id)?.name ?? id;
@@ -38,10 +38,14 @@ function formatDate(iso: string) {
   });
 }
 
-function getSessionStatus(s: Session): "enviada" | "processando" | "falhou" {
+function getSessionStatus(s: Session): "enviada" | "processando" | "sem_email" | "falhou" {
   if (s.email_sent) return "enviada";
   const ageMin = (Date.now() - new Date(s.created_at).getTime()) / 60_000;
-  return ageMin < 5 ? "processando" : "falhou";
+  if (ageMin < 5) return "processando";
+  // Code generated but Brevo failed (edge function ran, SMTP step failed)
+  if (s.discount_code) return "sem_email";
+  // Edge function never ran or failed before code generation
+  return "falhou";
 }
 
 function isCodeExpired(s: Session): boolean {
@@ -49,9 +53,10 @@ function isCodeExpired(s: Session): boolean {
 }
 
 const STATUS_META = {
-  enviada:     { label: "ENVIADA",     icon: Mail,        cls: "border-green-500/40 bg-green-500/10 text-green-400" },
-  processando: { label: "PROCESSANDO", icon: Clock,       cls: "border-amber-500/40 bg-amber-500/10 text-amber-400" },
-  falhou:      { label: "FALHOU",      icon: AlertCircle, cls: "border-destructive/40 bg-destructive/10 text-destructive" },
+  enviada:     { label: "ENVIADA",     icon: Mail,        cls: "border-green-500/40 bg-green-500/10 text-green-400"       },
+  processando: { label: "PROCESSANDO", icon: Clock,       cls: "border-amber-500/40 bg-amber-500/10 text-amber-400"       },
+  sem_email:   { label: "SEM EMAIL",   icon: AlertCircle, cls: "border-orange-500/40 bg-orange-500/10 text-orange-400"    },
+  falhou:      { label: "FALHOU",      icon: XCircle,     cls: "border-destructive/40 bg-destructive/10 text-destructive" },
 };
 
 interface SessionsTabProps {
@@ -139,10 +144,11 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   });
 
   const counts = {
-    all:        sessions.length,
-    enviada:    sessions.filter((s) => getSessionStatus(s) === "enviada").length,
+    all:         sessions.length,
+    enviada:     sessions.filter((s) => getSessionStatus(s) === "enviada").length,
     processando: sessions.filter((s) => getSessionStatus(s) === "processando").length,
-    falhou:     sessions.filter((s) => getSessionStatus(s) === "falhou").length,
+    sem_email:   sessions.filter((s) => getSessionStatus(s) === "sem_email").length,
+    falhou:      sessions.filter((s) => getSessionStatus(s) === "falhou").length,
   };
 
   const expiredReusable = sessions.filter(
@@ -154,7 +160,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
       {/* Summary KPIs */}
       <motion.div
-        className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+        className="grid grid-cols-2 gap-3 sm:grid-cols-5"
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       >
         <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4 text-center">
@@ -164,6 +170,10 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
           <p className="text-2xl font-bold text-amber-400">{counts.processando}</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Processando</p>
+        </div>
+        <div className="rounded-2xl border border-orange-500/20 bg-orange-500/5 p-4 text-center">
+          <p className="text-2xl font-bold text-orange-400">{counts.sem_email}</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Sem email</p>
         </div>
         <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-center">
           <p className="text-2xl font-bold text-destructive">{counts.falhou}</p>
@@ -204,23 +214,25 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
       {/* Status filter */}
       <div className="flex flex-wrap gap-2">
-        {(["all", "enviada", "processando", "falhou"] as StatusFilter[]).map((f) => (
+        {(["all", "enviada", "processando", "sem_email", "falhou"] as StatusFilter[]).map((f) => (
           <button
             key={f}
             onClick={() => setStatusFilter(f)}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
               statusFilter === f
-                ? f === "all" ? "bg-primary text-primary-foreground"
-                  : f === "enviada" ? "bg-green-500/20 text-green-400 border border-green-500/40"
-                  : f === "processando" ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
-                  : "bg-destructive/20 text-destructive border border-destructive/40"
+                ? f === "all"         ? "bg-primary text-primary-foreground"
+                : f === "enviada"     ? "bg-green-500/20  text-green-400  border border-green-500/40"
+                : f === "processando" ? "bg-amber-500/20  text-amber-400  border border-amber-500/40"
+                : f === "sem_email"   ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
+                :                       "bg-destructive/20 text-destructive border border-destructive/40"
                 : "bg-muted text-muted-foreground"
             }`}
           >
-            {f === "all" ? `Tutti (${counts.all})`
-              : f === "enviada" ? `Enviada (${counts.enviada})`
+            {f === "all"         ? `Tutti (${counts.all})`
+              : f === "enviada"     ? `Enviada (${counts.enviada})`
               : f === "processando" ? `Processando (${counts.processando})`
-              : `Falhou (${counts.falhou})`}
+              : f === "sem_email"   ? `Sem email (${counts.sem_email})`
+              :                       `Falhou (${counts.falhou})`}
           </button>
         ))}
         <button
