@@ -515,9 +515,10 @@ serve(async (req) => {
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 
+  // Write discount_code first — email_sent stays false until Brevo confirms.
   const { error: dbErr } = await supabase
     .from("quiz_sessions")
-    .update({ discount_code: code, email_sent: true })
+    .update({ discount_code: code })
     .eq("id", record.id);
 
   if (dbErr) console.error("[on-session-created] db update failed:", dbErr.message);
@@ -560,6 +561,9 @@ serve(async (req) => {
     console.error("[on-session-created] Brevo error:", errText);
     return new Response(JSON.stringify({ ok: false, error: errText }), { status: 500 });
   }
+
+  // Mark email as sent only after Brevo confirms delivery.
+  await supabase.from("quiz_sessions").update({ email_sent: true }).eq("id", record.id);
 
   const brevoData = await brevoRes.json();
   console.log("[on-session-created] email sent:", brevoData.messageId, "→", record.email);

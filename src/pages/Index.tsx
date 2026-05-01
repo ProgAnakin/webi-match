@@ -173,7 +173,7 @@ const Index = () => {
       // Product snapshot — used by the Edge Function to build the email
       product_name:  matchedProduct.name,
       product_price: matchedProduct.price,
-      product_image: matchedProduct.image ?? null,
+      product_image: matchedProduct.image?.startsWith("https://") ? matchedProduct.image : null,
       product_video: videoOverrides[matchedProduct.id] ?? null,
       discount_percent: discountOverrides[matchedProduct.id] ?? 5,
     };
