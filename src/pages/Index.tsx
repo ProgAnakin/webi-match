@@ -236,7 +236,7 @@ const Index = () => {
   const anim = screenAnim[screen];
 
   return (
-    <div className="relative min-h-screen overflow-auto bg-background">
+    <div className="relative h-dvh overflow-hidden bg-background">
       <AnimatePresence>
         {inactivitySecondsLeft !== null && (
           <motion.div

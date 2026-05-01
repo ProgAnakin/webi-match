@@ -68,7 +68,7 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
       {/* Orb 1 — hero, left */}
       <motion.div
         className="absolute rounded-full"
-        style={{ width: 820, height: 820, left: "-20%", top: "-8%" }}
+        style={{ width: "min(820px, 85vmin)", height: "min(820px, 85vmin)", left: "-20%", top: "-8%" }}
         animate={{ x: [0, 72, -26, 72], y: [0, -58, 36, -58] }}
         transition={{
           x: { duration: 24, repeat: Infinity, ease: "easeInOut" },
@@ -77,8 +77,8 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
       >
         <motion.div
           className="h-full w-full rounded-full"
-          style={{ filter: "blur(68px)" }}
-          animate={{ backgroundColor: primary, opacity: [0.32, 0.42, 0.32] }}
+          style={{ filter: "blur(clamp(40px, 7vmin, 68px))" }}
+          animate={{ backgroundColor: primary, opacity: [0.28, 0.38, 0.28] }}
           transition={{
             backgroundColor: COLOR_MORPH,
             opacity: { duration: 24, repeat: Infinity, ease: "easeInOut" },
@@ -89,7 +89,7 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
       {/* Orb 2 — bottom-right secondary */}
       <motion.div
         className="absolute rounded-full"
-        style={{ width: 620, height: 620, right: "-12%", bottom: "-10%" }}
+        style={{ width: "min(620px, 65vmin)", height: "min(620px, 65vmin)", right: "-12%", bottom: "-10%" }}
         animate={{ x: [0, -58, 26, -58], y: [0, -46, 56, -46] }}
         transition={{
           x: { duration: 20, repeat: Infinity, ease: "easeInOut", delay: 5 },
@@ -98,8 +98,8 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
       >
         <motion.div
           className="h-full w-full rounded-full"
-          style={{ filter: "blur(62px)" }}
-          animate={{ backgroundColor: secondary, opacity: [0.26, 0.36, 0.26] }}
+          style={{ filter: "blur(clamp(36px, 6vmin, 62px))" }}
+          animate={{ backgroundColor: secondary, opacity: [0.22, 0.32, 0.22] }}
           transition={{
             backgroundColor: COLOR_MORPH,
             opacity: { duration: 20, repeat: Infinity, ease: "easeInOut", delay: 3 },
@@ -110,7 +110,7 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
       {/* Orb 3 — top-right primary */}
       <motion.div
         className="absolute rounded-full"
-        style={{ width: 420, height: 420, right: "4%", top: "-14%" }}
+        style={{ width: "min(420px, 44vmin)", height: "min(420px, 44vmin)", right: "4%", top: "-14%" }}
         animate={{ x: [0, 42, -20, 42], y: [0, 46, -30, 46] }}
         transition={{
           x: { duration: 17, repeat: Infinity, ease: "easeInOut", delay: 8 },
@@ -119,8 +119,8 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
       >
         <motion.div
           className="h-full w-full rounded-full"
-          style={{ filter: "blur(52px)" }}
-          animate={{ backgroundColor: primary, opacity: [0.22, 0.32, 0.22] }}
+          style={{ filter: "blur(clamp(28px, 5vmin, 52px))" }}
+          animate={{ backgroundColor: primary, opacity: [0.18, 0.28, 0.18] }}
           transition={{
             backgroundColor: COLOR_MORPH,
             opacity: { duration: 17, repeat: Infinity, ease: "easeInOut" },
@@ -131,7 +131,7 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
       {/* Orb 4 — mid-left secondary */}
       <motion.div
         className="absolute rounded-full"
-        style={{ width: 300, height: 300, left: "14%", bottom: "14%" }}
+        style={{ width: "min(300px, 32vmin)", height: "min(300px, 32vmin)", left: "14%", bottom: "14%" }}
         animate={{ x: [0, -32, 20, -32], y: [0, 36, -24, 36] }}
         transition={{
           x: { duration: 15, repeat: Infinity, ease: "easeInOut", delay: 1 },
@@ -140,8 +140,8 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
       >
         <motion.div
           className="h-full w-full rounded-full"
-          style={{ filter: "blur(46px)" }}
-          animate={{ backgroundColor: secondary, opacity: [0.22, 0.30, 0.22] }}
+          style={{ filter: "blur(clamp(24px, 4.5vmin, 46px))" }}
+          animate={{ backgroundColor: secondary, opacity: [0.18, 0.26, 0.18] }}
           transition={{
             backgroundColor: COLOR_MORPH,
             opacity: { duration: 15, repeat: Infinity, ease: "easeInOut", delay: 4 },
@@ -152,12 +152,17 @@ const QuizBackground = ({ category }: QuizBackgroundProps) => {
       {/* Orb 5 — center ambient pulse */}
       <div
         className="absolute rounded-full"
-        style={{ width: 540, height: 540, left: "calc(50% - 270px)", top: "calc(50% - 270px)" }}
+        style={{
+          width: "min(540px, 56vmin)",
+          height: "min(540px, 56vmin)",
+          left: "calc(50% - min(270px, 28vmin))",
+          top: "calc(50% - min(270px, 28vmin))",
+        }}
       >
         <motion.div
           className="h-full w-full rounded-full"
-          style={{ filter: "blur(90px)" }}
-          animate={{ backgroundColor: primary, opacity: [0.10, 0.18, 0.10] }}
+          style={{ filter: "blur(clamp(50px, 9vmin, 90px))" }}
+          animate={{ backgroundColor: primary, opacity: [0.08, 0.15, 0.08] }}
           transition={{
             backgroundColor: COLOR_MORPH,
             opacity: { duration: 3.8, repeat: Infinity, ease: "easeInOut" },

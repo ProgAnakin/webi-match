@@ -49,15 +49,20 @@ function readCssConfettiColors(): string[] {
 // ── Firework burst — particles explode outward from a fixed point ────────────
 interface BurstCfg { bx: number; by: number; startDelay: number; cycle: number; count: number; }
 
-// 6 positions, well staggered so only 1–2 are visible at any moment
-// (was 12 — reduced to keep the product card as the visual protagonist)
+// 12 positions with fast overlapping cycles — multiple bursts visible at once
 const BURST_POSITIONS: BurstCfg[] = [
-  { bx: 14, by: 16, startDelay: 0.0, cycle: 5.5, count: 16 },
-  { bx: 86, by: 14, startDelay: 1.6, cycle: 6.0, count: 16 },
-  { bx: 50, by: 8,  startDelay: 3.0, cycle: 5.8, count: 18 }, // top centre
-  { bx: 18, by: 78, startDelay: 4.2, cycle: 5.4, count: 14 },
-  { bx: 82, by: 76, startDelay: 2.4, cycle: 5.6, count: 14 },
-  { bx: 50, by: 92, startDelay: 0.8, cycle: 6.2, count: 16 }, // bottom centre
+  { bx: 14, by: 16, startDelay: 0.0, cycle: 2.8, count: 26 },
+  { bx: 86, by: 14, startDelay: 0.7, cycle: 3.0, count: 26 },
+  { bx: 50, by: 6,  startDelay: 1.4, cycle: 2.9, count: 28 },
+  { bx: 18, by: 78, startDelay: 2.1, cycle: 2.7, count: 24 },
+  { bx: 82, by: 76, startDelay: 1.0, cycle: 2.8, count: 24 },
+  { bx: 50, by: 92, startDelay: 0.3, cycle: 3.0, count: 26 },
+  { bx: 28, by: 44, startDelay: 2.4, cycle: 2.9, count: 22 },
+  { bx: 72, by: 42, startDelay: 1.7, cycle: 2.7, count: 22 },
+  { bx: 8,  by: 55, startDelay: 3.1, cycle: 3.1, count: 20 },
+  { bx: 92, by: 52, startDelay: 2.7, cycle: 2.8, count: 20 },
+  { bx: 36, by: 22, startDelay: 3.5, cycle: 3.0, count: 22 },
+  { bx: 65, by: 68, startDelay: 1.3, cycle: 2.9, count: 22 },
 ];
 
 // Stable per-particle pseudo-random (no Math.random at render time)
@@ -296,7 +301,7 @@ const MatchResult = ({
   }, []);
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-10">
+    <div className="relative flex h-dvh flex-col items-center justify-center overflow-hidden px-6 py-6">
 
       {/* Atmospheric ambient layer — uses ringColor so the warmer the match, the warmer the room.
           This is the "stage" that frames the product card, not a competing distraction. */}
@@ -344,7 +349,7 @@ const MatchResult = ({
       {/* Firework bursts — staggered so only 1–2 are visible at any moment */}
       {tier !== "low" && (
         <div className="pointer-events-none absolute inset-0">
-          {BURST_POSITIONS.slice(0, tier === "high" ? 6 : 4).map((cfg) => (
+          {BURST_POSITIONS.slice(0, tier === "high" ? 12 : 7).map((cfg) => (
             <FireworkBurst key={`${cfg.bx}-${cfg.by}`} {...cfg} colors={confettiColors} />
           ))}
         </div>
