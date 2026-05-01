@@ -13,6 +13,8 @@ export interface QuizSession {
   created_at: string;
   store_id: string | null;
   email_sent?: boolean | null;
+  discount_code?: string | null;
+  code_redeemed?: boolean | null;
 }
 
 export interface DayCount {
