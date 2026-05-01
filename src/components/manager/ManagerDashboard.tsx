@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BarChart2, Camera, Check, HelpCircle, Home, Link, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download } from "lucide-react";
+import { BarChart2, Camera, Check, HelpCircle, Home, Link, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download, Inbox } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import { getStoredStoreId, setStoredStoreId, getStoreById } from "@/data/stores";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 import { StoreSelectorModal } from "./StoreSelectorModal";
 import { FaqModal, FaqData, EMPTY_FAQ } from "./FaqModal";
+import { SessionsTab } from "./SessionsTab";
+
+type ActiveTab = "catalogo" | "sessioni";
 
 /** product_id → active boolean, loaded from Supabase */
 type SettingsMap = Record<string, boolean>;
@@ -61,6 +64,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [userRole, setUserRole] = useState<{ role: string; store_id: string | null } | null>(null);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("catalogo");
 
   const currentStore = getStoreById(storeId);
 
@@ -429,6 +433,44 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           )}
         </AnimatePresence>
 
+        {/* Tab switcher */}
+        <motion.div
+          className="flex gap-1 rounded-2xl border border-border bg-muted/30 p-1"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}
+        >
+          <button
+            onClick={() => setActiveTab("catalogo")}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+              activeTab === "catalogo"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            📦 Catalogo
+          </button>
+          <button
+            onClick={() => setActiveTab("sessioni")}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+              activeTab === "sessioni"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Inbox className="h-3.5 w-3.5" /> Sessioni &amp; Codici
+          </button>
+        </motion.div>
+
+        {/* Sessions tab */}
+        {activeTab === "sessioni" && (
+          <SessionsTab
+            storeId={storeId}
+            isGlobal={userRole?.role !== "consulente_responsabile"}
+          />
+        )}
+
+        {/* Catalogo-only sections below */}
+        {activeTab === "catalogo" && (<>
+
         {/* Info banner */}
         <motion.div
           className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-xs text-muted-foreground leading-relaxed"
@@ -679,6 +721,8 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         <p className="pb-4 text-center text-xs text-muted-foreground">
           Webi Match · Gestione Catalogo · Webidoo
         </p>
+
+        </>)} {/* end catalogo tab */}
       </div>
 
       {/* FAQ Modal */}

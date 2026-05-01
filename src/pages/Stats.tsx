@@ -50,8 +50,8 @@ const Stats = () => {
       setChecking(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!session) setAuthStep("login");
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === "SIGNED_OUT") setAuthStep("login");
     });
     return () => listener.subscription.unsubscribe();
   }, []);

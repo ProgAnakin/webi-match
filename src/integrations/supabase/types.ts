@@ -115,6 +115,8 @@ export type Database = {
           product_video: string | null
           discount_code: string | null
           discount_percent: number | null
+          code_redeemed: boolean
+          code_redeemed_at: string | null
           created_at: string
         }
         Insert: {
@@ -133,6 +135,8 @@ export type Database = {
           product_video?: string | null
           discount_code?: string | null
           discount_percent?: number | null
+          code_redeemed?: boolean
+          code_redeemed_at?: string | null
           created_at?: string
         }
         Update: {
@@ -151,6 +155,8 @@ export type Database = {
           product_video?: string | null
           discount_code?: string | null
           discount_percent?: number | null
+          code_redeemed?: boolean
+          code_redeemed_at?: string | null
           created_at?: string
         }
         Relationships: []

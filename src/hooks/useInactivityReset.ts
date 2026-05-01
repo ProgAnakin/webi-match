@@ -1,19 +1,20 @@
 import { useEffect, useRef, useCallback } from "react";
 import { INACTIVITY_TIMEOUT_MS, WARNING_DURATION_MS } from "@/config/timings";
 
-const INACTIVITY_TIMEOUT = INACTIVITY_TIMEOUT_MS;
-const WARNING_DURATION   = WARNING_DURATION_MS;
+const WARNING_DURATION = WARNING_DURATION_MS;
 
 interface UseInactivityResetOptions {
   enabled: boolean;
   onWarn: (secondsLeft: number) => void;
   onReset: () => void;
-  /** Called when a user interaction cancels the warning (before the reset fires).
-   *  Use this to hide the overlay without restarting the whole flow. */
+  /** Called when a user interaction cancels the warning (before the reset fires). */
   onDismiss?: () => void;
+  /** Override the default inactivity timeout (ms). Defaults to INACTIVITY_TIMEOUT_MS. */
+  timeout?: number;
 }
 
-export function useInactivityReset({ enabled, onWarn, onReset, onDismiss }: UseInactivityResetOptions) {
+export function useInactivityReset({ enabled, onWarn, onReset, onDismiss, timeout }: UseInactivityResetOptions) {
+  const INACTIVITY_TIMEOUT = timeout ?? INACTIVITY_TIMEOUT_MS;
   const onWarnRef    = useRef(onWarn);
   const onResetRef   = useRef(onReset);
   const onDismissRef = useRef(onDismiss);
@@ -89,7 +90,7 @@ export function useInactivityReset({ enabled, onWarn, onReset, onDismiss }: UseI
       clearAll();
       armRef.current = () => {};
     };
-  }, [enabled]);
+  }, [enabled, INACTIVITY_TIMEOUT]);
 
   /** Call this to dismiss the overlay manually (e.g. "Sono ancora qui!" button). */
   const dismiss = useCallback(() => {

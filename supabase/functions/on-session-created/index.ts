@@ -10,11 +10,12 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const BREVO_KEY      = Deno.env.get("BREVO_API_KEY") ?? "";
-const SUPABASE_URL   = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_KEY    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const PII_KEY        = Deno.env.get("PII_ENCRYPTION_KEY") ?? "";
-const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
+const BREVO_KEY        = Deno.env.get("BREVO_API_KEY") ?? "";
+const SUPABASE_URL     = Deno.env.get("SUPABASE_URL") ?? "";
+const SERVICE_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const PII_KEY          = Deno.env.get("PII_ENCRYPTION_KEY") ?? "";
+const ALLOWED_ORIGIN   = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
+const SHEETS_WEBHOOK   = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL") ?? "";
 
 // Comma-separated list of emails that bypass the 1-email-per-hour rate limit.
 // Set via Supabase secret WHITELIST_EMAILS. Remove when testing is complete.
@@ -562,6 +563,24 @@ serve(async (req) => {
 
   const brevoData = await brevoRes.json();
   console.log("[on-session-created] email sent:", brevoData.messageId, "→", record.email);
+
+  // Server-side Google Sheets relay — fire-and-forget, never blocks email delivery.
+  if (SHEETS_WEBHOOK) {
+    const sheetsPayload = {
+      data:     new Date().toLocaleString("it-IT"),
+      nome:     String(record.nome    ?? ""),
+      cognome:  String(record.cognome ?? ""),
+      email:    String(record.email   ?? ""),
+      prodotto: String(record.product_name ?? ""),
+      match:    `${Number(record.match_percent ?? 0)}%`,
+      store_id: String(record.store_id ?? ""),
+    };
+    fetch(SHEETS_WEBHOOK, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify(sheetsPayload),
+    }).catch((err) => console.error("[on-session-created] sheets relay failed:", err));
+  }
 
   return new Response(JSON.stringify({ ok: true, code, emailId: brevoData.messageId }), {
     status: 200,
