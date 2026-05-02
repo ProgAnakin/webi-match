@@ -88,30 +88,18 @@ const WebidooMark = ({ size }: { size: number }) => (
   </svg>
 );
 
-// Bounce paths follow a rectangular loop so the mark touches every edge.
+// Bounce path: rectangular loop touching all four edges (screensaver style).
 // x/y are relative to the element's centre (positioned at 50%,50%).
-// Bounds chosen so the mark stays clear of the progress bar (top) and
-// action buttons (bottom) on any iPad size.
-const MARKS = [
-  {
-    size:        82,
-    bounceDur:   42,           // seconds for one full rectangular loop
-    opacityDur:  8,            // independent breathing cycle
-    // clockwise: TL → TR → BR → BL → TL
-    x: ["-38vw",  "36vw",  "36vw", "-38vw", "-38vw"],
-    y: ["-26vh", "-26vh",  "26vh",  "26vh", "-26vh"],
-    opacityStart: 0,           // Framer Motion initial for opacity keyframes
-  },
-  {
-    size:        56,
-    bounceDur:   32,
-    opacityDur:  6,
-    // counter-clockwise starting opposite corner: BR → BL → TL → TR → BR
-    x: ["36vw", "-38vw", "-38vw",  "36vw",  "36vw"],
-    y: ["26vh",  "26vh", "-26vh", "-26vh",  "26vh"],
-    opacityStart: 14,          // half-cycle offset so marks aren't in phase
-  },
-] as const;
+// Vertical bounds chosen so the mark stays clear of the progress bar
+// (top ~100px) and action buttons (bottom ~100px) on any iPad size.
+const MARK = {
+  size:       82,
+  bounceDur:  42,   // seconds per full rectangular loop
+  opacityDur:  8,   // independent breathing cycle
+  // clockwise: TL → TR → BR → BL → TL
+  x: ["-38vw",  "36vw",  "36vw", "-38vw", "-38vw"],
+  y: ["-26vh", "-26vh",  "26vh",  "26vh", "-26vh"],
+} as const;
 
 const QuizBackground = memo(() => (
   <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -127,46 +115,27 @@ const QuizBackground = memo(() => (
       </defs>
     </svg>
 
-    {/* ── Webidoo mark — bounces like a screensaver across the background ──────
-        Two instances: outer motion.div carries the position (box-path bounce),
-        inner motion.div breathes opacity independently.
-        Using linear timing on position gives a true constant-speed screensaver feel.
-        Opacity cycles independently so the mark fades in/out regardless of position. */}
-    {MARKS.map((m, i) => (
+    {/* ── Webidoo mark — one instance bouncing screensaver-style ─────────────
+        Outer motion.div: constant-speed rectangular-path position (screensaver).
+        Inner motion.div: independent opacity breathing so the mark fades in
+        and out regardless of where it is on screen.                         */}
+    <motion.div
+      style={{ position: "absolute", left: "50%", top: "50%", willChange: "transform" }}
+      animate={{ x: MARK.x, y: MARK.y }}
+      transition={{ duration: MARK.bounceDur, repeat: Infinity, ease: "linear" }}
+    >
       <motion.div
-        key={i}
         style={{
-          position: "absolute",
-          left: "50%",
-          top: "50%",
-          willChange: "transform",
+          marginLeft: -MARK.size / 2,
+          marginTop:  -Math.round(MARK.size * 0.9) / 2,
+          willChange: "opacity",
         }}
-        animate={{ x: m.x, y: m.y }}
-        transition={{
-          duration: m.bounceDur,
-          repeat: Infinity,
-          ease: "linear",
-          delay: i === 1 ? m.bounceDur / 2 : 0, // offset second mark by half-cycle
-        }}
+        animate={{ opacity: [0.06, 0.26, 0.10, 0.24, 0.06] }}
+        transition={{ duration: MARK.opacityDur, repeat: Infinity, ease: "easeInOut" }}
       >
-        <motion.div
-          style={{
-            marginLeft: -m.size / 2,
-            marginTop:  -Math.round(m.size * 0.9) / 2,
-            willChange: "opacity",
-          }}
-          animate={{ opacity: [0.06, 0.26, 0.10, 0.24, 0.06] }}
-          transition={{
-            duration: m.opacityDur,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: m.opacityStart,
-          }}
-        >
-          <WebidooMark size={m.size} />
-        </motion.div>
+        <WebidooMark size={MARK.size} />
       </motion.div>
-    ))}
+    </motion.div>
 
     {/* ── Ember Float ───────────────────────────────────────────────────────────
         Sparks launch from left/right walls, bounded to 14–84% of screen height
