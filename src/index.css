@@ -160,6 +160,34 @@
   to   { transform: translateY(100vh); }
 }
 
+/* Ember Float — sparks launched horizontally from the left/right walls.
+   Four variants so particles travel at different vertical drifts.
+   ease-out: launched fast from the wall, decelerates naturally. */
+@keyframes wb-ember-ltr {
+  0%   { opacity: 0;    transform: translate(0,     0px);  }
+  9%   { opacity: 0.88; }
+  80%  { opacity: 0.48; }
+  100% { opacity: 0;    transform: translate(32vw, -18px); }
+}
+@keyframes wb-ember-ltr-b {
+  0%   { opacity: 0;    transform: translate(0,    0px);   }
+  9%   { opacity: 0.72; }
+  80%  { opacity: 0.36; }
+  100% { opacity: 0;    transform: translate(28vw, 16px);  }
+}
+@keyframes wb-ember-rtl {
+  0%   { opacity: 0;    transform: translate(0,      0px); }
+  9%   { opacity: 0.88; }
+  80%  { opacity: 0.48; }
+  100% { opacity: 0;    transform: translate(-32vw, -18px);}
+}
+@keyframes wb-ember-rtl-b {
+  0%   { opacity: 0;    transform: translate(0,     0px);  }
+  9%   { opacity: 0.72; }
+  80%  { opacity: 0.36; }
+  100% { opacity: 0;    transform: translate(-28vw, 16px); }
+}
+
 /* ── Attract screen animations ──────────────────────────────────────────────── */
 
 /* Product icons float upward like embers */
