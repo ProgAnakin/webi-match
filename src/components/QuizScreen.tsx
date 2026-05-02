@@ -61,7 +61,9 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
     <div className="relative flex min-h-screen flex-col items-center justify-center px-6">
       <QuizBackground emoji={question.emoji} category={question.category} />
 
-      {showTutorial && <SwipeTutorial onDismiss={() => setShowTutorial(false)} />}
+      <AnimatePresence>
+        {showTutorial && <SwipeTutorial onDismiss={() => setShowTutorial(false)} />}
+      </AnimatePresence>
 
       {/* Progress */}
       <div className="absolute left-0 right-0 top-0 px-6 pt-8">
