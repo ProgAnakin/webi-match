@@ -112,38 +112,38 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
 
       {/* Buttons */}
       <div
-        className="absolute bottom-10 flex w-full max-w-sm items-center justify-center gap-3 px-5"
+        className="absolute bottom-10 flex w-full max-w-sm items-center justify-center gap-4 px-5"
         style={{ pointerEvents: transitioning ? "none" : "auto", opacity: transitioning ? 0.4 : 1, transition: "opacity 0.15s" }}
       >
-        {/* NO — left arrow */}
+        {/* NO */}
         <motion.button
           onClick={() => { haptic(30); handleSwipe("left"); }}
-          className="flex h-14 w-[120px] items-center justify-center rounded-2xl border-2 border-destructive/60 bg-destructive/10 text-destructive backdrop-blur-sm"
-          style={{ boxShadow: "0 0 22px hsl(0 84% 60% / 0.22), inset 0 0 12px hsl(0 84% 60% / 0.07)" }}
-          whileHover={{ scale: 1.06, boxShadow: "0 0 34px hsl(0 84% 60% / 0.45)" }}
-          whileTap={{ scale: 0.88, boxShadow: "0 0 60px hsl(0 84% 60% / 0.80), inset 0 0 24px hsl(0 84% 60% / 0.38)" }}
+          className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-destructive/55 bg-destructive/10 text-destructive backdrop-blur-sm"
+          style={{ boxShadow: "0 0 20px hsl(0 84% 60% / 0.18), inset 0 0 10px hsl(0 84% 60% / 0.06)" }}
+          whileTap={{ scale: 0.90, boxShadow: "0 0 52px hsl(0 84% 60% / 0.72), inset 0 0 20px hsl(0 84% 60% / 0.32)" }}
         >
-          <ChevronsLeft className="h-9 w-9" strokeWidth={2.2} />
+          <ChevronsLeft className="h-6 w-6 flex-shrink-0" strokeWidth={2.5} />
+          <span className="text-base font-black tracking-wide">{t.swipe.no}</span>
         </motion.button>
 
-        {/* Center destiny text */}
-        <div className="flex w-[86px] shrink-0 flex-col items-center gap-1">
-          <div className="h-px w-full bg-border/35" />
-          <p className="text-center text-[8px] font-black uppercase leading-tight tracking-[0.13em] text-muted-foreground/55">
+        {/* Center label */}
+        <div className="flex w-14 shrink-0 flex-col items-center gap-1">
+          <div className="h-px w-full bg-border/30" />
+          <p className="text-center text-[7px] font-black uppercase leading-tight tracking-[0.14em] text-muted-foreground/45">
             {t.quiz.chooseDestiny}
           </p>
-          <div className="h-px w-full bg-border/35" />
+          <div className="h-px w-full bg-border/30" />
         </div>
 
-        {/* YES — right arrow */}
+        {/* YES */}
         <motion.button
           onClick={() => { haptic(45); handleSwipe("right"); }}
-          className="flex h-14 w-[120px] items-center justify-center rounded-2xl border-2 border-success/60 bg-success/10 text-success backdrop-blur-sm"
-          style={{ boxShadow: "0 0 22px hsl(145 80% 42% / 0.22), inset 0 0 12px hsl(145 80% 42% / 0.07)" }}
-          whileHover={{ scale: 1.06, boxShadow: "0 0 34px hsl(145 80% 42% / 0.45)" }}
-          whileTap={{ scale: 0.88, boxShadow: "0 0 60px hsl(145 80% 42% / 0.80), inset 0 0 24px hsl(145 80% 42% / 0.38)" }}
+          className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-success/55 bg-success/10 text-success backdrop-blur-sm"
+          style={{ boxShadow: "0 0 20px hsl(145 80% 42% / 0.18), inset 0 0 10px hsl(145 80% 42% / 0.06)" }}
+          whileTap={{ scale: 0.90, boxShadow: "0 0 52px hsl(145 80% 42% / 0.72), inset 0 0 20px hsl(145 80% 42% / 0.32)" }}
         >
-          <ChevronsRight className="h-9 w-9" strokeWidth={2.2} />
+          <span className="text-base font-black tracking-wide">{t.swipe.yes}</span>
+          <ChevronsRight className="h-6 w-6 flex-shrink-0" strokeWidth={2.5} />
         </motion.button>
       </div>
     </div>
