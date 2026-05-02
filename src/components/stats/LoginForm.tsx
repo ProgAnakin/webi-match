@@ -49,7 +49,7 @@ export const LoginForm = ({ onLoginSuccess, onMfaRequired }: LoginFormProps) => 
       email: email.trim().toLowerCase(), password,
     });
 
-    supabase.rpc("record_login_attempt", {
+    await supabase.rpc("record_login_attempt", {
       p_email: email.trim().toLowerCase(),
       p_success: !authError,
     });

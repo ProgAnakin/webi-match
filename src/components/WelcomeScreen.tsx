@@ -10,12 +10,9 @@ import { LANGUAGES } from "@/i18n/translations";
 import { getStoredStoreId, getStoreById } from "@/data/stores";
 import { supabase } from "@/integrations/supabase/client";
 
-// Staff / test emails that bypass the 1-hour participation cooldown.
-// Remove an entry here when the account should be subject to normal rules.
-const COOLDOWN_BYPASS = new Set([
-  "costanzobruno.annichini@webidoo.com",
-  "costatocb@gmail.com",
-]);
+// Staff email bypass is enforced server-side via the cooldown_bypass_emails
+// Supabase table (checked inside the check_email_cooldown RPC).
+// Do NOT add emails here — they would be visible in the client bundle.
 
 export interface UserInfo {
   nome: string;
@@ -106,7 +103,7 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    if (!COOLDOWN_BYPASS.has(normalizedEmail)) {
+    {
       setChecking(true);
       try {
         const { data } = await supabase.rpc("check_email_cooldown", {
@@ -232,11 +229,10 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
 };
 
 // ─── Store Badge ──────────────────────────────────────────────────────────────
-const StoreBadge = ({ onTap, refreshKey }: { onTap: () => void; refreshKey: number }) => {
+const StoreBadge = ({ onTap }: { onTap: () => void }) => {
   const { t } = useLang();
   const storeId = getStoredStoreId();
   const store = storeId ? getStoreById(storeId) : null;
-  void refreshKey;
   return (
     <button
       onClick={onTap}
@@ -258,7 +254,7 @@ const LOGO_TAPS_REQUIRED = 6;
 const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenProps) => {
   const { t } = useLang();
   const [showPin, setShowPin] = useState(false);
-  const [storeBadgeKey, setStoreBadgeKey] = useState(0);
+  const [storeBadgeKey, setStoreBadgeKey] = useState(0); // incremented to force StoreBadge remount after store change
   const tapCount = useRef(0);
   const tapTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -291,7 +287,7 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
 
       {/* Store badge — bottom-left */}
       <div className="absolute bottom-4 left-4 z-10 flex flex-col items-start gap-1.5">
-        <StoreBadge onTap={() => setShowPin(true)} refreshKey={storeBadgeKey} />
+        <StoreBadge key={storeBadgeKey} onTap={() => setShowPin(true)} />
         {settingsLoadFailed && (
           <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-400">
             {t.welcome.catalogOffline}

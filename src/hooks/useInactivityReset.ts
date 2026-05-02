@@ -1,8 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { INACTIVITY_TIMEOUT_MS, WARNING_DURATION_MS } from "@/config/timings";
 
-const WARNING_DURATION = WARNING_DURATION_MS;
-
 interface UseInactivityResetOptions {
   enabled: boolean;
   onWarn: (secondsLeft: number) => void;
@@ -42,7 +40,7 @@ export function useInactivityReset({ enabled, onWarn, onReset, onDismiss, timeou
 
     const startCountdown = () => {
       isWarning = true;
-      let secondsLeft = Math.round(WARNING_DURATION / 1000);
+      let secondsLeft = Math.round(WARNING_DURATION_MS / 1000);
       onWarnRef.current(secondsLeft);
 
       countdownTimer = setInterval(() => {

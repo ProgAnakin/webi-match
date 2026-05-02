@@ -5,22 +5,11 @@ import { useSound } from "@/hooks/useSound";
 import { useDevicePerformance } from "@/hooks/useDevicePerformance";
 import { useLang } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
+import { getClientId } from "@/lib/clientId";
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 const EMAIL_TAPS  = 5;
 const PIN_KEYS: (number | "⌫" | "")[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, "", 0, "⌫"];
-
-function getClientId(): string {
-  const idKey  = "wb_client_id";
-  const tsKey  = "wb_client_id_rotated";
-  const dayMs  = 86_400_000;
-  const lastTs = Number(localStorage.getItem(tsKey) ?? 0);
-  if (!localStorage.getItem(idKey) || Date.now() - lastTs > dayMs) {
-    localStorage.setItem(idKey, crypto.randomUUID());
-    localStorage.setItem(tsKey, String(Date.now()));
-  }
-  return localStorage.getItem(idKey)!;
-}
 
 interface MatchResultProps {
   product: Product;

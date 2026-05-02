@@ -87,10 +87,16 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
+    setSaveError(null);
+    const { data, error: fetchError } = await supabase
       .from("product_settings")
       .select("product_id, active, price_override, image_url, video_url, discount_percent, faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3")
       .eq("store_id", storeId);
+    if (fetchError) {
+      setSaveError("Errore nel caricamento delle impostazioni. Verifica la connessione.");
+      setLoading(false);
+      return;
+    }
     if (data) {
       const map: SettingsMap = {};
       const prices: PriceMap = {};
@@ -152,6 +158,8 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         product_id: productId,
         new_active: targetActive,
         store_id: storeId,
+      }).then(({ error }) => {
+        if (error) console.error("[audit]", error.message);
       });
     });
 
@@ -198,11 +206,12 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   };
 
   const handleBulkToggle = async (enable: boolean) => {
-    for (const productId of bulkSelection) {
-      await saveProductActive(productId, enable);
-    }
+    await Promise.all([...bulkSelection].map((id) => saveProductActive(id, enable)));
     setBulkSelection(new Set());
   };
+
+  const VALID_PRODUCT_IDS = new Set(products.map((p) => p.id));
+  const PRICE_REGEX = /^€?\s*\d{1,5}([.,]\d{2})?$/;
 
   const handleCsvUpload = async (file: File) => {
     const text = await file.text();
@@ -211,9 +220,15 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
 
     for (const line of lines) {
       const [productId, price] = line.split(",").map((s) => s.trim());
-      if (productId && price) {
-        parsed.push({ productId, newPrice: price });
-      }
+      if (!productId || !price) continue;
+      if (!VALID_PRODUCT_IDS.has(productId)) continue;
+      if (!PRICE_REGEX.test(price)) continue;
+      parsed.push({ productId, newPrice: price });
+    }
+
+    if (parsed.length === 0) {
+      setSaveError("Nessuna riga valida nel CSV. Verifica il formato: product_id,€prezzo");
+      return;
     }
 
     setCsvPreview(parsed);
@@ -228,9 +243,23 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     setShowCsvModal(false);
   };
 
+  const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
+  const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
+  const IMAGE_EXT: Record<string, string> = {
+    "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif",
+  };
+
   const uploadProductImage = async (productId: string, file: File) => {
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      setSaveError("Formato non supportato. Usa JPEG, PNG o WebP.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setSaveError("Immagine troppo grande (max 10 MB).");
+      return;
+    }
     setUploadingImageId(productId);
-    const ext = file.name.split(".").pop() ?? "jpg";
+    const ext = IMAGE_EXT[file.type] ?? "jpg";
     const path = `${storeId}/${productId}.${ext}`;
 
     const { error: uploadError } = await supabase.storage

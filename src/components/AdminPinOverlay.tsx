@@ -4,24 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { STORES, setStoredStoreId, getStoredStoreId } from "@/data/stores";
 import { supabase } from "@/integrations/supabase/client";
 import { useLang } from "@/i18n/LanguageContext";
-
-// PIN validation is server-side via Supabase RPC (verify_staff_pin).
-// Lockout + attempt logging are also managed server-side.
+import { getClientId } from "@/lib/clientId";
 
 const KEYS = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
-
-// Device ID rotated daily — limits long-term cross-session tracking on shared kiosks.
-function getClientId(): string {
-  const idKey  = "wb_client_id";
-  const tsKey  = "wb_client_id_rotated";
-  const dayMs  = 86_400_000;
-  const lastTs = Number(localStorage.getItem(tsKey) ?? 0);
-  if (!localStorage.getItem(idKey) || Date.now() - lastTs > dayMs) {
-    localStorage.setItem(idKey, crypto.randomUUID());
-    localStorage.setItem(tsKey, String(Date.now()));
-  }
-  return localStorage.getItem(idKey)!;
-}
 
 type Step = "pin" | "store";
 

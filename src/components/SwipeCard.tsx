@@ -2,6 +2,7 @@ import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import type { Question } from "@/data/questions";
 import { questions } from "@/data/questions";
 import { useLang } from "@/i18n/LanguageContext";
+import { haptic } from "@/lib/haptic";
 
 interface SwipeCardProps {
   question: Question;
@@ -33,10 +34,6 @@ const CATEGORY_CODES: Record<string, string> = {
 };
 
 const ROMAN = ["I","II","III","IV","V","VI","VII","VIII","IX","X"];
-
-function haptic(ms: number) {
-  try { navigator.vibrate?.(ms); } catch { /* unsupported */ }
-}
 
 const Pip = ({ color }: { color: string }) => (
   <div style={{ width: 7, height: 7, background: color, opacity: 0.35, transform: "rotate(45deg)" }} />
