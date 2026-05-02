@@ -4,13 +4,13 @@ import { memo } from "react";
 // Each ember has an explicit shape (w×h) so sparks travelling horizontally look
 // physically correct — elongated along the direction of travel.
 interface Ember {
-  top:   number;  // % from top — kept within 14–84% to avoid progress bar & buttons
-  dur:   number;  // animation duration in seconds
-  delay: string;  // negative = already mid-cycle at load, so embers appear immediately
-  w:     number;  // px
-  h:     number;  // px
+  top:   number;
+  dur:   number;
+  delay: string;
+  w:     number;
+  h:     number;
   color: string;
-  anim:  string;  // keyframe name (encodes side + vertical-drift variant)
+  anim:  string;
 }
 
 const EMBERS: Ember[] = [
@@ -42,65 +42,135 @@ const EMBERS: Ember[] = [
   { top: 35, dur: 5.8, delay: "-12.0s", w: 6, h: 2, color: "#f8a432", anim: "wb-ember-rtl-b" },
 ];
 
-// `circle closest-side` keeps orb gradients within their div — no hard edges.
+// Inline SVG recreation of the Webidoo logo mark.
+// The existing PNG has a white background and cannot be used directly on dark.
+// Shape: horizontal horseshoe (open at bottom) + leaf on top-right + downward triangle.
+// Gradient defined once in a hidden SVG defs block above and referenced by id.
+const WebidooMark = ({ size }: { size: number }) => (
+  <svg
+    width={size}
+    height={Math.round(size * 0.9)}
+    viewBox="0 0 110 100"
+    fill="none"
+    overflow="visible"
+  >
+    {/* Horseshoe body — single closed path:
+        outer U-shape → step inward → inner slot (reversed) → close across arm base */}
+    <path
+      fill="url(#wb-mark-grad)"
+      d="
+        M 12,82
+        C 4,82 4,20 55,16
+        C 106,20 106,82 98,82
+        L 83,72
+        C 95,68 95,28 55,24
+        C 15,28 15,68 27,72
+        Z
+      "
+    />
+    {/* Leaf / flame — sits on the top-right of the body */}
+    <path
+      fill="url(#wb-mark-grad)"
+      d="
+        M 66,16
+        C 66,4 82,0 78,14
+        C 84,-2 74,-6 62,8
+        C 54,-2 48,6 52,14
+        C 56,4 66,4 66,16
+        Z
+      "
+    />
+    {/* Downward arrow — fills the gap between the two arms */}
+    <path
+      fill="url(#wb-mark-grad)"
+      d="M 27,72 L 83,72 L 55,90 Z"
+    />
+  </svg>
+);
+
+// Bounce paths follow a rectangular loop so the mark touches every edge.
+// x/y are relative to the element's centre (positioned at 50%,50%).
+// Bounds chosen so the mark stays clear of the progress bar (top) and
+// action buttons (bottom) on any iPad size.
+const MARKS = [
+  {
+    size:        82,
+    bounceDur:   42,           // seconds for one full rectangular loop
+    opacityDur:  8,            // independent breathing cycle
+    // clockwise: TL → TR → BR → BL → TL
+    x: ["-38vw",  "36vw",  "36vw", "-38vw", "-38vw"],
+    y: ["-26vh", "-26vh",  "26vh",  "26vh", "-26vh"],
+    opacityStart: 0,           // Framer Motion initial for opacity keyframes
+  },
+  {
+    size:        56,
+    bounceDur:   32,
+    opacityDur:  6,
+    // counter-clockwise starting opposite corner: BR → BL → TL → TR → BR
+    x: ["36vw", "-38vw", "-38vw",  "36vw",  "36vw"],
+    y: ["26vh",  "26vh", "-26vh", "-26vh",  "26vh"],
+    opacityStart: 14,          // half-cycle offset so marks aren't in phase
+  },
+] as const;
+
 const QuizBackground = memo(() => (
   <div className="pointer-events-none absolute inset-0 overflow-hidden">
 
-    {/* Orb 1 — Webidoo orange, top-left — provides warm atmospheric base */}
-    <motion.div
-      className="absolute"
-      style={{
-        left: "-18%", top: "-24%",
-        width: "80%", height: "80%",
-        background: "radial-gradient(circle closest-side, hsl(18,92%,58%) 0%, transparent 100%)",
-        opacity: 0.58,
-        willChange: "transform",
-      }}
-      animate={{ x: [0, 52, -24, 40, 0], y: [0, 34, -20, 44, 0], scale: [1, 1.14, 0.90, 1.10, 1] }}
-      transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-    />
+    {/* Shared gradient definition — referenced by all WebidooMark SVGs */}
+    <svg width="0" height="0" style={{ position: "absolute" }}>
+      <defs>
+        <linearGradient id="wb-mark-grad" x1="0" y1="0" x2="110" y2="100" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stopColor="#fca83a" />
+          <stop offset="55%"  stopColor="#fb6b04" />
+          <stop offset="100%" stopColor="#e83010" />
+        </linearGradient>
+      </defs>
+    </svg>
 
-    {/* Orb 2 — Webidoo navy blue, bottom-right */}
-    <motion.div
-      className="absolute"
-      style={{
-        right: "-20%", bottom: "-28%",
-        width: "82%", height: "82%",
-        background: "radial-gradient(circle closest-side, hsl(224,82%,56%) 0%, transparent 100%)",
-        opacity: 0.55,
-        willChange: "transform",
-      }}
-      animate={{ x: [0, -44, 20, -38, 0], y: [0, -30, 18, -40, 0], scale: [1, 0.88, 1.16, 0.94, 1] }}
-      transition={{ duration: 26, repeat: Infinity, ease: "easeInOut", delay: 5 }}
-    />
+    {/* ── Webidoo mark — bounces like a screensaver across the background ──────
+        Two instances: outer motion.div carries the position (box-path bounce),
+        inner motion.div breathes opacity independently.
+        Using linear timing on position gives a true constant-speed screensaver feel.
+        Opacity cycles independently so the mark fades in/out regardless of position. */}
+    {MARKS.map((m, i) => (
+      <motion.div
+        key={i}
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          willChange: "transform",
+        }}
+        animate={{ x: m.x, y: m.y }}
+        transition={{
+          duration: m.bounceDur,
+          repeat: Infinity,
+          ease: "linear",
+          delay: i === 1 ? m.bounceDur / 2 : 0, // offset second mark by half-cycle
+        }}
+      >
+        <motion.div
+          style={{
+            marginLeft: -m.size / 2,
+            marginTop:  -Math.round(m.size * 0.9) / 2,
+            willChange: "opacity",
+          }}
+          animate={{ opacity: [0.06, 0.26, 0.10, 0.24, 0.06] }}
+          transition={{
+            duration: m.opacityDur,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: m.opacityStart,
+          }}
+        >
+          <WebidooMark size={m.size} />
+        </motion.div>
+      </motion.div>
+    ))}
 
-    {/* Orb 3 — warm amber, centre drift */}
-    <motion.div
-      className="absolute"
-      style={{
-        left: "12%", top: "24%",
-        width: "62%", height: "62%",
-        background: "radial-gradient(circle closest-side, hsl(38,96%,62%) 0%, transparent 100%)",
-        opacity: 0.32,
-        willChange: "transform",
-      }}
-      animate={{ x: [0, 38, -30, 46, 0], y: [0, -32, 24, -22, 0], scale: [1, 1.18, 0.86, 1.12, 1] }}
-      transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 10 }}
-    />
-
-    {/* Vignette — pulls focus toward the card */}
-    <div
-      className="absolute inset-0"
-      style={{
-        background: "radial-gradient(ellipse 80% 74% at 50% 50%, transparent 35%, hsl(228,61%,9% / 0.50) 90%)",
-      }}
-    />
-
-    {/* ── Ember Float ──────────────────────────────────────────────────────────
-        Particles launch from left/right walls and drift inward, staying clear
-        of the progress bar (top) and action buttons (bottom) since top values
-        are bounded to 14 %–84 % of screen height. Elongated w×h pairs on
-        horizontally-travelling embers mimic real sparks blown sideways.     */}
+    {/* ── Ember Float ───────────────────────────────────────────────────────────
+        Sparks launch from left/right walls, bounded to 14–84% of screen height
+        so they never overlap the progress bar or action buttons.            */}
     {EMBERS.map((e, i) => {
       const fromLeft = e.anim.startsWith("wb-ember-ltr");
       return (
