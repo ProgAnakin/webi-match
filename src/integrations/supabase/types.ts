@@ -51,6 +51,12 @@ export type Database = {
           video_url: string | null
           discount_percent: number | null
           updated_at: string
+          faq_q1: string | null
+          faq_a1: string | null
+          faq_q2: string | null
+          faq_a2: string | null
+          faq_q3: string | null
+          faq_a3: string | null
         }
         Insert: {
           product_id: string
@@ -61,6 +67,12 @@ export type Database = {
           video_url?: string | null
           discount_percent?: number | null
           updated_at?: string
+          faq_q1?: string | null
+          faq_a1?: string | null
+          faq_q2?: string | null
+          faq_a2?: string | null
+          faq_q3?: string | null
+          faq_a3?: string | null
         }
         Update: {
           product_id?: string
@@ -71,6 +83,12 @@ export type Database = {
           video_url?: string | null
           discount_percent?: number | null
           updated_at?: string
+          faq_q1?: string | null
+          faq_a1?: string | null
+          faq_q2?: string | null
+          faq_a2?: string | null
+          faq_q3?: string | null
+          faq_a3?: string | null
         }
         Relationships: []
       }
