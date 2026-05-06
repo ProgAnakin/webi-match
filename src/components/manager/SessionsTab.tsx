@@ -20,7 +20,7 @@ interface Session {
   code_redeemed_at: string | null;
 }
 
-type StatusFilter = "all" | "enviada" | "processando" | "falhou";
+type StatusFilter = "all" | "inviata" | "elaborazione" | "fallita";
 
 function productName(id: string) {
   return products.find((p) => p.id === id)?.name ?? id;
@@ -38,10 +38,10 @@ function formatDate(iso: string) {
   });
 }
 
-function getSessionStatus(s: Session): "enviada" | "processando" | "falhou" {
-  if (s.email_sent) return "enviada";
+function getSessionStatus(s: Session): "inviata" | "elaborazione" | "fallita" {
+  if (s.email_sent) return "inviata";
   const ageMin = (Date.now() - new Date(s.created_at).getTime()) / 60_000;
-  return ageMin < 5 ? "processando" : "falhou";
+  return ageMin < 5 ? "elaborazione" : "fallita";
 }
 
 function isCodeExpired(s: Session): boolean {
@@ -49,9 +49,9 @@ function isCodeExpired(s: Session): boolean {
 }
 
 const STATUS_META = {
-  enviada:     { label: "ENVIADA",     icon: Mail,        cls: "border-green-500/40 bg-green-500/10 text-green-400" },
-  processando: { label: "PROCESSANDO", icon: Clock,       cls: "border-amber-500/40 bg-amber-500/10 text-amber-400" },
-  falhou:      { label: "FALHOU",      icon: AlertCircle, cls: "border-destructive/40 bg-destructive/10 text-destructive" },
+  inviata:      { label: "INVIATA",      icon: Mail,        cls: "border-green-500/40 bg-green-500/10 text-green-400" },
+  elaborazione: { label: "ELABORAZIONE", icon: Clock,       cls: "border-amber-500/40 bg-amber-500/10 text-amber-400" },
+  fallita:      { label: "FALLITA",      icon: AlertCircle, cls: "border-destructive/40 bg-destructive/10 text-destructive" },
 };
 
 interface SessionsTabProps {
@@ -67,9 +67,11 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [negadoCount, setNegadoCount] = useState(0);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     let query = supabase
       .from("quiz_sessions")
       .select("id, email, nome, cognome, matched_product_id, match_percent, email_sent, discount_code, created_at, store_id, code_redeemed, code_redeemed_at")
@@ -78,19 +80,26 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
     if (!isGlobal) query = query.eq("store_id", storeId);
 
-    const { data } = await query;
-    setSessions((data ?? []) as Session[]);
+    const { data, error } = await query;
+    if (error) {
+      setFetchError("Errore nel caricamento delle sessioni. Verifica la connessione.");
+    } else {
+      setSessions((data ?? []) as Session[]);
+    }
     setLoading(false);
   }, [storeId, isGlobal]);
 
   const fetchNegado = useCallback(async () => {
-    const [shownRes, claimedRes] = await Promise.all([
-      supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "result_shown"),
-      supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "claimed"),
-    ]);
+    let shownQ = supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "result_shown");
+    let claimedQ = supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "claimed");
+    if (!isGlobal) {
+      shownQ   = shownQ.eq("store_id", storeId);
+      claimedQ = claimedQ.eq("store_id", storeId);
+    }
+    const [shownRes, claimedRes] = await Promise.all([shownQ, claimedQ]);
     const negado = (shownRes.count ?? 0) - (claimedRes.count ?? 0);
     setNegadoCount(Math.max(0, negado));
-  }, []);
+  }, [storeId, isGlobal]);
 
   useEffect(() => {
     fetchSessions();
@@ -134,15 +143,15 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
       s.email.toLowerCase().includes(q) ||
       (s.discount_code?.toLowerCase().includes(q) ?? false) ||
       `${s.nome ?? ""} ${s.cognome ?? ""}`.toLowerCase().includes(q);
-    const matchStatus = statusFilter === "all" || getSessionStatus(s) === statusFilter;
+    const matchStatus = statusFilter === "all" || getSessionStatus(s) === (statusFilter as "inviata" | "elaborazione" | "fallita");
     return matchSearch && matchStatus;
   });
 
   const counts = {
-    all:        sessions.length,
-    enviada:    sessions.filter((s) => getSessionStatus(s) === "enviada").length,
-    processando: sessions.filter((s) => getSessionStatus(s) === "processando").length,
-    falhou:     sessions.filter((s) => getSessionStatus(s) === "falhou").length,
+    all:          sessions.length,
+    inviata:      sessions.filter((s) => getSessionStatus(s) === "inviata").length,
+    elaborazione: sessions.filter((s) => getSessionStatus(s) === "elaborazione").length,
+    fallita:      sessions.filter((s) => getSessionStatus(s) === "fallita").length,
   };
 
   const expiredReusable = sessions.filter(
@@ -159,21 +168,33 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
       >
         <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4 text-center">
           <p className="text-2xl font-bold text-green-400">{counts.enviada}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Emails enviadas</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Email inviate</p>
         </div>
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
-          <p className="text-2xl font-bold text-amber-400">{counts.processando}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Processando</p>
+          <p className="text-2xl font-bold text-amber-400">{counts.elaborazione}</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">In elaborazione</p>
         </div>
         <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-center">
-          <p className="text-2xl font-bold text-destructive">{counts.falhou}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Falharam</p>
+          <p className="text-2xl font-bold text-destructive">{counts.fallita}</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Fallite</p>
         </div>
         <div className="rounded-2xl border border-border bg-muted/20 p-4 text-center">
           <p className="text-2xl font-bold text-foreground">{negadoCount}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Match negado</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Non conversioni</p>
         </div>
       </motion.div>
+
+      {/* Fetch error */}
+      <AnimatePresence>
+        {fetchError && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          >
+            {fetchError}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Expired codes info */}
       {expiredReusable > 0 && (
@@ -204,23 +225,23 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
       {/* Status filter */}
       <div className="flex flex-wrap gap-2">
-        {(["all", "enviada", "processando", "falhou"] as StatusFilter[]).map((f) => (
+        {(["all", "inviata", "elaborazione", "fallita"] as StatusFilter[]).map((f) => (
           <button
             key={f}
             onClick={() => setStatusFilter(f)}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
               statusFilter === f
                 ? f === "all" ? "bg-primary text-primary-foreground"
-                  : f === "enviada" ? "bg-green-500/20 text-green-400 border border-green-500/40"
-                  : f === "processando" ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                  : f === "inviata" ? "bg-green-500/20 text-green-400 border border-green-500/40"
+                  : f === "elaborazione" ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
                   : "bg-destructive/20 text-destructive border border-destructive/40"
                 : "bg-muted text-muted-foreground"
             }`}
           >
             {f === "all" ? `Tutti (${counts.all})`
-              : f === "enviada" ? `Enviada (${counts.enviada})`
-              : f === "processando" ? `Processando (${counts.processando})`
-              : `Falhou (${counts.falhou})`}
+              : f === "inviata" ? `Inviata (${counts.inviata})`
+              : f === "elaborazione" ? `In elaborazione (${counts.elaborazione})`
+              : `Fallita (${counts.fallita})`}
           </button>
         ))}
         <button
@@ -235,12 +256,19 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
       {loading ? (
         <div className="py-16 text-center text-muted-foreground text-sm">Caricamento sessioni…</div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-muted/20 py-12 text-center">
-          <p className="text-2xl mb-2">📭</p>
+        <div className="rounded-2xl border border-border bg-muted/20 py-12 text-center px-6 space-y-2">
+          <p className="text-2xl">📭</p>
           <p className="text-sm font-medium text-foreground">
-            {search ? "Nessun risultato trovato" : "Nessuna sessione"}
+            {search ? "Nessun risultato trovato" : "Nessuna sessione completata"}
           </p>
-          {search && <p className="text-xs text-muted-foreground mt-1">Prova con un'altra email o codice.</p>}
+          {search
+            ? <p className="text-xs text-muted-foreground">Prova con un'altra email o codice.</p>
+            : negadoCount > 0
+              ? <p className="text-xs text-muted-foreground leading-relaxed">
+                  {negadoCount} visitatori hanno visto il risultato ma non hanno lasciato la loro email — sono conteggiati come "Non conversioni".
+                </p>
+              : null
+          }
         </div>
       ) : (
         <div className="space-y-2">
@@ -336,7 +364,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                               title="Segna codice come utilizzato dal cliente"
                             >
                               <CheckCircle2 className="h-3 w-3" />
-                              {isRedeeming ? "…" : "Marcar como usado"}
+                              {isRedeeming ? "…" : "Segna come usato"}
                             </button>
                           )}
 
