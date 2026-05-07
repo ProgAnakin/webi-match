@@ -54,5 +54,22 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     sourcemap: false,
+    // Manual chunking — keeps vendor code in separate, long-cacheable bundles
+    // so iPads only re-download the small app chunk on every release.
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor":  ["react", "react-dom", "react/jsx-runtime"],
+          "framer-motion": ["framer-motion"],
+          "supabase":      ["@supabase/supabase-js"],
+          "router":        ["react-router-dom"],
+          "react-query":   ["@tanstack/react-query"],
+          "radix":         ["@radix-ui/react-label", "@radix-ui/react-toast", "@radix-ui/react-tooltip"],
+        },
+      },
+    },
+    // The kiosk bundle is intentionally larger than 500 KB once code-split;
+    // the warning isn't useful here.
+    chunkSizeWarningLimit: 800,
   },
 }));

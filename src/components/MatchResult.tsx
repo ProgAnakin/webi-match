@@ -6,7 +6,7 @@ import { useDevicePerformance } from "@/hooks/useDevicePerformance";
 import { useLang } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const EMAIL_TAPS  = 5;
 const PIN_KEYS: (number | "⌫" | "")[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, "", 0, "⌫"];
 
@@ -197,6 +197,8 @@ const MatchResult = ({
       frame = requestAnimationFrame(runSlot);
     }, 900);
     return () => { cancelAnimationFrame(frame); clearTimeout(timeout); };
+  // play and ringMotionValue are stable refs (useCallback / useMotionValue) — safe to omit.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchPercent]);
 
   const starCount = Math.floor(product.rating);

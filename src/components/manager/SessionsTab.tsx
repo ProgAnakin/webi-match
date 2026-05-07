@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, Search, X, Copy, Check, Mail, Clock, AlertCircle, XCircle, CheckCircle2 } from "lucide-react";
+import { RefreshCw, Search, X, Copy, Check, Mail, Clock, AlertCircle, XCircle, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import { STORES } from "@/data/stores";
@@ -111,6 +111,12 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     fetchNegado();
   }, [fetchSessions, fetchNegado]);
 
+  // ── Pagination — 20 sessions per page ─────────────────────────────────────
+  const PAGE_SIZE = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+  // Reset to page 1 whenever the filter or search query changes
+  useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
+
   const copyCode = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
@@ -151,6 +157,10 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     const matchStatus = statusFilter === "all" || getSessionStatus(s) === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage   = Math.min(currentPage, totalPages);
+  const paginated  = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const counts = {
     all:         sessions.length,
@@ -292,11 +302,37 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">
-            {filtered.length} sessioni{search ? ` (filtro: "${search}")` : ""}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              {filtered.length} sessioni{search ? ` (filtro: "${search}")` : ""}
+              {totalPages > 1 && ` · pagina ${safePage} di ${totalPages}`}
+            </p>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={safePage === 1}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground disabled:opacity-30 active:scale-95 hover:text-foreground"
+                  aria-label="Pagina precedente"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                <span className="min-w-[3rem] text-center text-xs font-semibold text-foreground">
+                  {safePage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={safePage === totalPages}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground disabled:opacity-30 active:scale-95 hover:text-foreground"
+                  aria-label="Pagina successiva"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
           <AnimatePresence initial={false}>
-            {filtered.map((s, i) => {
+            {paginated.map((s, i) => {
               const status = getSessionStatus(s);
               const meta = STATUS_META[status];
               const expired = isCodeExpired(s);
@@ -412,11 +448,31 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
               );
             })}
           </AnimatePresence>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-30 active:scale-95 hover:text-foreground"
+              >
+                <ChevronLeft className="h-3 w-3" /> Precedente
+              </button>
+              <span className="text-xs text-muted-foreground">{safePage} / {totalPages}</span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-30 active:scale-95 hover:text-foreground"
+              >
+                Successiva <ChevronRight className="h-3 w-3" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       <p className="pb-2 text-center text-xs text-muted-foreground">
-        Mostra le ultime 300 sessioni · I codici scadono 24h dopo la creazione
+        Ultime 300 sessioni · 20 per pagina · Codici scadono 24h dopo la creazione
       </p>
     </div>
   );
