@@ -17,6 +17,9 @@ dist
 dist-ssr
 *.local
 
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # Bun lock files (project uses npm)
 bun.lock
 bun.lockb

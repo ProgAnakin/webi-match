@@ -28,6 +28,11 @@ type FaqMap = Record<string, FaqData>;
 const DISCOUNT_OPTIONS = [5, 8, 10] as const;
 type DiscountOption = typeof DISCOUNT_OPTIONS[number];
 
+// Module-level constants — defined outside the component so they are not
+// recreated on every render. Used by the CSV bulk-upload validator.
+const VALID_PRODUCT_IDS = new Set(products.map((p) => p.id));
+const PRICE_REGEX = /^€?\s*\d{1,5}([.,]\d{2})?$/;
+
 interface UndoEntry { productId: string; restoredValue: boolean; }
 
 interface ManagerDashboardProps {
@@ -131,6 +136,11 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
+  // Clear any pending undo timer on unmount to avoid setState-after-unmount.
+  useEffect(() => () => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+  }, []);
+
   /** Core upsert — does NOT create an undo entry. Used by both toggleProduct and handleUndo. */
   const saveProductActive = async (productId: string, targetActive: boolean) => {
     const current = settings[productId] ?? true;
@@ -208,9 +218,6 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     await Promise.all([...bulkSelection].map((id) => saveProductActive(id, enable)));
     setBulkSelection(new Set());
   };
-
-  const VALID_PRODUCT_IDS = new Set(products.map((p) => p.id));
-  const PRICE_REGEX = /^€?\s*\d{1,5}([.,]\d{2})?$/;
 
   const handleCsvUpload = async (file: File) => {
     const text = await file.text();

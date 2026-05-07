@@ -65,9 +65,9 @@ BEGIN
     RETURN jsonb_build_object('valid', false, 'locked_seconds', COALESCE(locked_secs, 120));
   END IF;
 
-  -- Fetch stored PIN hash
+  -- Fetch stored PIN hash (table created in 20260407000001).
   SELECT value INTO stored_hash
-  FROM public.app_settings
+  FROM public.app_config
   WHERE key = 'staff_pin_hash';
 
   IF stored_hash IS NULL THEN

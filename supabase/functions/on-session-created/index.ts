@@ -16,6 +16,10 @@ const SERVICE_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const PII_KEY          = Deno.env.get("PII_ENCRYPTION_KEY") ?? "";
 const ALLOWED_ORIGIN   = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
 const SHEETS_WEBHOOK   = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL") ?? "";
+// Shared secret used to authenticate the Postgres webhook. Configure the same
+// value in Supabase Dashboard → Database → Webhooks → Headers as
+// "x-webhook-secret: <value>". When unset, no auth is enforced (legacy mode).
+const WEBHOOK_SECRET   = Deno.env.get("WEBHOOK_SECRET") ?? "";
 
 // Comma-separated list of emails that bypass the 1-email-per-hour rate limit.
 // Set via Supabase secret WHITELIST_EMAILS. Remove when testing is complete.
@@ -454,6 +458,16 @@ serve(async (req) => {
 
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  }
+
+  // Verify shared webhook secret. Silent rejection (200 ok) avoids leaking
+  // which calls were rejected to scanners. Skipped when WEBHOOK_SECRET unset
+  // to preserve compatibility with deployments that have not yet rotated.
+  if (WEBHOOK_SECRET) {
+    const provided = req.headers.get("x-webhook-secret") ?? "";
+    if (provided !== WEBHOOK_SECRET) {
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
   }
 
   let payload: Record<string, unknown>;

@@ -88,10 +88,11 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
     { emoji: MSG_EMOJIS[3], text: t.splash.step4 },
   ];
 
+  // The cycle has a fixed period (4 messages) so we can hoist the length to a
+  // module-level constant; the interval no longer needs to read the array.
   useEffect(() => {
-    const id = setInterval(() => setMsgIndex((i) => (i + 1) % messages.length), 2500);
+    const id = setInterval(() => setMsgIndex((i) => (i + 1) % MSG_EMOJIS.length), 2500);
     return () => clearInterval(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const currentLang = LANGUAGES.find((l) => l.code === lang)!;

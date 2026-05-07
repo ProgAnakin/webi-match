@@ -17,7 +17,15 @@ import { RESULT_INACTIVITY_TIMEOUT_MS } from "@/config/timings";
 type Screen = "splash" | "welcome" | "loading_quiz" | "quiz" | "result" | "success";
 
 // ── Per-screen directional transitions ────────────────────────────────────────
-const screenAnim: Record<Screen, { initial: object; animate: object; exit: object; transition: object }> = {
+// Cast to satisfy framer-motion's strict TargetAndTransition typings — values
+// here are valid motion targets but the structural inference loses the union.
+type ScreenAnim = {
+  initial: Record<string, unknown>;
+  animate: Record<string, unknown>;
+  exit: Record<string, unknown>;
+  transition: Record<string, unknown>;
+};
+const screenAnim: Record<Screen, ScreenAnim> = {
   loading_quiz: {
     initial:    { opacity: 0 },
     animate:    { opacity: 1 },
@@ -179,12 +187,18 @@ const Index = () => {
     };
 
     // Retry up to 2 times with exponential backoff before giving up.
-    let lastError: unknown;
+    // Only retry on network/server errors — 4xx (validation, constraint) won't
+    // succeed on retry, so abort immediately to avoid wasting 1.5s.
+    let lastError: { code?: string; message?: string } | null = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0) await new Promise((r) => setTimeout(r, 500 * 2 ** (attempt - 1)));
       const { error } = await supabase.from("quiz_sessions").insert(payload);
       if (!error) { lastError = null; break; }
       lastError = error;
+      // PostgREST returns "23xxx" for constraint violations and "PGRST..." for
+      // permission/parsing issues — none of these benefit from retry.
+      const code = error.code ?? "";
+      if (code.startsWith("23") || code.startsWith("PGRST") || code === "42501") break;
     }
     if (lastError) {
       console.error("[webi-match] quiz_sessions insert failed:", lastError);
@@ -248,23 +262,34 @@ const Index = () => {
             onClick={handleDismiss}
           >
             <div
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="inactivity-title"
+              aria-describedby="inactivity-countdown"
               className="mx-6 rounded-2xl bg-white p-8 text-center shadow-2xl max-w-sm w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="mb-4 text-5xl">⏱️</div>
-              <h2 className="mb-2 text-xl font-bold text-gray-900">{t.inactivity.title}</h2>
+              <div className="mb-4 text-5xl" aria-hidden="true">⏱️</div>
+              <h2 id="inactivity-title" className="mb-2 text-xl font-bold text-gray-900">{t.inactivity.title}</h2>
               <p className="mb-6 text-gray-500 text-sm">{t.inactivity.countdown}</p>
-              <div className="mb-6 flex items-center justify-center">
+              <div
+                id="inactivity-countdown"
+                className="mb-6 flex items-center justify-center"
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 <span className="text-6xl font-bold text-rose-500">{inactivitySecondsLeft}</span>
                 <span className="ml-2 text-2xl text-gray-400">s</span>
               </div>
               <button
+                type="button"
                 onClick={handleDismiss}
                 className="w-full rounded-xl bg-primary px-6 py-3 font-semibold text-white active:opacity-90 mb-3"
               >
                 {t.inactivity.dismiss}
               </button>
               <button
+                type="button"
                 onClick={handleRestart}
                 className="w-full rounded-xl bg-gray-100 px-6 py-3 font-semibold text-gray-600 active:bg-gray-200"
               >
@@ -278,10 +303,10 @@ const Index = () => {
       <AnimatePresence mode="wait">
         <motion.div
           key={screen}
-          initial={anim.initial}
-          animate={anim.animate}
-          exit={anim.exit}
-          transition={anim.transition}
+          initial={anim.initial as never}
+          animate={anim.animate as never}
+          exit={anim.exit as never}
+          transition={anim.transition as never}
         >
           {screen === "splash" && <AttractScreen onComplete={handleSplashComplete} />}
           {screen === "welcome" && <WelcomeScreen onStart={handleStart} settingsLoadFailed={settingsLoadFailed} />}

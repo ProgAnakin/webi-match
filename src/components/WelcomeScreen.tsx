@@ -25,12 +25,12 @@ interface WelcomeScreenProps {
   settingsLoadFailed?: boolean;
 }
 
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-const NAME_REGEX  = /^[\p{L}\s'\-]{2,100}$/u;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const NAME_REGEX  = /^[\p{L}\s'-]{2,100}$/u;
 
 function sanitizeName(value: string): string {
   return value
-    .replace(/[^\p{L}\s'\-]/gu, "")
+    .replace(/[^\p{L}\s'-]/gu, "")
     .replace(/\s{2,}/g, " ")
     .slice(0, 100);
 }

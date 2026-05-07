@@ -29,14 +29,14 @@ CREATE POLICY "product_settings_write_authenticated"
 -- Seed all current products as active.
 -- ON CONFLICT DO NOTHING → safe to re-run without wiping existing toggles.
 INSERT INTO public.product_settings (product_id, active) VALUES
-  ('airpulse-pro',    true),
-  ('fitcore-band',    true),
-  ('flashdeck-mini',  true),
-  ('clipcam-360',     true),
-  ('voicebox-studio', true),
-  ('sleeppod-neo',    true),
-  ('ergoflow-chair',  true),
-  ('trailcam-pro',    true),
-  ('nexpad-gaming',   true),
-  ('nomad-charger',   true)
+  ('blnd-blender',         true),
+  ('fitring-air',          true),
+  ('head-hdtw01',          true),
+  ('ksix-saturn',          true),
+  ('laifen-neo',           true),
+  ('muzen-otr',            true),
+  ('outin-nano',            true),
+  ('terraillon-massager',  true),
+  ('veho-pebble-mg5',      true),
+  ('veho-zb7',             true)
 ON CONFLICT (product_id) DO NOTHING;

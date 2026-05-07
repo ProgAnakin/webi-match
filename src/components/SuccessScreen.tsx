@@ -215,12 +215,13 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
   const { t } = useLang();
   const reduceMotion = useReducedMotion();
 
+  // Mount-only animation. checkScale is a stable MotionValue and play is a
+  // stable callback from useSound, so no deps need to be tracked.
   useEffect(() => {
     animate(checkScale, 1, { type: "spring", stiffness: 200, damping: 15, delay: 0.5 });
     const timer = setTimeout(() => play("success"), 350);
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [checkScale, play]);
 
   const benefits = [
     { icon: "🎬", title: t.success.benefits.video.title,    desc: t.success.benefits.video.desc,    highlight: false },

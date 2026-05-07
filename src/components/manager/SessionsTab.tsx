@@ -68,6 +68,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   const [negadoCount, setNegadoCount] = useState(0);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [redeemError, setRedeemError] = useState<string | null>(null);
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
@@ -117,6 +118,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   const markRedeemed = async (s: Session) => {
     if (redeemingId) return;
     setRedeemingId(s.id);
+    setRedeemError(null);
     const { error } = await supabase
       .from("quiz_sessions")
       .update({
@@ -133,6 +135,9 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             : row
         )
       );
+    } else {
+      setRedeemError(error.message ?? "Impossibile marcare il codice come usato. Riprova.");
+      setTimeout(() => setRedeemError(null), 5000);
     }
     setRedeemingId(null);
   };
@@ -167,7 +172,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       >
         <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4 text-center">
-          <p className="text-2xl font-bold text-green-400">{counts.enviada}</p>
+          <p className="text-2xl font-bold text-green-400">{counts.inviata}</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Email inviate</p>
         </div>
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
@@ -192,6 +197,16 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           >
             {fetchError}
+          </motion.div>
+        )}
+        {redeemError && (
+          <motion.div
+            key="redeem-error"
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            role="alert"
+          >
+            {redeemError}
           </motion.div>
         )}
       </AnimatePresence>

@@ -39,6 +39,9 @@ export const FaqModal = ({ productName, initial, onSave, onClose }: FaqModalProp
       // intentionally no onClick to dismiss — only X or Save can close
     >
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Modifica FAQ"
         className="relative w-full max-w-lg overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl"
         style={{ maxHeight: "88vh" }}
         initial={{ scale: 0.92, opacity: 0, y: 24 }}
@@ -49,7 +52,9 @@ export const FaqModal = ({ productName, initial, onSave, onClose }: FaqModalProp
       >
         {/* X — transparent, top-right */}
         <button
+          type="button"
           onClick={onClose}
+          aria-label="Chiudi"
           className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground/40 transition-colors hover:bg-muted/50 hover:text-foreground"
         >
           <X className="h-4 w-4" />

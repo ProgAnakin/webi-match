@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_access_log: {
+        Row: {
+          id: string
+          client_id: string
+          user_agent: string | null
+          ip_address: string | null
+          success: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          client_id: string
+          user_agent?: string | null
+          ip_address?: string | null
+          success: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          client_id?: string
+          user_agent?: string | null
+          ip_address?: string | null
+          success?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      app_config: {
+        Row: {
+          key: string
+          value: string
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          value: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          value?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cooldown_check_log: {
+        Row: {
+          id: string
+          session_key: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_key: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          session_key?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      login_attempts: {
+        Row: {
+          id: string
+          email: string
+          success: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          success: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          success?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       manager_audit_log: {
         Row: {
           id: string
@@ -21,6 +105,7 @@ export type Database = {
           user_email: string | null
           product_id: string
           new_active: boolean
+          store_id: string | null
           created_at: string
         }
         Insert: {
@@ -29,6 +114,7 @@ export type Database = {
           user_email?: string | null
           product_id: string
           new_active: boolean
+          store_id?: string | null
           created_at?: string
         }
         Update: {
@@ -37,6 +123,28 @@ export type Database = {
           user_email?: string | null
           product_id?: string
           new_active?: boolean
+          store_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      store_roles: {
+        Row: {
+          user_id: string
+          role: string
+          store_id: string | null
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          role: string
+          store_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          role?: string
+          store_id?: string | null
           created_at?: string
         }
         Relationships: []
@@ -135,6 +243,11 @@ export type Database = {
           discount_percent: number | null
           code_redeemed: boolean
           code_redeemed_at: string | null
+          nome_enc: string | null
+          cognome_enc: string | null
+          email_hash: string | null
+          email_opened_at: string | null
+          email_clicked_at: string | null
           created_at: string
         }
         Insert: {
@@ -155,6 +268,11 @@ export type Database = {
           discount_percent?: number | null
           code_redeemed?: boolean
           code_redeemed_at?: string | null
+          nome_enc?: string | null
+          cognome_enc?: string | null
+          email_hash?: string | null
+          email_opened_at?: string | null
+          email_clicked_at?: string | null
           created_at?: string
         }
         Update: {
@@ -175,6 +293,11 @@ export type Database = {
           discount_percent?: number | null
           code_redeemed?: boolean
           code_redeemed_at?: string | null
+          nome_enc?: string | null
+          cognome_enc?: string | null
+          email_hash?: string | null
+          email_opened_at?: string | null
+          email_clicked_at?: string | null
           created_at?: string
         }
         Relationships: []
@@ -188,9 +311,36 @@ export type Database = {
         Args: { p_email: string }
         Returns: { in_cooldown: boolean; hours_remaining: number }[]
       }
+      check_login_rate_limit: {
+        Args: { p_email: string }
+        Returns: { locked: boolean; locked_seconds: number }
+      }
+      record_login_attempt: {
+        Args: { p_email: string; p_success: boolean }
+        Returns: void
+      }
       verify_staff_pin: {
-        Args: { p_pin: string; p_client_id: string; p_user_agent: string }
-        Returns: { valid: boolean; store_id: string | null }[]
+        Args: {
+          pin_input: string
+          client_id?: string
+          user_agent?: string
+          ip_address?: string
+        }
+        Returns: { valid: boolean; locked_seconds: number }
+      }
+      get_my_store_role: {
+        Args: Record<string, never>
+        Returns: { role: string; store_id: string | null }[]
+      }
+      encrypt_session_pii: {
+        Args: {
+          p_session_id: string
+          p_nome: string
+          p_cognome: string
+          p_email: string
+          p_key: string
+        }
+        Returns: void
       }
     }
     Enums: {

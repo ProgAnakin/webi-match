@@ -7,7 +7,7 @@ import { useLang } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getClientId } from "@/lib/clientId";
 
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const EMAIL_TAPS  = 5;
 const PIN_KEYS: (number | "⌫" | "")[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, "", 0, "⌫"];
 
@@ -235,28 +235,48 @@ const MatchResult = ({
     setPinValue(next);
     if (next.length === 4) {
       setPinVerifying(true);
+      let result: { valid: boolean; locked_seconds: number } | null = null;
+
+      // Attempt 1: Edge Function (captures real IP for brute-force lockout).
       try {
-        const { data, error } = await supabase.rpc("verify_staff_pin", {
-          pin_input: next,
-          client_id: getClientId(),
-          user_agent: navigator.userAgent,
+        const { data: fnData, error: fnError } = await supabase.functions.invoke("verify-pin", {
+          body: {
+            pin_input: next,
+            client_id: getClientId(),
+            user_agent: navigator.userAgent,
+          },
         });
-        const result = data as { valid: boolean; locked_seconds: number } | null;
-        if (!error && result?.valid === true) {
-          setPinVerifying(false);
-          setTimeout(() => setPinVerified(true), 150);
-        } else {
-          if (result?.locked_seconds && result.locked_seconds > 0) {
-            setPinLockedSeconds(result.locked_seconds);
-          }
-          setPinError(true);
-          setTimeout(() => { setPinValue(""); setPinError(false); }, 700);
-          setPinVerifying(false);
+        if (!fnError && fnData && typeof (fnData as Record<string, unknown>).valid === "boolean") {
+          result = fnData as { valid: boolean; locked_seconds: number };
         }
       } catch {
+        // Edge Function unreachable — fall through to direct RPC.
+      }
+
+      // Attempt 2: direct RPC fallback (no IP capture, but always available).
+      if (!result) {
+        try {
+          const { data: rpcData } = await supabase.rpc("verify_staff_pin", {
+            pin_input: next,
+            client_id: getClientId(),
+            user_agent: navigator.userAgent,
+          });
+          result = rpcData as { valid: boolean; locked_seconds: number } | null;
+        } catch {
+          // Network failure — result stays null, treated as invalid.
+        }
+      }
+
+      setPinVerifying(false);
+
+      if (result?.valid === true) {
+        setTimeout(() => setPinVerified(true), 150);
+      } else {
+        if (result?.locked_seconds && result.locked_seconds > 0) {
+          setPinLockedSeconds(result.locked_seconds);
+        }
         setPinError(true);
         setTimeout(() => { setPinValue(""); setPinError(false); }, 700);
-        setPinVerifying(false);
       }
     }
   }, [pinValue, pinVerifying, pinLockedSeconds]);
