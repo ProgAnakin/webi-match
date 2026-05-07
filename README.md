@@ -1,6 +1,13 @@
 # Webi-Match
 
-**Interactive product discovery kiosk for Webidoo retail stores.**
+[![CI](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml/badge.svg)](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml)
+[![Deploy](https://img.shields.io/badge/deploy-Vercel-black?logo=vercel)](https://webi-match.vercel.app)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20%2B%20Edge%20Functions-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
+[![License](https://img.shields.io/badge/license-Proprietary-red)](./LICENSE)
+
+**Interactive product discovery kiosk for Webidoo retail stores — built for iPad, running in production.**
 
 Customers swipe through 8 personalised questions — Tinder-style — and receive an instant product recommendation with a dedicated discount and a personalised video from a consultant. Email is captured for CRM and newsletter integration.
 

@@ -1,23 +1,31 @@
-// Edge Function — wraps verify_staff_pin RPC to capture the real client IP.
-// Calling the RPC directly from the browser loses the IP; routing through here
-// lets the SQL function enforce IP-based lockout that localStorage clearing cannot bypass.
+// verify-pin — Staff PIN verification Edge Function
 //
-// Required secrets (auto-injected by Supabase runtime):
-//   SUPABASE_URL              — auto-injected
-//   SUPABASE_SERVICE_ROLE_KEY — auto-injected
-// Optional secrets:
-//   ALLOWED_ORIGIN — lock CORS to a specific domain (e.g. https://your-app.vercel.app)
+// PRIMARY path  → checks the STAFF_PIN secret directly (no DB required).
+//   Setup:  Supabase Dashboard → Edge Functions → verify-pin → Secrets
+//           Add secret  STAFF_PIN = 0123
+//
+// FALLBACK path → bcrypt comparison against app_config.staff_pin_hash in the DB.
+//   Used automatically when STAFF_PIN secret is not set.
+//   Setup:  run migration 20260507000004 in the Supabase SQL Editor.
+//
+// Rate limiting is handled in-memory (resets on cold start, fine for kiosk use).
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const SUPABASE_URL    = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_KEY     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const ALLOWED_ORIGIN  = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
+const STAFF_PIN      = Deno.env.get("STAFF_PIN") ?? "";
+const SUPABASE_URL   = Deno.env.get("SUPABASE_URL") ?? "";
+const SERVICE_KEY    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
+const SILENT         = JSON.stringify({ valid: false, locked_seconds: 0 });
 
-const SILENT = JSON.stringify({ valid: false, locked_seconds: 0 });
+// In-memory rate limiter keyed by IP. Acceptable for kiosk — cold starts reset it.
+const ipAttempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_FAILURES = 5;
+const WINDOW_MS    = 5 * 60 * 1000; // 5-minute counting window
+const LOCKOUT_MS   = 2 * 60 * 1000; // 2-minute lockout after MAX_FAILURES
 
-function headers(origin: string) {
+function makeHeaders(origin: string) {
   return {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin":  ALLOWED_ORIGIN === "*" ? "*" : origin,
@@ -26,49 +34,120 @@ function headers(origin: string) {
   };
 }
 
+function getClientIp(req: Request): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
+
+// Constant-time comparison — prevents timing oracle on PIN length/value.
+function safeEqual(a: string, b: string): boolean {
+  // Consume time proportional to b.length even when lengths differ.
+  let diff = a.length !== b.length ? 1 : 0;
+  const len = Math.max(a.length, b.length);
+  for (let i = 0; i < len; i++) {
+    diff |= (a.charCodeAt(i) ?? 0) ^ (b.charCodeAt(i) ?? 0);
+  }
+  return diff === 0;
+}
+
+function checkRateLimit(ip: string): { blocked: boolean; remaining: number } {
+  const now = Date.now();
+  const entry = ipAttempts.get(ip);
+  if (!entry) return { blocked: false, remaining: 0 };
+  if (now >= entry.resetAt) { ipAttempts.delete(ip); return { blocked: false, remaining: 0 }; }
+  if (entry.count >= MAX_FAILURES) {
+    return { blocked: true, remaining: Math.ceil((entry.resetAt - now) / 1000) };
+  }
+  return { blocked: false, remaining: 0 };
+}
+
+function recordFailure(ip: string): void {
+  const now = Date.now();
+  const cur = ipAttempts.get(ip) ?? { count: 0, resetAt: now + WINDOW_MS };
+  cur.count += 1;
+  if (cur.count >= MAX_FAILURES) cur.resetAt = now + LOCKOUT_MS;
+  ipAttempts.set(ip, cur);
+}
+
 serve(async (req) => {
   const origin = req.headers.get("origin") ?? "";
+  const h = makeHeaders(origin);
 
-  // Preflight
-  if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: headers(origin) });
-  }
+  // CORS preflight
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: h });
 
-  // Silent CORS rejection — returns 200 with invalid result so origin can't be enumerated
+  // Silent origin rejection
   if (ALLOWED_ORIGIN !== "*" && origin && origin !== ALLOWED_ORIGIN) {
-    return new Response(SILENT, { status: 200, headers: headers(origin) });
+    return new Response(SILENT, { status: 200, headers: h });
   }
 
-  if (req.method !== "POST") {
-    return new Response(SILENT, { status: 200, headers: headers(origin) });
-  }
+  if (req.method !== "POST") return new Response(SILENT, { status: 200, headers: h });
 
   let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
-    return new Response(SILENT, { status: 200, headers: headers(origin) });
+    return new Response(SILENT, { status: 200, headers: h });
   }
 
-  // Real IP — Supabase injects x-forwarded-for; take the first (leftmost) address.
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    null;
+  const ip       = getClientIp(req);
+  const pinInput = String(body.pin_input ?? "");
 
-  const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+  // Rate limit check
+  const rl = checkRateLimit(ip);
+  if (rl.blocked) {
+    return new Response(
+      JSON.stringify({ valid: false, locked_seconds: rl.remaining }),
+      { status: 200, headers: h }
+    );
+  }
+
+  // ── PRIMARY: STAFF_PIN secret (set this in Supabase Dashboard) ────────────
+  if (STAFF_PIN) {
+    const valid = safeEqual(pinInput, STAFF_PIN);
+    if (valid) {
+      ipAttempts.delete(ip); // clear any prior failures on success
+    } else {
+      recordFailure(ip);
+    }
+    return new Response(JSON.stringify({ valid, locked_seconds: 0 }), { status: 200, headers: h });
+  }
+
+  // ── FALLBACK: bcrypt hash in database ─────────────────────────────────────
+  // Activated only when STAFF_PIN secret is absent.
+  // Requires migration 20260507000004 to have been run in Supabase SQL Editor.
+  console.warn("[verify-pin] STAFF_PIN secret not set — falling back to DB bcrypt.");
+
+  if (!SUPABASE_URL || !SERVICE_KEY) {
+    console.error("[verify-pin] Missing Supabase env — cannot verify PIN.");
+    return new Response(SILENT, { status: 200, headers: h });
+  }
+
+  const supabase   = createClient(SUPABASE_URL, SERVICE_KEY);
+  const ip_address = getClientIp(req) === "unknown" ? null : getClientIp(req);
 
   const { data, error } = await supabase.rpc("verify_staff_pin", {
-    pin_input:  String(body.pin_input  ?? ""),
+    pin_input:  pinInput,
     client_id:  String(body.client_id  ?? "default"),
     user_agent: String(body.user_agent ?? ""),
-    ip_address: ip,
+    ip_address,
   });
 
   if (error) {
     console.error("[verify-pin] rpc error:", error.message);
-    return new Response(SILENT, { status: 200, headers: headers(origin) });
+    return new Response(SILENT, { status: 200, headers: h });
   }
 
-  return new Response(JSON.stringify(data), { status: 200, headers: headers(origin) });
+  // Mirror rate limiting for DB path too (DB tracks its own, but keep in sync)
+  const result = data as { valid: boolean; locked_seconds: number } | null;
+  if (result?.valid === true) {
+    ipAttempts.delete(ip);
+  } else if (result?.locked_seconds === 0) {
+    recordFailure(ip);
+  }
+
+  return new Response(JSON.stringify(data), { status: 200, headers: h });
 });
