@@ -5,18 +5,20 @@ import QuizScreen from "@/components/QuizScreen";
 import MatchResult from "@/components/MatchResult";
 import SuccessScreen from "@/components/SuccessScreen";
 import AttractScreen from "@/components/AttractScreen";
+import { KioskLockScreen } from "@/components/KioskLockScreen";
 import { getMatchedProduct, products as coreProducts, type Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import { useInactivityReset } from "@/hooks/useInactivityReset";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { useBgMusic } from "@/hooks/useBgMusic";
+import { useKioskMode } from "@/hooks/useKioskMode";
 import { useLang } from "@/i18n/LanguageContext";
 import { getStoredStoreId } from "@/data/stores";
 import { RESULT_INACTIVITY_TIMEOUT_MS } from "@/config/timings";
 
 type Screen = "splash" | "welcome" | "loading_quiz" | "quiz" | "result" | "success";
 
-// ── Per-screen directional transitions ────────────────────────────────────────────
+// ── Per-screen directional transitions ────────────────────────────────────────────────
 const screenAnim: Record<Screen, { initial: object; animate: object; exit: object; transition: object }> = {
   loading_quiz: {
     initial:    { opacity: 0 },
@@ -69,6 +71,8 @@ function trackFunnel(funnelKey: string, eventType: "quiz_started" | "result_show
 
 const Index = () => {
   const { t } = useLang();
+  const { isKioskLocked, deactivateKiosk } = useKioskMode();
+  const [showKioskLock, setShowKioskLock] = useState(isKioskLocked);
   const [screen, setScreen] = useState<Screen>("splash");
   const [user, setUser] = useState<UserInfo>({ nome: "", cognome: "", email: "" });
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
@@ -280,6 +284,16 @@ const Index = () => {
 
   return (
     <div className="relative h-dvh overflow-hidden bg-background">
+      <AnimatePresence>
+        {showKioskLock && (
+          <KioskLockScreen
+            key="kiosk-lock"
+            onStartQuiz={() => setShowKioskLock(false)}
+            onDeactivate={() => { deactivateKiosk(); setShowKioskLock(false); }}
+          />
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {inactivitySecondsLeft !== null && (
           <motion.div
