@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { STORES, setStoredStoreId, getStoredStoreId } from "@/data/stores";
 import { supabase } from "@/integrations/supabase/client";
 import { useLang } from "@/i18n/LanguageContext";
+import { useKioskMode } from "@/hooks/useKioskMode";
 
 // PIN validation is server-side via Supabase RPC (verify_staff_pin).
 // Lockout + attempt logging are also managed server-side.
@@ -31,6 +32,7 @@ interface AdminPinOverlayProps {
 
 const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
   const { t } = useLang();
+  const { isKioskLocked, activateKiosk, deactivateKiosk } = useKioskMode();
   const [step, setStep] = useState<Step>("pin");
   const [pin, setPin] = useState("");
   const [shake, setShake] = useState(false);
@@ -132,7 +134,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
     setTimeout(() => setSavedStoreId(null), 1500);
   };
 
-  // ─── Store selection step ────────────────────────────────────────────────────
+  // ─── Store selection step ──────────────────────────────────────────────
   if (step === "store") {
     return (
       <motion.div
@@ -214,12 +216,39 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
               📊 Vai ad Analytics / Manager
             </motion.button>
           </div>
+
+          {/* Kiosk mode toggle */}
+          <div className="mt-4 rounded-2xl border border-border bg-secondary/50 px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-foreground">
+                  {isKioskLocked ? "🔒 Modalità Kiosk Attiva" : "🔓 Modalità Kiosk"}
+                </p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground leading-snug">
+                  {isKioskLocked
+                    ? "Schermo a tutto schermo — barra indirizzi nascosta"
+                    : "Attiva per nascondere la barra del browser"}
+                </p>
+              </div>
+              <motion.button
+                onClick={isKioskLocked ? deactivateKiosk : activateKiosk}
+                className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold transition-colors ${
+                  isKioskLocked
+                    ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                    : "bg-primary/10 text-primary hover:bg-primary/20"
+                }`}
+                whileTap={{ scale: 0.95 }}
+              >
+                {isKioskLocked ? "Disattiva" : "Attiva"}
+              </motion.button>
+            </div>
+          </div>
         </motion.div>
       </motion.div>
     );
   }
 
-  // ─── PIN step ────────────────────────────────────────────────────────────────
+  // ─── PIN step ────────────────────────────────────────────────────────────────────
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md"

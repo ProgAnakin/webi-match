@@ -3,6 +3,12 @@
 const MATCH_MIN = 45;
 const MATCH_MAX = 98;
 
+// The 8 fixed matching tags — must stay in sync with TAG_MAP below.
+export const AVAILABLE_TAGS = [
+  "audio", "productivity", "recovery", "sport", "style", "tech", "travel", "wellness",
+] as const;
+export type AvailableTag = typeof AVAILABLE_TAGS[number];
+
 export interface Product {
   id: string;
   name: string;
@@ -206,12 +212,14 @@ function deterministicTiePick(answers: Record<number, boolean>, len: number): nu
 export function getMatchedProduct(
   answers: Record<number, boolean>,
   activeIds?: Set<string>,
+  allProducts?: Product[],
 ): { product: Product; matchPercent: number } {
+  const pool_source = allProducts ?? products;
   const filtered =
     activeIds && activeIds.size > 0
-      ? products.filter((p) => activeIds.has(p.id))
-      : products;
-  const pool = filtered.length > 0 ? filtered : products;
+      ? pool_source.filter((p) => activeIds.has(p.id))
+      : pool_source;
+  const pool = filtered.length > 0 ? filtered : pool_source;
 
   const activeTags: string[] = [];
   Object.entries(answers).forEach(([qId, answered]) => {
@@ -233,7 +241,7 @@ export function getMatchedProduct(
   });
 
   // Deterministic pick among tied products — same answers always yield the same product.
-  const bestProduct = tied[deterministicTiePick(answers, tied.length)] ?? pool[0] ?? products[0];
+  const bestProduct = tied[deterministicTiePick(answers, tied.length)] ?? pool[0] ?? pool_source[0];
 
   const totalTags = bestProduct.tags.length || 1;
   const rawPercent = Math.round((bestScore / totalTags) * 100);

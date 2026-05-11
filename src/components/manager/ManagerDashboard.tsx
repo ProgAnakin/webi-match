@@ -9,8 +9,9 @@ import { useIdleLogout } from "@/hooks/useIdleLogout";
 import { StoreSelectorModal } from "./StoreSelectorModal";
 import { FaqModal, FaqData, EMPTY_FAQ } from "./FaqModal";
 import { SessionsTab } from "./SessionsTab";
+import { ProductCatalogTab } from "./ProductCatalogTab";
 
-type ActiveTab = "catalogo" | "sessioni" | "storico";
+type ActiveTab = "catalogo" | "sessioni" | "storico" | "gestione";
 
 /** product_id → active boolean, loaded from Supabase */
 type SettingsMap = Record<string, boolean>;
@@ -633,7 +634,22 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           >
             <History className="h-3.5 w-3.5" /> Storico
           </button>
+          {userRole?.role !== "consulente_responsabile" && (
+            <button
+              onClick={() => setActiveTab("gestione")}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+                activeTab === "gestione"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              🗂️ Gestione
+            </button>
+          )}
         </motion.div>
+
+        {/* Gestione catalogo globale (admin master only) */}
+        {activeTab === "gestione" && <ProductCatalogTab />}
 
         {/* Sessions tab */}
         {activeTab === "sessioni" && (
@@ -831,7 +847,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                       </motion.button>
                     </div>
 
-                    {/* ── Row 2: price · discount ──────────────────────── */}
+                    {/* ── Row 2: price · discount ──────────────────── */}
                     <div className="ml-7 mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
                       {/* Price */}
                       {editingPriceId === product.id ? (
@@ -895,7 +911,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                       </div>
                     </div>
 
-                    {/* ── Row 3: media actions + tags ──────────────────── */}
+                    {/* ── Row 3: media actions + tags ────────────────── */}
                     <div className="ml-7 mt-3 flex flex-wrap items-center gap-2">
 
                       {/* Image */}

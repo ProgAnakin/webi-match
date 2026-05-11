@@ -5,18 +5,20 @@ import QuizScreen from "@/components/QuizScreen";
 import MatchResult from "@/components/MatchResult";
 import SuccessScreen from "@/components/SuccessScreen";
 import AttractScreen from "@/components/AttractScreen";
-import { getMatchedProduct, type Product } from "@/data/products";
+import { KioskLockScreen } from "@/components/KioskLockScreen";
+import { getMatchedProduct, products as coreProducts, type Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import { useInactivityReset } from "@/hooks/useInactivityReset";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { useBgMusic } from "@/hooks/useBgMusic";
+import { useKioskMode } from "@/hooks/useKioskMode";
 import { useLang } from "@/i18n/LanguageContext";
 import { getStoredStoreId } from "@/data/stores";
 import { RESULT_INACTIVITY_TIMEOUT_MS } from "@/config/timings";
 
 type Screen = "splash" | "welcome" | "loading_quiz" | "quiz" | "result" | "success";
 
-// ── Per-screen directional transitions ────────────────────────────────────────
+// ── Per-screen directional transitions ────────────────────────────────────────────────
 const screenAnim: Record<Screen, { initial: object; animate: object; exit: object; transition: object }> = {
   loading_quiz: {
     initial:    { opacity: 0 },
@@ -69,6 +71,8 @@ function trackFunnel(funnelKey: string, eventType: "quiz_started" | "result_show
 
 const Index = () => {
   const { t } = useLang();
+  const { isKioskLocked, deactivateKiosk } = useKioskMode();
+  const [showKioskLock, setShowKioskLock] = useState(isKioskLocked);
   const [screen, setScreen] = useState<Screen>("splash");
   const [user, setUser] = useState<UserInfo>({ nome: "", cognome: "", email: "" });
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
@@ -83,41 +87,84 @@ const Index = () => {
   const [imageOverrides, setImageOverrides] = useState<Record<string, string>>({});
   const [videoOverrides, setVideoOverrides] = useState<Record<string, string>>({});
   const [discountOverrides, setDiscountOverrides] = useState<Record<string, number>>({});
+  const [allProducts, setAllProducts] = useState<Product[]>(coreProducts);
   const [settingsLoadFailed, setSettingsLoadFailed] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
     const storeId = getStoredStoreId() ?? "corso-vercelli";
-    supabase
-      .from("product_settings")
-      .select("product_id, active, price_override, image_url, video_url, discount_percent")
-      .eq("store_id", storeId)
-      .then(({ data, error }) => {
-        if (error) {
-          console.error("[webi-match] product_settings fetch failed:", error);
-          setSettingsLoadFailed(true);
-        } else if (data && data.length > 0) {
-          const active = new Set(
-            data.filter((r) => r.active !== false).map((r) => r.product_id),
-          );
-          const prices: Record<string, string> = {};
-          const images: Record<string, string> = {};
-          const videos: Record<string, string> = {};
-          const discounts: Record<string, number> = {};
-          data.forEach((r) => {
-            if (r.price_override) prices[r.product_id] = r.price_override;
-            if (r.image_url) images[r.product_id] = r.image_url;
-            if (r.video_url) videos[r.product_id] = r.video_url;
-            if (r.discount_percent) discounts[r.product_id] = r.discount_percent;
-          });
-          setActiveProductIds(active);
-          setPriceOverrides(prices);
-          setVideoOverrides(videos);
-          setImageOverrides(images);
-          setDiscountOverrides(discounts);
-        }
-        setSettingsLoaded(true);
-      });
+
+    Promise.all([
+      supabase
+        .from("product_settings")
+        .select("product_id, active, price_override, image_url, video_url, discount_percent")
+        .eq("store_id", storeId),
+      supabase
+        .from("custom_products")
+        .select("id, name, description, price, rating, image_url, video_url, tags, faq")
+        .eq("status", "active"),
+      supabase
+        .from("product_global_status")
+        .select("product_id, hidden"),
+    ]).then(([settingsRes, customRes, globalRes]) => {
+      if (settingsRes.error) {
+        console.error("[webi-match] product_settings fetch failed:", settingsRes.error);
+        setSettingsLoadFailed(true);
+      }
+
+      // Build the global hidden set
+      const hiddenIds = new Set(
+        (globalRes.data ?? []).filter((r) => r.hidden).map((r) => r.product_id),
+      );
+
+      // Merge core + custom products, filtering globally hidden ones
+      const customProductList: Product[] = (customRes.data ?? []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        price: r.price,
+        rating: r.rating,
+        image: r.image_url ?? "/products/placeholder.png",
+        videoUrl: r.video_url ?? "#",
+        tags: r.tags ?? [],
+        faq: (r.faq as { q: string; a: string }[]) ?? [],
+      }));
+      const merged = [...coreProducts, ...customProductList].filter(
+        (p) => !hiddenIds.has(p.id),
+      );
+      setAllProducts(merged);
+
+      // Apply per-store settings
+      const data = settingsRes.data;
+      if (data && data.length > 0) {
+        const active = new Set(
+          data.filter((r) => r.active !== false).map((r) => r.product_id),
+        );
+        // Also add custom products (always active unless per-store deactivated)
+        customProductList.forEach((p) => {
+          if (!hiddenIds.has(p.id)) active.add(p.id);
+        });
+        const prices: Record<string, string> = {};
+        const images: Record<string, string> = {};
+        const videos: Record<string, string> = {};
+        const discounts: Record<string, number> = {};
+        data.forEach((r) => {
+          if (r.price_override) prices[r.product_id] = r.price_override;
+          if (r.image_url) images[r.product_id] = r.image_url;
+          if (r.video_url) videos[r.product_id] = r.video_url;
+          if (r.discount_percent) discounts[r.product_id] = r.discount_percent;
+        });
+        setActiveProductIds(active);
+        setPriceOverrides(prices);
+        setVideoOverrides(videos);
+        setImageOverrides(images);
+        setDiscountOverrides(discounts);
+      } else {
+        // No per-store settings yet — all merged products are active
+        setActiveProductIds(new Set(merged.map((p) => p.id)));
+      }
+      setSettingsLoaded(true);
+    });
   }, []);
 
   // Transition out of loading screen once settings are ready
@@ -138,7 +185,7 @@ const Index = () => {
   };
 
   const handleQuizComplete = (answers: Record<number, boolean>) => {
-    const { product: baseProduct, matchPercent: pct } = getMatchedProduct(answers, activeProductIds ?? undefined);
+    const { product: baseProduct, matchPercent: pct } = getMatchedProduct(answers, activeProductIds ?? undefined, allProducts);
     // Apply store-specific overrides (price + image) set by manager
     const priceOverride = baseProduct && priceOverrides[baseProduct.id];
     const imageOverride = baseProduct && imageOverrides[baseProduct.id];
@@ -237,6 +284,16 @@ const Index = () => {
 
   return (
     <div className="relative h-dvh overflow-hidden bg-background">
+      <AnimatePresence>
+        {showKioskLock && (
+          <KioskLockScreen
+            key="kiosk-lock"
+            onStartQuiz={() => setShowKioskLock(false)}
+            onDeactivate={() => { deactivateKiosk(); setShowKioskLock(false); }}
+          />
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {inactivitySecondsLeft !== null && (
           <motion.div
