@@ -1,20 +1,29 @@
 import { motion } from "framer-motion";
 import { memo } from "react";
 
-// Each ember has an explicit shape (w×h) so sparks travelling horizontally look
-// physically correct — elongated along the direction of travel.
-interface Ember {
-  top:   number;
-  dur:   number;
-  delay: string;
-  w:     number;
-  h:     number;
-  color: string;
-  anim:  string;
-}
+// ── Star constellation ─────────────────────────────────────────────────────
+// Deterministic positions (no random) so the layout is stable across renders.
+// Tints rotate between white, Webidoo orange and amber for brand coherence.
+interface Star { left: string; top: string; size: number; delay: number; dur: number; tint: string; }
+const STARS: Star[] = Array.from({ length: 46 }, (_, i) => {
+  const tint =
+    i % 6 === 0 ? "hsla(27, 92%, 70%, 0.95)" :   // brand orange
+    i % 9 === 0 ? "hsla(38, 96%, 70%, 0.95)" :   // amber
+                  "hsla(0, 0%, 100%, 0.9)";       // white
+  return {
+    left:  `${(i * 73 + 5) % 96}%`,
+    top:   `${(i * 41 + 3) % 94}%`,
+    size:  1.2 + (i % 4) * 0.7,
+    delay: (i * 0.31) % 9,
+    dur:   2.4 + (i % 5) * 0.9,
+    tint,
+  };
+});
 
+// ── Ember Float (kept — already polished) ─────────────────────────────────
+interface Ember { top: number; dur: number; delay: string; w: number; h: number; color: string; anim: string; }
 const EMBERS: Ember[] = [
-  // ── Left wall → travel right ──────────────────────────────────────────────
+  // Left wall → travel right
   { top: 16, dur: 6.2, delay: "-1.5s",  w: 4, h: 4, color: "#fb6b04", anim: "wb-ember-ltr"   },
   { top: 25, dur: 5.5, delay: "-4.2s",  w: 7, h: 2, color: "#f8a432", anim: "wb-ember-ltr-b" },
   { top: 36, dur: 7.1, delay: "-7.8s",  w: 3, h: 3, color: "#fcb498", anim: "wb-ember-ltr"   },
@@ -27,7 +36,7 @@ const EMBERS: Ember[] = [
   { top: 62, dur: 5.1, delay: "-6.4s",  w: 4, h: 4, color: "#fcb498", anim: "wb-ember-ltr-b" },
   { top: 72, dur: 6.7, delay: "-10.2s", w: 5, h: 2, color: "#fb6b04", anim: "wb-ember-ltr"   },
   { top: 32, dur: 5.9, delay: "-11.5s", w: 6, h: 2, color: "#f8a432", anim: "wb-ember-ltr-b" },
-  // ── Right wall → travel left ───────────────────────────────────────────────
+  // Right wall → travel left
   { top: 18, dur: 6.4, delay: "-3.2s",  w: 3, h: 3, color: "#f8a432", anim: "wb-ember-rtl"   },
   { top: 28, dur: 5.7, delay: "-7.0s",  w: 6, h: 2, color: "#fb6b04", anim: "wb-ember-rtl-b" },
   { top: 40, dur: 7.2, delay: "-1.4s",  w: 4, h: 4, color: "#fcb498", anim: "wb-ember-rtl"   },
@@ -42,104 +51,102 @@ const EMBERS: Ember[] = [
   { top: 35, dur: 5.8, delay: "-12.0s", w: 6, h: 2, color: "#f8a432", anim: "wb-ember-rtl-b" },
 ];
 
-// Inline SVG recreation of the Webidoo logo mark.
-// The existing PNG has a white background and cannot be used directly on dark.
-// Shape: horizontal horseshoe (open at bottom) + leaf on top-right + downward triangle.
-// Gradient defined once in a hidden SVG defs block above and referenced by id.
-const WebidooMark = ({ size }: { size: number }) => (
-  <svg
-    width={size}
-    height={Math.round(size * 0.9)}
-    viewBox="0 0 110 100"
-    fill="none"
-    overflow="visible"
-  >
-    {/* Horseshoe body — single closed path:
-        outer U-shape → step inward → inner slot (reversed) → close across arm base */}
-    <path
-      fill="url(#wb-mark-grad)"
-      d="
-        M 12,82
-        C 4,82 4,20 55,16
-        C 106,20 106,82 98,82
-        L 83,72
-        C 95,68 95,28 55,24
-        C 15,28 15,68 27,72
-        Z
-      "
-    />
-    {/* Leaf / flame — sits on the top-right of the body */}
-    <path
-      fill="url(#wb-mark-grad)"
-      d="
-        M 66,16
-        C 66,4 82,0 78,14
-        C 84,-2 74,-6 62,8
-        C 54,-2 48,6 52,14
-        C 56,4 66,4 66,16
-        Z
-      "
-    />
-    {/* Downward arrow — fills the gap between the two arms */}
-    <path
-      fill="url(#wb-mark-grad)"
-      d="M 27,72 L 83,72 L 55,90 Z"
-    />
-  </svg>
-);
-
-// Bounce path: rectangular loop touching all four edges (screensaver style).
-// x/y are relative to the element's centre (positioned at 50%,50%).
-// Vertical bounds chosen so the mark stays clear of the progress bar
-// (top ~100px) and action buttons (bottom ~100px) on any iPad size.
-const MARK = {
-  size:       82,
-  bounceDur:  42,   // seconds per full rectangular loop
-  opacityDur:  8,   // independent breathing cycle
-  // clockwise: TL → TR → BR → BL → TL
-  x: ["-38vw",  "36vw",  "36vw", "-38vw", "-38vw"],
-  y: ["-26vh", "-26vh",  "26vh",  "26vh", "-26vh"],
-} as const;
+// Radial-gradient orbs (no filter:blur — Safari iPad-safe).
+// `closest-side` keeps the falloff perfectly circular regardless of element shape.
+const OrbGradient = ({ hue, sat, lit }: { hue: number; sat: number; lit: number }) =>
+  `radial-gradient(circle closest-side, hsla(${hue},${sat}%,${lit}%,0.55) 0%, hsla(${hue},${sat}%,${lit}%,0.18) 38%, transparent 72%)`;
 
 const QuizBackground = memo(() => (
-  <div className="pointer-events-none absolute inset-0 overflow-hidden">
+  <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
 
-    {/* Shared gradient definition — referenced by all WebidooMark SVGs */}
-    <svg width="0" height="0" style={{ position: "absolute" }}>
-      <defs>
-        <linearGradient id="wb-mark-grad" x1="0" y1="0" x2="110" y2="100" gradientUnits="userSpaceOnUse">
-          <stop offset="0%"   stopColor="#fca83a" />
-          <stop offset="55%"  stopColor="#fb6b04" />
-          <stop offset="100%" stopColor="#e83010" />
-        </linearGradient>
-      </defs>
-    </svg>
+    {/* ── Layer 1 · Deep cosmic gradient ─────────────────────────────────────── */}
+    <div
+      className="absolute inset-0"
+      style={{
+        background:
+          "radial-gradient(ellipse 120% 90% at 50% 30%, hsl(230, 55%, 22%) 0%, hsl(230, 60%, 12%) 60%, hsl(230, 65%, 8%) 100%)",
+      }}
+    />
 
-    {/* ── Webidoo mark — one instance bouncing screensaver-style ─────────────
-        Outer motion.div: constant-speed rectangular-path position (screensaver).
-        Inner motion.div: independent opacity breathing so the mark fades in
-        and out regardless of where it is on screen.                         */}
+    {/* ── Layer 2 · Ambient aurora orbs (no filter:blur for iOS Safari) ───── */}
     <motion.div
-      style={{ position: "absolute", left: "50%", top: "50%", willChange: "transform" }}
-      animate={{ x: MARK.x, y: MARK.y }}
-      transition={{ duration: MARK.bounceDur, repeat: Infinity, ease: "linear" }}
-    >
-      <motion.div
-        style={{
-          marginLeft: -MARK.size / 2,
-          marginTop:  -Math.round(MARK.size * 0.9) / 2,
-          willChange: "opacity",
-        }}
-        animate={{ opacity: [0.06, 0.26, 0.10, 0.24, 0.06] }}
-        transition={{ duration: MARK.opacityDur, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <WebidooMark size={MARK.size} />
-      </motion.div>
-    </motion.div>
+      className="absolute"
+      style={{
+        left: "-14vw", top: "-8vh",
+        width: "max(620px, 56vmin)", height: "max(620px, 56vmin)",
+        background: OrbGradient({ hue: 27, sat: 92, lit: 56 }),
+        willChange: "transform",
+      }}
+      animate={{
+        x: [0, 60, 30, -20, 0],
+        y: [0, 35, -25, 50, 0],
+        scale: [1, 1.12, 0.94, 1.06, 1],
+      }}
+      transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
+    />
+    <motion.div
+      className="absolute"
+      style={{
+        right: "-16vw", top: "12vh",
+        width: "max(540px, 50vmin)", height: "max(540px, 50vmin)",
+        background: OrbGradient({ hue: 16, sat: 100, lit: 52 }),
+        willChange: "transform",
+      }}
+      animate={{
+        x: [0, -50, 20, -30, 0],
+        y: [0, 45, -20, 35, 0],
+        scale: [1, 0.92, 1.10, 0.96, 1],
+      }}
+      transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+    />
+    <motion.div
+      className="absolute"
+      style={{
+        left: "20vw", bottom: "-18vh",
+        width: "max(560px, 52vmin)", height: "max(560px, 52vmin)",
+        background: OrbGradient({ hue: 230, sat: 75, lit: 48 }),
+        willChange: "transform",
+      }}
+      animate={{
+        x: [0, 40, -25, 30, 0],
+        y: [0, -30, 25, -40, 0],
+        scale: [1, 1.06, 0.94, 1.08, 1],
+      }}
+      transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
+    />
 
-    {/* ── Ember Float ───────────────────────────────────────────────────────────
-        Sparks launch from left/right walls, bounded to 14–84% of screen height
-        so they never overlap the progress bar or action buttons.            */}
+    {/* ── Layer 3 · Diagonal light sweep (slow comet) ────────────────────── */}
+    <motion.div
+      className="absolute"
+      style={{
+        left: "-30%", top: "-20%",
+        width: "60%", height: "140%",
+        background:
+          "linear-gradient(110deg, transparent 35%, hsla(27, 92%, 70%, 0.06) 48%, hsla(27, 92%, 80%, 0.12) 50%, hsla(27, 92%, 70%, 0.06) 52%, transparent 65%)",
+        willChange: "transform",
+      }}
+      animate={{ x: ["0vw", "180vw"] }}
+      transition={{ duration: 22, repeat: Infinity, ease: "linear", repeatDelay: 8 }}
+    />
+
+    {/* ── Layer 4 · Star constellation ──────────────────────────────────── */}
+    {STARS.map((s, i) => (
+      <motion.div
+        key={i}
+        className="absolute rounded-full"
+        style={{
+          left: s.left, top: s.top,
+          width: s.size, height: s.size,
+          background: s.tint,
+          boxShadow: `0 0 ${s.size * 3}px ${s.tint}`,
+          willChange: "opacity, transform",
+        }}
+        animate={{ opacity: [0.15, 1, 0.15], scale: [0.7, 1.3, 0.7] }}
+        transition={{ duration: s.dur, delay: s.delay, repeat: Infinity, ease: "easeInOut" }}
+      />
+    ))}
+
+    {/* ── Layer 5 · Ember Float — sparks from side walls ─────────────────── */}
     {EMBERS.map((e, i) => {
       const fromLeft = e.anim.startsWith("wb-ember-ltr");
       return (
@@ -153,12 +160,31 @@ const QuizBackground = memo(() => (
             height:       e.h,
             borderRadius: e.w === e.h ? "50%" : 2,
             background:   e.color,
+            boxShadow:    `0 0 ${Math.max(e.w, e.h) * 2}px ${e.color}80`,
             animation:    `${e.anim} ${e.dur}s ease-out ${e.delay} infinite`,
             willChange:   "transform, opacity",
           }}
         />
       );
     })}
+
+    {/* ── Layer 6 · Edge vignette (focus pull toward centre) ─────────────── */}
+    <div
+      className="absolute inset-0"
+      style={{
+        background:
+          "radial-gradient(ellipse 95% 90% at 50% 50%, transparent 38%, hsla(230, 65%, 6%, 0.65) 100%)",
+      }}
+    />
+
+    {/* ── Layer 7 · Subtle grain noise (premium feel) ────────────────────── */}
+    <svg aria-hidden className="absolute inset-0 h-full w-full opacity-[0.025]">
+      <filter id="qb-grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" />
+        <feColorMatrix type="saturate" values="0" />
+      </filter>
+      <rect width="100%" height="100%" filter="url(#qb-grain)" />
+    </svg>
   </div>
 ));
 

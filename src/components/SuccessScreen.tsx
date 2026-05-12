@@ -22,101 +22,205 @@ const Plane = ({ size = 38, opacity = 1 }: { size?: number; opacity?: number }) 
 );
 
 // Pre-computed sparkle positions — stable across renders
-const SPARKLES = Array.from({ length: 22 }, (_, i) => ({
+const SPARKLES = Array.from({ length: 34 }, (_, i) => ({
   id:    i,
-  left:  `${4 + (i * 41 % 92)}%`,
-  top:   `${4 + (i * 59 % 88)}%`,
-  size:  1 + (i % 3) * 0.8,
-  delay: (i * 0.43) % 6,
-  dur:   2.0 + (i % 5) * 0.5,
+  left:  `${(4 + (i * 41)) % 96}%`,
+  top:   `${(4 + (i * 59)) % 92}%`,
+  size:  1 + (i % 3) * 0.9,
+  delay: (i * 0.43) % 7,
+  dur:   2.2 + (i % 5) * 0.6,
+  tint:  i % 6 === 0 ? "hsla(27, 92%, 70%, 1)" :  // brand orange
+         i % 9 === 0 ? "hsla(38, 96%, 70%, 1)" :  // amber
+                       "rgba(255, 255, 255, 0.95)",
 }));
 
-// ── Warm celebration background ──────────────────────────────────────────────
-// 3 brand-aligned orbs (orange + amber + supporting blue-violet) drift gently
-// with mix-blend-mode:screen for additive colour mixing. Anchored in the body
-// base colour so transition from MatchResult feels like rising warmth, not a
-// jump to a different visual universe.
+// Golden particles drifting upward — celebration of success
+const GOLDEN_PARTICLES = Array.from({ length: 18 }, (_, i) => ({
+  id:    i,
+  left:  `${(7 + i * 13) % 95}%`,
+  size:  3 + (i % 3),
+  delay: (i * 0.51) % 8,
+  dur:   9 + (i % 4) * 2,
+  drift: ((i % 5) - 2) * 12,
+  hue:   i % 3 === 0 ? 27 : i % 3 === 1 ? 38 : 16,
+}));
+
+// God-ray angles fan out from the top-center
+const GOD_RAYS = [-32, -22, -12, -4, 6, 14, 24, 34];
+
+// ── "Warm Bloom" celebration background ────────────────────────────────────
+// Layer stack (back → front):
+//   1. Navy → warm-floor gradient (sunset hint)
+//   2. Centred sunlight burst (top)
+//   3. 8 god-rays fanning from top-centre
+//   4. 4 warm orbs (orange/amber/coral/violet) with screen-blend
+//   5. Golden particles drifting upward (celebratory confetti suspension)
+//   6. Twinkling sparkles
+//   7. Warm vignette
+//   8. Grain noise
 const SuccessBackground = ({ skip }: { skip: boolean }) => (
   <div
     className="pointer-events-none absolute inset-0 overflow-hidden"
-    style={{ background: "linear-gradient(160deg, hsl(230,55%,18%) 0%, hsl(228,55%,15%) 55%, hsl(232,55%,17%) 100%)" }}
+    style={{
+      background:
+        "linear-gradient(180deg, hsl(230, 60%, 12%) 0%, hsl(230, 55%, 18%) 55%, hsl(20, 55%, 22%) 100%)",
+    }}
   >
     {/* Warm sunlight burst — centre top, reinforces brand orange */}
-    <div className="absolute inset-0"
-      style={{ background: "radial-gradient(ellipse 70% 55% at 50% -5%, hsl(27,92%,62% / 0.28) 0%, transparent 70%)" }}
+    <div
+      className="absolute inset-0"
+      style={{
+        background:
+          "radial-gradient(ellipse 75% 55% at 50% -10%, hsla(27, 92%, 60%, 0.32) 0%, transparent 65%)",
+      }}
     />
+
+    {/* God rays — 8 angled beams from top-centre */}
+    {!skip && (
+      <div className="absolute" style={{ left: "50%", top: "-10%", width: 0, height: 0 }}>
+        {GOD_RAYS.map((angle, i) => (
+          <motion.div
+            key={i}
+            className="absolute"
+            style={{
+              left: 0, top: 0,
+              width: "max(3vmin, 26px)",
+              height: "max(90vh, 700px)",
+              marginLeft: "-1.5vmin",
+              transformOrigin: "top center",
+              transform: `rotate(${angle}deg)`,
+              background:
+                "linear-gradient(180deg, hsla(27, 92%, 65%, 0.30) 0%, hsla(38, 96%, 65%, 0.16) 28%, transparent 70%)",
+              willChange: "opacity",
+            }}
+            animate={{ opacity: [0.35, 0.75, 0.45, 0.65, 0.35] }}
+            transition={{
+              duration: 7 + (i % 3),
+              delay: i * 0.4,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
+    )}
 
     {/* Orb layer — screen blend for additive colour mixing */}
     <div className="absolute inset-0" style={{ mixBlendMode: "screen" }}>
 
       {/* Orb 1 — brand orange (hero), top-left */}
-      <motion.div className="absolute rounded-full"
+      <motion.div
+        className="absolute rounded-full"
         style={{
           left: "-8%", top: "-8%",
-          width: 760, height: 760,
-          background: "radial-gradient(circle, hsl(27,92%,55%) 0%, transparent 65%)",
-          filter: "blur(64px)", opacity: 0.54,
+          width: "max(760px, 70vmin)", height: "max(760px, 70vmin)",
+          background:
+            "radial-gradient(circle closest-side, hsla(27, 92%, 55%, 0.65) 0%, hsla(27, 92%, 55%, 0.20) 38%, transparent 72%)",
+          willChange: "transform",
         }}
         animate={skip ? {} : { x: [0, 110, 190, 130, 40, -40, 0], y: [0, 70, -30, -110, -50, 50, 0] }}
         transition={{ duration: 19, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Orb 2 — warm amber, bottom-right (continues the warm story) */}
-      <motion.div className="absolute rounded-full"
+      {/* Orb 2 — warm amber, bottom-right */}
+      <motion.div
+        className="absolute rounded-full"
         style={{
           right: "-12%", bottom: "0%",
-          width: 660, height: 660,
-          background: "radial-gradient(circle, hsl(40,95%,58%) 0%, transparent 65%)",
-          filter: "blur(72px)", opacity: 0.42,
+          width: "max(660px, 62vmin)", height: "max(660px, 62vmin)",
+          background:
+            "radial-gradient(circle closest-side, hsla(40, 95%, 58%, 0.55) 0%, hsla(40, 95%, 58%, 0.18) 38%, transparent 72%)",
+          willChange: "transform",
         }}
         animate={skip ? {} : { x: [0, -130, -90, 60, 50, -40, 0], y: [0, -100, 70, 30, -40, -80, 0] }}
         transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Orb 3 — orange-red coral, top-right (depth and contrast) */}
-      <motion.div className="absolute rounded-full"
+      {/* Orb 3 — orange-coral, top-right */}
+      <motion.div
+        className="absolute rounded-full"
         style={{
           right: "-2%", top: "5%",
-          width: 540, height: 540,
-          background: "radial-gradient(circle, hsl(15,88%,58%) 0%, transparent 65%)",
-          filter: "blur(58px)", opacity: 0.40,
+          width: "max(540px, 50vmin)", height: "max(540px, 50vmin)",
+          background:
+            "radial-gradient(circle closest-side, hsla(15, 88%, 58%, 0.52) 0%, hsla(15, 88%, 58%, 0.16) 38%, transparent 72%)",
+          willChange: "transform",
         }}
         animate={skip ? {} : { x: [0, -90, -150, -100, -40, 20, 0], y: [0, 120, 80, -40, -60, 50, 0] }}
         transition={{ duration: 17, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Orb 4 — soft blue-violet (single cool accent — the "horizon at dusk") */}
-      <motion.div className="absolute rounded-full"
+      {/* Orb 4 — periwinkle accent (the "horizon at dusk") */}
+      <motion.div
+        className="absolute rounded-full"
         style={{
           left: "5%", bottom: "-5%",
-          width: 600, height: 600,
-          background: "radial-gradient(circle, hsl(230,70%,62%) 0%, transparent 65%)",
-          filter: "blur(70px)", opacity: 0.32,
+          width: "max(600px, 56vmin)", height: "max(600px, 56vmin)",
+          background:
+            "radial-gradient(circle closest-side, hsla(230, 70%, 62%, 0.42) 0%, hsla(230, 70%, 62%, 0.14) 38%, transparent 72%)",
+          willChange: "transform",
         }}
         animate={skip ? {} : { x: [0, 90, 140, 70, -15, 30, 0], y: [0, -80, -130, -65, 25, -40, 0] }}
         transition={{ duration: 21, repeat: Infinity, ease: "easeInOut" }}
       />
     </div>
 
-    {/* Soft vignette — anchored to body navy for depth without breaking the warm tone */}
-    <div className="absolute inset-0"
-      style={{
-        background: "radial-gradient(ellipse 90% 80% at 50% 50%, transparent 30%, hsl(230,55%,10% / 0.50) 100%)",
-      }}
-    />
+    {/* Golden particles — drifting upward like suspended confetti */}
+    {!skip && GOLDEN_PARTICLES.map((p) => (
+      <motion.div
+        key={p.id}
+        className="absolute rounded-full"
+        style={{
+          left: p.left,
+          bottom: -10,
+          width: p.size,
+          height: p.size,
+          background: `hsla(${p.hue}, 95%, 65%, 0.95)`,
+          boxShadow: `0 0 ${p.size * 3}px hsla(${p.hue}, 95%, 60%, 0.75)`,
+          willChange: "transform, opacity",
+        }}
+        animate={{
+          y: ["0vh", "-110vh"],
+          x: [0, p.drift, -p.drift, 0],
+          opacity: [0, 0.95, 0.85, 0],
+        }}
+        transition={{
+          duration: p.dur,
+          delay: p.delay,
+          repeat: Infinity,
+          ease: "easeOut",
+          times: [0, 0.18, 0.7, 1],
+        }}
+      />
+    ))}
 
     {/* Sparkles — tiny stars that pulse in and out */}
-    {!skip && SPARKLES.map(s => (
-      <motion.div key={s.id}
-        className="absolute rounded-full bg-white"
-        style={{ left: s.left, top: s.top, width: s.size, height: s.size }}
-        animate={{ opacity: [0, 0.75, 0], scale: [0.4, 1.3, 0.4] }}
+    {!skip && SPARKLES.map((s) => (
+      <motion.div
+        key={s.id}
+        className="absolute rounded-full"
+        style={{
+          left: s.left, top: s.top,
+          width: s.size, height: s.size,
+          background: s.tint,
+          boxShadow: `0 0 ${s.size * 3}px ${s.tint}`,
+        }}
+        animate={{ opacity: [0, 0.85, 0], scale: [0.4, 1.4, 0.4] }}
         transition={{ duration: s.dur, delay: s.delay, repeat: Infinity, ease: "easeInOut" }}
       />
     ))}
 
-    {/* Grain — fine noise for depth and premium feel */}
-    <svg className="absolute inset-0 h-full w-full opacity-[0.038]" aria-hidden="true">
+    {/* Warm vignette — anchored to body navy for depth without breaking the warm tone */}
+    <div
+      className="absolute inset-0"
+      style={{
+        background:
+          "radial-gradient(ellipse 95% 85% at 50% 55%, transparent 32%, hsla(230, 60%, 8%, 0.55) 100%)",
+      }}
+    />
+
+    {/* Grain — fine noise for premium feel */}
+    <svg aria-hidden className="absolute inset-0 h-full w-full opacity-[0.035]">
       <filter id="ss-grain">
         <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch" />
         <feColorMatrix type="saturate" values="0" />
