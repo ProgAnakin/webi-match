@@ -10,7 +10,7 @@ interface SuccessScreenProps {
   onRestart: () => void;
 }
 
-// ── Paper airplane SVG — nose points RIGHT ───────────────────────────────────────────────
+// ── Paper airplane SVG — nose points RIGHT ───────────────────────────────────────────
 const Plane = ({ size = 38, opacity = 1 }: { size?: number; opacity?: number }) => (
   <svg width={size} height={size} viewBox="0 0 38 38" fill="none" style={{ opacity }}>
     <path d="M2 19 L36 5 L24 35 L17 25 Z" fill="white" />
@@ -21,7 +21,7 @@ const Plane = ({ size = 38, opacity = 1 }: { size?: number; opacity?: number }) 
   </svg>
 );
 
-// Pre-computed sparkle positions — stable across renders
+// Pre-computed star positions — stable across renders, orange + white only
 const SPARKLES = Array.from({ length: 34 }, (_, i) => ({
   id:    i,
   left:  `${(4 + (i * 41)) % 96}%`,
@@ -29,163 +29,28 @@ const SPARKLES = Array.from({ length: 34 }, (_, i) => ({
   size:  1 + (i % 3) * 0.9,
   delay: (i * 0.43) % 7,
   dur:   2.2 + (i % 5) * 0.6,
-  tint:  i % 6 === 0 ? "hsla(27, 92%, 70%, 1)" :  // brand orange
-         i % 9 === 0 ? "hsla(38, 96%, 70%, 1)" :  // amber
-                       "rgba(255, 255, 255, 0.95)",
+  tint:  i % 3 === 0 ? "hsla(27, 92%, 70%, 0.95)" : "hsla(0, 0%, 100%, 0.9)",
 }));
 
-// Golden particles drifting upward — celebration of success
-const GOLDEN_PARTICLES = Array.from({ length: 18 }, (_, i) => ({
-  id:    i,
-  left:  `${(7 + i * 13) % 95}%`,
-  size:  3 + (i % 3),
-  delay: (i * 0.51) % 8,
-  dur:   9 + (i % 4) * 2,
-  drift: ((i % 5) - 2) * 12,
-  hue:   i % 3 === 0 ? 27 : i % 3 === 1 ? 38 : 16,
-}));
-
-// God-ray angles fan out from the top-center
-const GOD_RAYS = [-32, -22, -12, -4, 6, 14, 24, 34];
-
-// ── "Warm Bloom" celebration background ───────────────────────────────────────────────
+// ── Minimal success background — consistent with quiz screen ─────────────────
 const SuccessBackground = ({ skip }: { skip: boolean }) => (
   <div
     className="pointer-events-none absolute inset-0 overflow-hidden"
     style={{
       background:
-        "linear-gradient(180deg, hsl(230, 60%, 12%) 0%, hsl(230, 55%, 18%) 55%, hsl(20, 55%, 22%) 100%)",
+        "radial-gradient(ellipse 120% 90% at 50% 30%, hsl(230, 55%, 22%) 0%, hsl(230, 60%, 12%) 60%, hsl(230, 65%, 8%) 100%)",
     }}
   >
-    {/* Warm sunlight burst — centre top, reinforces brand orange */}
+    {/* Subtle brand accent — barely-there orange glow at top */}
     <div
       className="absolute inset-0"
       style={{
         background:
-          "radial-gradient(ellipse 75% 55% at 50% -10%, hsla(27, 92%, 60%, 0.32) 0%, transparent 65%)",
+          "radial-gradient(ellipse 60% 35% at 50% -5%, hsla(27, 92%, 55%, 0.10) 0%, transparent 70%)",
       }}
     />
 
-    {/* God rays — 8 angled beams from top-centre */}
-    {!skip && (
-      <div className="absolute" style={{ left: "50%", top: "-10%", width: 0, height: 0 }}>
-        {GOD_RAYS.map((angle, i) => (
-          <motion.div
-            key={i}
-            className="absolute"
-            style={{
-              left: 0, top: 0,
-              width: "max(3vmin, 26px)",
-              height: "max(90vh, 700px)",
-              marginLeft: "-1.5vmin",
-              transformOrigin: "top center",
-              transform: `rotate(${angle}deg)`,
-              background:
-                "linear-gradient(180deg, hsla(27, 92%, 65%, 0.30) 0%, hsla(38, 96%, 65%, 0.16) 28%, transparent 70%)",
-              willChange: "opacity",
-            }}
-            animate={{ opacity: [0.35, 0.75, 0.45, 0.65, 0.35] }}
-            transition={{
-              duration: 7 + (i % 3),
-              delay: i * 0.4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        ))}
-      </div>
-    )}
-
-    {/* Orb layer — screen blend for additive colour mixing */}
-    <div className="absolute inset-0" style={{ mixBlendMode: "screen" }}>
-
-      {/* Orb 1 — brand orange (hero), top-left */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{
-          left: "-8%", top: "-8%",
-          width: "max(760px, 70vmin)", height: "max(760px, 70vmin)",
-          background:
-            "radial-gradient(circle closest-side, hsla(27, 92%, 55%, 0.65) 0%, hsla(27, 92%, 55%, 0.20) 38%, transparent 72%)",
-          willChange: "transform",
-        }}
-        animate={skip ? {} : { x: [0, 110, 190, 130, 40, -40, 0], y: [0, 70, -30, -110, -50, 50, 0] }}
-        transition={{ duration: 19, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* Orb 2 — warm amber, bottom-right */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{
-          right: "-12%", bottom: "0%",
-          width: "max(660px, 62vmin)", height: "max(660px, 62vmin)",
-          background:
-            "radial-gradient(circle closest-side, hsla(40, 95%, 58%, 0.55) 0%, hsla(40, 95%, 58%, 0.18) 38%, transparent 72%)",
-          willChange: "transform",
-        }}
-        animate={skip ? {} : { x: [0, -130, -90, 60, 50, -40, 0], y: [0, -100, 70, 30, -40, -80, 0] }}
-        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* Orb 3 — orange-coral, top-right */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{
-          right: "-2%", top: "5%",
-          width: "max(540px, 50vmin)", height: "max(540px, 50vmin)",
-          background:
-            "radial-gradient(circle closest-side, hsla(15, 88%, 58%, 0.52) 0%, hsla(15, 88%, 58%, 0.16) 38%, transparent 72%)",
-          willChange: "transform",
-        }}
-        animate={skip ? {} : { x: [0, -90, -150, -100, -40, 20, 0], y: [0, 120, 80, -40, -60, 50, 0] }}
-        transition={{ duration: 17, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* Orb 4 — periwinkle accent */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{
-          left: "5%", bottom: "-5%",
-          width: "max(600px, 56vmin)", height: "max(600px, 56vmin)",
-          background:
-            "radial-gradient(circle closest-side, hsla(230, 70%, 62%, 0.42) 0%, hsla(230, 70%, 62%, 0.14) 38%, transparent 72%)",
-          willChange: "transform",
-        }}
-        animate={skip ? {} : { x: [0, 90, 140, 70, -15, 30, 0], y: [0, -80, -130, -65, 25, -40, 0] }}
-        transition={{ duration: 21, repeat: Infinity, ease: "easeInOut" }}
-      />
-    </div>
-
-    {/* Golden particles — drifting upward like suspended confetti */}
-    {!skip && GOLDEN_PARTICLES.map((p) => (
-      <motion.div
-        key={p.id}
-        className="absolute rounded-full"
-        style={{
-          left: p.left,
-          bottom: -10,
-          width: p.size,
-          height: p.size,
-          background: `hsla(${p.hue}, 95%, 65%, 0.95)`,
-          boxShadow: `0 0 ${p.size * 3}px hsla(${p.hue}, 95%, 60%, 0.75)`,
-          willChange: "transform, opacity",
-        }}
-        animate={{
-          y: ["0vh", "-110vh"],
-          x: [0, p.drift, -p.drift, 0],
-          opacity: [0, 0.95, 0.85, 0],
-        }}
-        transition={{
-          duration: p.dur,
-          delay: p.delay,
-          repeat: Infinity,
-          ease: "easeOut",
-          times: [0, 0.18, 0.7, 1],
-        }}
-      />
-    ))}
-
-    {/* Sparkles — tiny stars that pulse in and out */}
+    {/* Stars — orange + white, pulsing */}
     {!skip && SPARKLES.map((s) => (
       <motion.div
         key={s.id}
@@ -195,25 +60,26 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
           width: s.size, height: s.size,
           background: s.tint,
           boxShadow: `0 0 ${s.size * 3}px ${s.tint}`,
+          willChange: "opacity, transform",
         }}
-        animate={{ opacity: [0, 0.85, 0], scale: [0.4, 1.4, 0.4] }}
+        animate={{ opacity: [0.15, 1, 0.15], scale: [0.7, 1.3, 0.7] }}
         transition={{ duration: s.dur, delay: s.delay, repeat: Infinity, ease: "easeInOut" }}
       />
     ))}
 
-    {/* Warm vignette */}
+    {/* Edge vignette */}
     <div
       className="absolute inset-0"
       style={{
         background:
-          "radial-gradient(ellipse 95% 85% at 50% 55%, transparent 32%, hsla(230, 60%, 8%, 0.55) 100%)",
+          "radial-gradient(ellipse 95% 90% at 50% 50%, transparent 38%, hsla(230, 65%, 6%, 0.65) 100%)",
       }}
     />
 
     {/* Grain */}
-    <svg aria-hidden className="absolute inset-0 h-full w-full opacity-[0.035]">
+    <svg aria-hidden className="absolute inset-0 h-full w-full opacity-[0.025]">
       <filter id="ss-grain">
-        <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch" />
+        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" />
         <feColorMatrix type="saturate" values="0" />
       </filter>
       <rect width="100%" height="100%" filter="url(#ss-grain)" />
@@ -221,7 +87,7 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
   </div>
 );
 
-// ── Airplane config ──────────────────────────────────────────────────────────────────────────────────
+// ── Airplane config ───────────────────────────────────────────────────────────────────────
 const PLANES = [
   { startX: -280, startY: -220, midX: -120, midY: -160, rotA: 45,  rotB: 30,  size: 44, delay: 0.3,  dur: 1.8 },
   { startX:  300, startY: -200, midX:  130, midY: -140, rotA: 135, rotB: 150, size: 38, delay: 0.55, dur: 1.9 },
@@ -260,7 +126,7 @@ const FlyingAirplane = ({ cfg }: { cfg: typeof PLANES[0] }) => {
   );
 };
 
-// ── Envelope ──────────────────────────────────────────────────────────────────────────────────────────────
+// ── Envelope ────────────────────────────────────────────────────────────────────────────
 const EnvelopeIcon = () => (
   <svg width="148" height="112" viewBox="0 0 148 112" fill="none">
     <defs>
@@ -287,7 +153,7 @@ const EnvelopeIcon = () => (
   </svg>
 );
 
-// ── Main component ───────────────────────────────────────────────────────────────────────────────────────
+// ── Main component ───────────────────────────────────────────────────────────────────────────
 const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScreenProps) => {
   const checkScale = useMotionValue(0);
   const checkOpacity = useTransform(checkScale, [0, 1], [0, 1]);
