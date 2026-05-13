@@ -3,7 +3,7 @@ import { memo } from "react";
 
 // ── Star constellation ─────────────────────────────────────────────────────
 // Deterministic positions (no random) so the layout is stable across renders.
-// Tints rotate between white, Webidoo orange and amber for brand coherence.
+// Tints rotate between white, brand orange and amber for brand coherence.
 interface Star { left: string; top: string; size: number; delay: number; dur: number; tint: string; }
 const STARS: Star[] = Array.from({ length: 46 }, (_, i) => {
   const tint =
