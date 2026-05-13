@@ -100,7 +100,7 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
         }}
         whileDrag={{ scale: 1.015 }}
       >
-        {/* Webidoo orange brand bar */}
+        {/* brand orange bar */}
         <div
           className="flex-shrink-0"
           style={{

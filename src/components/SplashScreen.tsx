@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import webidooLogo from "@/assets/webidoo-logo.png";
+import logo from "@/assets/webidoo-logo.png";
 import DiscoveryBackground from "./DiscoveryBackground";
 import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";
@@ -11,7 +11,7 @@ interface SplashScreenProps {
 
 const AUTO_ADVANCE_MS = 4500;
 
-// ─── Language Selector ────────────────────────────────────────────────────────
+// ─── Language Selector ────────────────────────────────────────────────────────────────────────────────
 const LanguageSelector = () => {
   const { lang, setLang } = useLang();
   return (
@@ -65,8 +65,8 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
 
         {/* Logo */}
         <motion.img
-          src={webidooLogo}
-          alt="Webidoo"
+          src={logo}
+          alt="Costanzo Annichini"
           className="h-24 w-auto"
           initial={{ scale: 0.7, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
