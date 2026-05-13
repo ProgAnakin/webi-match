@@ -129,8 +129,8 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     if (redeemingId) return;
     setRedeemingId(s.id);
     setRedeemError(null);
-    const { error } = await supabase.rpc("mark_code_redeemed", { p_session_id: s.id } as never);
-    if (!error) {
+    const { data: rowsUpdated, error } = await supabase.rpc("mark_code_redeemed", { p_session_id: s.id } as never);
+    if (!error && (rowsUpdated as number) > 0) {
       setSessions((prev) =>
         prev.map((row) =>
           row.id === s.id
@@ -138,7 +138,9 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             : row
         )
       );
-    } else {
+    } else if (!error && (rowsUpdated as number) === 0) {
+      setRedeemError("0 righe aggiornate — controlla che la funzione SQL sia aggiornata con SET row_security = off.");
+    } else if (error) {
       setRedeemError(`Errore: ${error.message} (code: ${error.code})`);
     }
     setRedeemingId(null);
