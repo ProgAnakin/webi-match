@@ -76,6 +76,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [negadoCount, setNegadoCount] = useState(0);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
+  const [redeemError, setRedeemError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [showPurgeModal, setShowPurgeModal] = useState(false);
   const [purging, setPurging] = useState(false);
@@ -127,6 +128,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   const markRedeemed = async (s: Session) => {
     if (redeemingId) return;
     setRedeemingId(s.id);
+    setRedeemError(null);
     const { error } = await supabase.rpc("mark_code_redeemed", { p_session_id: s.id } as never);
     if (!error) {
       setSessions((prev) =>
@@ -136,6 +138,8 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             : row
         )
       );
+    } else {
+      setRedeemError(`Errore: ${error.message} (code: ${error.code})`);
     }
     setRedeemingId(null);
   };
@@ -296,6 +300,19 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         </motion.div>
       )}
 
+      {/* Redeem error feedback */}
+      <AnimatePresence>
+        {redeemError && (
+          <motion.div
+            className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-400 flex items-center justify-between"
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+          >
+            <span>{redeemError}</span>
+            <button onClick={() => setRedeemError(null)} className="ml-3 opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Purge success feedback */}
       <AnimatePresence>
         {purgedCount !== null && (
@@ -351,6 +368,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         ))}
 
         <div className="ml-auto flex items-center gap-2">
+          {/* Export CSV */}
           <button
             onClick={exportToCSV}
             disabled={exporting}
@@ -360,6 +378,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             <Download className="h-3 w-3" /> {exporting ? "…" : "Esporta CSV"}
           </button>
 
+          {/* Purge old sessions */}
           <button
             onClick={openPurgeModal}
             className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-95 transition-colors"
@@ -368,6 +387,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             <Trash2 className="h-3 w-3" /> Pulisci (7gg)
           </button>
 
+          {/* Refresh */}
           <button
             onClick={() => { fetchSessions(); fetchNegado(); }}
             className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground active:scale-95"
