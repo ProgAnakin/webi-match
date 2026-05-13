@@ -7,7 +7,7 @@
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20%2B%20Edge%20Functions-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 [![License](https://img.shields.io/badge/license-Proprietary-red)](./LICENSE)
 
-**Interactive product discovery kiosk for Webidoo retail stores — built for iPad, running in production.**
+**Interactive product discovery kiosk for Costanzo Annichini retail stores — built for iPad, running in production.**
 
 Customers swipe through 8 personalised questions — Tinder-style — and receive an instant product recommendation with a dedicated discount and a personalised video from a consultant. Email is captured for CRM and newsletter integration.
 
@@ -15,7 +15,7 @@ Customers swipe through 8 personalised questions — Tinder-style — and receiv
 
 ## Overview
 
-Webi-Match is a touchscreen kiosk experience designed for iPad deployment in Webidoo electronics retail stores. The app guides customers through a short preference quiz and produces a tailored gadget recommendation, driving both in-store conversion and post-visit engagement via automated email follow-up.
+Webi-Match is a touchscreen kiosk experience designed for iPad deployment in Costanzo Annichini electronics retail stores. The app guides customers through a short preference quiz and produces a tailored gadget recommendation, driving both in-store conversion and post-visit engagement via automated email follow-up.
 
 **Flow:**
 `Attract Screen → Language Selection → Welcome + Data Capture → Quiz (8 swipes) → Match Result → Success + Email Delivery`
@@ -160,4 +160,4 @@ Place product images in `public/products/` and reference them in `src/data/produ
 
 ## License
 
-Proprietary — © Webidoo. All rights reserved.
+Proprietary — © Costanzo Annichini. All rights reserved.
