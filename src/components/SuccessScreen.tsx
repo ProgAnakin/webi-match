@@ -10,7 +10,7 @@ interface SuccessScreenProps {
   onRestart: () => void;
 }
 
-// ── Paper airplane SVG — nose points RIGHT ─────────────────────────────────
+// ── Paper airplane SVG — nose points RIGHT ───────────────────────────────────────────────
 const Plane = ({ size = 38, opacity = 1 }: { size?: number; opacity?: number }) => (
   <svg width={size} height={size} viewBox="0 0 38 38" fill="none" style={{ opacity }}>
     <path d="M2 19 L36 5 L24 35 L17 25 Z" fill="white" />
@@ -48,7 +48,7 @@ const GOLDEN_PARTICLES = Array.from({ length: 18 }, (_, i) => ({
 // God-ray angles fan out from the top-center
 const GOD_RAYS = [-32, -22, -12, -4, 6, 14, 24, 34];
 
-// ── "Warm Bloom" celebration background ────────────────────────────────────
+// ── "Warm Bloom" celebration background ───────────────────────────────────────────────
 const SuccessBackground = ({ skip }: { skip: boolean }) => (
   <div
     className="pointer-events-none absolute inset-0 overflow-hidden"
@@ -221,7 +221,7 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
   </div>
 );
 
-// ── Airplane config ─────────────────────────────────────────────────────────
+// ── Airplane config ──────────────────────────────────────────────────────────────────────────────────
 const PLANES = [
   { startX: -280, startY: -220, midX: -120, midY: -160, rotA: 45,  rotB: 30,  size: 44, delay: 0.3,  dur: 1.8 },
   { startX:  300, startY: -200, midX:  130, midY: -140, rotA: 135, rotB: 150, size: 38, delay: 0.55, dur: 1.9 },
@@ -260,7 +260,7 @@ const FlyingAirplane = ({ cfg }: { cfg: typeof PLANES[0] }) => {
   );
 };
 
-// ── Envelope ────────────────────────────────────────────────────────────────
+// ── Envelope ──────────────────────────────────────────────────────────────────────────────────────────────
 const EnvelopeIcon = () => (
   <svg width="148" height="112" viewBox="0 0 148 112" fill="none">
     <defs>
@@ -287,7 +287,7 @@ const EnvelopeIcon = () => (
   </svg>
 );
 
-// ── Main component ───────────────────────────────────────────────────────────
+// ── Main component ───────────────────────────────────────────────────────────────────────────────────────
 const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScreenProps) => {
   const checkScale = useMotionValue(0);
   const checkOpacity = useTransform(checkScale, [0, 1], [0, 1]);
@@ -303,7 +303,7 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
   }, []);
 
   const benefits = [
-    { icon: "🎬", title: t.success.benefits.video.title,    desc: t.success.benefits.video.desc,    highlight: false },
+    { icon: "🎦", title: t.success.benefits.video.title,    desc: t.success.benefits.video.desc,    highlight: false },
     { icon: "📖", title: t.success.benefits.manual.title,   desc: t.success.benefits.manual.desc,   highlight: false },
     { icon: "❓", title: t.success.benefits.faq.title,      desc: t.success.benefits.faq.desc,      highlight: false },
     { icon: "🏷️", title: t.success.benefits.discount.title, desc: t.success.benefits.discount.desc, highlight: true  },
@@ -437,7 +437,7 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
 
         <motion.p className="text-[10px] text-muted-foreground/40 select-none"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6 }}>
-          © {new Date().getFullYear()} Webidoo · Webi-Match
+          © {new Date().getFullYear()} Costanzo Annichini · Webi-Match
         </motion.p>
       </motion.div>
     </div>
