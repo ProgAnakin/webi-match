@@ -73,7 +73,7 @@ export const LoginForm = ({ onLoginSuccess, onMfaRequired }: LoginFormProps) => 
         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
         <div className="text-5xl">📊</div>
         <h1 className="text-2xl font-bold text-foreground">Dashboard Analytics</h1>
-        <p className="text-sm text-muted-foreground">Accesso riservato a Webidoo</p>
+        <p className="text-sm text-muted-foreground">Accesso riservato</p>
         <div className="space-y-3 text-left">
           <input type="email" placeholder="Email" value={email} autoComplete="email"
             onChange={(e) => { setEmail(e.target.value); setError(""); }}
