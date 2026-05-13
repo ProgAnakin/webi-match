@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import webidooLogo from "@/assets/webidoo-logo.png";
+import logo from "@/assets/webidoo-logo.png";
 
 function getClientId(): string {
   const idKey = "wb_client_id";
@@ -177,7 +177,7 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
       transition={{ duration: 0.4 }}
     >
       <div className="flex flex-col items-center gap-6 px-8 text-center">
-        <img src={webidooLogo} alt="Webidoo" className="h-12 object-contain" />
+        <img src={logo} alt="Costanzo Annichini" className="h-12 object-contain" />
 
         <motion.div
           className="text-7xl"

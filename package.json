@@ -1,6 +1,6 @@
 {
   "name": "webi-match",
-  "description": "Interactive product-matching kiosk experience for Webidoo retail stores — swipe-based quiz, real-time analytics, multi-store management.",
+  "description": "Interactive product-matching kiosk experience — swipe-based quiz, real-time analytics, multi-store management.",
   "private": true,
   "version": "1.0.0",
   "type": "module",
