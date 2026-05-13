@@ -10,7 +10,7 @@ interface SuccessScreenProps {
   onRestart: () => void;
 }
 
-// ── Paper airplane SVG — nose points RIGHT ─────────────────────────────────
+// ── Paper airplane SVG — nose points RIGHT ───────────────────────────────────────────
 const Plane = ({ size = 38, opacity = 1 }: { size?: number; opacity?: number }) => (
   <svg width={size} height={size} viewBox="0 0 38 38" fill="none" style={{ opacity }}>
     <path d="M2 19 L36 5 L24 35 L17 25 Z" fill="white" />
@@ -48,16 +48,7 @@ const GOLDEN_PARTICLES = Array.from({ length: 18 }, (_, i) => ({
 // God-ray angles fan out from the top-center
 const GOD_RAYS = [-32, -22, -12, -4, 6, 14, 24, 34];
 
-// ── "Warm Bloom" celebration background ────────────────────────────────────
-// Layer stack (back → front):
-//   1. Navy → warm-floor gradient (sunset hint)
-//   2. Centred sunlight burst (top)
-//   3. 8 god-rays fanning from top-centre
-//   4. 4 warm orbs (orange/amber/coral/violet) with screen-blend
-//   5. Golden particles drifting upward (celebratory confetti suspension)
-//   6. Twinkling sparkles
-//   7. Warm vignette
-//   8. Grain noise
+// ── "Warm Bloom" celebration background ──────────────────────────────────────────
 const SuccessBackground = ({ skip }: { skip: boolean }) => (
   <div
     className="pointer-events-none absolute inset-0 overflow-hidden"
@@ -150,7 +141,7 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
         transition={{ duration: 17, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Orb 4 — periwinkle accent (the "horizon at dusk") */}
+      {/* Orb 4 — periwinkle accent */}
       <motion.div
         className="absolute rounded-full"
         style={{
@@ -210,7 +201,7 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
       />
     ))}
 
-    {/* Warm vignette — anchored to body navy for depth without breaking the warm tone */}
+    {/* Warm vignette */}
     <div
       className="absolute inset-0"
       style={{
@@ -219,7 +210,7 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
       }}
     />
 
-    {/* Grain — fine noise for premium feel */}
+    {/* Grain */}
     <svg aria-hidden className="absolute inset-0 h-full w-full opacity-[0.035]">
       <filter id="ss-grain">
         <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch" />
@@ -230,20 +221,13 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
   </div>
 );
 
-// ── Airplane config ─────────────────────────────────────────────────────────
-// Each plane: startX/Y from center (envelope), arc midpoint, rotation at start/end, size
+// ── Airplane config ───────────────────────────────────────────────────────────────────────
 const PLANES = [
-  // from top-left
   { startX: -280, startY: -220, midX: -120, midY: -160, rotA: 45,  rotB: 30,  size: 44, delay: 0.3,  dur: 1.8 },
-  // from top-right
   { startX:  300, startY: -200, midX:  130, midY: -140, rotA: 135, rotB: 150, size: 38, delay: 0.55, dur: 1.9 },
-  // from right
   { startX:  380, startY:  30,  midX:  160, midY: -20,  rotA: 180, rotB: 160, size: 50, delay: 0.8,  dur: 2.0 },
-  // from bottom-left large hero
   { startX: -320, startY:  260, midX: -120, midY:  120, rotA: -45, rotB: -20, size: 52, delay: 1.1,  dur: 2.2 },
-  // from top, small
   { startX:   60, startY: -260, midX:   20, midY: -130, rotA: 90,  rotB: 75,  size: 30, delay: 1.4,  dur: 1.7 },
-  // straggler from far left
   { startX: -420, startY:  60,  midX: -180, midY:   0,  rotA: 0,   rotB: 10,  size: 34, delay: 2.0,  dur: 2.1 },
 ];
 
@@ -276,7 +260,7 @@ const FlyingAirplane = ({ cfg }: { cfg: typeof PLANES[0] }) => {
   );
 };
 
-// ── Envelope ────────────────────────────────────────────────────────────────
+// ── Envelope ────────────────────────────────────────────────────────────────────────────
 const EnvelopeIcon = () => (
   <svg width="148" height="112" viewBox="0 0 148 112" fill="none">
     <defs>
@@ -289,29 +273,21 @@ const EnvelopeIcon = () => (
         <stop offset="100%" stopColor="hsl(225,50%,18%)" />
       </linearGradient>
     </defs>
-    {/* Shadow */}
     <ellipse cx="74" cy="108" rx="52" ry="5" fill="black" opacity="0.22" />
-    {/* Body */}
     <rect x="4" y="10" width="140" height="92" rx="10" fill="url(#env-body)" stroke="hsl(var(--border))" strokeWidth="1.8" />
-    {/* Inner highlight */}
     <rect x="5" y="11" width="138" height="30" rx="9" fill="white" opacity="0.04" />
-    {/* Flap */}
     <path d="M4 20 L74 66 L144 20" stroke="hsl(var(--border))" strokeWidth="1.8" strokeLinejoin="round" fill="url(#env-flap)" />
-    {/* Flap inner fold line */}
     <path d="M4 20 L74 66 L144 20" stroke="white" strokeWidth="0.6" strokeLinejoin="round" fill="none" opacity="0.08" />
-    {/* Bottom fold lines */}
     <path d="M4 102 L50 60" stroke="hsl(var(--border))" strokeWidth="1" opacity="0.5" />
     <path d="M144 102 L98 60" stroke="hsl(var(--border))" strokeWidth="1" opacity="0.5" />
-    {/* Seal */}
     <circle cx="74" cy="68" r="16" fill="hsl(var(--primary))" />
     <circle cx="74" cy="68" r="16" fill="white" opacity="0.12" />
     <path d="M66 68L71 73L82 62" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-    {/* Seal glow */}
     <circle cx="74" cy="68" r="16" stroke="white" strokeWidth="1" opacity="0.25" />
   </svg>
 );
 
-// ── Main component ───────────────────────────────────────────────────────────
+// ── Main component ───────────────────────────────────────────────────────────────────────────
 const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScreenProps) => {
   const checkScale = useMotionValue(0);
   const checkOpacity = useTransform(checkScale, [0, 1], [0, 1]);
@@ -327,7 +303,7 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
   }, []);
 
   const benefits = [
-    { icon: "🎬", title: t.success.benefits.video.title,    desc: t.success.benefits.video.desc,    highlight: false },
+    { icon: "🎦", title: t.success.benefits.video.title,    desc: t.success.benefits.video.desc,    highlight: false },
     { icon: "📖", title: t.success.benefits.manual.title,   desc: t.success.benefits.manual.desc,   highlight: false },
     { icon: "❓", title: t.success.benefits.faq.title,      desc: t.success.benefits.faq.desc,      highlight: false },
     { icon: "🏷️", title: t.success.benefits.discount.title, desc: t.success.benefits.discount.desc, highlight: true  },
@@ -347,7 +323,6 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
 
         {/* ── Envelope + airplanes ── */}
         <div className="relative flex items-center justify-center" style={{ width: 220, height: 180 }}>
-          {/* Pulse rings — 3 expanding rings */}
           {!reduceMotion && [0, 0.6, 1.2].map((d, i) => (
             <motion.div key={i}
               className="pointer-events-none absolute rounded-2xl border border-primary/50"
@@ -357,12 +332,10 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
             />
           ))}
 
-          {/* Airplanes */}
           {PLANES.map((cfg, i) => (
             <FlyingAirplane key={i} cfg={cfg} />
           ))}
 
-          {/* Envelope */}
           <motion.div
             className="relative z-10"
             initial={{ scale: 0, rotate: -12, y: 20 }}
@@ -464,7 +437,7 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
 
         <motion.p className="text-[10px] text-muted-foreground/40 select-none"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6 }}>
-          © {new Date().getFullYear()} Webidoo · Webi-Match
+          © {new Date().getFullYear()} Costanzo Annichini · Webi-Match
         </motion.p>
       </motion.div>
     </div>
