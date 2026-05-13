@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import webidooLogo from "@/assets/webidoo-logo.png";
+import logo from "@/assets/webidoo-logo.png";
 import { AttractBackground } from "./AttractBackground";
 import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";
 
 const MSG_EMOJIS = ["🎯", "🎁", "💡", "✨"];
 
-// ── Language picker modal ──────────────────────────────────────────────────────
+// ── Language picker modal ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 const LanguageModal = ({ onClose }: { onClose: () => void }) => {
   const { lang, setLang } = useLang();
   return (
@@ -71,7 +71,7 @@ const LanguageModal = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-// ── Main attract screen ────────────────────────────────────────────────────────
+// ── Main attract screen ───────────────────────────────────────────────────────────────────────────────────────────
 interface AttractScreenProps {
   onComplete: () => void;
 }
@@ -123,8 +123,8 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
             borderRadius: "50%",
           }} />
           <img
-            src={webidooLogo}
-            alt="Webidoo Store"
+            src={logo}
+            alt="Costanzo Annichini"
             className="relative h-28 w-auto"
             style={{ animation: "at-logo-glow 3s ease-in-out infinite" }}
           />
@@ -163,7 +163,7 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
         >
           <p className="text-xl font-bold text-white/85">{t.splash.headline}</p>
           <p className="text-base font-semibold" style={{ color: "hsl(27,92%,65%)" }}>
-            {t.splash.sub} ✦
+            {t.splash.sub} ✶
           </p>
         </motion.div>
 
