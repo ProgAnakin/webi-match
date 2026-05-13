@@ -24,7 +24,7 @@ interface DashboardProps {
   onLogout: () => void;
 }
 
-// ─── Date helpers ─────────────────────────────────────────────────────────────
+// ─── Date helpers ────────────────────────────────────────────────────────────────────────────────
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -79,7 +79,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     }, { replace: true });
   };
 
-  // ── 9. Date filter validation ──────────────────────────────────────────────
+  // ── 9. Date filter validation ────────────────────────────────────────────────────────────────
   const dateRangeInvalid = !!(dateFrom && dateTo && dateTo < dateFrom);
 
   const [sessions, setSessions] = useState<QuizSession[]>([]);
@@ -113,7 +113,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     });
   }, []);
 
-  // ── 6. Server-side filtering ───────────────────────────────────────────────
+  // ── 6. Server-side filtering ────────────────────────────────────────────────────────────────
   const fetchData = useCallback(async (isManual = false) => {
     if (isManual && Date.now() - lastFetchRef.current < REFRESH_DEBOUNCE_MS) return;
     lastFetchRef.current = Date.now();
@@ -197,7 +197,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     return { uniqueEmails, avgMatch, todaySessions, productStats };
   }, [filteredSessions, total]);
 
-  // ── 3. Trend indicators ────────────────────────────────────────────────────
+  // ── 3. Trend indicators ────────────────────────────────────────────────────────────────────────
   // Trends require a previous period to compare against. Since we now use server-side
   // filtering and sessions only contain the current period window, trend badges are
   // shown as null (hidden) — a future enhancement could do a second Supabase query
@@ -207,7 +207,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     [],
   );
 
-  // ─── Extra metrics ───────────────────────────────────────────────────────────
+  // ─── Extra metrics ────────────────────────────────────────────────────────────────────────────────
 
   const { emailSentCount, emailDeliveryRate, hourlyCounts, peakHour, maxHourly,
           matchBrackets, maxBracket, returningCount, dayCounts, maxDay,
@@ -258,7 +258,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
              codesGenerated, codesUsed };
   }, [filteredSessions, total]);
 
-  // ── 4. Conversion rate (Tasso claim) ─────────────────────────────────────
+  // ── 4. Conversion rate (Tasso claim) ────────────────────────────────────────────────────────────
   const tassoClaimPct = funnel && funnel.resultShown > 0
     ? Math.round((funnel.claimed / funnel.resultShown) * 100)
     : null;
@@ -292,7 +292,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
   // Redemption rate line (#8)
   const redemptionPct = codesGenerated > 0 ? Math.round((codesUsed / codesGenerated) * 100) : 0;
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
+  // ─── Render ──────────────────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-background px-4 py-8">
@@ -303,7 +303,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
           initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
           <div>
             <h1 className="text-2xl font-bold text-foreground">📊 Analytics</h1>
-            <p className="text-xs text-muted-foreground">Dati in tempo reale · Webidoo</p>
+            <p className="text-xs text-muted-foreground">Dati in tempo reale · Costanzo Annichini</p>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => fetchData(true)}
@@ -892,7 +892,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             </motion.div>
 
             <p className="pb-4 text-center text-xs text-muted-foreground">
-              Webi Match · Analytics riservate a Webidoo
+              Webi Match · Analytics · Costanzo Annichini
             </p>
           </>
         )}
