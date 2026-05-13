@@ -235,7 +235,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td style="font-size:12px;font-weight:800;color:#fff;letter-spacing:0.14em;">SCONTO SPECIALE</td>
-                <td align="right" style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.8);letter-spacing:0.1em;">WEBIDOO STORE</td>
+                <td align="right" style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.8);letter-spacing:0.1em;">COSTANZO ANNICHINI</td>
               </tr>
             </table>
           </td>
@@ -271,7 +271,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         <tr>
           <td style="background:${C.cardHeader};padding:12px 28px 14px;text-align:center;border-radius:0 0 14px 14px;">
             ${barcodesvg(C.orange)}
-            <p style="margin:5px 0 0;font-size:8px;color:${C.muted};letter-spacing:0.12em;text-transform:uppercase;">Biglietto Sconto Webidoo</p>
+            <p style="margin:5px 0 0;font-size:8px;color:${C.muted};letter-spacing:0.12em;text-transform:uppercase;">Biglietto Sconto</p>
           </td>
         </tr>
       </table>
@@ -290,7 +290,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         <td width="14" style="padding:0;">&nbsp;</td>
         <td valign="middle" style="padding:0;">
           <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:${C.fg};line-height:1.3;">Mostra l'email</p>
-          <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">Al consulente Webidoo in negozio</p>
+          <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">Al consulente in negozio</p>
         </td>
       </tr></table>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0;"><tr><td style="border-top:1px solid ${C.border};height:0;font-size:0;line-height:0;">&nbsp;</td></tr></table>
@@ -417,7 +417,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
 
   <tr>
     <td style="background:${C.cardHeader};padding:24px 32px 28px;text-align:center;border-top:1px solid ${C.border};border-radius:0 0 20px 20px;">
-      <p style="margin:0 0 4px;font-size:15px;font-weight:800;color:${C.fg};letter-spacing:0.1em;">WEBIDOO STORE</p>
+      <p style="margin:0 0 4px;font-size:15px;font-weight:800;color:${C.fg};letter-spacing:0.1em;">COSTANZO ANNICHINI</p>
       <p style="margin:0 0 12px;font-size:11px;color:${C.muted};">Powered by Webi-Match</p>
       ${fullName ? `<p style="margin:0 0 10px;font-size:12px;color:${C.muted};">Inviato a <strong style="color:${C.fg};">${fullName}</strong>${recipientEmail ? ` · ${recipientEmail}` : ""}</p>` : ""}
       <div style="border-top:1px solid ${C.border};margin:12px auto;max-width:200px;"></div>
@@ -549,7 +549,7 @@ serve(async (req) => {
     method: "POST",
     headers: { "api-key": BREVO_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({
-      sender: { name: "Webidoo Store", email: "costanzobruno.annichini@webidoo.com" },
+      sender: { name: "Costanzo Annichini", email: "costanzo.annichini@gmail.com" },
       to: [{ email: record.email, name: [nome, String(record.cognome ?? "")].filter(Boolean).join(" ") }],
       subject: `${subjName} tuo match è ${pct}% — Codice sconto valido 24h ⏰`,
       htmlContent: html,
