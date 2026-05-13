@@ -1,7 +1,7 @@
 {
   "name": "Webi Match",
   "short_name": "Webi Match",
-  "description": "Trova il tuo gadget tech ideale — powered by Webidoo",
+  "description": "Trova il tuo gadget tech ideale",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

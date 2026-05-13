@@ -5,10 +5,10 @@ export interface Store {
 }
 
 export const STORES: Store[] = [
-  { id: "corso-vercelli", name: 'Webidoo Store "Corso Vercelli"', shortName: "Corso Vercelli" },
-  { id: "5-giornate",     name: 'Webidoo Store "5 Giornate"',    shortName: "5 Giornate"    },
-  { id: "verona",         name: 'Webidoo Store "Verona"',         shortName: "Verona"        },
-  { id: "bergamo",        name: 'Webidoo Store "Bergamo"',        shortName: "Bergamo"       },
+  { id: "corso-vercelli", name: 'Store "Corso Vercelli"', shortName: "Corso Vercelli" },
+  { id: "5-giornate",     name: 'Store "5 Giornate"',    shortName: "5 Giornate"    },
+  { id: "verona",         name: 'Store "Verona"',         shortName: "Verona"        },
+  { id: "bergamo",        name: 'Store "Bergamo"',        shortName: "Bergamo"       },
 ];
 
 export const STORE_LS_KEY = "wb_store_id";

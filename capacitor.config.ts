@@ -1,8 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  // Unique app identifier — change com.webidoo.webimatch if you publish to stores
-  appId: "com.webidoo.webimatch",
+  appId: "com.annichini.webimatch",
   appName: "Webi Match",
   // Vite build output directory
   webDir: "dist",
