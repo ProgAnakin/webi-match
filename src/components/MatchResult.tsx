@@ -33,7 +33,7 @@ interface MatchResultProps {
   claimError?: boolean;
 }
 
-// Webidoo brand confetti: oranges, blues, amber, white. All indexes map to
+// Brand confetti palette: oranges, blues, amber, white. All indexes map to
 // the --confetti-N variables in index.css.
 const BRAND_CONFETTI_INDEXES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // orange range + navy blues + amber + white
 
@@ -45,7 +45,7 @@ function readCssConfettiColors(): string[] {
   });
 }
 
-// ── Firework burst — particles explode outward from a fixed point ────────────
+// ── Firework burst — particles explode outward from a fixed point ────────────────────
 interface BurstCfg { bx: number; by: number; startDelay: number; cycle: number; count: number; }
 
 // 12 positions with fast overlapping cycles — multiple bursts visible at once
@@ -148,7 +148,7 @@ const MatchResult = ({
   const { play } = useSound();
   const tier = useDevicePerformance();
 
-  // ── Change-email state ─────────────────────────────────────────────────────
+  // ── Change-email state ────────────────────────────────────────────────────────────────────────────
   const emailTapCount = useRef(0);
   const emailTapTimer = useRef<ReturnType<typeof setTimeout>>();
   const [showChangeModal, setShowChangeModal] = useState(false);
@@ -213,7 +213,7 @@ const MatchResult = ({
     : matchPercent >= 65 ? "bg-orange-400 text-gray-900"
     : "bg-blue-500";
 
-  // ── Email-tap handler ──────────────────────────────────────────────────────
+  // ── Email-tap handler ────────────────────────────────────────────────────────────────────────────
   const handleEmailTap = useCallback(() => {
     emailTapCount.current += 1;
     clearTimeout(emailTapTimer.current);
@@ -243,7 +243,7 @@ const MatchResult = ({
     return () => { if (pinLockRef.current) clearInterval(pinLockRef.current); };
   }, [pinLockedSeconds]);
 
-  // ── PIN keypad handler — server-side verification ──────────────────────────
+  // ── PIN keypad handler — server-side verification ──────────────────────────────────────────
   const handlePinKey = useCallback(async (key: number | "⌫") => {
     if (pinVerifying || pinLockedSeconds > 0) return;
     if (key === "⌫") { setPinValue((p) => p.slice(0, -1)); setPinError(false); return; }
@@ -278,7 +278,7 @@ const MatchResult = ({
     }
   }, [pinValue, pinVerifying, pinLockedSeconds]);
 
-  // ── Save new email ─────────────────────────────────────────────────────────
+  // ── Save new email ──────────────────────────────────────────────────────────────────────────────────
   const handleSaveEmail = useCallback(() => {
     setNewEmailTouched(true);
     if (!EMAIL_REGEX.test(newEmail.trim())) return;
@@ -322,7 +322,7 @@ const MatchResult = ({
           animate={{ scale: [1, 1.06, 1] }}
           transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
         />
-        {/* Brand orange anchor — keeps Webidoo identity present regardless of match tier */}
+        {/* Brand orange anchor */}
         <div
           className="absolute rounded-full"
           style={{
@@ -356,7 +356,7 @@ const MatchResult = ({
         </div>
       )}
 
-      {/* ── Change-email modal ─────────────────────────────────────────────── */}
+      {/* ── Change-email modal ────────────────────────────────────────────────────────────────────────── */}
       <AnimatePresence>
         {showChangeModal && (
           <motion.div
@@ -628,7 +628,7 @@ const MatchResult = ({
           ))}
         </motion.div>
 
-        {/* ── Email reminder (5-tap secret) ─────────────────────────────────── */}
+        {/* ── Email reminder (5-tap secret) ───────────────────────────────────────────────────── */}
         <motion.div
           className="w-full"
           initial={{ opacity: 0, y: 12 }}
