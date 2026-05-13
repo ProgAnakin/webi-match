@@ -55,12 +55,12 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Confetti palette — Webidoo brand colors */
-    --confetti-1:  20  86% 52%;   /* Webidoo orange — primary */
+    /* Confetti palette */
+    --confetti-1:  20  86% 52%;   /* orange — primary */
     --confetti-2:  25  90% 68%;   /* orange light / peach     */
     --confetti-3:  18  92% 60%;   /* orange-coral             */
     --confetti-4:  22  95% 72%;   /* pale peach               */
-    --confetti-5:  228 65% 58%;   /* Webidoo navy (lifted)    */
+    --confetti-5:  228 65% 58%;   /* navy (lifted)    */
     --confetti-6:  224 80% 72%;   /* sky-blue accent          */
     --confetti-7:  228 55% 78%;   /* periwinkle               */
     --confetti-8:  38  96% 60%;   /* warm amber               */
@@ -117,10 +117,10 @@
   }
 }
 
-/* ── Welcome screen background animations ───────────────────────────────────
+/* ── Welcome screen background animations ───────────────────────────────────────────────────────
    All @keyframes here — processed by Vite, guaranteed to work on iOS Safari.
    Only transform + opacity animated (GPU compositor, zero layout cost).
-──────────────────────────────────────────────────────────────────────────── */
+─────────────────────────────────────────────────────────────────────────────────── */
 
 /* Colour orbs — slow ambient drift */
 @keyframes wb-orb-a {
@@ -188,7 +188,7 @@
   100% { opacity: 0;    transform: translate(-28vw, 16px); }
 }
 
-/* ── Attract screen animations ──────────────────────────────────────────────── */
+/* ── Attract screen animations ──────────────────────────────────────────────────────────────────────────────────────── */
 
 /* Product icons float upward like embers */
 @keyframes at-float-up {
