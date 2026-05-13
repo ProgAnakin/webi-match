@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
-import webidooLogo from "@/assets/webidoo-logo.png";
+import logo from "@/assets/webidoo-logo.png";
 import DiscoveryBackground from "./DiscoveryBackground";
 import AdminPinOverlay from "./AdminPinOverlay";
 import { useSound } from "@/hooks/useSound";
@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 // Staff / test emails that bypass the 1-hour participation cooldown.
 // Remove an entry here when the account should be subject to normal rules.
 const COOLDOWN_BYPASS = new Set([
-  "costanzobruno.annichini@webidoo.com",
+  "costanzo.annichini@gmail.com",
   "costatocb@gmail.com",
 ]);
 
@@ -38,7 +38,7 @@ function sanitizeName(value: string): string {
     .slice(0, 100);
 }
 
-// ─── Language Selector ────────────────────────────────────────────────────────
+// ─── Language Selector ───────────────────────────────────────────────────────────────────────
 const LanguageSelector = () => {
   const { lang, setLang } = useLang();
   return (
@@ -61,7 +61,7 @@ const LanguageSelector = () => {
   );
 };
 
-// ─── Welcome Form ─────────────────────────────────────────────────────────────
+// ─── Welcome Form ───────────────────────────────────────────────────────────────────────────
 const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const { t } = useLang();
   const [nome, setNome] = useState("");
@@ -118,12 +118,11 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
           return;
         }
       } catch {
-        // RPC unavailable or network failure — check sessionStorage as local fallback
         const ssKey = `wb_cooldown_${normalizedEmail}`;
         const lastAttempt = sessionStorage.getItem(ssKey);
         if (lastAttempt) {
           const diffMs = Date.now() - parseInt(lastAttempt, 10);
-          const cooldownMs = 60 * 60 * 1000; // 1 hour local fallback
+          const cooldownMs = 60 * 60 * 1000;
           if (diffMs < cooldownMs) {
             setCooldownHours(Math.ceil((cooldownMs - diffMs) / 3600000));
             setChecking(false);
@@ -157,7 +156,6 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
 
   return (
     <div className="w-full space-y-3">
-      {/* Nome + Cognome */}
       <div className="flex gap-3">
         <div className="flex-1">
           <input type="text" placeholder={t.welcome.firstName} value={nome}
@@ -175,7 +173,6 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
         </div>
       </div>
 
-      {/* Email */}
       <div className="relative">
         <input type="email" placeholder={t.welcome.emailPlaceholder}
           value={email} onChange={handleEmail}
@@ -209,7 +206,6 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
         </motion.p>
       )}
 
-      {/* CTA */}
       <motion.button
         onClick={handleStart}
         disabled={checking}
@@ -219,7 +215,6 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
         {checking ? "…" : t.welcome.cta}
       </motion.button>
 
-      {/* Trust / Privacy */}
       <div className="flex flex-col items-center gap-1">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
           <span>🔒</span>
@@ -231,7 +226,7 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   );
 };
 
-// ─── Store Badge ──────────────────────────────────────────────────────────────
+// ─── Store Badge ────────────────────────────────────────────────────────────────────────────
 const StoreBadge = ({ onTap, refreshKey }: { onTap: () => void; refreshKey: number }) => {
   const { t } = useLang();
   const storeId = getStoredStoreId();
@@ -252,7 +247,7 @@ const StoreBadge = ({ onTap, refreshKey }: { onTap: () => void; refreshKey: numb
   );
 };
 
-// ─── Welcome Screen ────────────────────────────────────────────────────────────
+// ─── Welcome Screen ────────────────────────────────────────────────────────────────────────────
 const LOGO_TAPS_REQUIRED = 6;
 
 const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenProps) => {
@@ -277,19 +272,16 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
     <div className="flex min-h-screen flex-col items-center justify-center px-6 py-8">
       <DiscoveryBackground />
 
-      {/* Language selector — top-right */}
       <div className="absolute top-4 right-4 z-10">
         <LanguageSelector />
       </div>
 
-      {/* Copyright — bottom-center */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
         <span className="text-[10px] text-muted-foreground/40 select-none">
-          © {new Date().getFullYear()} Webidoo · Webi-Match
+          © {new Date().getFullYear()} Costanzo Annichini · Webi-Match
         </span>
       </div>
 
-      {/* Store badge — bottom-left */}
       <div className="absolute bottom-4 left-4 z-10 flex flex-col items-start gap-1.5">
         <StoreBadge onTap={() => setShowPin(true)} refreshKey={storeBadgeKey} />
         {settingsLoadFailed && (
@@ -299,7 +291,6 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
         )}
       </div>
 
-      {/* Admin PIN overlay */}
       <AnimatePresence>
         {showPin && (
           <AdminPinOverlay
@@ -317,10 +308,9 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: "easeOut" }}
       >
-        {/* Logo — compact signature */}
         <motion.img
-          src={webidooLogo}
-          alt="Webidoo Store"
+          src={logo}
+          alt="Costanzo Annichini"
           className="h-24 w-auto"
           onClick={handleLogoTap}
           initial={{ scale: 0.8, opacity: 0 }}
@@ -328,7 +318,6 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
           transition={{ duration: 0.6, delay: 0.1 }}
         />
 
-        {/* Title */}
         <motion.div
           className="text-center"
           initial={{ opacity: 0, y: 10 }}
@@ -342,7 +331,6 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
           <p className="text-sm text-muted-foreground">{t.welcome.tagline}</p>
         </motion.div>
 
-        {/* Step indicator — you are here */}
         <motion.div
           className="flex items-center gap-2"
           initial={{ opacity: 0, y: 6 }}
@@ -357,7 +345,6 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
           </span>
         </motion.div>
 
-        {/* Subtitle — focused instruction */}
         <motion.p
           className="text-center text-sm text-muted-foreground/80 leading-relaxed px-2"
           initial={{ opacity: 0 }}
@@ -367,7 +354,6 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
           {t.welcome.subtitle}
         </motion.p>
 
-        {/* Form — nome + cognome + email */}
         <WelcomeForm onStart={onStart} />
       </motion.div>
     </div>
