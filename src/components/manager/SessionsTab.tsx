@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, Search, X, Copy, Check, Mail, Clock, AlertCircle, XCircle, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshCw, Search, X, Copy, Check, Mail, Clock, AlertCircle, XCircle, CheckCircle2, ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import { STORES } from "@/data/stores";
@@ -42,9 +42,7 @@ function getSessionStatus(s: Session): "enviada" | "processando" | "sem_email" |
   if (s.email_sent) return "enviada";
   const ageMin = (Date.now() - new Date(s.created_at).getTime()) / 60_000;
   if (ageMin < 5) return "processando";
-  // Code generated but Brevo failed (edge function ran, SMTP step failed)
   if (s.discount_code) return "sem_email";
-  // Edge function never ran or failed before code generation
   return "falhou";
 }
 
@@ -52,7 +50,6 @@ function isCodeExpired(s: Session): boolean {
   return (Date.now() - new Date(s.created_at).getTime()) > 24 * 3_600_000;
 }
 
-/** Returns hours left until expiry (based on 24h from created_at). Returns null if already expired. */
 function hoursUntilExpiry(s: Session): number | null {
   const msLeft = (new Date(s.created_at).getTime() + 24 * 3_600_000) - Date.now();
   if (msLeft <= 0) return null;
@@ -79,6 +76,11 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [negadoCount, setNegadoCount] = useState(0);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [showPurgeModal, setShowPurgeModal] = useState(false);
+  const [purging, setPurging] = useState(false);
+  const [purgePreviewCount, setPurgePreviewCount] = useState<number | null>(null);
+  const [purgedCount, setPurgedCount] = useState<number | null>(null);
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
@@ -96,8 +98,6 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   }, [storeId, isGlobal]);
 
   const fetchNegado = useCallback(async () => {
-    // NOTE: negadoCount uses quiz_funnel_events which may span a different time window
-    // than the session list (300-session limit). See localNegado below for a session-derived metric.
     const [shownRes, claimedRes] = await Promise.all([
       supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "result_shown"),
       supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "claimed"),
@@ -111,10 +111,8 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     fetchNegado();
   }, [fetchSessions, fetchNegado]);
 
-  // ── Pagination — 20 sessions per page ─────────────────────────────────────
   const PAGE_SIZE = 20;
   const [currentPage, setCurrentPage] = useState(1);
-  // Reset to page 1 whenever the filter or search query changes
   useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
 
   const copyCode = async (code: string) => {
@@ -125,17 +123,11 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     } catch { /* clipboard unavailable */ }
   };
 
+  // ── Mark code redeemed — uses RPC to bypass RLS ─────────────────────────
   const markRedeemed = async (s: Session) => {
     if (redeemingId) return;
     setRedeemingId(s.id);
-    const { error } = await supabase
-      .from("quiz_sessions")
-      .update({
-        code_redeemed: true,
-        code_redeemed_at: new Date().toISOString(),
-      })
-      .eq("id", s.id);
-
+    const { error } = await supabase.rpc("mark_code_redeemed", { p_session_id: s.id } as never);
     if (!error) {
       setSessions((prev) =>
         prev.map((row) =>
@@ -147,6 +139,74 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     }
     setRedeemingId(null);
   };
+
+  // ── Export all sessions to CSV ──────────────────────────────────────────
+  const exportToCSV = useCallback(async () => {
+    setExporting(true);
+    let query = supabase
+      .from("quiz_sessions")
+      .select("id, email, nome, cognome, matched_product_id, match_percent, email_sent, discount_code, created_at, store_id, code_redeemed, code_redeemed_at")
+      .order("created_at", { ascending: false });
+
+    if (!isGlobal) query = query.eq("store_id", storeId);
+
+    const { data } = await query;
+    const rows = (data ?? []) as Session[];
+
+    const headers = ["Nome", "Cognome", "Email", "Prodotto", "Match %", "Store", "Data", "Codice Sconto", "Stato Codice", "Usato Il"];
+    const csvRows = rows.map((s) => [
+      s.nome ?? "",
+      s.cognome ?? "",
+      s.email,
+      productName(s.matched_product_id),
+      s.match_percent,
+      storeName(s.store_id),
+      formatDate(s.created_at),
+      s.discount_code ?? "",
+      s.code_redeemed ? "usato" : isCodeExpired(s) ? "scaduto" : s.discount_code ? "valido" : "sem codice",
+      s.code_redeemed_at ? formatDate(s.code_redeemed_at) : "",
+    ]);
+
+    const csvContent = [headers, ...csvRows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    // BOM prefix ensures Excel opens UTF-8 correctly
+    const blob = new Blob(["﻿" + csvContent], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `webi-match-sessioni-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setExporting(false);
+  }, [storeId, isGlobal]);
+
+  // ── Preview purge count then open modal ────────────────────────────────
+  const openPurgeModal = useCallback(async () => {
+    setPurgePreviewCount(null);
+    setShowPurgeModal(true);
+    let query = supabase
+      .from("quiz_sessions")
+      .select("id", { count: "exact", head: true })
+      .lt("created_at", new Date(Date.now() - 7 * 24 * 3_600_000).toISOString());
+    if (!isGlobal) query = query.eq("store_id", storeId);
+    const { count } = await query;
+    setPurgePreviewCount(count ?? 0);
+  }, [storeId, isGlobal]);
+
+  // ── Execute purge via RPC ───────────────────────────────────────────────
+  const executePurge = useCallback(async () => {
+    setPurging(true);
+    const { data } = await supabase.rpc("purge_sessions_older_than", { p_days: 7 } as never);
+    setPurging(false);
+    setShowPurgeModal(false);
+    setPurgedCount(data as number ?? 0);
+    fetchSessions();
+    fetchNegado();
+  }, [fetchSessions, fetchNegado]);
 
   const filtered = sessions.filter((s) => {
     const q = search.toLowerCase().trim();
@@ -174,7 +234,6 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     (s) => isCodeExpired(s) && s.discount_code && !s.code_redeemed
   ).length;
 
-  // Redemption rate KPI
   const sessionsWithCode = sessions.filter((s) => s.discount_code !== null);
   const sessionsRedeemed = sessions.filter((s) => s.code_redeemed === true);
   const redemptionTotal = sessionsWithCode.length;
@@ -189,8 +248,6 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     redemptionPct >= 20 ? "border-amber-500/20 bg-amber-500/5" :
     "border-border bg-muted/20";
 
-  // Local negado derived from current session list (may differ from funnel-event count)
-  // Sessions where the user didn't proceed to claim (no email_sent and no discount_code)
   const localNegado = sessions.length - sessions.filter((s) => s.email_sent || s.discount_code).length;
 
   return (
@@ -220,10 +277,8 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         <div className="rounded-2xl border border-border bg-muted/20 p-4 text-center">
           <p className="text-2xl font-bold text-foreground">{negadoCount}</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Match negado</p>
-          {/* Local metric: sessions where user declined before claiming (may differ from funnel count above) */}
           <p className="mt-0.5 text-[9px] text-muted-foreground/50">({localNegado} da lista)</p>
         </div>
-        {/* Redemption rate KPI */}
         <div className={`rounded-2xl border p-4 text-center ${redemptionBorderBg}`}>
           <p className={`text-2xl font-bold ${redemptionColor}`}>{redemptionUsed}/{redemptionTotal}</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Codici usati</p>
@@ -240,6 +295,19 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
           💡 <strong className="text-foreground">{expiredReusable}</strong> codici scaduti (più di 24h) possono essere riutilizzati manualmente per nuovi clienti — copia il codice e consegnalo al consulente.
         </motion.div>
       )}
+
+      {/* Purge success feedback */}
+      <AnimatePresence>
+        {purgedCount !== null && (
+          <motion.div
+            className="rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-xs text-green-400 flex items-center justify-between"
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+          >
+            <span>✓ <strong>{purgedCount}</strong> sessioni eliminate con successo.</span>
+            <button onClick={() => setPurgedCount(null)} className="ml-3 opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Search */}
       <div className="relative">
@@ -258,7 +326,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         )}
       </div>
 
-      {/* Status filter */}
+      {/* Status filter + actions */}
       <div className="flex flex-wrap gap-2">
         {(["all", "enviada", "processando", "sem_email", "falhou"] as StatusFilter[]).map((f) => (
           <button
@@ -281,12 +349,32 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
               :                       `Falhou (${counts.falhou})`}
           </button>
         ))}
-        <button
-          onClick={() => { fetchSessions(); fetchNegado(); }}
-          className="ml-auto flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground active:scale-95"
-        >
-          <RefreshCw className="h-3 w-3" /> Aggiorna
-        </button>
+
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={exportToCSV}
+            disabled={exporting}
+            className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-400 active:scale-95 transition-colors disabled:opacity-50"
+            title="Esporta tutte le sessioni in CSV (apribile in Excel)"
+          >
+            <Download className="h-3 w-3" /> {exporting ? "…" : "Esporta CSV"}
+          </button>
+
+          <button
+            onClick={openPurgeModal}
+            className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-95 transition-colors"
+            title="Elimina sessioni più vecchie di 7 giorni"
+          >
+            <Trash2 className="h-3 w-3" /> Pulisci (7gg)
+          </button>
+
+          <button
+            onClick={() => { fetchSessions(); fetchNegado(); }}
+            className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground active:scale-95"
+          >
+            <RefreshCw className="h-3 w-3" /> Aggiorna
+          </button>
+        </div>
       </div>
 
       {/* Session list */}
@@ -313,7 +401,6 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={safePage === 1}
                   className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground disabled:opacity-30 active:scale-95 hover:text-foreground"
-                  aria-label="Pagina precedente"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </button>
@@ -324,7 +411,6 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={safePage === totalPages}
                   className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground disabled:opacity-30 active:scale-95 hover:text-foreground"
-                  aria-label="Pagina successiva"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
                 </button>
@@ -351,7 +437,6 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                   transition={{ delay: Math.min(i * 0.03, 0.3) }}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    {/* Left: session info */}
                     <div className="min-w-0 flex-1 space-y-1">
                       {fullName && (
                         <p className="truncate text-sm font-bold text-foreground">{fullName}</p>
@@ -366,15 +451,12 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                       <p className="text-[10px] text-muted-foreground/60">{formatDate(s.created_at)}</p>
                     </div>
 
-                    {/* Right: status + code */}
                     <div className="flex flex-col items-end gap-2 shrink-0">
-                      {/* Status badge */}
                       <span className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${meta.cls}`}>
                         <StatusIcon className="h-3 w-3" />
                         {meta.label}
                       </span>
 
-                      {/* Discount code */}
                       {s.discount_code ? (
                         <div className="flex flex-col items-end gap-1.5">
                           <div className="flex items-center gap-1.5">
@@ -417,7 +499,6 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                             </button>
                           </div>
 
-                          {/* Mark as redeemed button — only shown if not yet redeemed */}
                           {!s.code_redeemed && (
                             <button
                               onClick={() => markRedeemed(s)}
@@ -430,7 +511,6 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                             </button>
                           )}
 
-                          {/* Redemption timestamp */}
                           {s.code_redeemed && s.code_redeemed_at && (
                             <p className="text-[9px] text-muted-foreground/50">
                               Usato il {formatDate(s.code_redeemed_at)}
@@ -474,6 +554,67 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
       <p className="pb-2 text-center text-xs text-muted-foreground">
         Ultime 300 sessioni · 20 per pagina · Codici scadono 24h dopo la creazione
       </p>
+
+      {/* ── Purge confirmation modal ─────────────────────────────────────── */}
+      <AnimatePresence>
+        {showPurgeModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-6"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => !purging && setShowPurgeModal(false)}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl"
+              initial={{ scale: 0.92, y: 16 }} animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 28 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-destructive/30 bg-destructive/10">
+                  <Trash2 className="h-5 w-5 text-destructive" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Pulizia cronologia</p>
+                  <p className="text-xs text-muted-foreground">Sessioni più vecchie di 7 giorni</p>
+                </div>
+              </div>
+
+              <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-400">
+                <p className="font-semibold mb-1">⚠ Azione irreversibile</p>
+                <p>
+                  {purgePreviewCount === null
+                    ? "Calcolo sessioni da eliminare…"
+                    : purgePreviewCount === 0
+                    ? "Nessuna sessione da eliminare (tutte entro 7 giorni)."
+                    : `${purgePreviewCount} sessioni verranno eliminate definitivamente.`}
+                </p>
+              </div>
+
+              <p className="mb-5 text-xs text-muted-foreground">
+                Prima di procedere, usa il pulsante <strong className="text-foreground">Esporta CSV</strong> per salvare nome, cognome ed email di tutti i clienti in un file Excel.
+              </p>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => !purging && setShowPurgeModal(false)}
+                  disabled={purging}
+                  className="flex-1 rounded-xl border border-border bg-muted/30 py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground active:scale-95 transition-colors disabled:opacity-50"
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={executePurge}
+                  disabled={purging || purgePreviewCount === 0}
+                  className="flex-1 rounded-xl border border-destructive/40 bg-destructive/10 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/20 active:scale-95 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {purging ? "Eliminando…" : "Elimina"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
