@@ -95,14 +95,20 @@ export function QuizCardsTab() {
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [reorderingId, setReorderingId] = useState<number | null>(null);
   const [showTranslateInfo, setShowTranslateInfo] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const fetchCards = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
+    setLoadError(null);
+    const { data, error } = await supabase
       .from("quiz_cards")
       .select("id, emoji, tag, sort_order, active, text_it, text_en, text_pt, text_es, text_fr")
       .order("sort_order", { ascending: true });
-    setCards((data ?? []) as QuizCard[]);
+    if (error) {
+      setLoadError(error.message);
+    } else {
+      setCards((data ?? []) as QuizCard[]);
+    }
     setLoading(false);
   }, []);
 
@@ -383,6 +389,12 @@ export function QuizCardsTab() {
       {/* Card list */}
       {loading ? (
         <div className="py-12 text-center text-xs text-muted-foreground">Caricamento carte…</div>
+      ) : loadError ? (
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 py-12 text-center">
+          <p className="text-2xl mb-2">⚠️</p>
+          <p className="text-sm font-medium text-destructive">Errore nel caricamento delle carte</p>
+          <p className="text-xs text-muted-foreground mt-1">{loadError}</p>
+        </div>
       ) : cards.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-muted/10 py-12 text-center">
           <p className="text-2xl mb-2">🃏</p>

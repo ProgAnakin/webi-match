@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BarChart2, Camera, Check, HelpCircle, History, Home, Link, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download, Inbox } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { products } from "@/data/products";
+import { products, type Product } from "@/data/products";
 import { getStoredStoreId, setStoredStoreId, getStoreById, STORES } from "@/data/stores";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 import { StoreSelectorModal } from "./StoreSelectorModal";
@@ -126,6 +126,9 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const [userRole, setUserRole] = useState<{ role: string; store_id: string | null } | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("catalogo");
   const [gestioneTab, setGestioneTab] = useState<GestioneTab>("catalogo");
+  // Custom products (added via Gestione) — merged into the catalog so they can
+  // be managed per-store exactly like core products.
+  const [customProducts, setCustomProducts] = useState<Product[]>([]);
 
   // Storico (audit log) state
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
@@ -149,7 +152,11 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     });
   }, []);
 
-  const allTags = Array.from(new Set(products.flatMap((p) => p.tags))).sort();
+  // Core + custom products, used everywhere the catalog list is rendered/filtered.
+  const catalogProducts = [...products, ...customProducts];
+  const customProductIds = new Set(customProducts.map((p) => p.id));
+
+  const allTags = Array.from(new Set(catalogProducts.flatMap((p) => p.tags))).sort();
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -193,6 +200,30 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   }, [storeId]);
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
+
+  // Fetch active custom products so they appear in the catalog alongside core ones.
+  const fetchCustomProducts = useCallback(async () => {
+    const { data } = await supabase
+      .from("custom_products")
+      .select("id, name, description, price, rating, image_url, video_url, tags, faq")
+      .eq("status", "active");
+    if (!data) return;
+    setCustomProducts(
+      data.map((r) => ({
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        price: r.price,
+        rating: r.rating,
+        image: r.image_url ?? "/products/placeholder.png",
+        videoUrl: r.video_url ?? "#",
+        tags: r.tags ?? [],
+        faq: (r.faq as { q: string; a: string }[]) ?? [],
+      })),
+    );
+  }, []);
+
+  useEffect(() => { fetchCustomProducts(); }, [fetchCustomProducts]);
 
   // Fetch audit log when storico tab is active
   const fetchAuditLog = useCallback(async () => {
@@ -243,6 +274,8 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         user_id: data.user.id,
         user_email: data.user.email,
         product_id: productId,
+        action: "product_toggle",
+        old_active: current,
         new_active: targetActive,
         store_id: storeId,
       });
@@ -438,7 +471,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
 
   const downloadCsvTemplate = () => {
     const header = "product_id,price\n";
-    const rows = products.map((p) => `${p.id},${p.price}`).join("\n");
+    const rows = catalogProducts.map((p) => `${p.id},${p.price}`).join("\n");
     const csv = header + rows;
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -456,7 +489,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     onLogout();
   };
 
-  const sortedProducts = [...products].sort((a, b) => {
+  const sortedProducts = [...catalogProducts].sort((a, b) => {
     const aOn = settings[a.id] !== false;
     const bOn = settings[b.id] !== false;
     if (aOn === bOn) return 0;
@@ -469,7 +502,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     return matchSearch && matchTag;
   });
 
-  const activeCount = products.filter((p) => settings[p.id] !== false).length;
+  const activeCount = catalogProducts.filter((p) => settings[p.id] !== false).length;
 
   // Select-all: true if all filtered products are in bulkSelection
   const allFilteredSelected =
@@ -508,7 +541,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
               {userRole?.role === "consulente_responsabile" && <span className="ml-1 opacity-50">(bloccata)</span>}
             </button>
             <p className="text-xs text-muted-foreground">
-              {loading ? "Caricamento…" : `${activeCount} di ${products.length} prodotti attivi nel quiz`}
+              {loading ? "Caricamento…" : `${activeCount} di ${catalogProducts.length} prodotti attivi nel quiz`}
               {bulkSelection.size > 0 && <span className="ml-2 font-semibold text-primary">· {bulkSelection.size} selezionati</span>}
             </p>
           </div>
@@ -725,7 +758,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
               <div className="space-y-2">
                 {auditLog.map((entry) => {
                   const prodName = entry.product_id
-                    ? (products.find((p) => p.id === entry.product_id)?.name ?? entry.product_id)
+                    ? (catalogProducts.find((p) => p.id === entry.product_id)?.name ?? entry.product_id)
                     : "—";
                   const isActivated = entry.new_active === true;
                   return (
@@ -865,7 +898,14 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                           <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-green-400" : "bg-muted-foreground"}`} />
                           {isActive ? "Attivo" : "In pausa"}
                         </span>
-                        <h3 className="text-sm font-bold leading-snug text-foreground">{product.name}</h3>
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="text-sm font-bold leading-snug text-foreground">{product.name}</h3>
+                          {customProductIds.has(product.id) && (
+                            <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary">
+                              Custom
+                            </span>
+                          )}
+                        </div>
                         {updatedAt && (
                           <p className="mt-0.5 text-[10px] text-muted-foreground/50">
                             Aggiornato: {formatUpdatedAt(updatedAt)}
@@ -1049,7 +1089,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
       {/* FAQ Modal */}
       <AnimatePresence>
         {editingFaqId && (() => {
-          const prod = products.find((p) => p.id === editingFaqId);
+          const prod = catalogProducts.find((p) => p.id === editingFaqId);
           if (!prod) return null;
           return (
             <FaqModal
