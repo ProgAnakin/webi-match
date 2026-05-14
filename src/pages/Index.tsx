@@ -112,9 +112,9 @@ const Index = () => {
     type CustomRow    = { id: string; name: string; description: string; price: string; rating: number; image_url: string | null; video_url: string | null; tags: string[]; faq: { q: string; a: string }[] };
     type GlobalRow    = { product_id: string; hidden: boolean };
     // Needed to narrow the type alias used inside applySnapshot
-    let settingsData: SettingsRow[] = [];
-    let customData:   CustomRow[]   = [];
-    let globalData:   GlobalRow[]   = [];
+    const settingsData: SettingsRow[] = [];
+    const customData:   CustomRow[]   = [];
+    const globalData:   GlobalRow[]   = [];
 
     function applySnapshot(snap: StartupSnapshot, fromCache: boolean) {
       const hiddenIds = new Set(
