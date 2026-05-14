@@ -4,6 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { products as coreProducts } from "@/data/products";
 import { AVAILABLE_TAGS } from "@/data/products";
 
+// Load distinct active tags from quiz_cards so new custom cards surface in the picker.
+async function fetchActiveTags(): Promise<string[]> {
+  const { data } = await supabase
+    .from("quiz_cards")
+    .select("tag")
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
+  if (!data || data.length === 0) return [...AVAILABLE_TAGS];
+  const fromDb = Array.from(new Set(data.map((r: { tag: string }) => r.tag)));
+  // Merge with static fallback so existing tags are always present even if DB is slow
+  const merged = Array.from(new Set([...fromDb, ...AVAILABLE_TAGS]));
+  return merged.sort();
+}
+
 interface CustomProductRow {
   id: string;
   name: string;
@@ -47,6 +61,7 @@ export function ProductCatalogTab() {
   const [customProducts, setCustomProducts] = useState<CustomProductRow[]>([]);
   const [globalStatus, setGlobalStatus] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [availableTags, setAvailableTags] = useState<string[]>([...AVAILABLE_TAGS]);
   const [showArchived, setShowArchived] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -71,6 +86,10 @@ export function ProductCatalogTab() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  useEffect(() => {
+    fetchActiveTags().then(setAvailableTags);
+  }, []);
 
   const openAddForm = () => {
     setEditingId(null);
@@ -363,7 +382,7 @@ export function ProductCatalogTab() {
                 Tag di corrispondenza * <span className="font-normal">(almeno 1, idealmente 3)</span>
               </label>
               <div className="flex flex-wrap gap-2">
-                {AVAILABLE_TAGS.map((tag) => (
+                {availableTags.map((tag) => (
                   <button
                     key={tag}
                     type="button"

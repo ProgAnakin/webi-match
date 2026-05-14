@@ -15,6 +15,8 @@ import { useKioskMode } from "@/hooks/useKioskMode";
 import { useLang } from "@/i18n/LanguageContext";
 import { getStoredStoreId } from "@/data/stores";
 import { RESULT_INACTIVITY_TIMEOUT_MS } from "@/config/timings";
+import type { QuizCard } from "@/data/quiz-cards";
+import { buildTagMap } from "@/data/quiz-cards";
 
 type Screen = "splash" | "welcome" | "loading_quiz" | "quiz" | "result" | "success";
 
@@ -90,6 +92,8 @@ const Index = () => {
   const [allProducts, setAllProducts] = useState<Product[]>(coreProducts);
   const [settingsLoadFailed, setSettingsLoadFailed] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [quizCards, setQuizCards] = useState<QuizCard[] | null>(null);
+  const [tagMap, setTagMap] = useState<Record<number, string> | undefined>(undefined);
 
   useEffect(() => {
     const storeId = getStoredStoreId() ?? "corso-vercelli";
@@ -106,7 +110,12 @@ const Index = () => {
       supabase
         .from("product_global_status")
         .select("product_id, hidden"),
-    ]).then(([settingsRes, customRes, globalRes]) => {
+      supabase
+        .from("quiz_cards")
+        .select("id, emoji, tag, sort_order, active, text_it, text_en, text_pt, text_es, text_fr")
+        .eq("active", true)
+        .order("sort_order", { ascending: true }),
+    ]).then(([settingsRes, customRes, globalRes, cardsRes]) => {
       if (settingsRes.error) {
         console.error("[webi-match] product_settings fetch failed:", settingsRes.error);
         setSettingsLoadFailed(true);
@@ -163,6 +172,13 @@ const Index = () => {
         // No per-store settings yet — all merged products are active
         setActiveProductIds(new Set(merged.map((p) => p.id)));
       }
+      // Load dynamic quiz cards (fall back to static questions if empty/error)
+      if (!cardsRes.error && cardsRes.data && cardsRes.data.length > 0) {
+        const loaded = cardsRes.data as QuizCard[];
+        setQuizCards(loaded);
+        setTagMap(buildTagMap(loaded));
+      }
+
       setSettingsLoaded(true);
     });
   }, []);
@@ -185,7 +201,7 @@ const Index = () => {
   };
 
   const handleQuizComplete = (answers: Record<number, boolean>) => {
-    const { product: baseProduct, matchPercent: pct } = getMatchedProduct(answers, activeProductIds ?? undefined, allProducts);
+    const { product: baseProduct, matchPercent: pct } = getMatchedProduct(answers, activeProductIds ?? undefined, allProducts, tagMap);
     // Apply store-specific overrides (price + image) set by manager
     const priceOverride = baseProduct && priceOverrides[baseProduct.id];
     const imageOverride = baseProduct && imageOverrides[baseProduct.id];
@@ -369,7 +385,7 @@ const Index = () => {
               </div>
             </div>
           )}
-          {screen === "quiz" && <QuizScreen onComplete={handleQuizComplete} />}
+          {screen === "quiz" && <QuizScreen onComplete={handleQuizComplete} cards={quizCards ?? undefined} />}
           {screen === "result" && matchedProduct && (
             <MatchResult
               product={matchedProduct}

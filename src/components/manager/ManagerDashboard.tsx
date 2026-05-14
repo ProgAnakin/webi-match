@@ -10,8 +10,10 @@ import { StoreSelectorModal } from "./StoreSelectorModal";
 import { FaqModal, FaqData, EMPTY_FAQ } from "./FaqModal";
 import { SessionsTab } from "./SessionsTab";
 import { ProductCatalogTab } from "./ProductCatalogTab";
+import { QuizCardsTab } from "./QuizCardsTab";
 
 type ActiveTab = "catalogo" | "sessioni" | "storico" | "gestione";
+type GestioneTab = "catalogo" | "carte";
 
 /** product_id → active boolean, loaded from Supabase */
 type SettingsMap = Record<string, boolean>;
@@ -122,6 +124,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const undoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [userRole, setUserRole] = useState<{ role: string; store_id: string | null } | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("catalogo");
+  const [gestioneTab, setGestioneTab] = useState<GestioneTab>("catalogo");
 
   // Storico (audit log) state
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
@@ -648,8 +651,36 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           )}
         </motion.div>
 
-        {/* Gestione catalogo globale (admin master only) */}
-        {activeTab === "gestione" && <ProductCatalogTab />}
+        {/* Gestione globale (admin master only) */}
+        {activeTab === "gestione" && (
+          <div className="space-y-4">
+            {/* Sub-tab switcher */}
+            <div className="flex gap-1 rounded-2xl border border-border bg-muted/30 p-1">
+              <button
+                onClick={() => setGestioneTab("catalogo")}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-colors ${
+                  gestioneTab === "catalogo"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                📦 Catalogo globale
+              </button>
+              <button
+                onClick={() => setGestioneTab("carte")}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-colors ${
+                  gestioneTab === "carte"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                🃏 Carte Quiz
+              </button>
+            </div>
+            {gestioneTab === "catalogo" && <ProductCatalogTab />}
+            {gestioneTab === "carte"    && <QuizCardsTab />}
+          </div>
+        )}
 
         {/* Sessions tab */}
         {activeTab === "sessioni" && (
