@@ -304,47 +304,79 @@ const MatchResult = ({
   return (
     <div className="relative flex h-dvh flex-col items-center justify-center overflow-hidden px-6 py-6">
 
-      {/* Atmospheric ambient layer — uses ringColor so the warmer the match, the warmer the room.
-          This is the "stage" that frames the product card, not a competing distraction. */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {/* ── Background — cosmic dark + match-reactive glow (no filter:blur, iPad Safari safe) ── */}
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+        style={{
+          background:
+            "radial-gradient(ellipse 120% 90% at 50% 30%, hsl(230, 55%, 22%) 0%, hsl(230, 60%, 12%) 60%, hsl(230, 65%, 8%) 100%)",
+        }}
+      >
+        {/* Match-reactive glow — colour shifts with match quality */}
         <motion.div
-          className="absolute rounded-full"
+          className="absolute"
           style={{
-            left: "50%", top: "38%",
-            width: "max(720px, 90vw)",
-            height: "max(720px, 90vw)",
-            marginLeft: "max(-360px, -45vw)",
-            marginTop:  "max(-360px, -45vw)",
-            background: `radial-gradient(circle, ${ringColor}66 0%, transparent 60%)`,
-            filter: "blur(70px)",
-            opacity: 0.42,
+            left: "50%", top: "42%",
+            width: "max(700px, 88vw)", height: "max(700px, 88vw)",
+            marginLeft: "max(-350px, -44vw)", marginTop: "max(-350px, -44vw)",
+            background: `radial-gradient(circle closest-side, ${ringColor}38 0%, ${ringColor}0d 45%, transparent 70%)`,
+            willChange: "transform, opacity",
           }}
-          animate={{ scale: [1, 1.06, 1] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ scale: [1, 1.08, 1], opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         />
-        {/* Brand orange anchor */}
+
+        {/* Brand orange accent — top left */}
         <div
-          className="absolute rounded-full"
+          className="absolute"
           style={{
-            left: "-15%", top: "-15%",
-            width: "max(520px, 55vw)",
-            height: "max(520px, 55vw)",
-            background: "radial-gradient(circle, hsl(27,92%,55%) 0%, transparent 70%)",
-            filter: "blur(80px)",
-            opacity: 0.18,
+            left: "-8%", top: "-10%",
+            width: "max(500px, 52vw)", height: "max(500px, 52vw)",
+            background: "radial-gradient(circle closest-side, hsla(27, 92%, 55%, 0.13) 0%, transparent 70%)",
           }}
         />
+
+        {/* Subtle star field — orange + white, sparser than quiz (fireworks take the stage) */}
+        {Array.from({ length: 22 }, (_, i) => ({
+          left:  `${(i * 61 + 7) % 95}%`,
+          top:   `${(i * 43 + 5) % 93}%`,
+          size:  0.9 + (i % 3) * 0.6,
+          delay: (i * 0.37) % 8,
+          dur:   2.8 + (i % 5) * 0.8,
+          tint:  i % 3 === 0 ? "hsla(27, 92%, 70%, 0.9)" : "hsla(0, 0%, 100%, 0.85)",
+        })).map((s, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              left: s.left, top: s.top,
+              width: s.size, height: s.size,
+              background: s.tint,
+              boxShadow: `0 0 ${s.size * 3}px ${s.tint}`,
+              willChange: "opacity, transform",
+            }}
+            animate={{ opacity: [0.1, 0.8, 0.1], scale: [0.6, 1.2, 0.6] }}
+            transition={{ duration: s.dur, delay: s.delay, repeat: Infinity, ease: "easeInOut" }}
+          />
+        ))}
+
+        {/* Edge vignette */}
         <div
-          className="absolute rounded-full"
+          className="absolute inset-0"
           style={{
-            right: "-15%", bottom: "-15%",
-            width: "max(480px, 50vw)",
-            height: "max(480px, 50vw)",
-            background: "radial-gradient(circle, hsl(15,88%,58%) 0%, transparent 70%)",
-            filter: "blur(80px)",
-            opacity: 0.14,
+            background:
+              "radial-gradient(ellipse 95% 90% at 50% 50%, transparent 35%, hsla(230, 65%, 6%, 0.70) 100%)",
           }}
         />
+
+        {/* Grain */}
+        <svg aria-hidden className="absolute inset-0 h-full w-full opacity-[0.025]">
+          <filter id="mr-grain">
+            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" />
+            <feColorMatrix type="saturate" values="0" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#mr-grain)" />
+        </svg>
       </div>
 
       {/* Firework bursts — staggered so only 1–2 are visible at any moment */}

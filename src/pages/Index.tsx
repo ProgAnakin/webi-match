@@ -15,6 +15,9 @@ import { useKioskMode } from "@/hooks/useKioskMode";
 import { useLang } from "@/i18n/LanguageContext";
 import { getStoredStoreId } from "@/data/stores";
 import { RESULT_INACTIVITY_TIMEOUT_MS } from "@/config/timings";
+import type { QuizCard } from "@/data/quiz-cards";
+import { buildTagMap } from "@/data/quiz-cards";
+import { readCache, writeCache } from "@/lib/startupCache";
 
 type Screen = "splash" | "welcome" | "loading_quiz" | "quiz" | "result" | "success";
 
@@ -90,9 +93,89 @@ const Index = () => {
   const [allProducts, setAllProducts] = useState<Product[]>(coreProducts);
   const [settingsLoadFailed, setSettingsLoadFailed] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [quizCards, setQuizCards] = useState<QuizCard[] | null>(null);
+  const [tagMap, setTagMap] = useState<Record<number, string> | undefined>(undefined);
 
   useEffect(() => {
     const storeId = getStoredStoreId() ?? "corso-vercelli";
+    const cacheKey = `startup_${storeId}`;
+
+    interface StartupSnapshot {
+      settingsData: typeof settingsData;
+      customData: typeof customData;
+      globalData: typeof globalData;
+      cardsData: QuizCard[];
+    }
+
+    // Inline type helpers to avoid re-declaring per-closure.
+    type SettingsRow  = { product_id: string; active: boolean; price_override: string | null; image_url: string | null; video_url: string | null; discount_percent: number | null };
+    type CustomRow    = { id: string; name: string; description: string; price: string; rating: number; image_url: string | null; video_url: string | null; tags: string[]; faq: { q: string; a: string }[] };
+    type GlobalRow    = { product_id: string; hidden: boolean };
+    // Needed to narrow the type alias used inside applySnapshot
+    const settingsData: SettingsRow[] = [];
+    const customData:   CustomRow[]   = [];
+    const globalData:   GlobalRow[]   = [];
+
+    function applySnapshot(snap: StartupSnapshot, fromCache: boolean) {
+      const hiddenIds = new Set(
+        snap.globalData.filter((r) => r.hidden).map((r) => r.product_id),
+      );
+      const customProductList: Product[] = snap.customData.map((r) => ({
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        price: r.price,
+        rating: r.rating,
+        image: r.image_url ?? "/products/placeholder.png",
+        videoUrl: r.video_url ?? "#",
+        tags: r.tags ?? [],
+        faq: r.faq ?? [],
+      }));
+      const merged = [...coreProducts, ...customProductList].filter(
+        (p) => !hiddenIds.has(p.id),
+      );
+      setAllProducts(merged);
+
+      const data = snap.settingsData;
+      if (data && data.length > 0) {
+        const active = new Set(
+          data.filter((r) => r.active !== false).map((r) => r.product_id),
+        );
+        // Custom products default to active, but respect an explicit per-store
+        // deactivation: only auto-add ones without a product_settings row.
+        const settingsIds = new Set(data.map((r) => r.product_id));
+        customProductList.forEach((p) => {
+          if (!hiddenIds.has(p.id) && !settingsIds.has(p.id)) active.add(p.id);
+        });
+        const prices: Record<string, string>  = {};
+        const images: Record<string, string>  = {};
+        const videos: Record<string, string>  = {};
+        const discounts: Record<string, number> = {};
+        data.forEach((r) => {
+          if (r.price_override)  prices[r.product_id]    = r.price_override;
+          if (r.image_url)       images[r.product_id]    = r.image_url;
+          if (r.video_url)       videos[r.product_id]    = r.video_url;
+          if (r.discount_percent) discounts[r.product_id] = r.discount_percent;
+        });
+        setActiveProductIds(active);
+        setPriceOverrides(prices);
+        setVideoOverrides(videos);
+        setImageOverrides(images);
+        setDiscountOverrides(discounts);
+      } else {
+        setActiveProductIds(new Set(merged.map((p) => p.id)));
+      }
+      if (snap.cardsData.length > 0) {
+        setQuizCards(snap.cardsData);
+        setTagMap(buildTagMap(snap.cardsData));
+      }
+      // Only mark loaded on first call (cache) or always (live).
+      if (!fromCache || !settingsLoaded) setSettingsLoaded(true);
+    }
+
+    // Stale-while-revalidate: serve cache instantly, then refresh in background.
+    const cached = readCache<StartupSnapshot>(cacheKey);
+    if (cached) applySnapshot(cached, true);
 
     Promise.all([
       supabase
@@ -106,65 +189,30 @@ const Index = () => {
       supabase
         .from("product_global_status")
         .select("product_id, hidden"),
-    ]).then(([settingsRes, customRes, globalRes]) => {
+      supabase
+        .from("quiz_cards")
+        .select("id, emoji, tag, sort_order, active, text_it, text_en, text_pt, text_es, text_fr")
+        .eq("active", true)
+        .order("sort_order", { ascending: true }),
+    ]).then(([settingsRes, customRes, globalRes, cardsRes]) => {
       if (settingsRes.error) {
         console.error("[webi-match] product_settings fetch failed:", settingsRes.error);
-        setSettingsLoadFailed(true);
+        if (!cached) setSettingsLoadFailed(true);
       }
 
-      // Build the global hidden set
-      const hiddenIds = new Set(
-        (globalRes.data ?? []).filter((r) => r.hidden).map((r) => r.product_id),
-      );
+      const snap: StartupSnapshot = {
+        settingsData: (settingsRes.data ?? []) as SettingsRow[],
+        customData:   (customRes.data   ?? []) as CustomRow[],
+        globalData:   (globalRes.data   ?? []) as GlobalRow[],
+        cardsData:    (!cardsRes.error && cardsRes.data && cardsRes.data.length > 0)
+          ? (cardsRes.data as QuizCard[])
+          : [],
+      };
 
-      // Merge core + custom products, filtering globally hidden ones
-      const customProductList: Product[] = (customRes.data ?? []).map((r) => ({
-        id: r.id,
-        name: r.name,
-        description: r.description,
-        price: r.price,
-        rating: r.rating,
-        image: r.image_url ?? "/products/placeholder.png",
-        videoUrl: r.video_url ?? "#",
-        tags: r.tags ?? [],
-        faq: (r.faq as { q: string; a: string }[]) ?? [],
-      }));
-      const merged = [...coreProducts, ...customProductList].filter(
-        (p) => !hiddenIds.has(p.id),
-      );
-      setAllProducts(merged);
-
-      // Apply per-store settings
-      const data = settingsRes.data;
-      if (data && data.length > 0) {
-        const active = new Set(
-          data.filter((r) => r.active !== false).map((r) => r.product_id),
-        );
-        // Also add custom products (always active unless per-store deactivated)
-        customProductList.forEach((p) => {
-          if (!hiddenIds.has(p.id)) active.add(p.id);
-        });
-        const prices: Record<string, string> = {};
-        const images: Record<string, string> = {};
-        const videos: Record<string, string> = {};
-        const discounts: Record<string, number> = {};
-        data.forEach((r) => {
-          if (r.price_override) prices[r.product_id] = r.price_override;
-          if (r.image_url) images[r.product_id] = r.image_url;
-          if (r.video_url) videos[r.product_id] = r.video_url;
-          if (r.discount_percent) discounts[r.product_id] = r.discount_percent;
-        });
-        setActiveProductIds(active);
-        setPriceOverrides(prices);
-        setVideoOverrides(videos);
-        setImageOverrides(images);
-        setDiscountOverrides(discounts);
-      } else {
-        // No per-store settings yet — all merged products are active
-        setActiveProductIds(new Set(merged.map((p) => p.id)));
-      }
-      setSettingsLoaded(true);
+      writeCache(cacheKey, snap);
+      applySnapshot(snap, false);
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Transition out of loading screen once settings are ready
@@ -185,7 +233,7 @@ const Index = () => {
   };
 
   const handleQuizComplete = (answers: Record<number, boolean>) => {
-    const { product: baseProduct, matchPercent: pct } = getMatchedProduct(answers, activeProductIds ?? undefined, allProducts);
+    const { product: baseProduct, matchPercent: pct } = getMatchedProduct(answers, activeProductIds ?? undefined, allProducts, tagMap);
     // Apply store-specific overrides (price + image) set by manager
     const priceOverride = baseProduct && priceOverrides[baseProduct.id];
     const imageOverride = baseProduct && imageOverrides[baseProduct.id];
@@ -369,7 +417,7 @@ const Index = () => {
               </div>
             </div>
           )}
-          {screen === "quiz" && <QuizScreen onComplete={handleQuizComplete} />}
+          {screen === "quiz" && <QuizScreen onComplete={handleQuizComplete} cards={quizCards ?? undefined} />}
           {screen === "result" && matchedProduct && (
             <MatchResult
               product={matchedProduct}

@@ -1,0 +1,44 @@
+import type { Question } from "@/data/questions";
+
+export interface QuizCard {
+  id: number;
+  emoji: string;
+  tag: string;
+  sort_order: number;
+  active: boolean;
+  text_it: string;
+  text_en: string | null;
+  text_pt: string | null;
+  text_es: string | null;
+  text_fr: string | null;
+}
+
+/** Returns the best available text for a card given the current language. */
+export function resolveCardText(card: QuizCard, lang: string): string {
+  const key = `text_${lang}` as keyof QuizCard;
+  const val = card[key];
+  return (typeof val === "string" && val.trim()) ? val : card.text_it;
+}
+
+/** Converts the static questions.ts array into QuizCard objects (fallback). */
+export function questionsToCards(questions: Question[]): QuizCard[] {
+  return questions.map((q) => ({
+    id: q.id,
+    emoji: q.emoji,
+    tag: q.category,
+    sort_order: q.id,
+    active: true,
+    text_it: q.text,
+    text_en: null,
+    text_pt: null,
+    text_es: null,
+    text_fr: null,
+  }));
+}
+
+/** Builds a tagMap (questionId → tag) from a list of cards. */
+export function buildTagMap(cards: QuizCard[]): Record<number, string> {
+  const map: Record<number, string> = {};
+  cards.forEach((c) => { map[c.id] = c.tag; });
+  return map;
+}

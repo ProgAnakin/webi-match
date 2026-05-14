@@ -173,19 +173,9 @@ export const products: Product[] = [
     ],
   },
 ];
-// Maps questionId → product tag (must stay in sync with questions.ts categories)
-// Winning scenario per product (all verified to be unique):
-//   BLND Blender      → sport + wellness + travel
-//   FitRing Air       → sport + tech + recovery
-//   HEAD HDTW01       → audio + sport + travel
-//   Ksix Saturn       → tech + productivity + recovery
-//   Laifen NEO        → style + wellness + productivity
-//   MUZEN OTR         → audio + style + travel
-//   Outin Nano        → travel + productivity + wellness
-//   Terraillon        → recovery + sport + wellness
-//   Veho Pebble MG5   → travel + productivity + tech
-//   Veho ZB-7         → audio + productivity + style
-const TAG_MAP: Record<number, string> = {
+// Static fallback — used when no dynamic tagMap is supplied (e.g. in unit tests).
+// Must stay in sync with questions.ts categories and the quiz_cards DB seed.
+const STATIC_TAG_MAP: Record<number, string> = {
   1: "sport",
   2: "audio",
   3: "productivity",
@@ -196,24 +186,13 @@ const TAG_MAP: Record<number, string> = {
   8: "recovery",
 };
 
-// Deterministic tie-break: djb2 hash of the sorted answer string ensures
-// identical quiz answers always produce the same product recommendation.
-function deterministicTiePick(answers: Record<number, boolean>, len: number): number {
-  if (len <= 1) return 0;
-  const key = Object.keys(answers)
-    .sort((a, b) => Number(a) - Number(b))
-    .map((k) => `${k}${answers[Number(k)] ? 1 : 0}`)
-    .join("");
-  let h = 5381;
-  for (let i = 0; i < key.length; i++) h = ((h * 33) ^ key.charCodeAt(i)) | 0;
-  return Math.abs(h) % len;
-}
-
 export function getMatchedProduct(
   answers: Record<number, boolean>,
   activeIds?: Set<string>,
   allProducts?: Product[],
+  tagMap?: Record<number, string>,
 ): { product: Product; matchPercent: number } {
+  const resolvedTagMap = tagMap ?? STATIC_TAG_MAP;
   const pool_source = allProducts ?? products;
   const filtered =
     activeIds && activeIds.size > 0
@@ -223,7 +202,7 @@ export function getMatchedProduct(
 
   const activeTags: string[] = [];
   Object.entries(answers).forEach(([qId, answered]) => {
-    if (answered && TAG_MAP[Number(qId)]) activeTags.push(TAG_MAP[Number(qId)]);
+    if (answered && resolvedTagMap[Number(qId)]) activeTags.push(resolvedTagMap[Number(qId)]);
   });
 
   let bestScore = 0;
@@ -240,8 +219,7 @@ export function getMatchedProduct(
     }
   });
 
-  // Deterministic pick among tied products — same answers always yield the same product.
-  const bestProduct = tied[deterministicTiePick(answers, tied.length)] ?? pool[0] ?? pool_source[0];
+  const bestProduct = tied[Math.floor(Math.random() * tied.length)] ?? pool[0] ?? pool_source[0];
 
   const totalTags = bestProduct.tags.length || 1;
   const rawPercent = Math.round((bestScore / totalTags) * 100);

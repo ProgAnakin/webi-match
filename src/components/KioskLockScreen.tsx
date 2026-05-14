@@ -87,7 +87,7 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
     }
   }, [pin, isLocked, verifying, onDeactivate]);
 
-  // ── PIN entry view ────────────────────────────────────────────
+  // ── PIN entry view ─────────────────────────────────────────────────
   if (showPin) {
     return (
       <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background">
@@ -168,7 +168,7 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
     );
   }
 
-  // ── Main lock screen ────────────────────────────────────────────
+  // ── Main lock screen ─────────────────────────────────────────────────
   return (
     <motion.div
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background"

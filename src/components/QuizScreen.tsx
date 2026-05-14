@@ -5,19 +5,25 @@ import SwipeCard from "./SwipeCard";
 import SwipeTutorial from "./SwipeTutorial";
 import QuizBackground from "./QuizBackground";
 import { questions } from "@/data/questions";
+import type { QuizCard } from "@/data/quiz-cards";
+import { questionsToCards } from "@/data/quiz-cards";
 import { useSound } from "@/hooks/useSound";
 import { useLang } from "@/i18n/LanguageContext";
 
 interface QuizScreenProps {
   onComplete: (answers: Record<number, boolean>) => void;
+  cards?: QuizCard[];
 }
 
 function haptic(ms: number) {
   try { navigator.vibrate?.(ms); } catch { /* unsupported */ }
 }
 
-const QuizScreen = ({ onComplete }: QuizScreenProps) => {
+const QuizScreen = ({ onComplete, cards: cardsProp }: QuizScreenProps) => {
   const { t } = useLang();
+  // Fall back to static questions when no DB cards are provided
+  const cards = cardsProp && cardsProp.length > 0 ? cardsProp : questionsToCards(questions);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, boolean>>({});
   const [showTutorial, setShowTutorial] = useState(true);
@@ -33,11 +39,11 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
     setExitDirection(direction);
     play(direction === "right" ? "swipe_yes" : "swipe_no");
 
-    const question = questions[currentIndex];
-    const newAnswers = { ...answers, [question.id]: direction === "right" };
+    const card = cards[currentIndex];
+    const newAnswers = { ...answers, [card.id]: direction === "right" };
     setAnswers(newAnswers);
 
-    if (currentIndex + 1 >= questions.length) {
+    if (currentIndex + 1 >= cards.length) {
       setTimeout(() => {
         transitioningRef.current = false;
         setTransitioning(false);
@@ -52,10 +58,10 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
       }, 240);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, answers, onComplete]);
+  }, [currentIndex, answers, cards, onComplete]);
 
-  const question = questions[currentIndex];
-  if (!question) return null;
+  const card = cards[currentIndex];
+  if (!card) return null;
 
   return (
     <div className="relative flex h-dvh flex-col items-center justify-center px-6">
@@ -68,22 +74,22 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
         <div className="mx-auto flex max-w-sm flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-foreground">
-              {t.quiz.questionOf(currentIndex + 1, questions.length)}
+              {t.quiz.questionOf(currentIndex + 1, cards.length)}
             </span>
             <span className="text-sm font-bold text-primary">
-              {Math.round((currentIndex / questions.length) * 100)}%
+              {Math.round((currentIndex / cards.length) * 100)}%
             </span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
             <motion.div
               className="h-full rounded-full gradient-primary"
-              initial={{ width: `${(Math.max(0, currentIndex - 1) / questions.length) * 100}%` }}
-              animate={{ width: `${(currentIndex / questions.length) * 100}%` }}
+              initial={{ width: `${(Math.max(0, currentIndex - 1) / cards.length) * 100}%` }}
+              animate={{ width: `${(currentIndex / cards.length) * 100}%` }}
               transition={{ duration: 0.4, ease: "easeOut" }}
             />
           </div>
           <div className="flex items-center justify-center gap-1.5 pt-0.5">
-            {questions.map((_, idx) => (
+            {cards.map((_, idx) => (
               <motion.div
                 key={idx}
                 className="rounded-full bg-primary"
@@ -103,7 +109,8 @@ const QuizScreen = ({ onComplete }: QuizScreenProps) => {
       <AnimatePresence custom={exitDirection}>
         <SwipeCard
           key={currentIndex}
-          question={question}
+          card={card}
+          totalCards={cards.length}
           onSwipe={handleSwipe}
           exitDirection={exitDirection}
           index={currentIndex}

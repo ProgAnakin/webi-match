@@ -3,12 +3,11 @@ import { memo } from "react";
 
 // ── Star constellation ─────────────────────────────────────────────────────
 // Deterministic positions (no random) so the layout is stable across renders.
-// Tints rotate between white, brand orange and amber for brand coherence.
+// Tints alternate between brand orange and white.
 interface Star { left: string; top: string; size: number; delay: number; dur: number; tint: string; }
 const STARS: Star[] = Array.from({ length: 46 }, (_, i) => {
   const tint =
-    i % 6 === 0 ? "hsla(27, 92%, 70%, 0.95)" :   // brand orange
-    i % 9 === 0 ? "hsla(38, 96%, 70%, 0.95)" :   // amber
+    i % 3 === 0 ? "hsla(27, 92%, 70%, 0.95)" :   // brand orange
                   "hsla(0, 0%, 100%, 0.9)";       // white
   return {
     left:  `${(i * 73 + 5) % 96}%`,
@@ -51,11 +50,6 @@ const EMBERS: Ember[] = [
   { top: 35, dur: 5.8, delay: "-12.0s", w: 6, h: 2, color: "#f8a432", anim: "wb-ember-rtl-b" },
 ];
 
-// Radial-gradient orbs (no filter:blur — Safari iPad-safe).
-// `closest-side` keeps the falloff perfectly circular regardless of element shape.
-const OrbGradient = ({ hue, sat, lit }: { hue: number; sat: number; lit: number }) =>
-  `radial-gradient(circle closest-side, hsla(${hue},${sat}%,${lit}%,0.55) 0%, hsla(${hue},${sat}%,${lit}%,0.18) 38%, transparent 72%)`;
-
 const QuizBackground = memo(() => (
   <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
 
@@ -68,68 +62,7 @@ const QuizBackground = memo(() => (
       }}
     />
 
-    {/* ── Layer 2 · Ambient aurora orbs (no filter:blur for iOS Safari) ───── */}
-    <motion.div
-      className="absolute"
-      style={{
-        left: "-14vw", top: "-8vh",
-        width: "max(620px, 56vmin)", height: "max(620px, 56vmin)",
-        background: OrbGradient({ hue: 27, sat: 92, lit: 56 }),
-        willChange: "transform",
-      }}
-      animate={{
-        x: [0, 60, 30, -20, 0],
-        y: [0, 35, -25, 50, 0],
-        scale: [1, 1.12, 0.94, 1.06, 1],
-      }}
-      transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
-    />
-    <motion.div
-      className="absolute"
-      style={{
-        right: "-16vw", top: "12vh",
-        width: "max(540px, 50vmin)", height: "max(540px, 50vmin)",
-        background: OrbGradient({ hue: 16, sat: 100, lit: 52 }),
-        willChange: "transform",
-      }}
-      animate={{
-        x: [0, -50, 20, -30, 0],
-        y: [0, 45, -20, 35, 0],
-        scale: [1, 0.92, 1.10, 0.96, 1],
-      }}
-      transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
-    />
-    <motion.div
-      className="absolute"
-      style={{
-        left: "20vw", bottom: "-18vh",
-        width: "max(560px, 52vmin)", height: "max(560px, 52vmin)",
-        background: OrbGradient({ hue: 230, sat: 75, lit: 48 }),
-        willChange: "transform",
-      }}
-      animate={{
-        x: [0, 40, -25, 30, 0],
-        y: [0, -30, 25, -40, 0],
-        scale: [1, 1.06, 0.94, 1.08, 1],
-      }}
-      transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
-    />
-
-    {/* ── Layer 3 · Diagonal light sweep (slow comet) ────────────────────── */}
-    <motion.div
-      className="absolute"
-      style={{
-        left: "-30%", top: "-20%",
-        width: "60%", height: "140%",
-        background:
-          "linear-gradient(110deg, transparent 35%, hsla(27, 92%, 70%, 0.06) 48%, hsla(27, 92%, 80%, 0.12) 50%, hsla(27, 92%, 70%, 0.06) 52%, transparent 65%)",
-        willChange: "transform",
-      }}
-      animate={{ x: ["0vw", "180vw"] }}
-      transition={{ duration: 22, repeat: Infinity, ease: "linear", repeatDelay: 8 }}
-    />
-
-    {/* ── Layer 4 · Star constellation ──────────────────────────────────── */}
+    {/* ── Layer 2 · Star constellation ──────────────────────────────────── */}
     {STARS.map((s, i) => (
       <motion.div
         key={i}
