@@ -9,12 +9,23 @@ describe("getMatchedProduct", () => {
     expect(matchPercent).toBeLessThanOrEqual(98);
   });
 
-  it("is deterministic — same answers always return the same product", () => {
+  it("picks randomly among tied top-scoring products", () => {
+    // Q1=sport, Q3=productivity, Q5=travel — four products tie at score 2
     const answers = { 1: true, 3: true, 5: true };
-    const a = getMatchedProduct(answers);
-    const b = getMatchedProduct(answers);
-    expect(a.product.id).toBe(b.product.id);
-    expect(a.matchPercent).toBe(b.matchPercent);
+    const tiedIds = new Set([
+      "blnd-blender",
+      "head-hdtw01",
+      "outin-nano",
+      "veho-pebble-mg5",
+    ]);
+    const seen = new Set<string>();
+    for (let i = 0; i < 80; i++) {
+      const { product } = getMatchedProduct(answers);
+      expect(tiedIds.has(product.id)).toBe(true);
+      seen.add(product.id);
+    }
+    // Over 80 runs the random pick should surface more than one product.
+    expect(seen.size).toBeGreaterThan(1);
   });
 
   it("respects activeIds filter", () => {

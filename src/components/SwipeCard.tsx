@@ -1,10 +1,11 @@
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import type { Question } from "@/data/questions";
-import { questions } from "@/data/questions";
+import type { QuizCard } from "@/data/quiz-cards";
+import { resolveCardText } from "@/data/quiz-cards";
 import { useLang } from "@/i18n/LanguageContext";
 
 interface SwipeCardProps {
-  question: Question;
+  card: QuizCard;
+  totalCards: number;
   onSwipe: (direction: "left" | "right") => void;
   exitDirection?: "left" | "right";
   index?: number;
@@ -14,8 +15,8 @@ function haptic(ms: number) {
   try { navigator.vibrate?.(ms); } catch { /* unsupported */ }
 }
 
-const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardProps) => {
-  const { t } = useLang();
+const SwipeCard = ({ card, totalCards, onSwipe, exitDirection, index = 0 }: SwipeCardProps) => {
+  const { t, lang } = useLang();
 
   const x = useMotionValue(0);
   const rotate       = useTransform(x, [-200, 200], [-18, 18]);
@@ -29,9 +30,10 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
     "0 28px 80px hsl(145 80% 42% / 0.50), 0 0 0 1px rgba(255,255,255,0.05) inset",
   ]);
 
-  const categoryLabel = t.categories[question.category] ?? question.category;
+  const categoryLabel = t.categories[card.tag] ?? card.tag;
   const stepNum   = String(index + 1).padStart(2, "0");
-  const stepTotal = String(questions.length).padStart(2, "0");
+  const stepTotal = String(totalCards).padStart(2, "0");
+  const displayText = resolveCardText(card, lang);
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     const boost = Math.abs(info.velocity.x) > 400 ? 30 : 0;
@@ -40,7 +42,6 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
     else if (info.offset.x < -threshold) { haptic(30); onSwipe("left");  }
   };
 
-  // Card base style — deep navy glass, same visual family as the language modal
   const cardBg     = "linear-gradient(158deg, hsl(228,52%,20%) 0%, hsl(228,68%,11%) 100%)";
   const cardBorder = "1px solid rgba(255,255,255,0.09)";
 
@@ -109,7 +110,7 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
           }}
         />
 
-        {/* Drag tint overlays — UX feedback during swipe */}
+        {/* Drag tint overlays */}
         <motion.div
           className="pointer-events-none absolute inset-0 rounded-[28px]"
           style={{ background: "hsl(0 84% 60%)", opacity: noTintOp, zIndex: 25 }}
@@ -119,7 +120,7 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
           style={{ background: "hsl(145 80% 42%)", opacity: yesTintOp, zIndex: 25 }}
         />
 
-        {/* Subtle warm glow beneath orange bar */}
+        {/* Warm glow beneath orange bar */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0"
           style={{
@@ -128,7 +129,7 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
           }}
         />
 
-        {/* Bottom gradient — improves text legibility */}
+        {/* Bottom gradient */}
         <div
           className="pointer-events-none absolute inset-x-0 bottom-0"
           style={{
@@ -173,13 +174,13 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
             }}
           />
 
-          {/* Emoji — centred in remaining space */}
+          {/* Emoji */}
           <div className="flex flex-1 items-center justify-center">
             <span
               className="select-none"
               style={{ display: "block", fontSize: 116, lineHeight: 1 }}
             >
-              {question.emoji}
+              {card.emoji}
             </span>
           </div>
 
@@ -198,7 +199,7 @@ const SwipeCard = ({ question, onSwipe, exitDirection, index = 0 }: SwipeCardPro
               className="text-[1.12rem] font-bold leading-snug text-white"
               style={{ textShadow: "0 2px 18px rgba(0,0,0,0.9)" }}
             >
-              {t.questions[question.id] ?? question.text}
+              {displayText}
             </h2>
           </div>
         </div>
