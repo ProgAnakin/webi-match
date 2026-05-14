@@ -20,6 +20,70 @@ function tagToSlug(tag: string): string {
   return tag.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 }
 
+// ── Inline card preview ─────────────────────────────────────────────────────
+function CardPreview({ form, totalCards }: { form: CardForm; totalCards: number }) {
+  const cardBg = "linear-gradient(158deg, hsl(228,52%,20%) 0%, hsl(228,68%,11%) 100%)";
+  const text = form.text_it.trim() || "Testo della domanda…";
+  const emoji = form.emoji.trim() || "❓";
+  const tag = tagToSlug(form.tag) || "categoria";
+  const step = String(1).padStart(2, "0");
+  const total = String(Math.max(totalCards, 1)).padStart(2, "0");
+
+  return (
+    <div className="col-span-2 mt-1">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+        Anteprima carta
+      </p>
+      <div
+        className="relative mx-auto w-full max-w-[220px] rounded-[18px] overflow-hidden select-none"
+        style={{ background: cardBg, border: "1px solid rgba(255,255,255,0.09)", aspectRatio: "3/5" }}
+      >
+        {/* Orange bar */}
+        <div style={{ height: 3, background: "linear-gradient(90deg,hsl(27,92%,55%),hsl(16,100%,50%))" }} />
+        <div className="flex flex-col h-full pb-4">
+          {/* Header */}
+          <div className="flex items-center justify-between px-3 pt-2.5">
+            <div className="flex items-center gap-1.5">
+              <div className="h-1 w-1 rounded-full" style={{ background: "hsl(27,92%,58%)", opacity: 0.85 }} />
+              <span className="text-[8px] font-bold uppercase tracking-[0.2em]" style={{ color: "hsla(27,88%,72%,0.82)" }}>
+                {tag}
+              </span>
+            </div>
+            <span className="tabular-nums text-[8px] font-semibold" style={{ color: "hsla(27,88%,72%,0.60)" }}>
+              {step}<span style={{ opacity: 0.5 }}>&thinsp;/&thinsp;{total}</span>
+            </span>
+          </div>
+          <div className="mx-3 mt-1.5" style={{ height: 1, background: "linear-gradient(to right,transparent,rgba(255,255,255,0.08),transparent)" }} />
+          {/* Emoji */}
+          <div className="flex flex-1 items-center justify-center">
+            <span style={{ fontSize: 52, lineHeight: 1 }}>{emoji}</span>
+          </div>
+          <div className="mx-3" style={{ height: 1, background: "linear-gradient(to right,transparent,rgba(255,255,255,0.08),transparent)" }} />
+          {/* Question text */}
+          <div className="px-4 pt-2 text-center">
+            <p className="text-[9px] font-bold leading-snug text-white" style={{ textShadow: "0 1px 8px rgba(0,0,0,0.9)" }}>
+              {text}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Audit helper ─────────────────────────────────────────────────────────────
+async function logAudit(action: string, cardId: number | null, cardTag: string, newActive?: boolean) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from("manager_audit_log").insert({
+    user_id: user.id,
+    user_email: user.email ?? null,
+    product_id: `quiz_card:${cardId ?? cardTag}`,
+    action,
+    new_active: newActive ?? null,
+  });
+}
+
 export function QuizCardsTab() {
   const [cards, setCards] = useState<QuizCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,11 +162,16 @@ export function QuizCardsTab() {
     if (editingId !== null) {
       const { error } = await supabase.from("quiz_cards").update(payload).eq("id", editingId);
       if (error) { setFormError(error.message); setSaving(false); return; }
+      logAudit("quiz_card_edit", editingId, slug);
     } else {
-      // New card goes to the end of the sort order
       const maxOrder = cards.reduce((m, c) => Math.max(m, c.sort_order), 0);
-      const { error } = await supabase.from("quiz_cards").insert({ ...payload, sort_order: maxOrder + 1, active: true });
+      const { data: inserted, error } = await supabase
+        .from("quiz_cards")
+        .insert({ ...payload, sort_order: maxOrder + 1, active: true })
+        .select("id")
+        .single();
       if (error) { setFormError(error.message); setSaving(false); return; }
+      logAudit("quiz_card_add", inserted?.id ?? null, slug, true);
     }
 
     await fetchCards();
@@ -113,6 +182,7 @@ export function QuizCardsTab() {
   const toggleActive = async (card: QuizCard) => {
     setTogglingId(card.id);
     await supabase.from("quiz_cards").update({ active: !card.active, updated_at: new Date().toISOString() }).eq("id", card.id);
+    logAudit("quiz_card_toggle", card.id, card.tag, !card.active);
     setCards((prev) => prev.map((c) => c.id === card.id ? { ...c, active: !c.active } : c));
     setTogglingId(null);
   };
@@ -129,8 +199,8 @@ export function QuizCardsTab() {
       supabase.from("quiz_cards").update({ sort_order: other.sort_order, updated_at: new Date().toISOString() }).eq("id", card.id),
       supabase.from("quiz_cards").update({ sort_order: card.sort_order, updated_at: new Date().toISOString() }).eq("id", other.id),
     ]);
+    logAudit("quiz_card_reorder", card.id, card.tag);
 
-    // Optimistic update
     setCards((prev) => {
       const next = [...prev];
       const a = { ...next[idx], sort_order: other.sort_order };
@@ -228,13 +298,16 @@ export function QuizCardsTab() {
                 />
               </div>
 
+              {/* Live preview */}
+              <CardPreview form={form} totalCards={cards.length || 1} />
+
               {/* Translation section */}
               <div className="col-span-2 rounded-xl border border-border/50 bg-muted/10 p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                     Traduzioni (opzionali)
                   </span>
-                  {/* Traduci button — built but disabled */}
+                  {/* Traduci button — built but disabled until API integration */}
                   <button
                     type="button"
                     disabled
@@ -384,7 +457,6 @@ export function QuizCardsTab() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0">
-                  {/* Edit */}
                   <button
                     onClick={() => openEditForm(card)}
                     className="rounded-xl p-2 text-muted-foreground hover:text-foreground active:scale-95"
@@ -392,7 +464,6 @@ export function QuizCardsTab() {
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
-                  {/* Toggle active */}
                   <button
                     onClick={() => toggleActive(card)}
                     disabled={togglingId === card.id}

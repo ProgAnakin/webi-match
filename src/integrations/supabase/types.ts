@@ -14,13 +14,46 @@ export type Database = {
   }
   public: {
     Tables: {
+      email_template: {
+        Row: {
+          id: number
+          sender_name: string
+          subject_template: string
+          header_title: string
+          header_subtitle: string
+          footer_store_name: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          sender_name?: string
+          subject_template?: string
+          header_title?: string
+          header_subtitle?: string
+          footer_store_name?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          sender_name?: string
+          subject_template?: string
+          header_title?: string
+          header_subtitle?: string
+          footer_store_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       manager_audit_log: {
         Row: {
           id: string
           user_id: string | null
           user_email: string | null
           product_id: string
-          new_active: boolean
+          action: string | null
+          old_active: boolean | null
+          new_active: boolean | null
+          store_id: string | null
           created_at: string
         }
         Insert: {
@@ -28,7 +61,10 @@ export type Database = {
           user_id?: string | null
           user_email?: string | null
           product_id: string
-          new_active: boolean
+          action?: string | null
+          old_active?: boolean | null
+          new_active?: boolean | null
+          store_id?: string | null
           created_at?: string
         }
         Update: {
@@ -36,7 +72,10 @@ export type Database = {
           user_id?: string | null
           user_email?: string | null
           product_id?: string
-          new_active?: boolean
+          action?: string | null
+          old_active?: boolean | null
+          new_active?: boolean | null
+          store_id?: string | null
           created_at?: string
         }
         Relationships: []
@@ -50,6 +89,12 @@ export type Database = {
           image_url: string | null
           video_url: string | null
           discount_percent: number | null
+          faq_q1: string | null
+          faq_a1: string | null
+          faq_q2: string | null
+          faq_a2: string | null
+          faq_q3: string | null
+          faq_a3: string | null
           updated_at: string
         }
         Insert: {
@@ -60,6 +105,12 @@ export type Database = {
           image_url?: string | null
           video_url?: string | null
           discount_percent?: number | null
+          faq_q1?: string | null
+          faq_a1?: string | null
+          faq_q2?: string | null
+          faq_a2?: string | null
+          faq_q3?: string | null
+          faq_a3?: string | null
           updated_at?: string
         }
         Update: {
@@ -70,6 +121,57 @@ export type Database = {
           image_url?: string | null
           video_url?: string | null
           discount_percent?: number | null
+          faq_q1?: string | null
+          faq_a1?: string | null
+          faq_q2?: string | null
+          faq_a2?: string | null
+          faq_q3?: string | null
+          faq_a3?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quiz_cards: {
+        Row: {
+          id: number
+          emoji: string
+          tag: string
+          sort_order: number
+          active: boolean
+          text_it: string
+          text_en: string | null
+          text_pt: string | null
+          text_es: string | null
+          text_fr: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          emoji?: string
+          tag: string
+          sort_order?: number
+          active?: boolean
+          text_it?: string
+          text_en?: string | null
+          text_pt?: string | null
+          text_es?: string | null
+          text_fr?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          emoji?: string
+          tag?: string
+          sort_order?: number
+          active?: boolean
+          text_it?: string
+          text_en?: string | null
+          text_pt?: string | null
+          text_es?: string | null
+          text_fr?: string | null
+          created_at?: string
           updated_at?: string
         }
         Relationships: []
@@ -169,6 +271,10 @@ export type Database = {
       check_email_cooldown: {
         Args: { p_email: string }
         Returns: { in_cooldown: boolean; hours_remaining: number }[]
+      }
+      get_my_store_role: {
+        Args: Record<string, never>
+        Returns: { role: string; store_id: string | null }[]
       }
       verify_staff_pin: {
         Args: { p_pin: string; p_client_id: string; p_user_agent: string }
