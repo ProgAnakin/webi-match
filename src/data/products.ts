@@ -196,19 +196,6 @@ const TAG_MAP: Record<number, string> = {
   8: "recovery",
 };
 
-// Deterministic tie-break: djb2 hash of the sorted answer string ensures
-// identical quiz answers always produce the same product recommendation.
-function deterministicTiePick(answers: Record<number, boolean>, len: number): number {
-  if (len <= 1) return 0;
-  const key = Object.keys(answers)
-    .sort((a, b) => Number(a) - Number(b))
-    .map((k) => `${k}${answers[Number(k)] ? 1 : 0}`)
-    .join("");
-  let h = 5381;
-  for (let i = 0; i < key.length; i++) h = ((h * 33) ^ key.charCodeAt(i)) | 0;
-  return Math.abs(h) % len;
-}
-
 export function getMatchedProduct(
   answers: Record<number, boolean>,
   activeIds?: Set<string>,
@@ -240,8 +227,7 @@ export function getMatchedProduct(
     }
   });
 
-  // Deterministic pick among tied products — same answers always yield the same product.
-  const bestProduct = tied[deterministicTiePick(answers, tied.length)] ?? pool[0] ?? pool_source[0];
+  const bestProduct = tied[Math.floor(Math.random() * tied.length)] ?? pool[0] ?? pool_source[0];
 
   const totalTags = bestProduct.tags.length || 1;
   const rawPercent = Math.round((bestScore / totalTags) * 100);
