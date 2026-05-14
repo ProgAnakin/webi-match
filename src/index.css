@@ -117,10 +117,10 @@
   }
 }
 
-/* ── Welcome screen background animations ───────────────────────────────────────────────────────
+/* ── Welcome screen background animations ────────────────────────────────────────────
    All @keyframes here — processed by Vite, guaranteed to work on iOS Safari.
    Only transform + opacity animated (GPU compositor, zero layout cost).
-─────────────────────────────────────────────────────────────────────────────────── */
+──────────────────────────────────────────────────────────────────────────────── */
 
 /* Colour orbs — slow ambient drift */
 @keyframes wb-orb-a {
@@ -188,7 +188,7 @@
   100% { opacity: 0;    transform: translate(-28vw, 16px); }
 }
 
-/* ── Attract screen animations ──────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Attract screen animations ───────────────────────────────────────────────────────────────────────── */
 
 /* Product icons float upward like embers */
 @keyframes at-float-up {

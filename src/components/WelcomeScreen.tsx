@@ -38,7 +38,7 @@ function sanitizeName(value: string): string {
     .slice(0, 100);
 }
 
-// ─── Language Selector ─────────────────────────────────────────────────────────────────────────
+// ─── Language Selector ───────────────────────────────────────────────────────────────────────
 const LanguageSelector = () => {
   const { lang, setLang } = useLang();
   return (
@@ -61,7 +61,7 @@ const LanguageSelector = () => {
   );
 };
 
-// ─── Welcome Form ───────────────────────────────────────────────────────────────────────────────
+// ─── Welcome Form ───────────────────────────────────────────────────────────────────────────
 const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const { t } = useLang();
   const [nome, setNome] = useState("");
@@ -226,7 +226,7 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   );
 };
 
-// ─── Store Badge ───────────────────────────────────────────────────────────────────────────────
+// ─── Store Badge ────────────────────────────────────────────────────────────────────────────
 const StoreBadge = ({ onTap, refreshKey }: { onTap: () => void; refreshKey: number }) => {
   const { t } = useLang();
   const storeId = getStoredStoreId();
@@ -247,7 +247,7 @@ const StoreBadge = ({ onTap, refreshKey }: { onTap: () => void; refreshKey: numb
   );
 };
 
-// ─── Welcome Screen ───────────────────────────────────────────────────────────────────────────
+// ─── Welcome Screen ────────────────────────────────────────────────────────────────────────────
 const LOGO_TAPS_REQUIRED = 6;
 
 const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenProps) => {

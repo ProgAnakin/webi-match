@@ -111,7 +111,18 @@ function progressHtml(pct: number, color: string, muted: string): string {
   </td></tr></table>`;
 }
 
-function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ q: string; a: string }>): string {
+interface EmailTpl {
+  sender_name: string;
+  subject_template: string;
+  header_title: string;
+  header_subtitle: string;
+  footer_store_name: string;
+}
+
+function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ q: string; a: string }>, tpl?: EmailTpl): string {
+  const headerTitle    = tpl?.header_title    ?? "Abbiamo trovato il tuo match!";
+  const headerSubtitle = tpl?.header_subtitle ?? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il <strong style=\"color:#f0f4ff;\">gadget perfetto per il tuo stile di vita</strong>.";
+  const footerName     = tpl?.footer_store_name ?? "COSTANZO ANNICHINI";
   const nome         = escHtml(String(record.nome    ?? "").trim());
   const cognome      = escHtml(String(record.cognome ?? "").trim());
   const pct          = Number(record.match_percent ?? 0);
@@ -177,11 +188,9 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         </td></tr>
       </table>
       <h1 style="margin:22px 0 8px;font-size:30px;font-weight:800;color:${C.fg};line-height:1.15;letter-spacing:-0.01em;">
-        ${nome ? `Ciao <span style="color:${C.orange};">${nome}</span>,<br/>abbiamo trovato il tuo match!` : "Abbiamo trovato il tuo match!"}
+        ${nome ? `Ciao <span style="color:${C.orange};">${nome}</span>,<br/>${escHtml(headerTitle)}` : escHtml(headerTitle)}
       </h1>
-      <p style="margin:0;font-size:15px;color:${C.muted};line-height:1.6;">
-        Il nostro algoritmo ha analizzato le tue risposte<br/>e ha selezionato il <strong style="color:${C.fg};">gadget perfetto per il tuo stile di vita</strong>.
-      </p>
+      <p style="margin:0;font-size:15px;color:${C.muted};line-height:1.6;">${escHtml(headerSubtitle)}</p>
     </td>
   </tr>
 
@@ -235,7 +244,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td style="font-size:12px;font-weight:800;color:#fff;letter-spacing:0.14em;">SCONTO SPECIALE</td>
-                <td align="right" style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.8);letter-spacing:0.1em;">COSTANZO ANNICHINI</td>
+                <td align="right" style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.8);letter-spacing:0.1em;">${escHtml(footerName)}</td>
               </tr>
             </table>
           </td>
@@ -417,7 +426,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
 
   <tr>
     <td style="background:${C.cardHeader};padding:24px 32px 28px;text-align:center;border-top:1px solid ${C.border};border-radius:0 0 20px 20px;">
-      <p style="margin:0 0 4px;font-size:15px;font-weight:800;color:${C.fg};letter-spacing:0.1em;">COSTANZO ANNICHINI</p>
+      <p style="margin:0 0 4px;font-size:15px;font-weight:800;color:${C.fg};letter-spacing:0.1em;">${escHtml(footerName)}</p>
       <p style="margin:0 0 12px;font-size:11px;color:${C.muted};">Powered by Webi-Match</p>
       ${fullName ? `<p style="margin:0 0 10px;font-size:12px;color:${C.muted};">Inviato a <strong style="color:${C.fg};">${fullName}</strong>${recipientEmail ? ` · ${recipientEmail}` : ""}</p>` : ""}
       <div style="border-top:1px solid ${C.border};margin:12px auto;max-width:200px;"></div>
@@ -540,18 +549,34 @@ serve(async (req) => {
     }
   }
 
+  // Load editable email template (falls back to hardcoded defaults if unavailable).
+  const { data: tplRow } = await supabase
+    .from("email_template")
+    .select("sender_name, subject_template, header_title, header_subtitle, footer_store_name")
+    .eq("id", 1)
+    .maybeSingle();
+  const tpl = {
+    sender_name:       String(tplRow?.sender_name       ?? "Costanzo Annichini"),
+    subject_template:  String(tplRow?.subject_template  ?? "{{nome}}, il tuo match è {{pct}}% — Codice sconto valido 24h ⏰"),
+    header_title:      String(tplRow?.header_title      ?? "Abbiamo trovato il tuo match!"),
+    header_subtitle:   String(tplRow?.header_subtitle   ?? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il gadget perfetto per il tuo stile di vita."),
+    footer_store_name: String(tplRow?.footer_store_name ?? "COSTANZO ANNICHINI"),
+  };
+
   const nome     = String(record.nome ?? "").trim();
   const pct      = Number(record.match_percent ?? 0);
-  const subjName = nome ? `${nome}, il` : "Il";
-  const html     = buildEmail(record, code, faq);
+  const subject  = tpl.subject_template
+    .replace(/\{\{nome\}\}/g, nome || "Cliente")
+    .replace(/\{\{pct\}\}/g,  String(pct));
+  const html     = buildEmail(record, code, faq, tpl);
 
   const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: { "api-key": BREVO_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({
-      sender: { name: "Costanzo Annichini", email: "costanzo.annichini@gmail.com" },
+      sender: { name: tpl.sender_name, email: "costanzo.annichini@gmail.com" },
       to: [{ email: record.email, name: [nome, String(record.cognome ?? "")].filter(Boolean).join(" ") }],
-      subject: `${subjName} tuo match è ${pct}% — Codice sconto valido 24h ⏰`,
+      subject,
       htmlContent: html,
     }),
   });

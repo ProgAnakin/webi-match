@@ -11,9 +11,10 @@ import { FaqModal, FaqData, EMPTY_FAQ } from "./FaqModal";
 import { SessionsTab } from "./SessionsTab";
 import { ProductCatalogTab } from "./ProductCatalogTab";
 import { QuizCardsTab } from "./QuizCardsTab";
+import { EmailTemplateTab } from "./EmailTemplateTab";
 
 type ActiveTab = "catalogo" | "sessioni" | "storico" | "gestione";
-type GestioneTab = "catalogo" | "carte";
+type GestioneTab = "catalogo" | "carte" | "email";
 
 /** product_id → active boolean, loaded from Supabase */
 type SettingsMap = Record<string, boolean>;
@@ -170,8 +171,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         if (row.image_url) images[row.product_id] = row.image_url;
         if (row.video_url) videos[row.product_id] = row.video_url;
         if (row.discount_percent) discounts[row.product_id] = row.discount_percent;
-        // @ts-expect-error — faq/updated_at columns added via migration 20260418000002, not yet in generated types
-        const { faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3, updated_at: ua } = row as Record<string, string>;
+        const { faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3, updated_at: ua } = row;
         if (faq_q1 || faq_q2 || faq_q3) {
           faqs[row.product_id] = {
             q1: faq_q1 ?? "", a1: faq_a1 ?? "",
@@ -424,7 +424,6 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   };
 
   const saveFaq = async (productId: string, faq: FaqData) => {
-    // @ts-expect-error — faq columns added via migration 20260418000002, not yet in generated types
     await supabase.from("product_settings").upsert({
       product_id: productId,
       store_id: storeId,
@@ -676,9 +675,20 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
               >
                 🃏 Carte Quiz
               </button>
+              <button
+                onClick={() => setGestioneTab("email")}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-colors ${
+                  gestioneTab === "email"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                📧 Email
+              </button>
             </div>
             {gestioneTab === "catalogo" && <ProductCatalogTab />}
             {gestioneTab === "carte"    && <QuizCardsTab />}
+            {gestioneTab === "email"    && <EmailTemplateTab />}
           </div>
         )}
 
@@ -949,6 +959,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                       {imageOverrides[product.id] ? (
                         <div className="flex items-center gap-1.5">
                           <img src={imageOverrides[product.id]} alt={product.name}
+                            loading="lazy" decoding="async"
                             className="h-8 w-12 rounded-md border border-border object-cover" />
                           <button onClick={() => removeProductImage(product.id)}
                             className="flex items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/10 px-2 py-1 text-[10px] text-destructive active:scale-95">

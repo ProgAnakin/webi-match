@@ -7,7 +7,7 @@ import { LANGUAGES } from "@/i18n/translations";
 
 const MSG_EMOJIS = ["🎯", "🎁", "💡", "✨"];
 
-// ── Language picker modal ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── Language picker modal ────────────────────────────────────────────────────────────────────────────────
 const LanguageModal = ({ onClose }: { onClose: () => void }) => {
   const { lang, setLang } = useLang();
   return (
@@ -71,7 +71,7 @@ const LanguageModal = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-// ── Main attract screen ───────────────────────────────────────────────────────────────────────────────────────────
+// ── Main attract screen ─────────────────────────────────────────────────────────────────────────────────
 interface AttractScreenProps {
   onComplete: () => void;
 }

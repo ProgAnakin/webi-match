@@ -11,7 +11,7 @@ interface SplashScreenProps {
 
 const AUTO_ADVANCE_MS = 4500;
 
-// ─── Language Selector ────────────────────────────────────────────────────────────────────────────────────────
+// ─── Language Selector ────────────────────────────────────────────────────────────────────────────────
 const LanguageSelector = () => {
   const { lang, setLang } = useLang();
   return (

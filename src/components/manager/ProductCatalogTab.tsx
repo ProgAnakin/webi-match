@@ -461,7 +461,7 @@ export function ProductCatalogTab() {
               className={`flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 ${hidden ? "opacity-50" : ""}`}
             >
               <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-muted/30">
-                <img src={p.image} alt={p.name} className="h-full w-full object-contain" />
+                <img src={p.image} alt={p.name} loading="lazy" decoding="async" className="h-full w-full object-contain" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-foreground">{p.name}</p>
@@ -522,6 +522,8 @@ export function ProductCatalogTab() {
                   <img
                     src={p.image_url}
                     alt={p.name}
+                    loading="lazy"
+                    decoding="async"
                     className="h-9 w-9 shrink-0 rounded-lg object-contain bg-muted/30"
                   />
                 ) : (

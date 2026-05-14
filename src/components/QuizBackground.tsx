@@ -79,7 +79,7 @@ const QuizBackground = memo(() => (
       />
     ))}
 
-    {/* ── Layer 3 · Ember Float — sparks from side walls ─────────────────── */}
+    {/* ── Layer 5 · Ember Float — sparks from side walls ─────────────────── */}
     {EMBERS.map((e, i) => {
       const fromLeft = e.anim.startsWith("wb-ember-ltr");
       return (
@@ -101,7 +101,7 @@ const QuizBackground = memo(() => (
       );
     })}
 
-    {/* ── Layer 4 · Edge vignette (focus pull toward centre) ─────────────── */}
+    {/* ── Layer 6 · Edge vignette (focus pull toward centre) ─────────────── */}
     <div
       className="absolute inset-0"
       style={{
@@ -110,7 +110,7 @@ const QuizBackground = memo(() => (
       }}
     />
 
-    {/* ── Layer 5 · Subtle grain noise (premium feel) ────────────────────── */}
+    {/* ── Layer 7 · Subtle grain noise (premium feel) ────────────────────── */}
     <svg aria-hidden className="absolute inset-0 h-full w-full opacity-[0.025]">
       <filter id="qb-grain">
         <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" />
