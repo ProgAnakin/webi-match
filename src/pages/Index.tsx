@@ -141,8 +141,11 @@ const Index = () => {
         const active = new Set(
           data.filter((r) => r.active !== false).map((r) => r.product_id),
         );
+        // Custom products default to active, but respect an explicit per-store
+        // deactivation: only auto-add ones without a product_settings row.
+        const settingsIds = new Set(data.map((r) => r.product_id));
         customProductList.forEach((p) => {
-          if (!hiddenIds.has(p.id)) active.add(p.id);
+          if (!hiddenIds.has(p.id) && !settingsIds.has(p.id)) active.add(p.id);
         });
         const prices: Record<string, string>  = {};
         const images: Record<string, string>  = {};
