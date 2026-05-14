@@ -1,6 +1,7 @@
 // Supabase Edge Function — triggered by Database Webhook on quiz_sessions INSERT
 // Generates a unique discount code, sends the match email via Brevo,
 // then updates the session row with the code and email_sent = true.
+// Deploy: supabase functions deploy on-session-created
 //
 // Required secrets (set via Supabase Dashboard → Edge Functions → Secrets):
 //   BREVO_API_KEY             — from brevo.com
