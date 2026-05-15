@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, Search, X, Copy, Check, Mail, Clock, AlertCircle, XCircle, CheckCircle2, ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react";
+import { RefreshCw, Search, X, Copy, Check, Mail, Clock, AlertCircle, XCircle, CheckCircle2, ChevronLeft, ChevronRight, Download, Trash2, Filter, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/data/products";
 import { STORES } from "@/data/stores";
+import { useDebounce } from "@/hooks/useDebounce";
+import { toast } from "sonner";
+import { getCodeTtlMs } from "./EmailTemplateTab";
 
 interface Session {
   id: string;
@@ -47,11 +50,11 @@ function getSessionStatus(s: Session): "enviada" | "processando" | "sem_email" |
 }
 
 function isCodeExpired(s: Session): boolean {
-  return (Date.now() - new Date(s.created_at).getTime()) > 24 * 3_600_000;
+  return (Date.now() - new Date(s.created_at).getTime()) > getCodeTtlMs();
 }
 
 function hoursUntilExpiry(s: Session): number | null {
-  const msLeft = (new Date(s.created_at).getTime() + 24 * 3_600_000) - Date.now();
+  const msLeft = (new Date(s.created_at).getTime() + getCodeTtlMs()) - Date.now();
   if (msLeft <= 0) return null;
   return Math.ceil(msLeft / 3_600_000);
 }
@@ -68,27 +71,58 @@ interface SessionsTabProps {
   isGlobal: boolean;
 }
 
+// ── Skeleton loader ────────────────────────────────────────────────────────────
+function SessionSkeleton() {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="rounded-2xl border border-border bg-card p-4 animate-pulse">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-32 rounded bg-muted/50" />
+              <div className="h-3 w-48 rounded bg-muted/40" />
+              <div className="h-3 w-24 rounded bg-muted/30" />
+            </div>
+            <div className="space-y-2">
+              <div className="h-6 w-20 rounded-full bg-muted/50" />
+              <div className="h-6 w-28 rounded-lg bg-muted/40" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
-  const [sessions, setSessions] = useState<Session[]>([]);   // current page
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [kpiData, setKpiData] = useState<Pick<Session, "id" | "email_sent" | "discount_code" | "created_at" | "code_redeemed">[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [negadoCount, setNegadoCount] = useState(0);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
-  const [redeemError, setRedeemError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [showPurgeModal, setShowPurgeModal] = useState(false);
   const [purging, setPurging] = useState(false);
   const [purgePreviewCount, setPurgePreviewCount] = useState<number | null>(null);
-  const [purgedCount, setPurgedCount] = useState<number | null>(null);
+
+  // ── Advanced filters ────────────────────────────────────────────────────────
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+  const [filterProductId, setFilterProductId] = useState("");
+  const [filterMatchMin, setFilterMatchMin] = useState("");
+  const [filterMatchMax, setFilterMatchMax] = useState("");
 
   const PAGE_SIZE = 20;
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Lightweight fetch of all sessions (status fields only) for KPI cards
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
   const fetchKpiData = useCallback(async () => {
     let q = supabase
       .from("quiz_sessions")
@@ -99,7 +133,6 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId, isGlobal]);
 
-  // Server-side paginated fetch with search applied
   const fetchSessions = useCallback(async () => {
     setLoading(true);
     const from = (currentPage - 1) * PAGE_SIZE;
@@ -111,16 +144,26 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
       .range(from, from + PAGE_SIZE - 1);
 
     if (!isGlobal) query = query.eq("store_id", storeId);
-    if (search.trim()) {
-      const q = search.trim();
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.trim();
       query = query.or(`email.ilike.%${q}%,discount_code.ilike.%${q}%,nome.ilike.%${q}%,cognome.ilike.%${q}%`);
     }
+    // Advanced filters
+    if (filterDateFrom) query = query.gte("created_at", new Date(filterDateFrom).toISOString());
+    if (filterDateTo) {
+      const to = new Date(filterDateTo);
+      to.setHours(23, 59, 59, 999);
+      query = query.lte("created_at", to.toISOString());
+    }
+    if (filterProductId) query = query.eq("matched_product_id", filterProductId);
+    if (filterMatchMin) query = query.gte("match_percent", parseInt(filterMatchMin, 10));
+    if (filterMatchMax) query = query.lte("match_percent", parseInt(filterMatchMax, 10));
 
     const { data, count } = await query;
     setSessions((data ?? []) as Session[]);
     setTotalCount(count ?? 0);
     setLoading(false);
-  }, [storeId, isGlobal, currentPage, search]);
+  }, [storeId, isGlobal, currentPage, debouncedSearch, filterDateFrom, filterDateTo, filterProductId, filterMatchMin, filterMatchMax]);
 
   const fetchNegado = useCallback(async () => {
     const [shownRes, claimedRes] = await Promise.all([
@@ -131,6 +174,19 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     setNegadoCount(Math.max(0, negado));
   }, []);
 
+  // #6 — Real-time subscription
+  useEffect(() => {
+    const ch = supabase
+      .channel("sessions-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "quiz_sessions" }, () => {
+        fetchSessions();
+        fetchKpiData();
+      })
+      .subscribe();
+    channelRef.current = ch;
+    return () => { supabase.removeChannel(ch); };
+  }, [fetchSessions, fetchKpiData]);
+
   useEffect(() => {
     fetchKpiData();
     fetchNegado();
@@ -140,22 +196,21 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     fetchSessions();
   }, [fetchSessions]);
 
-  // Reset to page 1 when search or status filter changes
-  useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [debouncedSearch, statusFilter, filterDateFrom, filterDateTo, filterProductId, filterMatchMin, filterMatchMax]);
 
   const copyCode = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
       setCopiedCode(code);
       setTimeout(() => setCopiedCode(null), 2000);
+      toast.success("Codice copiato!");
     } catch { /* clipboard unavailable */ }
   };
 
-  // ── Mark code redeemed — uses RPC to bypass RLS ─────────────────────────
   const markRedeemed = async (s: Session) => {
     if (redeemingId) return;
     setRedeemingId(s.id);
-    setRedeemError(null);
     const { data: rowsUpdated, error } = await supabase.rpc("mark_code_redeemed", { p_session_id: s.id } as never);
     if (!error && (rowsUpdated as number) > 0) {
       setSessions((prev) =>
@@ -165,36 +220,30 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             : row
         )
       );
+      toast.success("Codice segnato come usato.");
     } else if (!error && (rowsUpdated as number) === 0) {
-      setRedeemError("0 righe aggiornate — controlla che la funzione SQL sia aggiornata con SET row_security = off.");
+      toast.error("0 righe aggiornate — controlla la funzione SQL.");
     } else if (error) {
-      setRedeemError(`Errore: ${error.message} (code: ${error.code})`);
+      toast.error(`Errore: ${error.message}`);
     }
     setRedeemingId(null);
   };
 
-  // ── Export all sessions to CSV ──────────────────────────────────────────
   const exportToCSV = useCallback(async () => {
     setExporting(true);
     let query = supabase
       .from("quiz_sessions")
       .select("id, email, nome, cognome, matched_product_id, match_percent, email_sent, discount_code, created_at, store_id, code_redeemed, code_redeemed_at")
       .order("created_at", { ascending: false });
-
     if (!isGlobal) query = query.eq("store_id", storeId);
-
     const { data } = await query;
     const rows = (data ?? []) as Session[];
 
     const headers = ["Nome", "Cognome", "Email", "Prodotto", "Match %", "Store", "Data", "Codice Sconto", "Stato Codice", "Usato Il"];
     const csvRows = rows.map((s) => [
-      s.nome ?? "",
-      s.cognome ?? "",
-      s.email,
-      productName(s.matched_product_id),
-      s.match_percent,
-      storeName(s.store_id),
-      formatDate(s.created_at),
+      s.nome ?? "", s.cognome ?? "", s.email,
+      productName(s.matched_product_id), s.match_percent,
+      storeName(s.store_id), formatDate(s.created_at),
       s.discount_code ?? "",
       s.code_redeemed ? "usato" : isCodeExpired(s) ? "scaduto" : s.discount_code ? "valido" : "sem codice",
       s.code_redeemed_at ? formatDate(s.code_redeemed_at) : "",
@@ -204,7 +253,6 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
       .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
       .join("\n");
 
-    // BOM prefix ensures Excel opens UTF-8 correctly
     const blob = new Blob(["﻿" + csvContent], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -214,10 +262,10 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    toast.success(`${rows.length} sessioni esportate in CSV.`);
     setExporting(false);
   }, [storeId, isGlobal]);
 
-  // ── Preview purge count then open modal ────────────────────────────────
   const openPurgeModal = useCallback(async () => {
     setPurgePreviewCount(null);
     setShowPurgeModal(true);
@@ -230,28 +278,26 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     setPurgePreviewCount(count ?? 0);
   }, [storeId, isGlobal]);
 
-  // ── Execute purge via RPC ───────────────────────────────────────────────
   const executePurge = useCallback(async () => {
     setPurging(true);
     const { data } = await supabase.rpc("purge_sessions_older_than", { p_days: 7 } as never);
     setPurging(false);
     setShowPurgeModal(false);
-    setPurgedCount(data as number ?? 0);
+    const deleted = (data as number) ?? 0;
+    toast.success(`${deleted} sessioni eliminate con successo.`);
     fetchSessions();
     fetchKpiData();
     fetchNegado();
   }, [fetchSessions, fetchKpiData, fetchNegado]);
 
-  // Status filter applies client-side on the fetched page; search is server-side.
   const filtered = statusFilter === "all"
     ? sessions
     : sessions.filter((s) => getSessionStatus(s) === statusFilter);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const safePage   = Math.min(currentPage, totalPages);
-  const paginated  = filtered;   // server already returned just this page
+  const paginated  = filtered;
 
-  // KPI counts come from kpiData (all sessions, no pagination)
   const counts = {
     all:         kpiData.length,
     enviada:     kpiData.filter((s) => s.email_sent).length,
@@ -268,7 +314,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   };
 
   const expiredReusable = kpiData.filter(
-    (s) => (Date.now() - new Date(s.created_at).getTime()) > 24 * 3_600_000
+    (s) => (Date.now() - new Date(s.created_at).getTime()) > getCodeTtlMs()
       && s.discount_code && !s.code_redeemed
   ).length;
 
@@ -285,6 +331,18 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     "border-border bg-muted/20";
 
   const localNegado = kpiData.filter((s) => !s.email_sent && !s.discount_code).length;
+
+  const hasAdvancedFilter = !!(filterDateFrom || filterDateTo || filterProductId || filterMatchMin || filterMatchMax);
+
+  const clearAdvanced = () => {
+    setFilterDateFrom("");
+    setFilterDateTo("");
+    setFilterProductId("");
+    setFilterMatchMin("");
+    setFilterMatchMax("");
+  };
+
+  const allProducts = products.map((p) => ({ id: p.id, name: p.name }));
 
   return (
     <div className="space-y-5">
@@ -322,57 +380,103 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         </div>
       </motion.div>
 
-      {/* Expired codes info */}
       {expiredReusable > 0 && (
         <motion.div
           className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-xs text-muted-foreground"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         >
-          💡 <strong className="text-foreground">{expiredReusable}</strong> codici scaduti (più di 24h) possono essere riutilizzati manualmente per nuovi clienti — copia il codice e consegnalo al consulente.
+          💡 <strong className="text-foreground">{expiredReusable}</strong> codici scaduti (più di 24h) possono essere riutilizzati manualmente per nuovi clienti.
         </motion.div>
       )}
 
-      {/* Redeem error feedback */}
-      <AnimatePresence>
-        {redeemError && (
-          <motion.div
-            className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-400 flex items-center justify-between"
-            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+      {/* Search + advanced filter toggle */}
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Cerca per email, nome o codice sconto…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-xl border border-border bg-card pl-9 pr-9 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => setShowAdvanced((v) => !v)}
+            title="Filtri avanzati"
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
+              showAdvanced || hasAdvancedFilter
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground"
+            }`}
           >
-            <span>{redeemError}</span>
-            <button onClick={() => setRedeemError(null)} className="ml-3 opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Purge success feedback */}
-      <AnimatePresence>
-        {purgedCount !== null && (
-          <motion.div
-            className="rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-xs text-green-400 flex items-center justify-between"
-            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-          >
-            <span>✓ <strong>{purgedCount}</strong> sessioni eliminate con successo.</span>
-            <button onClick={() => setPurgedCount(null)} className="ml-3 opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-        <input
-          type="text"
-          placeholder="Cerca per email, nome o codice sconto…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-border bg-card pl-9 pr-9 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-        {search && (
-          <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-            <X className="h-3.5 w-3.5" />
+            <Filter className="h-3.5 w-3.5" />
+            {hasAdvancedFilter ? "Filtri attivi" : "Filtri"}
           </button>
-        )}
+        </div>
+
+        {/* Advanced filters panel */}
+        <AnimatePresence>
+          {showAdvanced && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                    <CalendarDays className="h-3 w-3" /> Filtri avanzati
+                  </p>
+                  {hasAdvancedFilter && (
+                    <button onClick={clearAdvanced} className="text-[10px] text-primary hover:underline">
+                      Azzera filtri
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Data da</label>
+                    <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)}
+                      className="w-full rounded-lg border border-border bg-muted/30 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Data a</label>
+                    <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)}
+                      className="w-full rounded-lg border border-border bg-muted/30 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[10px] text-muted-foreground mb-1">Prodotto</label>
+                    <select value={filterProductId} onChange={(e) => setFilterProductId(e.target.value)}
+                      className="w-full rounded-lg border border-border bg-muted/30 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
+                      <option value="">Tutti i prodotti</option>
+                      {allProducts.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Match % min</label>
+                    <input type="number" min={0} max={100} value={filterMatchMin} onChange={(e) => setFilterMatchMin(e.target.value)}
+                      placeholder="0"
+                      className="w-full rounded-lg border border-border bg-muted/30 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Match % max</label>
+                    <input type="number" min={0} max={100} value={filterMatchMax} onChange={(e) => setFilterMatchMax(e.target.value)}
+                      placeholder="100"
+                      className="w-full rounded-lg border border-border bg-muted/30 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Status filter + actions */}
@@ -400,17 +504,15 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         ))}
 
         <div className="ml-auto flex items-center gap-2">
-          {/* Export CSV */}
           <button
             onClick={exportToCSV}
             disabled={exporting}
             className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-400 active:scale-95 transition-colors disabled:opacity-50"
-            title="Esporta tutte le sessioni in CSV (apribile in Excel)"
+            title="Esporta tutte le sessioni in CSV"
           >
             <Download className="h-3 w-3" /> {exporting ? "…" : "Esporta CSV"}
           </button>
 
-          {/* Purge old sessions */}
           <button
             onClick={openPurgeModal}
             className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-95 transition-colors"
@@ -419,7 +521,6 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             <Trash2 className="h-3 w-3" /> Pulisci (7gg)
           </button>
 
-          {/* Refresh */}
           <button
             onClick={() => { fetchSessions(); fetchKpiData(); fetchNegado(); }}
             className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground active:scale-95"
@@ -431,20 +532,23 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
       {/* Session list */}
       {loading ? (
-        <div className="py-16 text-center text-muted-foreground text-sm">Caricamento sessioni…</div>
+        <SessionSkeleton />
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-border bg-muted/20 py-12 text-center">
           <p className="text-2xl mb-2">📭</p>
           <p className="text-sm font-medium text-foreground">
-            {search ? "Nessun risultato trovato" : "Nessuna sessione"}
+            {search || hasAdvancedFilter ? "Nessun risultato trovato" : "Nessuna sessione"}
           </p>
-          {search && <p className="text-xs text-muted-foreground mt-1">Prova con un'altra email o codice.</p>}
+          {(search || hasAdvancedFilter) && (
+            <p className="text-xs text-muted-foreground mt-1">Prova con criteri diversi.</p>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
               {totalCount} sessioni{search ? ` (ricerca: "${search}")` : ""}
+              {hasAdvancedFilter && " · filtri attivi"}
               {statusFilter !== "all" && ` · filtro: ${statusFilter}`}
               {totalPages > 1 && ` · pagina ${safePage} di ${totalPages}`}
             </p>
@@ -524,21 +628,15 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                             </code>
 
                             {s.code_redeemed ? (
-                              <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold text-green-400 uppercase">
-                                usato
-                              </span>
+                              <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold text-green-400 uppercase">usato</span>
                             ) : expired ? (
-                              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground uppercase">
-                                scaduto
-                              </span>
+                              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground uppercase">scaduto</span>
                             ) : expiringSoon ? (
                               <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 text-[9px] font-bold text-amber-400 uppercase">
                                 scade in {hrsLeft}h
                               </span>
                             ) : (
-                              <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold text-green-400 uppercase">
-                                valido
-                              </span>
+                              <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold text-green-400 uppercase">valido</span>
                             )}
 
                             <button
@@ -605,10 +703,10 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
       )}
 
       <p className="pb-2 text-center text-xs text-muted-foreground">
-        {totalCount} sessioni totali · 20 per pagina · Codici scadono 24h dopo la creazione
+        {totalCount} sessioni totali · 20 per pagina · Codici scadono 24h dopo la creazione · Aggiornamento live ⚡
       </p>
 
-      {/* ── Purge confirmation modal ─────────────────────────────────────── */}
+      {/* ── Purge confirmation modal ──────────────────────────────────────── */}
       <AnimatePresence>
         {showPurgeModal && (
           <motion.div
@@ -645,7 +743,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
               </div>
 
               <p className="mb-5 text-xs text-muted-foreground">
-                Prima di procedere, usa il pulsante <strong className="text-foreground">Esporta CSV</strong> per salvare nome, cognome ed email di tutti i clienti in un file Excel.
+                Prima di procedere, usa il pulsante <strong className="text-foreground">Esporta CSV</strong> per salvare tutti i dati clienti.
               </p>
 
               <div className="flex gap-2">

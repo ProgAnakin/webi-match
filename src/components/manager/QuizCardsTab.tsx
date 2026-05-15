@@ -1,7 +1,23 @@
 import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronUp, Eye, EyeOff, Globe, Pencil, Plus, RotateCcw, X } from "lucide-react";
+import { Eye, EyeOff, Globe, GripVertical, Pencil, Plus, RotateCcw, X } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { QuizCard } from "@/data/quiz-cards";
 
 const EMPTY_FORM = {
@@ -20,7 +36,7 @@ function tagToSlug(tag: string): string {
   return tag.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 }
 
-// ── Inline card preview ─────────────────────────────────────────────────────
+// ── Card preview ──────────────────────────────────────────────────────────────
 function CardPreview({ form, totalCards }: { form: CardForm; totalCards: number }) {
   const cardBg = "linear-gradient(158deg, hsl(228,52%,20%) 0%, hsl(228,68%,11%) 100%)";
   const text = form.text_it.trim() || "Testo della domanda…";
@@ -38,10 +54,8 @@ function CardPreview({ form, totalCards }: { form: CardForm; totalCards: number 
         className="relative mx-auto w-full max-w-[220px] rounded-[18px] overflow-hidden select-none"
         style={{ background: cardBg, border: "1px solid rgba(255,255,255,0.09)", aspectRatio: "3/5" }}
       >
-        {/* Orange bar */}
         <div style={{ height: 3, background: "linear-gradient(90deg,hsl(27,92%,55%),hsl(16,100%,50%))" }} />
         <div className="flex flex-col h-full pb-4">
-          {/* Header */}
           <div className="flex items-center justify-between px-3 pt-2.5">
             <div className="flex items-center gap-1.5">
               <div className="h-1 w-1 rounded-full" style={{ background: "hsl(27,92%,58%)", opacity: 0.85 }} />
@@ -54,12 +68,10 @@ function CardPreview({ form, totalCards }: { form: CardForm; totalCards: number 
             </span>
           </div>
           <div className="mx-3 mt-1.5" style={{ height: 1, background: "linear-gradient(to right,transparent,rgba(255,255,255,0.08),transparent)" }} />
-          {/* Emoji */}
           <div className="flex flex-1 items-center justify-center">
             <span style={{ fontSize: 52, lineHeight: 1 }}>{emoji}</span>
           </div>
           <div className="mx-3" style={{ height: 1, background: "linear-gradient(to right,transparent,rgba(255,255,255,0.08),transparent)" }} />
-          {/* Question text */}
           <div className="px-4 pt-2 text-center">
             <p className="text-[9px] font-bold leading-snug text-white" style={{ textShadow: "0 1px 8px rgba(0,0,0,0.9)" }}>
               {text}
@@ -71,7 +83,7 @@ function CardPreview({ form, totalCards }: { form: CardForm; totalCards: number 
   );
 }
 
-// ── Audit helper ─────────────────────────────────────────────────────────────
+// ── Audit helper ───────────────────────────────────────────────────────────────
 async function logAudit(action: string, cardId: number | null, cardTag: string, newActive?: boolean) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
@@ -84,6 +96,131 @@ async function logAudit(action: string, cardId: number | null, cardTag: string, 
   });
 }
 
+// ── Skeleton loader ─────────────────────────────────────────────────────────
+function CardSkeleton() {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 animate-pulse">
+          <div className="h-5 w-4 rounded bg-muted/50 shrink-0" />
+          <div className="h-9 w-9 rounded-lg bg-muted/50 shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3 w-24 rounded bg-muted/50" />
+            <div className="h-4 w-48 rounded bg-muted/40" />
+          </div>
+          <div className="flex gap-1 shrink-0">
+            <div className="h-8 w-8 rounded-xl bg-muted/50" />
+            <div className="h-8 w-8 rounded-xl bg-muted/40" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Sortable card row ──────────────────────────────────────────────────────────
+function SortableCard({
+  card,
+  selected,
+  onSelect,
+  onEdit,
+  onToggle,
+  togglingId,
+}: {
+  card: QuizCard;
+  selected: boolean;
+  onSelect: (id: number, checked: boolean) => void;
+  onEdit: (card: QuizCard) => void;
+  onToggle: (card: QuizCard) => void;
+  togglingId: number | null;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: card.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      layout
+      className={`flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 ${card.active ? "" : "opacity-50"}`}
+    >
+      {/* Drag handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground touch-none"
+        title="Trascina per riordinare"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+
+      {/* Bulk select checkbox */}
+      <input
+        type="checkbox"
+        checked={selected}
+        onChange={(e) => onSelect(card.id, e.target.checked)}
+        className="h-4 w-4 shrink-0 cursor-pointer"
+        onClick={(e) => e.stopPropagation()}
+      />
+
+      {/* Emoji */}
+      <div className="shrink-0 w-10 text-center text-2xl select-none">{card.emoji}</div>
+
+      {/* Info */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-mono font-medium text-muted-foreground">
+            {card.tag}
+          </span>
+          <span className="text-[10px] text-muted-foreground/50">#{card.sort_order}</span>
+          <div className="flex items-center gap-0.5 ml-1">
+            {(["en", "pt", "es", "fr"] as const).map((lang) => {
+              const key = `text_${lang}` as keyof QuizCard;
+              const hasTranslation = !!(card[key]);
+              return (
+                <span
+                  key={lang}
+                  title={`${lang.toUpperCase()}: ${hasTranslation ? "✓" : "usa italiano"}`}
+                  className={`text-[8px] font-bold rounded-sm px-0.5 ${hasTranslation ? "text-green-400 bg-green-400/10" : "text-muted-foreground/30 bg-muted/20"}`}
+                >
+                  {lang.toUpperCase()}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+        <p className="mt-0.5 truncate text-sm text-foreground">{card.text_it}</p>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1 shrink-0">
+        <button
+          onClick={() => onEdit(card)}
+          className="rounded-xl p-2 text-muted-foreground hover:text-foreground active:scale-95"
+          title="Modifica"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={() => onToggle(card)}
+          disabled={togglingId === card.id}
+          title={card.active ? "Nascondi carta" : "Attiva carta"}
+          className={`rounded-xl p-2 transition-colors active:scale-95 ${
+            card.active ? "bg-green-500/10 text-green-400" : "bg-muted/40 text-muted-foreground"
+          }`}
+        >
+          {card.active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
 export function QuizCardsTab() {
   const [cards, setCards] = useState<QuizCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,9 +230,14 @@ export function QuizCardsTab() {
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
-  const [reorderingId, setReorderingId] = useState<number | null>(null);
   const [showTranslateInfo, setShowTranslateInfo] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [bulkWorking, setBulkWorking] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
 
   const fetchCards = useCallback(async () => {
     setLoading(true);
@@ -169,6 +311,7 @@ export function QuizCardsTab() {
       const { error } = await supabase.from("quiz_cards").update(payload).eq("id", editingId);
       if (error) { setFormError(error.message); setSaving(false); return; }
       logAudit("quiz_card_edit", editingId, slug);
+      toast.success("Carta aggiornata.");
     } else {
       const maxOrder = cards.reduce((m, c) => Math.max(m, c.sort_order), 0);
       const { data: inserted, error } = await supabase
@@ -178,6 +321,7 @@ export function QuizCardsTab() {
         .single();
       if (error) { setFormError(error.message); setSaving(false); return; }
       logAudit("quiz_card_add", inserted?.id ?? null, slug, true);
+      toast.success("Carta aggiunta al quiz.");
     }
 
     await fetchCards();
@@ -193,32 +337,57 @@ export function QuizCardsTab() {
     setTogglingId(null);
   };
 
-  const moveCard = async (card: QuizCard, direction: "up" | "down") => {
-    const idx = cards.findIndex((c) => c.id === card.id);
-    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= cards.length) return;
+  // ── Drag end: reorder + persist ─────────────────────────────────────────────
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-    const other = cards[swapIdx];
-    setReorderingId(card.id);
+    const oldIndex = cards.findIndex((c) => c.id === active.id);
+    const newIndex = cards.findIndex((c) => c.id === over.id);
+    const reordered = arrayMove(cards, oldIndex, newIndex).map((c, i) => ({
+      ...c,
+      sort_order: i + 1,
+    }));
+    setCards(reordered);
 
-    await Promise.all([
-      supabase.from("quiz_cards").update({ sort_order: other.sort_order, updated_at: new Date().toISOString() }).eq("id", card.id),
-      supabase.from("quiz_cards").update({ sort_order: card.sort_order, updated_at: new Date().toISOString() }).eq("id", other.id),
-    ]);
-    logAudit("quiz_card_reorder", card.id, card.tag);
+    // Persist new sort_order for affected cards
+    await Promise.all(
+      reordered.map((c) =>
+        supabase.from("quiz_cards").update({ sort_order: c.sort_order, updated_at: new Date().toISOString() }).eq("id", c.id)
+      )
+    );
+    logAudit("quiz_card_reorder", null, "batch");
+  };
 
-    setCards((prev) => {
-      const next = [...prev];
-      const a = { ...next[idx], sort_order: other.sort_order };
-      const b = { ...next[swapIdx], sort_order: card.sort_order };
-      next[idx] = a;
-      next[swapIdx] = b;
-      return next.sort((x, y) => x.sort_order - y.sort_order);
+  // ── Bulk actions ─────────────────────────────────────────────────────────────
+  const handleSelect = (id: number, checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
     });
-    setReorderingId(null);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelected(checked ? new Set(cards.map((c) => c.id)) : new Set());
+  };
+
+  const bulkToggle = async (targetActive: boolean) => {
+    setBulkWorking(true);
+    await Promise.all(
+      [...selected].map((id) =>
+        supabase.from("quiz_cards").update({ active: targetActive, updated_at: new Date().toISOString() }).eq("id", id)
+      )
+    );
+    setCards((prev) => prev.map((c) => selected.has(c.id) ? { ...c, active: targetActive } : c));
+    toast.success(`${selected.size} carte ${targetActive ? "attivate" : "disattivate"}.`);
+    setSelected(new Set());
+    setBulkWorking(false);
   };
 
   const activeCount = cards.filter((c) => c.active).length;
+  const allSelected = cards.length > 0 && selected.size === cards.length;
 
   return (
     <div className="space-y-6">
@@ -240,7 +409,7 @@ export function QuizCardsTab() {
 
       {/* Info banner */}
       <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-xs text-muted-foreground leading-relaxed">
-        💡 Le carte attive compaiono nel quiz nell'ordine indicato. Aggiungi nuove carte con tag personalizzati — i nuovi tag appariranno automaticamente nel modulo prodotti.
+        💡 Trascina le carte per riordinarle. Usa le checkbox per azioni in blocco. Le carte attive compaiono nel quiz nell'ordine indicato.
       </div>
 
       {/* Add / Edit form */}
@@ -260,7 +429,6 @@ export function QuizCardsTab() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {/* Emoji */}
               <div>
                 <label className="block text-[10px] font-medium text-muted-foreground mb-1">Emoji centrale *</label>
                 <input
@@ -273,7 +441,6 @@ export function QuizCardsTab() {
                 />
               </div>
 
-              {/* Tag */}
               <div>
                 <label className="block text-[10px] font-medium text-muted-foreground mb-1">
                   Tag categoria * <span className="font-normal">(slug, es. "coffee")</span>
@@ -290,7 +457,6 @@ export function QuizCardsTab() {
                 </p>
               </div>
 
-              {/* Italian text (primary) */}
               <div className="col-span-2">
                 <label className="block text-[10px] font-medium text-muted-foreground mb-1">
                   Testo domanda — Italiano *
@@ -304,16 +470,13 @@ export function QuizCardsTab() {
                 />
               </div>
 
-              {/* Live preview */}
               <CardPreview form={form} totalCards={cards.length || 1} />
 
-              {/* Translation section */}
               <div className="col-span-2 rounded-xl border border-border/50 bg-muted/10 p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                     Traduzioni (opzionali)
                   </span>
-                  {/* Traduci button — built but disabled until API integration */}
                   <button
                     type="button"
                     disabled
@@ -325,7 +488,6 @@ export function QuizCardsTab() {
                   </button>
                 </div>
 
-                {/* Disabled notice */}
                 <div
                   className="rounded-lg bg-amber-500/8 border border-amber-500/20 px-3 py-2 text-[10px] text-amber-400/70 leading-relaxed cursor-pointer"
                   onClick={() => setShowTranslateInfo((v) => !v)}
@@ -333,16 +495,13 @@ export function QuizCardsTab() {
                   <span className="font-semibold">ℹ️ Traduzione automatica</span>
                   {showTranslateInfo ? (
                     <p className="mt-1">
-                      La traduzione automatica sarà disponibile in futuro con l'integrazione di un'API di traduzione.
-                      La struttura è già predisposta — al momento l'app è completamente gratuita e senza costi esterni.
-                      Puoi inserire le traduzioni manualmente nei campi qui sotto.
+                      La traduzione automatica sarà disponibile in futuro. Puoi inserire le traduzioni manualmente.
                     </p>
                   ) : (
                     <span className="ml-1 opacity-60">— tappa per i dettagli</span>
                   )}
                 </div>
 
-                {/* Manual translation fields */}
                 {[
                   { key: "text_en" as const, label: "🇬🇧 English" },
                   { key: "text_pt" as const, label: "🇧🇷 Português" },
@@ -388,7 +547,7 @@ export function QuizCardsTab() {
 
       {/* Card list */}
       {loading ? (
-        <div className="py-12 text-center text-xs text-muted-foreground">Caricamento carte…</div>
+        <CardSkeleton />
       ) : loadError ? (
         <div className="rounded-2xl border border-destructive/30 bg-destructive/10 py-12 text-center">
           <p className="text-2xl mb-2">⚠️</p>
@@ -403,95 +562,66 @@ export function QuizCardsTab() {
         </div>
       ) : (
         <div className="space-y-2">
-          {cards.map((card, idx) => {
-            const isFirst = idx === 0;
-            const isLast  = idx === cards.length - 1;
-            const isMoving = reorderingId === card.id;
-
-            return (
-              <motion.div
-                key={card.id}
-                layout
-                className={`flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 ${card.active ? "" : "opacity-50"}`}
-                animate={{ opacity: card.active ? 1 : 0.5 }}
-              >
-                {/* Sort order arrows */}
-                <div className="flex flex-col gap-0.5 shrink-0">
+          {/* Bulk action header */}
+          <div className="flex items-center gap-3 px-1">
+            <input
+              type="checkbox"
+              id="select-all-cards"
+              checked={allSelected}
+              onChange={(e) => handleSelectAll(e.target.checked)}
+              className="h-4 w-4 cursor-pointer"
+            />
+            <label htmlFor="select-all-cards" className="text-xs text-muted-foreground cursor-pointer select-none">
+              Seleziona tutti ({cards.length})
+            </label>
+            <AnimatePresence>
+              {selected.size > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}
+                  className="flex items-center gap-2 ml-2"
+                >
+                  <span className="text-xs font-semibold text-primary">{selected.size} selezionate</span>
                   <button
-                    onClick={() => moveCard(card, "up")}
-                    disabled={isFirst || isMoving}
-                    className="rounded-md p-0.5 text-muted-foreground hover:text-foreground active:scale-95 disabled:opacity-20"
+                    onClick={() => bulkToggle(true)}
+                    disabled={bulkWorking}
+                    className="flex items-center gap-1 rounded-full border border-green-500/40 bg-green-500/10 px-2.5 py-1 text-[10px] font-semibold text-green-400 active:scale-95 disabled:opacity-50"
                   >
-                    <ChevronUp className="h-3.5 w-3.5" />
+                    <Eye className="h-3 w-3" /> Attiva
                   </button>
                   <button
-                    onClick={() => moveCard(card, "down")}
-                    disabled={isLast || isMoving}
-                    className="rounded-md p-0.5 text-muted-foreground hover:text-foreground active:scale-95 disabled:opacity-20"
+                    onClick={() => bulkToggle(false)}
+                    disabled={bulkWorking}
+                    className="flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-400 active:scale-95 disabled:opacity-50"
                   >
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-
-                {/* Emoji */}
-                <div className="shrink-0 w-10 text-center text-2xl select-none">
-                  {card.emoji}
-                </div>
-
-                {/* Info */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-mono font-medium text-muted-foreground">
-                      {card.tag}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground/50">
-                      #{card.sort_order}
-                    </span>
-                    {/* Language coverage dots */}
-                    <div className="flex items-center gap-0.5 ml-1">
-                      {(["en", "pt", "es", "fr"] as const).map((lang) => {
-                        const key = `text_${lang}` as keyof QuizCard;
-                        const hasTranslation = !!(card[key]);
-                        return (
-                          <span
-                            key={lang}
-                            title={`${lang.toUpperCase()}: ${hasTranslation ? "✓" : "usa italiano"}`}
-                            className={`text-[8px] font-bold rounded-sm px-0.5 ${hasTranslation ? "text-green-400 bg-green-400/10" : "text-muted-foreground/30 bg-muted/20"}`}
-                          >
-                            {lang.toUpperCase()}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <p className="mt-0.5 truncate text-sm text-foreground">{card.text_it}</p>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => openEditForm(card)}
-                    className="rounded-xl p-2 text-muted-foreground hover:text-foreground active:scale-95"
-                    title="Modifica"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
+                    <EyeOff className="h-3 w-3" /> Disattiva
                   </button>
                   <button
-                    onClick={() => toggleActive(card)}
-                    disabled={togglingId === card.id}
-                    title={card.active ? "Nascondi carta" : "Attiva carta"}
-                    className={`rounded-xl p-2 transition-colors active:scale-95 ${
-                      card.active
-                        ? "bg-green-500/10 text-green-400"
-                        : "bg-muted/40 text-muted-foreground"
-                    }`}
+                    onClick={() => setSelected(new Set())}
+                    className="text-[10px] text-muted-foreground hover:text-foreground"
                   >
-                    {card.active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                    Annulla
                   </button>
-                </div>
-              </motion.div>
-            );
-          })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Draggable list */}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+              {cards.map((card) => (
+                <SortableCard
+                  key={card.id}
+                  card={card}
+                  selected={selected.has(card.id)}
+                  onSelect={handleSelect}
+                  onEdit={openEditForm}
+                  onToggle={toggleActive}
+                  togglingId={togglingId}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
       )}
 

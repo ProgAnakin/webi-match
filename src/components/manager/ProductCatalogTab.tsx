@@ -3,6 +3,31 @@ import { Eye, EyeOff, Pencil, Plus, RotateCcw, Trash2, Upload, X } from "lucide-
 import { supabase } from "@/integrations/supabase/client";
 import { products as coreProducts } from "@/data/products";
 import { AVAILABLE_TAGS } from "@/data/products";
+import { toast } from "sonner";
+
+/** Resize an image to max 1024px on the longest side, returning a new File at up to 80% JPEG quality. */
+async function resizeImage(file: File, maxPx = 1024, quality = 0.8): Promise<File> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const { width, height } = img;
+      const scale = Math.min(1, maxPx / Math.max(width, height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(
+        (blob) => resolve(blob ? new File([blob], file.name, { type: "image/jpeg" }) : file),
+        "image/jpeg",
+        quality,
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
 
 // Load distinct active tags from quiz_cards so new custom cards surface in the picker.
 async function fetchActiveTags(): Promise<string[]> {
@@ -148,22 +173,23 @@ export function ProductCatalogTab() {
     });
   };
 
-  const uploadImage = async (file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
+  const uploadImage = async (rawFile: File) => {
+    if (rawFile.size > 5 * 1024 * 1024) {
       setFormError("Immagine troppo grande — massimo 5 MB.");
       return;
     }
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(rawFile.type)) {
       setFormError("Formato non supportato — usa JPEG, PNG o WebP.");
       return;
     }
     setUploadingImage(true);
-    const ext = file.name.split(".").pop() ?? "jpg";
+    // #8 — auto-resize before upload
+    const file = await resizeImage(rawFile);
     const targetId = form.id || `new-${Date.now()}`;
-    const path = `custom/${targetId}.${ext}`;
+    const path = `custom/${targetId}.jpg`;
     const { error } = await supabase.storage
       .from("product-images")
-      .upload(path, file, { upsert: true, contentType: file.type });
+      .upload(path, file, { upsert: true, contentType: "image/jpeg" });
     if (error) {
       setFormError("Errore upload immagine: " + error.message);
       setUploadingImage(false);
@@ -187,9 +213,29 @@ export function ProductCatalogTab() {
     setSaving(true);
     setFormError(null);
 
+    const slugId = form.id.trim();
+
+    // #4 — slug collision check for new products
+    if (!editingId) {
+      // Check against core products
+      const coreCollision = coreProducts.some((p) => p.id === slugId);
+      if (coreCollision) {
+        setFormError(`L'ID "${slugId}" è già usato da un prodotto base. Scegli un ID diverso.`);
+        setSaving(false);
+        return;
+      }
+      // Check against custom products
+      const { data: existing } = await supabase.from("custom_products").select("id").eq("id", slugId).maybeSingle();
+      if (existing) {
+        setFormError(`L'ID "${slugId}" esiste già nel catalogo. Scegli un ID diverso.`);
+        setSaving(false);
+        return;
+      }
+    }
+
     const faqFiltered = form.faq.filter((f) => f.q.trim() || f.a.trim());
     const payload = {
-      id: form.id.trim(),
+      id: slugId,
       name: form.name.trim(),
       description: form.description.trim(),
       price: form.price.trim(),
@@ -211,6 +257,7 @@ export function ProductCatalogTab() {
       setSaving(false);
       return;
     }
+    toast.success(editingId ? "Prodotto aggiornato." : "Prodotto aggiunto al catalogo.");
     await fetchData();
     cancelForm();
     setSaving(false);
@@ -222,6 +269,7 @@ export function ProductCatalogTab() {
       .from("custom_products")
       .update({ status: archive ? "archived" : "active", updated_at: new Date().toISOString() })
       .eq("id", id);
+    toast.success(archive ? "Prodotto archiviato." : "Prodotto ripristinato.");
     await fetchData();
     setDeletingId(null);
   };
@@ -230,6 +278,7 @@ export function ProductCatalogTab() {
     if (!window.confirm(`Eliminare definitivamente il prodotto "${id}"? L'azione è irreversibile.`)) return;
     setDeletingId(id);
     await supabase.from("custom_products").delete().eq("id", id);
+    toast.success("Prodotto eliminato definitivamente.");
     await fetchData();
     setDeletingId(null);
   };
