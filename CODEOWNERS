@@ -1,0 +1,8 @@
+# All files — Costanzo Annichini is the sole maintainer and required reviewer.
+* @ProgAnakin
+
+# Security-sensitive paths get an explicit entry so they surface clearly in PR reviews.
+SECURITY.md @ProgAnakin
+supabase/migrations/ @ProgAnakin
+supabase/functions/ @ProgAnakin
+src/i18n/ @ProgAnakin

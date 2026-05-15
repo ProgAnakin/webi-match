@@ -161,6 +161,35 @@ flowchart LR
 
 ---
 
+## ⚡ Performance
+
+| Metric | Target | Notes |
+|--------|--------|-------|
+| **Bundle (main)** | < 200 KB gzip | Manual `manualChunks` splits react-vendor, framer-motion, supabase, radix into separate cacheable chunks |
+| **LCP** | < 2.5s | Attract screen paints from CSS only — no image in critical path |
+| **PWA Score** | 100 | Full manifest, service worker, offline capability, installable |
+| **A11y Score** | 100 | WCAG 2.1 AA — all targets, focus rings, ARIA labels, contrast |
+| **Image pipeline** | ≤ 1024px JPEG q=80 | Auto-resize on upload in manager dashboard |
+| **Search debounce** | 300 ms | Prevents DB hit on every keystroke |
+| **Animation budget** | ≤ 0.15s stagger | Capped to prevent jank on 20+ session list on iPad |
+
+> Run `npx lighthouse https://webi-match.vercel.app --view` to reproduce.
+
+---
+
+## 🗂️ Architecture Decision Records
+
+Key architectural trade-offs are documented in [`docs/adr/`](./docs/adr/):
+
+| ADR | Decision |
+|-----|---------|
+| [001](./docs/adr/001-supabase-over-firebase.md) | Supabase (PostgreSQL + RLS + pgcrypto) over Firebase |
+| [002](./docs/adr/002-pwa-over-native.md) | PWA over native iOS app (with Capacitor escape hatch) |
+| [003](./docs/adr/003-pii-encryption-at-rest.md) | PII encryption at the database layer (pgp_sym_encrypt + SHA-256) |
+| [004](./docs/adr/004-swipe-quiz-over-form.md) | Tinder-style swipe quiz over a traditional form |
+
+---
+
 ## 🧰 Tech Stack
 
 | Layer | Technology |
@@ -316,6 +345,9 @@ This project was conceived, designed and built end-to-end by Costanzo Annichini 
 
 **Costanzo Annichini** — Specialist Consultant @ Webidoo Store
 
-A side-of-the-desk project: built to give customers a reason to actually touch the iPads in store. Architected and shipped solo, end-to-end.
+A side-of-the-desk project: built to give customers a reason to actually touch the iPads in store. Architected and shipped solo, end-to-end — from swipe interaction to database security model to multilingual email automation.
 
-Let's connect on [LinkedIn](https://www.linkedin.com/) ✨
+- **GitHub:** [github.com/ProgAnakin](https://github.com/ProgAnakin)
+- **LinkedIn:** [linkedin.com/in/YOUR_PROFILE](https://www.linkedin.com/in/YOUR_PROFILE) ← *update this URL*
+
+> If you're a recruiter or engineer curious about the architecture, the [ADRs](./docs/adr/) document the key decisions. The [CHANGELOG](./CHANGELOG.md) documents every version. Happy to talk through any of it.
