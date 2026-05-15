@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BarChart2, Camera, Check, HelpCircle, History, Home, Link, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download, Inbox } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { products, type Product } from "@/data/products";
 import { getStoredStoreId, setStoredStoreId, getStoreById, STORES } from "@/data/stores";
@@ -12,6 +13,8 @@ import { SessionsTab } from "./SessionsTab";
 import { ProductCatalogTab } from "./ProductCatalogTab";
 import { QuizCardsTab } from "./QuizCardsTab";
 import { EmailTemplateTab } from "./EmailTemplateTab";
+
+import { resizeImage } from "@/lib/imageProcessing";
 
 type ActiveTab = "catalogo" | "sessioni" | "storico" | "gestione";
 type GestioneTab = "catalogo" | "carte" | "email";
@@ -265,6 +268,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
       setSavingId(null);
       setSettings((prev) => ({ ...prev, [productId]: current }));
       setSaveError("Errore nel salvataggio. Verifica la connessione e riprova.");
+      toast.error("Errore nel salvataggio. Verifica la connessione.");
       return false;
     }
 
@@ -396,29 +400,31 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     for (const { productId, newPrice } of csvPreview) {
       await savePriceOverride(productId, newPrice);
     }
+    toast.success(`${csvPreview.length} prezzi aggiornati da CSV.`);
     setCsvPreview([]);
     setShowCsvModal(false);
   };
 
-  const uploadProductImage = async (productId: string, file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      setSaveError("Immagine troppo grande — massimo 5 MB.");
+  const uploadProductImage = async (productId: string, rawFile: File) => {
+    if (rawFile.size > 5 * 1024 * 1024) {
+      toast.error("Immagine troppo grande — massimo 5 MB.");
       return;
     }
-    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
-      setSaveError("Formato non supportato — usa JPEG, PNG, WebP o GIF.");
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(rawFile.type)) {
+      toast.error("Formato non supportato — usa JPEG, PNG, WebP o GIF.");
       return;
     }
     setUploadingImageId(productId);
-    const ext = file.name.split(".").pop() ?? "jpg";
-    const path = `${storeId}/${productId}.${ext}`;
+    // #8 — auto-resize to max 1024px before upload
+    const file = await resizeImage(rawFile);
+    const path = `${storeId}/${productId}.jpg`;
 
     const { error: uploadError } = await supabase.storage
       .from("product-images")
-      .upload(path, file, { upsert: true, contentType: file.type });
+      .upload(path, file, { upsert: true, contentType: "image/jpeg" });
 
     if (uploadError) {
-      setSaveError("Errore upload immagine: " + uploadError.message);
+      toast.error("Errore upload immagine: " + uploadError.message);
       setUploadingImageId(null);
       return;
     }
@@ -437,6 +443,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     });
 
     setImageOverrides((prev) => ({ ...prev, [productId]: imageUrl }));
+    toast.success("Immagine caricata.");
     setUploadingImageId(null);
   };
 
@@ -496,6 +503,29 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     await supabase.auth.signOut();
     onLogout();
   };
+
+  // #11 — Keyboard shortcuts: Ctrl+S → refresh settings, Esc → clear bulk selection / close modals
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Ignore if focused on an input/textarea
+      if (["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) return;
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        fetchSettings();
+        toast.info("Catalogo aggiornato.");
+      }
+      if (e.key === "Escape") {
+        if (bulkSelection.size > 0) setBulkSelection(new Set());
+        if (bulkConfirm) setBulkConfirm(null);
+        if (showCsvModal) setShowCsvModal(false);
+        if (showStoreModal) setShowStoreModal(false);
+        if (editingFaqId) setEditingFaqId(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchSettings, bulkSelection.size, bulkConfirm, showCsvModal, showStoreModal, editingFaqId]);
 
   const sortedProducts = [...catalogProducts].sort((a, b) => {
     const aOn = settings[a.id] !== false;
@@ -844,7 +874,21 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
 
         {/* Product list */}
         {loading ? (
-          <div className="py-20 text-center text-muted-foreground">Caricamento prodotti…</div>
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="overflow-hidden rounded-2xl border border-border bg-card p-4 animate-pulse">
+                <div className="flex items-start gap-3">
+                  <div className="h-4 w-4 rounded bg-muted/50 mt-1.5 shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-12 rounded bg-muted/50" />
+                    <div className="h-5 w-48 rounded bg-muted/50" />
+                    <div className="h-3 w-24 rounded bg-muted/40" />
+                  </div>
+                  <div className="h-8 w-20 rounded-xl bg-muted/50 shrink-0" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : filteredProducts.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground text-sm">
             Nessun prodotto trovato per "{search || filterTag}".

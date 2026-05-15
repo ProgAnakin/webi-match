@@ -3,6 +3,14 @@ import { Eye, EyeOff, Pencil, Plus, RotateCcw, Trash2, Upload, X } from "lucide-
 import { supabase } from "@/integrations/supabase/client";
 import { products as coreProducts } from "@/data/products";
 import { AVAILABLE_TAGS } from "@/data/products";
+import { toast } from "sonner";
+
+import { resizeImage } from "@/lib/imageProcessing";
+
+/** Strip HTML tags from user-supplied text (XSS protection for custom product fields). */
+function stripHtml(text: string): string {
+  return text.replace(/<[^>]*>/g, "").trim();
+}
 
 // Load distinct active tags from quiz_cards so new custom cards surface in the picker.
 async function fetchActiveTags(): Promise<string[]> {
@@ -55,6 +63,26 @@ function slugify(text: string): string {
     .replace(/[^a-z0-9-]/g, "")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+function ProductSkeleton() {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 animate-pulse">
+          <div className="h-9 w-9 shrink-0 rounded-lg bg-muted/50" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3.5 w-32 rounded bg-muted/50" />
+            <div className="h-3 w-24 rounded bg-muted/40" />
+          </div>
+          <div className="flex gap-1">
+            <div className="h-7 w-7 rounded-lg bg-muted/50" />
+            <div className="h-7 w-7 rounded-lg bg-muted/40" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function ProductCatalogTab() {
@@ -148,22 +176,23 @@ export function ProductCatalogTab() {
     });
   };
 
-  const uploadImage = async (file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
+  const uploadImage = async (rawFile: File) => {
+    if (rawFile.size > 5 * 1024 * 1024) {
       setFormError("Immagine troppo grande — massimo 5 MB.");
       return;
     }
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(rawFile.type)) {
       setFormError("Formato non supportato — usa JPEG, PNG o WebP.");
       return;
     }
     setUploadingImage(true);
-    const ext = file.name.split(".").pop() ?? "jpg";
+    // #8 — auto-resize before upload
+    const file = await resizeImage(rawFile);
     const targetId = form.id || `new-${Date.now()}`;
-    const path = `custom/${targetId}.${ext}`;
+    const path = `custom/${targetId}.jpg`;
     const { error } = await supabase.storage
       .from("product-images")
-      .upload(path, file, { upsert: true, contentType: file.type });
+      .upload(path, file, { upsert: true, contentType: "image/jpeg" });
     if (error) {
       setFormError("Errore upload immagine: " + error.message);
       setUploadingImage(false);
@@ -175,11 +204,16 @@ export function ProductCatalogTab() {
   };
 
   const saveProduct = async () => {
-    if (!form.name.trim()) { setFormError("Il nome è obbligatorio."); return; }
-    if (form.name.trim().length > 60) { setFormError("Nome troppo lungo — massimo 60 caratteri."); return; }
+    const safeName = stripHtml(form.name);
+    const safeDesc = stripHtml(form.description);
+    if (!safeName) { setFormError("Il nome è obbligatorio."); return; }
+    if (safeName.length > 60) { setFormError("Nome troppo lungo — massimo 60 caratteri."); return; }
     if (!form.id.trim()) { setFormError("L'ID prodotto è obbligatorio."); return; }
-    if (!form.description.trim()) { setFormError("La descrizione è obbligatoria."); return; }
-    if (form.description.trim().length > 300) { setFormError("Descrizione troppo lunga — massimo 300 caratteri."); return; }
+    if (!safeDesc) { setFormError("La descrizione è obbligatoria."); return; }
+    if (safeDesc.length > 300) { setFormError("Descrizione troppo lunga — massimo 300 caratteri."); return; }
+    // Apply sanitized values
+    form.name = safeName;
+    form.description = safeDesc;
     if (!form.price.trim() || form.price === "€") { setFormError("Il prezzo è obbligatorio."); return; }
     if (!/^€?\d+([.,]\d{1,2})?$/.test(form.price.trim())) { setFormError("Formato prezzo non valido (es. €79,00 oppure 79.00)."); return; }
     if (form.tags.length === 0) { setFormError("Seleziona almeno un tag di corrispondenza."); return; }
@@ -187,9 +221,29 @@ export function ProductCatalogTab() {
     setSaving(true);
     setFormError(null);
 
+    const slugId = form.id.trim();
+
+    // #4 — slug collision check for new products
+    if (!editingId) {
+      // Check against core products
+      const coreCollision = coreProducts.some((p) => p.id === slugId);
+      if (coreCollision) {
+        setFormError(`L'ID "${slugId}" è già usato da un prodotto base. Scegli un ID diverso.`);
+        setSaving(false);
+        return;
+      }
+      // Check against custom products
+      const { data: existing } = await supabase.from("custom_products").select("id").eq("id", slugId).maybeSingle();
+      if (existing) {
+        setFormError(`L'ID "${slugId}" esiste già nel catalogo. Scegli un ID diverso.`);
+        setSaving(false);
+        return;
+      }
+    }
+
     const faqFiltered = form.faq.filter((f) => f.q.trim() || f.a.trim());
     const payload = {
-      id: form.id.trim(),
+      id: slugId,
       name: form.name.trim(),
       description: form.description.trim(),
       price: form.price.trim(),
@@ -211,6 +265,7 @@ export function ProductCatalogTab() {
       setSaving(false);
       return;
     }
+    toast.success(editingId ? "Prodotto aggiornato." : "Prodotto aggiunto al catalogo.");
     await fetchData();
     cancelForm();
     setSaving(false);
@@ -222,6 +277,7 @@ export function ProductCatalogTab() {
       .from("custom_products")
       .update({ status: archive ? "archived" : "active", updated_at: new Date().toISOString() })
       .eq("id", id);
+    toast.success(archive ? "Prodotto archiviato." : "Prodotto ripristinato.");
     await fetchData();
     setDeletingId(null);
   };
@@ -230,6 +286,7 @@ export function ProductCatalogTab() {
     if (!window.confirm(`Eliminare definitivamente il prodotto "${id}"? L'azione è irreversibile.`)) return;
     setDeletingId(id);
     await supabase.from("custom_products").delete().eq("id", id);
+    toast.success("Prodotto eliminato definitivamente.");
     await fetchData();
     setDeletingId(null);
   };
@@ -513,7 +570,7 @@ export function ProductCatalogTab() {
         </div>
 
         {loading ? (
-          <div className="py-8 text-center text-xs text-muted-foreground">Caricamento…</div>
+          <ProductSkeleton />
         ) : visibleCustom.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-muted/10 py-10 text-center">
             <p className="text-2xl mb-2">📦</p>

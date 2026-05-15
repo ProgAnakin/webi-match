@@ -1,6 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
-import { Check, Eye, EyeOff, RotateCcw, Save } from "lucide-react";
+import { Check, Clock, Eye, EyeOff, RotateCcw, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+const TTL_STORAGE_KEY = "wm_code_ttl_hours";
+const TTL_OPTIONS = [6, 12, 24, 48, 72] as const;
+type TtlOption = typeof TTL_OPTIONS[number];
+
+export function getCodeTtlMs(): number {
+  try {
+    const v = localStorage.getItem(TTL_STORAGE_KEY);
+    const hours = v ? parseInt(v, 10) : 24;
+    return (Number.isFinite(hours) ? hours : 24) * 3_600_000;
+  } catch { return 24 * 3_600_000; }
+}
 
 interface EmailTemplate {
   sender_name: string;
@@ -129,6 +142,13 @@ export function EmailTemplateTab() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [codeTtl, setCodeTtl] = useState<TtlOption>(() => {
+    try {
+      const v = localStorage.getItem(TTL_STORAGE_KEY);
+      const h = v ? parseInt(v, 10) : 24;
+      return (TTL_OPTIONS.includes(h as TtlOption) ? h : 24) as TtlOption;
+    } catch { return 24; }
+  });
 
   const fetchTemplate = useCallback(async () => {
     setLoading(true);
@@ -152,8 +172,12 @@ export function EmailTemplateTab() {
       .eq("id", 1);
     if (err) {
       setError(err.message);
+      toast.error("Errore nel salvataggio template.");
     } else {
+      // Persist TTL locally (no DB column needed)
+      try { localStorage.setItem(TTL_STORAGE_KEY, String(codeTtl)); } catch { /* ignore */ }
       setSaved(true);
+      toast.success("Template email salvato.");
       setTimeout(() => setSaved(false), 2500);
     }
     setSaving(false);
@@ -248,6 +272,37 @@ export function EmailTemplateTab() {
 
       {error && (
         <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</p>
+      )}
+
+      {/* #5 — Configurable discount code TTL */}
+      {!showPreview && (
+        <div className="rounded-xl border border-border/50 bg-muted/10 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Validità codice sconto
+            </p>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Durata visualizzata nell'email e nel pannello sessioni. Il codice viene considerato scaduto dopo questo periodo.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {TTL_OPTIONS.map((h) => (
+              <button
+                key={h}
+                onClick={() => setCodeTtl(h)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                  codeTtl === h ? "bg-primary text-primary-foreground" : "border border-border bg-muted/30 text-muted-foreground"
+                }`}
+              >
+                {h}h
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground/60">
+            Salvato localmente — viene applicato al prossimo salvataggio del template.
+          </p>
+        </div>
       )}
 
       {/* Variable reference */}
