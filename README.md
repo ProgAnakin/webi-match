@@ -348,6 +348,6 @@ This project was conceived, designed and built end-to-end by Costanzo Annichini 
 A side-of-the-desk project: built to give customers a reason to actually touch the iPads in store. Architected and shipped solo, end-to-end — from swipe interaction to database security model to multilingual email automation.
 
 - **GitHub:** [github.com/ProgAnakin](https://github.com/ProgAnakin)
-- **LinkedIn:** [linkedin.com/in/YOUR_PROFILE](https://www.linkedin.com/in/YOUR_PROFILE) ← *update this URL*
+- **LinkedIn:** [linkedin.com/in/costanzoannichini](https://www.linkedin.com/in/costanzoannichini/)
 
 > If you're a recruiter or engineer curious about the architecture, the [ADRs](./docs/adr/) document the key decisions. The [CHANGELOG](./CHANGELOG.md) documents every version. Happy to talk through any of it.
