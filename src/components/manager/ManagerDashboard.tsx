@@ -401,6 +401,14 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   };
 
   const uploadProductImage = async (productId: string, file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      setSaveError("Immagine troppo grande — massimo 5 MB.");
+      return;
+    }
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
+      setSaveError("Formato non supportato — usa JPEG, PNG, WebP o GIF.");
+      return;
+    }
     setUploadingImageId(productId);
     const ext = file.name.split(".").pop() ?? "jpg";
     const path = `${storeId}/${productId}.${ext}`;

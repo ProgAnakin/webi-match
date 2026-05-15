@@ -69,7 +69,9 @@ interface SessionsTabProps {
 }
 
 export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);   // current page
+  const [kpiData, setKpiData] = useState<Pick<Session, "id" | "email_sent" | "discount_code" | "created_at" | "code_redeemed">[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -83,20 +85,42 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   const [purgePreviewCount, setPurgePreviewCount] = useState<number | null>(null);
   const [purgedCount, setPurgedCount] = useState<number | null>(null);
 
+  const PAGE_SIZE = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Lightweight fetch of all sessions (status fields only) for KPI cards
+  const fetchKpiData = useCallback(async () => {
+    let q = supabase
+      .from("quiz_sessions")
+      .select("id, email_sent, discount_code, created_at, code_redeemed");
+    if (!isGlobal) q = q.eq("store_id", storeId);
+    const { data } = await q;
+    setKpiData((data ?? []) as typeof kpiData);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId, isGlobal]);
+
+  // Server-side paginated fetch with search applied
   const fetchSessions = useCallback(async () => {
     setLoading(true);
+    const from = (currentPage - 1) * PAGE_SIZE;
+
     let query = supabase
       .from("quiz_sessions")
-      .select("id, email, nome, cognome, matched_product_id, match_percent, email_sent, discount_code, created_at, store_id, code_redeemed, code_redeemed_at")
+      .select("id, email, nome, cognome, matched_product_id, match_percent, email_sent, discount_code, created_at, store_id, code_redeemed, code_redeemed_at", { count: "exact" })
       .order("created_at", { ascending: false })
-      .limit(300);
+      .range(from, from + PAGE_SIZE - 1);
 
     if (!isGlobal) query = query.eq("store_id", storeId);
+    if (search.trim()) {
+      const q = search.trim();
+      query = query.or(`email.ilike.%${q}%,discount_code.ilike.%${q}%,nome.ilike.%${q}%,cognome.ilike.%${q}%`);
+    }
 
-    const { data } = await query;
+    const { data, count } = await query;
     setSessions((data ?? []) as Session[]);
+    setTotalCount(count ?? 0);
     setLoading(false);
-  }, [storeId, isGlobal]);
+  }, [storeId, isGlobal, currentPage, search]);
 
   const fetchNegado = useCallback(async () => {
     const [shownRes, claimedRes] = await Promise.all([
@@ -108,12 +132,15 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   }, []);
 
   useEffect(() => {
-    fetchSessions();
+    fetchKpiData();
     fetchNegado();
-  }, [fetchSessions, fetchNegado]);
+  }, [fetchKpiData, fetchNegado]);
 
-  const PAGE_SIZE = 20;
-  const [currentPage, setCurrentPage] = useState(1);
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
+
+  // Reset to page 1 when search or status filter changes
   useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
 
   const copyCode = async (code: string) => {
@@ -211,40 +238,43 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     setShowPurgeModal(false);
     setPurgedCount(data as number ?? 0);
     fetchSessions();
+    fetchKpiData();
     fetchNegado();
-  }, [fetchSessions, fetchNegado]);
+  }, [fetchSessions, fetchKpiData, fetchNegado]);
 
-  const filtered = sessions.filter((s) => {
-    const q = search.toLowerCase().trim();
-    const matchSearch = !q ||
-      s.email.toLowerCase().includes(q) ||
-      (s.discount_code?.toLowerCase().includes(q) ?? false) ||
-      `${s.nome ?? ""} ${s.cognome ?? ""}`.toLowerCase().includes(q);
-    const matchStatus = statusFilter === "all" || getSessionStatus(s) === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  // Status filter applies client-side on the fetched page; search is server-side.
+  const filtered = statusFilter === "all"
+    ? sessions
+    : sessions.filter((s) => getSessionStatus(s) === statusFilter);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const safePage   = Math.min(currentPage, totalPages);
-  const paginated  = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const paginated  = filtered;   // server already returned just this page
 
+  // KPI counts come from kpiData (all sessions, no pagination)
   const counts = {
-    all:         sessions.length,
-    enviada:     sessions.filter((s) => getSessionStatus(s) === "enviada").length,
-    processando: sessions.filter((s) => getSessionStatus(s) === "processando").length,
-    sem_email:   sessions.filter((s) => getSessionStatus(s) === "sem_email").length,
-    falhou:      sessions.filter((s) => getSessionStatus(s) === "falhou").length,
+    all:         kpiData.length,
+    enviada:     kpiData.filter((s) => s.email_sent).length,
+    processando: kpiData.filter((s) => {
+      if (s.email_sent) return false;
+      return (Date.now() - new Date(s.created_at).getTime()) / 60_000 < 5;
+    }).length,
+    sem_email:   kpiData.filter((s) => {
+      if (s.email_sent) return false;
+      if (!s.discount_code) return false;
+      return (Date.now() - new Date(s.created_at).getTime()) / 60_000 >= 5;
+    }).length,
+    falhou:      kpiData.filter((s) => !s.email_sent && !s.discount_code).length,
   };
 
-  const expiredReusable = sessions.filter(
-    (s) => isCodeExpired(s) && s.discount_code && !s.code_redeemed
+  const expiredReusable = kpiData.filter(
+    (s) => (Date.now() - new Date(s.created_at).getTime()) > 24 * 3_600_000
+      && s.discount_code && !s.code_redeemed
   ).length;
 
-  const sessionsWithCode = sessions.filter((s) => s.discount_code !== null);
-  const sessionsRedeemed = sessions.filter((s) => s.code_redeemed === true);
-  const redemptionTotal = sessionsWithCode.length;
-  const redemptionUsed = sessionsRedeemed.length;
-  const redemptionPct = redemptionTotal > 0 ? Math.round((redemptionUsed / redemptionTotal) * 100) : 0;
+  const redemptionTotal = kpiData.filter((s) => s.discount_code !== null).length;
+  const redemptionUsed  = kpiData.filter((s) => s.code_redeemed === true).length;
+  const redemptionPct   = redemptionTotal > 0 ? Math.round((redemptionUsed / redemptionTotal) * 100) : 0;
   const redemptionColor =
     redemptionPct > 50 ? "text-green-400" :
     redemptionPct >= 20 ? "text-amber-400" :
@@ -254,7 +284,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     redemptionPct >= 20 ? "border-amber-500/20 bg-amber-500/5" :
     "border-border bg-muted/20";
 
-  const localNegado = sessions.length - sessions.filter((s) => s.email_sent || s.discount_code).length;
+  const localNegado = kpiData.filter((s) => !s.email_sent && !s.discount_code).length;
 
   return (
     <div className="space-y-5">
@@ -391,7 +421,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
           {/* Refresh */}
           <button
-            onClick={() => { fetchSessions(); fetchNegado(); }}
+            onClick={() => { fetchSessions(); fetchKpiData(); fetchNegado(); }}
             className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground active:scale-95"
           >
             <RefreshCw className="h-3 w-3" /> Aggiorna
@@ -414,7 +444,8 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              {filtered.length} sessioni{search ? ` (filtro: "${search}")` : ""}
+              {totalCount} sessioni{search ? ` (ricerca: "${search}")` : ""}
+              {statusFilter !== "all" && ` · filtro: ${statusFilter}`}
               {totalPages > 1 && ` · pagina ${safePage} di ${totalPages}`}
             </p>
             {totalPages > 1 && (
@@ -574,7 +605,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
       )}
 
       <p className="pb-2 text-center text-xs text-muted-foreground">
-        Ultime 300 sessioni · 20 per pagina · Codici scadono 24h dopo la creazione
+        {totalCount} sessioni totali · 20 per pagina · Codici scadono 24h dopo la creazione
       </p>
 
       {/* ── Purge confirmation modal ─────────────────────────────────────── */}

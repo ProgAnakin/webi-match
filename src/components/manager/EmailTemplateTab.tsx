@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Check, RotateCcw, Save } from "lucide-react";
+import { Check, Eye, EyeOff, RotateCcw, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface EmailTemplate {
@@ -18,6 +18,13 @@ const DEFAULTS: EmailTemplate = {
     "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il gadget perfetto per il tuo stile di vita.",
   footer_store_name: "COSTANZO ANNICHINI",
 };
+
+// Sample values used in the preview
+const SAMPLE = { nome: "Marco", pct: "87", product: "Sony WH-1000XM5", price: "€349,00", code: "WEBI-A3F2B187" };
+
+function interpolate(tpl: string): string {
+  return tpl.replace(/\{\{nome\}\}/g, SAMPLE.nome).replace(/\{\{pct\}\}/g, SAMPLE.pct);
+}
 
 const FIELD_META: { key: keyof EmailTemplate; label: string; hint: string; multiline?: boolean }[] = [
   {
@@ -50,12 +57,78 @@ const FIELD_META: { key: keyof EmailTemplate; label: string; hint: string; multi
   },
 ];
 
+function EmailPreview({ form }: { form: EmailTemplate }) {
+  return (
+    <div className="rounded-2xl border border-border bg-[#0d1228] overflow-hidden text-[#f0f4ff] font-sans">
+      {/* Top accent bar */}
+      <div className="h-1 w-full bg-gradient-to-r from-[#f5831c] via-[#e8420a] to-[#f5831c]" />
+
+      {/* Header */}
+      <div className="bg-[#101628] px-6 py-5 text-center space-y-2">
+        <div className="inline-block rounded-lg bg-gradient-to-r from-[#f5831c] to-[#e8420a] px-4 py-1.5">
+          <span className="text-[11px] font-black tracking-widest text-white uppercase">WEBI·MATCH</span>
+        </div>
+        <p className="text-base font-bold leading-snug">
+          Ciao <span className="text-[#f5831c]">{SAMPLE.nome}</span>,{" "}
+          <span>{interpolate(form.header_title)}</span>
+        </p>
+        <p className="text-xs text-[#7a8fbb] leading-relaxed">{interpolate(form.header_subtitle)}</p>
+      </div>
+
+      {/* Match % */}
+      <div className="bg-[#151d47] px-6 py-5 text-center border-t border-[#2a3a68]">
+        <p className="text-5xl font-black text-[#6BCB77]">{SAMPLE.pct}<span className="text-2xl">%</span></p>
+        <p className="text-[9px] font-bold uppercase tracking-widest text-[#7a8fbb] mt-1">Compatibilità</p>
+        <div className="mt-2 inline-block rounded-full border border-[#6BCB77]/40 bg-[#6BCB77]/10 px-3 py-1">
+          <span className="text-[10px] font-bold text-[#6BCB77]">OTTIMO MATCH</span>
+        </div>
+      </div>
+
+      {/* Product */}
+      <div className="bg-[#151d47] px-6 py-4 border-t border-[#2a3a68]">
+        <p className="text-[9px] font-bold uppercase tracking-widest text-[#7a8fbb] text-center mb-2">── IL TUO GADGET IDEALE ──</p>
+        <div className="rounded-xl border border-[#2a3a68] bg-[#101628] h-20 flex items-center justify-center text-3xl mb-3">📦</div>
+        <p className="text-sm font-black">{SAMPLE.product}</p>
+        <p className="text-lg font-bold text-[#f5831c]">{SAMPLE.price}</p>
+      </div>
+
+      {/* Discount code */}
+      <div className="bg-[#151d47] px-6 py-4 border-t border-[#2a3a68] text-center">
+        <p className="text-[9px] font-bold uppercase tracking-widest text-[#7a8fbb] mb-2">IL TUO CODICE SCONTO</p>
+        <div className="rounded-xl border-2 border-[#f5831c] overflow-hidden">
+          <div className="bg-gradient-to-r from-[#f5831c] to-[#e8420a] px-4 py-2 flex justify-between">
+            <span className="text-[10px] font-black text-white uppercase">Sconto Speciale</span>
+            <span className="text-[9px] text-white/70">{form.footer_store_name}</span>
+          </div>
+          <div className="bg-[#101628] px-4 py-4">
+            <p className="text-2xl font-black font-mono tracking-wider">{SAMPLE.code}</p>
+            <div className="flex justify-center gap-2 mt-2">
+              <span className="rounded-full bg-[#f5831c] px-2 py-0.5 text-[9px] font-bold text-white">✓ 24 ore</span>
+              <span className="rounded-full border border-[#2a3a68] px-2 py-0.5 text-[9px] text-[#f0f4ff]">🏪 In negozio</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="bg-[#101628] px-6 py-4 text-center border-t border-[#2a3a68]">
+        <p className="text-xs font-black">{form.footer_store_name}</p>
+        <p className="text-[10px] text-[#7a8fbb]">Powered by Webi-Match</p>
+        <p className="text-[9px] text-[#7a8fbb] mt-1">
+          Inviato a <strong className="text-[#f0f4ff]">{SAMPLE.nome}</strong> · Da: {form.sender_name}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function EmailTemplateTab() {
   const [form, setForm] = useState<EmailTemplate>(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   const fetchTemplate = useCallback(async () => {
     setLoading(true);
@@ -86,10 +159,6 @@ export function EmailTemplateTab() {
     setSaving(false);
   };
 
-  const resetDefaults = () => {
-    setForm(DEFAULTS);
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -102,7 +171,17 @@ export function EmailTemplateTab() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={resetDefaults}
+            onClick={() => setShowPreview((v) => !v)}
+            className={`flex items-center gap-1 rounded-xl border px-3 py-2 text-xs font-semibold active:scale-95 transition-colors ${
+              showPreview
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground"
+            }`}
+          >
+            {showPreview ? <><EyeOff className="h-3 w-3" /> Modifica</> : <><Eye className="h-3 w-3" /> Anteprima</>}
+          </button>
+          <button
+            onClick={() => setForm(DEFAULTS)}
             className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95"
           >
             <RotateCcw className="h-3 w-3" /> Default
@@ -120,36 +199,51 @@ export function EmailTemplateTab() {
       {/* Info */}
       <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-xs text-muted-foreground leading-relaxed">
         💡 Le modifiche vengono usate dalla prossima email inviata — non servono deploy.
-        La struttura HTML dell'email rimane invariata; solo i testi configurabili qui sono modificabili.
+        La struttura HTML rimane invariata; solo i testi configurabili qui sono modificabili.
       </div>
 
-      {/* Fields */}
-      {loading ? (
-        <div className="py-12 text-center text-xs text-muted-foreground">Caricamento template…</div>
-      ) : (
-        <div className="space-y-4">
-          {FIELD_META.map(({ key, label, hint, multiline }) => (
-            <div key={key} className="rounded-xl border border-border bg-card p-4 space-y-2">
-              <label className="block text-xs font-semibold text-foreground">{label}</label>
-              <p className="text-[10px] text-muted-foreground">{hint}</p>
-              {multiline ? (
-                <textarea
-                  value={form[key]}
-                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                  rows={2}
-                  className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={form[key]}
-                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                  className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              )}
-            </div>
-          ))}
+      {showPreview ? (
+        <div className="space-y-3">
+          {/* Subject preview */}
+          <div className="rounded-xl border border-border bg-card p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Anteprima oggetto</p>
+            <p className="text-sm font-semibold text-foreground">{interpolate(form.subject_template)}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Da: {form.sender_name}</p>
+          </div>
+          {/* Email preview */}
+          <p className="text-[10px] text-muted-foreground text-center">
+            Anteprima con dati di esempio — {SAMPLE.nome}, {SAMPLE.pct}%, {SAMPLE.product}
+          </p>
+          <EmailPreview form={form} />
         </div>
+      ) : (
+        loading ? (
+          <div className="py-12 text-center text-xs text-muted-foreground">Caricamento template…</div>
+        ) : (
+          <div className="space-y-4">
+            {FIELD_META.map(({ key, label, hint, multiline }) => (
+              <div key={key} className="rounded-xl border border-border bg-card p-4 space-y-2">
+                <label className="block text-xs font-semibold text-foreground">{label}</label>
+                <p className="text-[10px] text-muted-foreground">{hint}</p>
+                {multiline ? (
+                  <textarea
+                    value={form[key]}
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                    rows={2}
+                    className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={form[key]}
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                    className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )
       )}
 
       {error && (
@@ -157,22 +251,24 @@ export function EmailTemplateTab() {
       )}
 
       {/* Variable reference */}
-      <div className="rounded-xl border border-border/50 bg-muted/10 p-4 space-y-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Variabili disponibili nell'oggetto
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { v: "{{nome}}", desc: "Nome cliente" },
-            { v: "{{pct}}", desc: "% compatibilità" },
-          ].map(({ v, desc }) => (
-            <div key={v} className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/20 px-2.5 py-1.5">
-              <code className="text-[10px] font-mono text-primary">{v}</code>
-              <span className="text-[10px] text-muted-foreground">{desc}</span>
-            </div>
-          ))}
+      {!showPreview && (
+        <div className="rounded-xl border border-border/50 bg-muted/10 p-4 space-y-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Variabili disponibili nell'oggetto
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { v: "{{nome}}", desc: "Nome cliente" },
+              { v: "{{pct}}", desc: "% compatibilità" },
+            ].map(({ v, desc }) => (
+              <div key={v} className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/20 px-2.5 py-1.5">
+                <code className="text-[10px] font-mono text-primary">{v}</code>
+                <span className="text-[10px] text-muted-foreground">{desc}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { useInactivityReset } from "@/hooks/useInactivityReset";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { useBgMusic } from "@/hooks/useBgMusic";
 import { useKioskMode } from "@/hooks/useKioskMode";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useLang } from "@/i18n/LanguageContext";
 import { getStoredStoreId } from "@/data/stores";
 import { RESULT_INACTIVITY_TIMEOUT_MS } from "@/config/timings";
@@ -75,6 +76,7 @@ function trackFunnel(funnelKey: string, eventType: "quiz_started" | "result_show
 const Index = () => {
   const { t } = useLang();
   const { isKioskLocked, deactivateKiosk } = useKioskMode();
+  const isOnline = useOnlineStatus();
   const [showKioskLock, setShowKioskLock] = useState(isKioskLocked);
   const [screen, setScreen] = useState<Screen>("splash");
   const [user, setUser] = useState<UserInfo>({ nome: "", cognome: "", email: "" });
@@ -215,6 +217,17 @@ const Index = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Fallback: if startup data doesn't arrive within 10 s, force progress so the
+  // kiosk never gets permanently stuck on the loading screen.
+  useEffect(() => {
+    if (settingsLoaded) return;
+    const timer = setTimeout(() => {
+      setSettingsLoadFailed(true);
+      setSettingsLoaded(true);
+    }, 10_000);
+    return () => clearTimeout(timer);
+  }, [settingsLoaded]);
+
   // Transition out of loading screen once settings are ready
   useEffect(() => {
     if (settingsLoaded && screen === "loading_quiz") setScreen("quiz");
@@ -332,6 +345,21 @@ const Index = () => {
 
   return (
     <div className="relative h-dvh overflow-hidden bg-background">
+      {/* Offline banner — shown whenever the device loses network */}
+      <AnimatePresence>
+        {!isOnline && (
+          <motion.div
+            key="offline-banner"
+            initial={{ opacity: 0, y: -32 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -32 }}
+            className="fixed inset-x-0 top-0 z-[60] bg-amber-500 px-4 py-2 text-center text-xs font-semibold text-white shadow-lg"
+          >
+            ⚠ Connessione assente — il quiz funziona ma le email non verranno inviate
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {showKioskLock && (
           <KioskLockScreen

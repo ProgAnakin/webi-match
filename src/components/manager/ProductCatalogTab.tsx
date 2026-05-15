@@ -149,6 +149,14 @@ export function ProductCatalogTab() {
   };
 
   const uploadImage = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError("Immagine troppo grande — massimo 5 MB.");
+      return;
+    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setFormError("Formato non supportato — usa JPEG, PNG o WebP.");
+      return;
+    }
     setUploadingImage(true);
     const ext = file.name.split(".").pop() ?? "jpg";
     const targetId = form.id || `new-${Date.now()}`;
@@ -168,9 +176,12 @@ export function ProductCatalogTab() {
 
   const saveProduct = async () => {
     if (!form.name.trim()) { setFormError("Il nome è obbligatorio."); return; }
+    if (form.name.trim().length > 60) { setFormError("Nome troppo lungo — massimo 60 caratteri."); return; }
     if (!form.id.trim()) { setFormError("L'ID prodotto è obbligatorio."); return; }
     if (!form.description.trim()) { setFormError("La descrizione è obbligatoria."); return; }
+    if (form.description.trim().length > 300) { setFormError("Descrizione troppo lunga — massimo 300 caratteri."); return; }
     if (!form.price.trim() || form.price === "€") { setFormError("Il prezzo è obbligatorio."); return; }
+    if (!/^€?\d+([.,]\d{1,2})?$/.test(form.price.trim())) { setFormError("Formato prezzo non valido (es. €79,00 oppure 79.00)."); return; }
     if (form.tags.length === 0) { setFormError("Seleziona almeno un tag di corrispondenza."); return; }
 
     setSaving(true);

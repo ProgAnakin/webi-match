@@ -533,7 +533,7 @@ serve(async (req) => {
 
   if (dbErr) console.error("[on-session-created] db update failed:", dbErr.message);
 
-  // Fetch product-specific FAQ from product_settings
+  // Fetch product-specific FAQ: check product_settings first, then custom_products as fallback.
   const faq: Array<{ q: string; a: string }> = [];
   if (record.matched_product_id) {
     const { data: ps } = await supabase
@@ -546,6 +546,20 @@ serve(async (req) => {
         const q = String((ps as Record<string, unknown>)[`faq_q${n}`] ?? "").trim();
         const a = String((ps as Record<string, unknown>)[`faq_a${n}`] ?? "").trim();
         if (q && a) faq.push({ q: escHtml(q), a: escHtml(a) });
+      }
+    }
+    // Fallback: custom products store FAQ as a JSONB array
+    if (faq.length === 0) {
+      const { data: cp } = await supabase
+        .from("custom_products")
+        .select("faq")
+        .eq("id", String(record.matched_product_id))
+        .maybeSingle();
+      if (cp?.faq) {
+        for (const item of (cp.faq as { q: string; a: string }[])) {
+          if (item.q?.trim() && item.a?.trim())
+            faq.push({ q: escHtml(item.q.trim()), a: escHtml(item.a.trim()) });
+        }
       }
     }
   }
