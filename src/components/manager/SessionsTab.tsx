@@ -60,10 +60,10 @@ function hoursUntilExpiry(s: Session): number | null {
 }
 
 const STATUS_META = {
-  enviada:     { label: "ENVIADA",     icon: Mail,        cls: "border-green-500/40 bg-green-500/10 text-green-400"       },
-  processando: { label: "PROCESSANDO", icon: Clock,       cls: "border-amber-500/40 bg-amber-500/10 text-amber-400"       },
-  sem_email:   { label: "SEM EMAIL",   icon: AlertCircle, cls: "border-orange-500/40 bg-orange-500/10 text-orange-400"    },
-  falhou:      { label: "FALHOU",      icon: XCircle,     cls: "border-destructive/40 bg-destructive/10 text-destructive" },
+  enviada:     { label: "INVIATA",         icon: Mail,        cls: "border-green-500/40 bg-green-500/10 text-green-400"       },
+  processando: { label: "IN ELABORAZIONE", icon: Clock,       cls: "border-amber-500/40 bg-amber-500/10 text-amber-400"       },
+  sem_email:   { label: "SENZA EMAIL",     icon: AlertCircle, cls: "border-orange-500/40 bg-orange-500/10 text-orange-400"    },
+  falhou:      { label: "FALLITA",         icon: XCircle,     cls: "border-destructive/40 bg-destructive/10 text-destructive" },
 };
 
 interface SessionsTabProps {
@@ -145,7 +145,10 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
     if (!isGlobal) query = query.eq("store_id", storeId);
     if (debouncedSearch.trim()) {
-      const q = debouncedSearch.trim();
+      const q = debouncedSearch.trim()
+        .replace(/\\/g, "\\\\")
+        .replace(/%/g, "\\%")
+        .replace(/_/g, "\\_");
       query = query.or(`email.ilike.%${q}%,discount_code.ilike.%${q}%,nome.ilike.%${q}%,cognome.ilike.%${q}%`);
     }
     // Advanced filters
@@ -354,24 +357,24 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
       >
         <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4 text-center">
           <p className="text-2xl font-bold text-green-400">{counts.enviada}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Emails enviadas</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Email inviate</p>
         </div>
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
           <p className="text-2xl font-bold text-amber-400">{counts.processando}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Processando</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">In elaborazione</p>
         </div>
         <div className="rounded-2xl border border-orange-500/20 bg-orange-500/5 p-4 text-center">
           <p className="text-2xl font-bold text-orange-400">{counts.sem_email}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Sem email</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Senza email</p>
         </div>
         <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-center">
           <p className="text-2xl font-bold text-destructive">{counts.falhou}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Falharam</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Fallite</p>
         </div>
         <div className="rounded-2xl border border-border bg-muted/20 p-4 text-center">
           <p className="text-2xl font-bold text-foreground">{negadoCount}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Match negado</p>
-          <p className="mt-0.5 text-[9px] text-muted-foreground/50">({localNegado} da lista)</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Match negato</p>
+          <p className="mt-0.5 text-[9px] text-foreground/40">({localNegado} da lista)</p>
         </div>
         <div className={`rounded-2xl border p-4 text-center ${redemptionBorderBg}`}>
           <p className={`text-2xl font-bold ${redemptionColor}`}>{redemptionUsed}/{redemptionTotal}</p>
@@ -496,10 +499,10 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             }`}
           >
             {f === "all"         ? `Tutti (${counts.all})`
-              : f === "enviada"     ? `Enviada (${counts.enviada})`
-              : f === "processando" ? `Processando (${counts.processando})`
-              : f === "sem_email"   ? `Sem email (${counts.sem_email})`
-              :                       `Falhou (${counts.falhou})`}
+              : f === "enviada"     ? `Inviata (${counts.enviada})`
+              : f === "processando" ? `Elaborazione (${counts.processando})`
+              : f === "sem_email"   ? `Senza email (${counts.sem_email})`
+              :                       `Fallita (${counts.falhou})`}
           </button>
         ))}
 
@@ -507,25 +510,25 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
           <button
             onClick={exportToCSV}
             disabled={exporting}
-            className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-400 active:scale-95 transition-colors disabled:opacity-50"
+            className="flex min-h-[44px] items-center gap-1 rounded-xl border border-border bg-card px-3 text-xs text-foreground/70 hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-400 active:scale-95 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             title="Esporta tutte le sessioni in CSV"
           >
-            <Download className="h-3 w-3" /> {exporting ? "…" : "Esporta CSV"}
+            <Download className="h-3.5 w-3.5" /> {exporting ? "…" : "Esporta CSV"}
           </button>
 
           <button
             onClick={openPurgeModal}
-            className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-95 transition-colors"
+            className="flex min-h-[44px] items-center gap-1 rounded-xl border border-border bg-card px-3 text-xs text-foreground/70 hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-95 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             title="Elimina sessioni più vecchie di 7 giorni"
           >
-            <Trash2 className="h-3 w-3" /> Pulisci (7gg)
+            <Trash2 className="h-3.5 w-3.5" /> Pulisci (7gg)
           </button>
 
           <button
             onClick={() => { fetchSessions(); fetchKpiData(); fetchNegado(); }}
-            className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground active:scale-95"
+            className="flex min-h-[44px] items-center gap-1 rounded-xl border border-border bg-card px-3 text-xs text-foreground/70 active:scale-95 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <RefreshCw className="h-3 w-3" /> Aggiorna
+            <RefreshCw className="h-3.5 w-3.5" /> Aggiorna
           </button>
         </div>
       </div>
@@ -557,9 +560,9 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={safePage === 1}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground disabled:opacity-30 active:scale-95 hover:text-foreground"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground disabled:opacity-30 active:scale-95 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
                 <span className="min-w-[3rem] text-center text-xs font-semibold text-foreground">
                   {safePage} / {totalPages}
@@ -567,9 +570,9 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={safePage === totalPages}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground disabled:opacity-30 active:scale-95 hover:text-foreground"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground disabled:opacity-30 active:scale-95 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  <ChevronRight className="h-3.5 w-3.5" />
+                  <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
             )}
@@ -589,9 +592,9 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                 <motion.div
                   key={s.id}
                   className="rounded-2xl border border-border bg-card p-4"
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                  transition={{ delay: Math.min(i * 0.02, 0.15), duration: 0.2 }}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1 space-y-1">
@@ -641,12 +644,12 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
                             <button
                               onClick={() => copyCode(s.discount_code!)}
-                              className="rounded-lg border border-border bg-muted/50 p-1 text-muted-foreground hover:text-foreground active:scale-95 transition-colors"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-foreground/70 hover:text-foreground active:scale-95 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                               title="Copia codice"
                             >
                               {copiedCode === s.discount_code
-                                ? <Check className="h-3 w-3 text-green-400" />
-                                : <Copy className="h-3 w-3" />}
+                                ? <Check className="h-3.5 w-3.5 text-green-400" />
+                                : <Copy className="h-3.5 w-3.5" />}
                             </button>
                           </div>
 
@@ -654,11 +657,11 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                             <button
                               onClick={() => markRedeemed(s)}
                               disabled={isRedeeming}
-                              className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-400 active:scale-95 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="flex min-h-[32px] items-center gap-1 rounded-lg border border-border bg-muted/30 px-2 py-1 text-[10px] font-semibold text-foreground/70 hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-400 active:scale-95 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                               title="Segna codice come utilizzato dal cliente"
                             >
-                              <CheckCircle2 className="h-3 w-3" />
-                              {isRedeeming ? "…" : "Marcar como usado"}
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              {isRedeeming ? "…" : "Segna come usato"}
                             </button>
                           )}
 
@@ -685,17 +688,17 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={safePage === 1}
-                className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-30 active:scale-95 hover:text-foreground"
+                className="flex min-h-[44px] items-center gap-1 rounded-xl border border-border bg-card px-3 text-xs text-foreground/70 disabled:opacity-30 active:scale-95 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <ChevronLeft className="h-3 w-3" /> Precedente
+                <ChevronLeft className="h-3.5 w-3.5" /> Precedente
               </button>
-              <span className="text-xs text-muted-foreground">{safePage} / {totalPages}</span>
+              <span className="text-xs text-foreground/70">{safePage} / {totalPages}</span>
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={safePage === totalPages}
-                className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-30 active:scale-95 hover:text-foreground"
+                className="flex min-h-[44px] items-center gap-1 rounded-xl border border-border bg-card px-3 text-xs text-foreground/70 disabled:opacity-30 active:scale-95 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                Successiva <ChevronRight className="h-3 w-3" />
+                Successiva <ChevronRight className="h-3.5 w-3.5" />
               </button>
             </div>
           )}
@@ -715,6 +718,9 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             onClick={() => !purging && setShowPurgeModal(false)}
           >
             <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="purge-modal-title"
               className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl"
               initial={{ scale: 0.92, y: 16 }} animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.92, opacity: 0 }}
@@ -722,12 +728,12 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-destructive/30 bg-destructive/10">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-destructive/30 bg-destructive/10">
                   <Trash2 className="h-5 w-5 text-destructive" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-foreground">Pulizia cronologia</p>
-                  <p className="text-xs text-muted-foreground">Sessioni più vecchie di 7 giorni</p>
+                  <p id="purge-modal-title" className="text-sm font-bold text-foreground">Pulizia cronologia</p>
+                  <p className="text-xs text-foreground/70">Sessioni più vecchie di 7 giorni</p>
                 </div>
               </div>
 
@@ -742,7 +748,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                 </p>
               </div>
 
-              <p className="mb-5 text-xs text-muted-foreground">
+              <p className="mb-5 text-xs text-foreground/70">
                 Prima di procedere, usa il pulsante <strong className="text-foreground">Esporta CSV</strong> per salvare tutti i dati clienti.
               </p>
 
@@ -750,14 +756,14 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                 <button
                   onClick={() => !purging && setShowPurgeModal(false)}
                   disabled={purging}
-                  className="flex-1 rounded-xl border border-border bg-muted/30 py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground active:scale-95 transition-colors disabled:opacity-50"
+                  className="flex-1 min-h-[44px] rounded-xl border border-border bg-muted/30 py-2.5 text-sm font-semibold text-foreground/70 hover:text-foreground active:scale-95 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   Annulla
                 </button>
                 <button
                   onClick={executePurge}
                   disabled={purging || purgePreviewCount === 0}
-                  className="flex-1 rounded-xl border border-destructive/40 bg-destructive/10 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/20 active:scale-95 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex-1 min-h-[44px] rounded-xl border border-destructive/40 bg-destructive/10 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/20 active:scale-95 transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
                 >
                   {purging ? "Eliminando…" : "Elimina"}
                 </button>

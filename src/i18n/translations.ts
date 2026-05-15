@@ -24,6 +24,7 @@ export interface T {
     subtitle: string;
     noStore: string;
     catalogOffline: string;
+    offlineBanner: string;
     privacy: string;
     noSpam: string;
   };
@@ -135,6 +136,7 @@ export const translations: Record<Lang, T> = {
       subtitle: "Rispondi a 8 domande veloci e scopri il tuo match perfetto",
       noStore: "Sede non configurata",
       catalogOffline: "⚠ Catalogo offline — verifica connessione",
+      offlineBanner: "⚠ Connessione assente — il quiz funziona ma le email non verranno inviate",
       privacy: "Dati crittografati · Conformità GDPR",
       noSpam: "Niente spam. Puoi cancellarti in qualsiasi momento.",
     },
@@ -247,6 +249,7 @@ export const translations: Record<Lang, T> = {
       subtitle: "Answer 8 quick questions and find your perfect match",
       noStore: "Store not configured",
       catalogOffline: "⚠ Catalog offline — check connection",
+      offlineBanner: "⚠ No connection — the quiz works but emails won't be sent",
       privacy: "Encrypted data · GDPR compliant",
       noSpam: "No spam. Unsubscribe anytime.",
     },
@@ -359,6 +362,7 @@ export const translations: Record<Lang, T> = {
       subtitle: "Responda a 8 perguntas rápidas e descubra o seu match perfeito",
       noStore: "Loja não configurada",
       catalogOffline: "⚠ Catálogo offline — verifique a conexão",
+      offlineBanner: "⚠ Sem conexão — o quiz funciona mas os e-mails não serão enviados",
       privacy: "Dados encriptados · Conformidade GDPR",
       noSpam: "Sem spam. Pode cancelar a qualquer momento.",
     },
@@ -471,6 +475,7 @@ export const translations: Record<Lang, T> = {
       subtitle: "Responde 8 preguntas rápidas y descubre tu match perfecto",
       noStore: "Tienda no configurada",
       catalogOffline: "⚠ Catálogo sin conexión — comprueba la red",
+      offlineBanner: "⚠ Sin conexión — el quiz funciona pero no se enviarán emails",
       privacy: "Datos cifrados · Cumplimiento GDPR",
       noSpam: "Sin spam. Puedes darte de baja en cualquier momento.",
     },
@@ -583,6 +588,7 @@ export const translations: Record<Lang, T> = {
       subtitle: "Répondez à 8 questions rapides et découvrez votre match parfait",
       noStore: "Boutique non configurée",
       catalogOffline: "⚠ Catalogue hors ligne — vérifiez la connexion",
+      offlineBanner: "⚠ Pas de connexion — le quiz fonctionne mais les emails ne seront pas envoyés",
       privacy: "Données chiffrées · Conformité RGPD",
       noSpam: "Aucun spam. Désinscription possible à tout moment.",
     },

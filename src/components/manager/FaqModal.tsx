@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check } from "lucide-react";
 
@@ -20,6 +20,29 @@ interface FaqModalProps {
 export const FaqModal = ({ productName, initial, onSave, onClose }: FaqModalProps) => {
   const [data, setData] = useState<FaqData>(initial);
   const [saving, setSaving] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Focus trap + Escape key handler
+  useEffect(() => {
+    const el = dialogRef.current;
+    if (!el) return;
+    const focusable = el.querySelectorAll<HTMLElement>(
+      'button, input, textarea, select, [tabindex]:not([tabindex="-1"])'
+    );
+    focusable[0]?.focus();
+    const trap = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key !== "Tab") return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey ? document.activeElement === first : document.activeElement === last) {
+        e.preventDefault();
+        (e.shiftKey ? last : first)?.focus();
+      }
+    };
+    document.addEventListener("keydown", trap);
+    return () => document.removeEventListener("keydown", trap);
+  }, [onClose]);
 
   const update = (key: keyof FaqData, value: string) =>
     setData((prev) => ({ ...prev, [key]: value }));
@@ -39,6 +62,10 @@ export const FaqModal = ({ productName, initial, onSave, onClose }: FaqModalProp
       // intentionally no onClick to dismiss — only X or Save can close
     >
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="faq-modal-title"
         className="relative w-full max-w-lg overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl"
         style={{ maxHeight: "88vh" }}
         initial={{ scale: 0.92, opacity: 0, y: 24 }}
@@ -50,7 +77,8 @@ export const FaqModal = ({ productName, initial, onSave, onClose }: FaqModalProp
         {/* X — transparent, top-right */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground/40 transition-colors hover:bg-muted/50 hover:text-foreground"
+          aria-label="Chiudi"
+          className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-xl text-foreground/40 transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <X className="h-4 w-4" />
         </button>
@@ -60,7 +88,7 @@ export const FaqModal = ({ productName, initial, onSave, onClose }: FaqModalProp
           <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-primary">
             FAQ
           </p>
-          <h2 className="text-lg font-bold leading-snug text-foreground">{productName}</h2>
+          <h2 id="faq-modal-title" className="text-lg font-bold leading-snug text-foreground">{productName}</h2>
         </div>
 
         {/* 3 Q&A pairs */}
@@ -106,7 +134,7 @@ export const FaqModal = ({ productName, initial, onSave, onClose }: FaqModalProp
         <motion.button
           onClick={handleSave}
           disabled={saving}
-          className="w-full rounded-2xl gradient-primary py-3.5 text-sm font-bold text-white shadow-glow disabled:opacity-50"
+          className="w-full min-h-[44px] rounded-2xl gradient-primary py-3.5 text-sm font-bold text-white shadow-glow disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
           whileTap={{ scale: 0.98 }}
         >
           {saving ? (

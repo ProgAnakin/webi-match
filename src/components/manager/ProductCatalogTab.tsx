@@ -5,28 +5,11 @@ import { products as coreProducts } from "@/data/products";
 import { AVAILABLE_TAGS } from "@/data/products";
 import { toast } from "sonner";
 
-/** Resize an image to max 1024px on the longest side, returning a new File at up to 80% JPEG quality. */
-async function resizeImage(file: File, maxPx = 1024, quality = 0.8): Promise<File> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const { width, height } = img;
-      const scale = Math.min(1, maxPx / Math.max(width, height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(width * scale);
-      canvas.height = Math.round(height * scale);
-      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob(
-        (blob) => resolve(blob ? new File([blob], file.name, { type: "image/jpeg" }) : file),
-        "image/jpeg",
-        quality,
-      );
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-    img.src = url;
-  });
+import { resizeImage } from "@/lib/imageProcessing";
+
+/** Strip HTML tags from user-supplied text (XSS protection for custom product fields). */
+function stripHtml(text: string): string {
+  return text.replace(/<[^>]*>/g, "").trim();
 }
 
 // Load distinct active tags from quiz_cards so new custom cards surface in the picker.
@@ -80,6 +63,26 @@ function slugify(text: string): string {
     .replace(/[^a-z0-9-]/g, "")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+function ProductSkeleton() {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 animate-pulse">
+          <div className="h-9 w-9 shrink-0 rounded-lg bg-muted/50" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3.5 w-32 rounded bg-muted/50" />
+            <div className="h-3 w-24 rounded bg-muted/40" />
+          </div>
+          <div className="flex gap-1">
+            <div className="h-7 w-7 rounded-lg bg-muted/50" />
+            <div className="h-7 w-7 rounded-lg bg-muted/40" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function ProductCatalogTab() {
@@ -201,11 +204,16 @@ export function ProductCatalogTab() {
   };
 
   const saveProduct = async () => {
-    if (!form.name.trim()) { setFormError("Il nome è obbligatorio."); return; }
-    if (form.name.trim().length > 60) { setFormError("Nome troppo lungo — massimo 60 caratteri."); return; }
+    const safeName = stripHtml(form.name);
+    const safeDesc = stripHtml(form.description);
+    if (!safeName) { setFormError("Il nome è obbligatorio."); return; }
+    if (safeName.length > 60) { setFormError("Nome troppo lungo — massimo 60 caratteri."); return; }
     if (!form.id.trim()) { setFormError("L'ID prodotto è obbligatorio."); return; }
-    if (!form.description.trim()) { setFormError("La descrizione è obbligatoria."); return; }
-    if (form.description.trim().length > 300) { setFormError("Descrizione troppo lunga — massimo 300 caratteri."); return; }
+    if (!safeDesc) { setFormError("La descrizione è obbligatoria."); return; }
+    if (safeDesc.length > 300) { setFormError("Descrizione troppo lunga — massimo 300 caratteri."); return; }
+    // Apply sanitized values
+    form.name = safeName;
+    form.description = safeDesc;
     if (!form.price.trim() || form.price === "€") { setFormError("Il prezzo è obbligatorio."); return; }
     if (!/^€?\d+([.,]\d{1,2})?$/.test(form.price.trim())) { setFormError("Formato prezzo non valido (es. €79,00 oppure 79.00)."); return; }
     if (form.tags.length === 0) { setFormError("Seleziona almeno un tag di corrispondenza."); return; }
@@ -562,7 +570,7 @@ export function ProductCatalogTab() {
         </div>
 
         {loading ? (
-          <div className="py-8 text-center text-xs text-muted-foreground">Caricamento…</div>
+          <ProductSkeleton />
         ) : visibleCustom.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-muted/10 py-10 text-center">
             <p className="text-2xl mb-2">📦</p>

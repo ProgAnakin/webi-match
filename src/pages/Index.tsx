@@ -74,7 +74,7 @@ function trackFunnel(funnelKey: string, eventType: "quiz_started" | "result_show
 }
 
 const Index = () => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { isKioskLocked, deactivateKiosk } = useKioskMode();
   const isOnline = useOnlineStatus();
   const [showKioskLock, setShowKioskLock] = useState(isKioskLocked);
@@ -284,6 +284,7 @@ const Index = () => {
       product_image: matchedProduct.image?.startsWith("https://") ? matchedProduct.image : null,
       product_video: videoOverrides[matchedProduct.id] ?? null,
       discount_percent: discountOverrides[matchedProduct.id] ?? 5,
+      language: lang,
     };
 
     // Retry up to 2 times with exponential backoff before giving up.
@@ -355,7 +356,7 @@ const Index = () => {
             exit={{ opacity: 0, y: -32 }}
             className="fixed inset-x-0 top-0 z-[60] bg-amber-500 px-4 py-2 text-center text-xs font-semibold text-white shadow-lg"
           >
-            ⚠ Connessione assente — il quiz funziona ma le email non verranno inviate
+            {t.welcome.offlineBanner}
           </motion.div>
         )}
       </AnimatePresence>

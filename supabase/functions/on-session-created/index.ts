@@ -15,7 +15,7 @@ const BREVO_KEY        = Deno.env.get("BREVO_API_KEY") ?? "";
 const SUPABASE_URL     = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const PII_KEY          = Deno.env.get("PII_ENCRYPTION_KEY") ?? "";
-const ALLOWED_ORIGIN   = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
+const ALLOWED_ORIGIN   = Deno.env.get("ALLOWED_ORIGIN") ?? "";
 const SHEETS_WEBHOOK   = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL") ?? "";
 
 // Comma-separated list of emails that bypass the 1-email-per-hour rate limit.
@@ -102,12 +102,12 @@ function safeUrl(url: string): string {
   return /^https:\/\//i.test(u) ? u : "";
 }
 
-function progressHtml(pct: number, color: string, muted: string): string {
+function progressHtml(pct: number, color: string, muted: string, compatLabel = "COMPATIBILITÀ"): string {
   const filled = Math.round(pct / 10);
   const dots = '●'.repeat(filled) + '○'.repeat(10 - filled);
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="text-align:center;padding:0;">
       <p style="margin:0;font-size:72px;font-weight:900;color:${color};line-height:1;font-family:Arial,Helvetica,sans-serif;mso-line-height-rule:exactly;">${pct}<span style="font-size:36px;font-weight:900;">%</span></p>
-      <p style="margin:8px 0 6px;font-size:9px;font-weight:700;color:${muted};letter-spacing:0.28em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;text-align:center;">COMPATIBILITÀ</p>
+      <p style="margin:8px 0 6px;font-size:9px;font-weight:700;color:${muted};letter-spacing:0.28em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;text-align:center;">${compatLabel}</p>
       <p style="margin:0;font-size:20px;letter-spacing:4px;color:${color};text-align:center;font-family:Arial,Helvetica,sans-serif;">${dots}</p>
   </td></tr></table>`;
 }
@@ -120,9 +120,161 @@ interface EmailTpl {
   footer_store_name: string;
 }
 
+type Lang = "it" | "en" | "pt" | "es" | "fr";
+
+const EMAIL_I18N: Record<Lang, {
+  htmlLang: string;
+  preheader: (pct: number, code: string) => string;
+  compatibility: string;
+  productSection: string;
+  codeSection: string;
+  insertAtCheckout: string;
+  specialDiscount: string;
+  hrs24: string;
+  inStore: string;
+  oneUse: string;
+  discountTicket: string;
+  howToRedeem: string;
+  step1Title: string; step1Sub: string;
+  step2Title: string; step2Sub: string;
+  step3Title: string; step3Sub: string;
+  actionRequired: string;
+  saveEmail: string; saveEmailSub: string;
+  within24h: string; within24hSub: string;
+  visitStore: string; visitStoreSub: string;
+  faqSection: string;
+  imagesNote: string;
+  gdpr: string;
+  receivedNote: string;
+  codeExpiry: string;
+}> = {
+  it: {
+    htmlLang: "it",
+    preheader: (pct, code) => `🎉 ${pct}% di compatibilità — Il tuo codice ${code} scade in 24 ore!`,
+    compatibility: "COMPATIBILITÀ",
+    productSection: "── IL TUO GADGET IDEALE ──",
+    codeSection: "IL TUO CODICE SCONTO ESCLUSIVO",
+    insertAtCheckout: "Inserisci al checkout",
+    specialDiscount: "SCONTO SPECIALE",
+    hrs24: "✓ 24 ore", inStore: "🏪 In negozio", oneUse: "1️⃣ Un uso",
+    discountTicket: "Biglietto Sconto",
+    howToRedeem: "COME RISCUOTERE LO SCONTO",
+    step1Title: "Mostra l'email", step1Sub: "Al consulente in negozio",
+    step2Title: "Scegli il prodotto", step2Sub: "Il tuo match o qualsiasi altro",
+    step3Title: "Applica il codice", step3Sub: "Al checkout — sconto immediato",
+    actionRequired: "AZIONE RICHIESTA",
+    saveEmail: "Salva l'email", saveEmailSub: "Avrai il codice a portata di mano",
+    within24h: "Entro 24 ore", within24hSub: "Il codice scade presto",
+    visitStore: "Vieni in store", visitStoreSub: "Mostra al consulente",
+    faqSection: "DOMANDE FREQUENTI",
+    imagesNote: "Le immagini non si caricano? Clicca <strong style=\"color:#f0f4ff;\">&ldquo;Mostra immagini&rdquo;</strong> in cima all&rsquo;email per visualizzare il prodotto e il video del consulente.",
+    gdpr: "Dati crittografati · Conformità GDPR",
+    receivedNote: "Hai ricevuto questa email perché hai partecipato a Webi-Match in negozio.",
+    codeExpiry: "Il codice sconto è valido 24 ore dalla ricezione.",
+  },
+  en: {
+    htmlLang: "en",
+    preheader: (pct, code) => `🎉 ${pct}% compatibility — Your code ${code} expires in 24 hours!`,
+    compatibility: "COMPATIBILITY",
+    productSection: "── YOUR IDEAL GADGET ──",
+    codeSection: "YOUR EXCLUSIVE DISCOUNT CODE",
+    insertAtCheckout: "Use at checkout",
+    specialDiscount: "SPECIAL DISCOUNT",
+    hrs24: "✓ 24 hours", inStore: "🏪 In store", oneUse: "1️⃣ One use",
+    discountTicket: "Discount Ticket",
+    howToRedeem: "HOW TO REDEEM YOUR DISCOUNT",
+    step1Title: "Show the email", step1Sub: "To the store consultant",
+    step2Title: "Choose the product", step2Sub: "Your match or any other",
+    step3Title: "Apply the code", step3Sub: "At checkout — instant discount",
+    actionRequired: "ACTION REQUIRED",
+    saveEmail: "Save the email", saveEmailSub: "Keep the code handy",
+    within24h: "Within 24 hours", within24hSub: "The code expires soon",
+    visitStore: "Visit the store", visitStoreSub: "Show to the consultant",
+    faqSection: "FREQUENTLY ASKED QUESTIONS",
+    imagesNote: "Images not loading? Click <strong style=\"color:#f0f4ff;\">&ldquo;Show images&rdquo;</strong> at the top of the email to display the product and consultant video.",
+    gdpr: "Encrypted data · GDPR compliant",
+    receivedNote: "You received this email because you participated in Webi-Match in store.",
+    codeExpiry: "The discount code is valid for 24 hours from receipt.",
+  },
+  pt: {
+    htmlLang: "pt",
+    preheader: (pct, code) => `🎉 ${pct}% de compatibilidade — O seu código ${code} expira em 24 horas!`,
+    compatibility: "COMPATIBILIDADE",
+    productSection: "── O SEU GADGET IDEAL ──",
+    codeSection: "O SEU CÓDIGO DE DESCONTO EXCLUSIVO",
+    insertAtCheckout: "Use no checkout",
+    specialDiscount: "DESCONTO ESPECIAL",
+    hrs24: "✓ 24 horas", inStore: "🏪 Na loja", oneUse: "1️⃣ Um uso",
+    discountTicket: "Bilhete de Desconto",
+    howToRedeem: "COMO RESGATAR O DESCONTO",
+    step1Title: "Mostre o email", step1Sub: "Ao consultor na loja",
+    step2Title: "Escolha o produto", step2Sub: "O seu match ou qualquer outro",
+    step3Title: "Aplique o código", step3Sub: "No checkout — desconto imediato",
+    actionRequired: "AÇÃO NECESSÁRIA",
+    saveEmail: "Guarde o email", saveEmailSub: "Terá o código sempre à mão",
+    within24h: "Nas próximas 24 horas", within24hSub: "O código expira em breve",
+    visitStore: "Visite a loja", visitStoreSub: "Mostre ao consultor",
+    faqSection: "PERGUNTAS FREQUENTES",
+    imagesNote: "Imagens não carregam? Clique em <strong style=\"color:#f0f4ff;\">&ldquo;Mostrar imagens&rdquo;</strong> no topo do email para visualizar o produto e o vídeo do consultor.",
+    gdpr: "Dados encriptados · Conformidade GDPR",
+    receivedNote: "Recebeu este email porque participou no Webi-Match na loja.",
+    codeExpiry: "O código de desconto é válido por 24 horas após a receção.",
+  },
+  es: {
+    htmlLang: "es",
+    preheader: (pct, code) => `🎉 ${pct}% de compatibilidad — Tu código ${code} expira en 24 horas!`,
+    compatibility: "COMPATIBILIDAD",
+    productSection: "── TU GADGET IDEAL ──",
+    codeSection: "TU CÓDIGO DE DESCUENTO EXCLUSIVO",
+    insertAtCheckout: "Usa en el checkout",
+    specialDiscount: "DESCUENTO ESPECIAL",
+    hrs24: "✓ 24 horas", inStore: "🏪 En tienda", oneUse: "1️⃣ Un uso",
+    discountTicket: "Vale Descuento",
+    howToRedeem: "CÓMO CANJEAR TU DESCUENTO",
+    step1Title: "Muestra el email", step1Sub: "Al consultor en tienda",
+    step2Title: "Elige el producto", step2Sub: "Tu match o cualquier otro",
+    step3Title: "Aplica el código", step3Sub: "Al pagar — descuento inmediato",
+    actionRequired: "ACCIÓN REQUERIDA",
+    saveEmail: "Guarda el email", saveEmailSub: "Tendrás el código a mano",
+    within24h: "Dentro de 24 horas", within24hSub: "El código expira pronto",
+    visitStore: "Visita la tienda", visitStoreSub: "Muéstraselo al consultor",
+    faqSection: "PREGUNTAS FRECUENTES",
+    imagesNote: "¿Las imágenes no cargan? Haz clic en <strong style=\"color:#f0f4ff;\">&ldquo;Mostrar imágenes&rdquo;</strong> en la parte superior del email.",
+    gdpr: "Datos cifrados · Cumplimiento GDPR",
+    receivedNote: "Recibiste este email porque participaste en Webi-Match en tienda.",
+    codeExpiry: "El código de descuento es válido 24 horas desde la recepción.",
+  },
+  fr: {
+    htmlLang: "fr",
+    preheader: (pct, code) => `🎉 ${pct}% de compatibilité — Votre code ${code} expire dans 24 heures !`,
+    compatibility: "COMPATIBILITÉ",
+    productSection: "── VOTRE GADGET IDÉAL ──",
+    codeSection: "VOTRE CODE DE RÉDUCTION EXCLUSIF",
+    insertAtCheckout: "À utiliser au paiement",
+    specialDiscount: "RÉDUCTION SPÉCIALE",
+    hrs24: "✓ 24 heures", inStore: "🏪 En boutique", oneUse: "1️⃣ Un usage",
+    discountTicket: "Bon de Réduction",
+    howToRedeem: "COMMENT UTILISER VOTRE RÉDUCTION",
+    step1Title: "Montrez l'email", step1Sub: "Au conseiller en boutique",
+    step2Title: "Choisissez le produit", step2Sub: "Votre match ou un autre",
+    step3Title: "Appliquez le code", step3Sub: "Au paiement — réduction immédiate",
+    actionRequired: "ACTION REQUISE",
+    saveEmail: "Sauvegardez l'email", saveEmailSub: "Gardez le code à portée de main",
+    within24h: "Dans les 24 heures", within24hSub: "Le code expire bientôt",
+    visitStore: "Venez en boutique", visitStoreSub: "Montrez-le au conseiller",
+    faqSection: "FOIRES AUX QUESTIONS",
+    imagesNote: "Images non chargées ? Cliquez sur <strong style=\"color:#f0f4ff;\">&ldquo;Afficher les images&rdquo;</strong> en haut de l'email.",
+    gdpr: "Données chiffrées · Conformité RGPD",
+    receivedNote: "Vous avez reçu cet email car vous avez participé à Webi-Match en boutique.",
+    codeExpiry: "Le code de réduction est valable 24 heures après réception.",
+  },
+};
+
 function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ q: string; a: string }>, tpl?: EmailTpl): string {
-  const headerTitle    = tpl?.header_title    ?? "Abbiamo trovato il tuo match!";
-  const headerSubtitle = tpl?.header_subtitle ?? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il <strong style=\"color:#f0f4ff;\">gadget perfetto per il tuo stile di vita</strong>.";
+  const lang = (String(record.language ?? "it") as Lang);
+  const i18n = EMAIL_I18N[lang] ?? EMAIL_I18N.it;
+  const headerTitle    = tpl?.header_title    ?? (lang === "it" ? "Abbiamo trovato il tuo match!" : lang === "en" ? "We found your match!" : lang === "pt" ? "Encontrámos o seu match!" : lang === "es" ? "¡Encontramos tu match!" : "Nous avons trouvé votre match !");
+  const headerSubtitle = tpl?.header_subtitle ?? (lang === "it" ? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il <strong style=\"color:#f0f4ff;\">gadget perfetto per il tuo stile di vita</strong>." : lang === "en" ? "Our algorithm analysed your answers and selected the <strong style=\"color:#f0f4ff;\">perfect gadget for your lifestyle</strong>." : lang === "pt" ? "O nosso algoritmo analisou as suas respostas e selecionou o <strong style=\"color:#f0f4ff;\">gadget perfeito para o seu estilo de vida</strong>." : lang === "es" ? "Nuestro algoritmo analizó tus respuestas y seleccionó el <strong style=\"color:#f0f4ff;\">gadget perfecto para tu estilo de vida</strong>." : "Notre algorithme a analysé vos réponses et a sélectionné le <strong style=\"color:#f0f4ff;\">gadget parfait pour votre style de vie</strong>.");
   const footerName     = tpl?.footer_store_name ?? "COSTANZO ANNICHINI";
   const nome         = escHtml(String(record.nome    ?? "").trim());
   const cognome      = escHtml(String(record.cognome ?? "").trim());
@@ -142,7 +294,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
   const thumbUrl       = vidId ? `https://img.youtube.com/vi/${vidId}/maxresdefault.jpg` : null;
 
   return `<!DOCTYPE html>
-<html lang="it" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="${i18n.htmlLang}" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -170,7 +322,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
 <body style="margin:0;padding:0;background-color:${C.bg};font-family:'Space Grotesk',Arial,Helvetica,sans-serif;">
 
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:${C.bg};line-height:1px;">
-  🎉 ${pct}% di compatibilità — Il tuo codice ${code} scade in 24 ore!
+  ${i18n.preheader(pct, code)}
   &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
 </div>
 
@@ -197,19 +349,19 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
 
   <tr>
     <td style="background:${C.card};padding:40px 40px 36px;text-align:center;border-top:1px solid ${C.border};">
-      ${progressHtml(pct, ringColor, C.muted)}
+      ${progressHtml(pct, ringColor, C.muted, i18n.compatibility)}
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:18px auto 0;">
         <tr><td style="background:${ringColor}22;border:1.5px solid ${ringColor}66;border-radius:999px;padding:7px 22px;">
           <span style="font-size:12px;font-weight:700;color:${ringColor};letter-spacing:0.12em;">${badgeLabel}</span>
         </td></tr>
       </table>
-      <p style="margin:14px 0 0;font-size:13px;color:${C.muted};line-height:1.5;">Compatibilità verificata su 8 categorie di preferenze personali</p>
+      <p style="margin:14px 0 0;font-size:13px;color:${C.muted};line-height:1.5;">${i18n.compatibility} verificata su 8 categorie</p>
     </td>
   </tr>
 
   <tr>
     <td style="background:${C.card};padding:0;border-top:1px solid ${C.border};">
-      <p style="margin:0;padding:22px 32px 14px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">── IL TUO GADGET IDEALE ──</p>
+      <p style="margin:0;padding:22px 32px 14px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">${i18n.productSection}</p>
       ${productImage
         ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
              <tr><td style="padding:0 24px;">
@@ -237,14 +389,14 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
 
   <tr>
     <td style="background:${C.card};padding:28px 24px 32px;border-top:1px solid ${C.border};">
-      <p style="margin:0 0 16px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">IL TUO CODICE SCONTO ESCLUSIVO</p>
+      <p style="margin:0 0 16px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">${i18n.codeSection}</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
              style="border-radius:16px;border:2px solid ${C.orange};box-shadow:0 8px 48px rgba(245,131,28,0.35);">
         <tr>
           <td style="background:${C.orange};background:linear-gradient(90deg,${C.orange},${C.orangeRed},${C.orange});padding:11px 24px;border-radius:14px 14px 0 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="font-size:12px;font-weight:800;color:#fff;letter-spacing:0.14em;">SCONTO SPECIALE</td>
+                <td style="font-size:12px;font-weight:800;color:#fff;letter-spacing:0.14em;">${i18n.specialDiscount}</td>
                 <td align="right" style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.8);letter-spacing:0.1em;">${escHtml(footerName)}</td>
               </tr>
             </table>
@@ -252,20 +404,20 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         </tr>
         <tr>
           <td style="background:${C.cardHeader};padding:30px 28px 26px;text-align:center;">
-            <p style="margin:0 0 10px;font-size:10px;font-weight:700;color:${C.orange};letter-spacing:0.24em;text-transform:uppercase;">Inserisci al checkout</p>
+            <p style="margin:0 0 10px;font-size:10px;font-weight:700;color:${C.orange};letter-spacing:0.24em;text-transform:uppercase;">${i18n.insertAtCheckout}</p>
             <p style="margin:0 0 18px;font-size:38px;font-weight:900;color:${C.fg};font-family:'Courier New',Courier,monospace;letter-spacing:0.06em;line-height:1;white-space:nowrap;">${code}</p>
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
               <tr>
                 <td style="background:${C.orange};border-radius:999px;padding:5px 10px;white-space:nowrap;">
-                  <span style="font-size:10px;font-weight:700;color:#fff;display:inline-block;white-space:nowrap;">✓ 24 ore</span>
+                  <span style="font-size:10px;font-weight:700;color:#fff;display:inline-block;white-space:nowrap;">${i18n.hrs24}</span>
                 </td>
                 <td width="6">&nbsp;</td>
                 <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:5px 10px;white-space:nowrap;">
-                  <span style="font-size:10px;font-weight:600;color:${C.fg};display:inline-block;white-space:nowrap;">🏪 In negozio</span>
+                  <span style="font-size:10px;font-weight:600;color:${C.fg};display:inline-block;white-space:nowrap;">${i18n.inStore}</span>
                 </td>
                 <td width="6">&nbsp;</td>
                 <td style="background:${C.cardAlt};border:1px solid ${C.border};border-radius:999px;padding:5px 10px;white-space:nowrap;">
-                  <span style="font-size:10px;font-weight:600;color:${C.fg};display:inline-block;white-space:nowrap;">1️⃣ Un uso</span>
+                  <span style="font-size:10px;font-weight:600;color:${C.fg};display:inline-block;white-space:nowrap;">${i18n.oneUse}</span>
                 </td>
               </tr>
             </table>
@@ -281,7 +433,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         <tr>
           <td style="background:${C.cardHeader};padding:12px 28px 14px;text-align:center;border-radius:0 0 14px 14px;">
             ${barcodesvg(C.orange)}
-            <p style="margin:5px 0 0;font-size:8px;color:${C.muted};letter-spacing:0.12em;text-transform:uppercase;">Biglietto Sconto</p>
+            <p style="margin:5px 0 0;font-size:8px;color:${C.muted};letter-spacing:0.12em;text-transform:uppercase;">${i18n.discountTicket}</p>
           </td>
         </tr>
       </table>
@@ -290,7 +442,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
 
   <tr>
     <td style="background:${C.cardAlt};padding:28px 24px;border-top:1px solid ${C.border};">
-      <p style="margin:0 0 20px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">COME RISCUOTERE LO SCONTO</p>
+      <p style="margin:0 0 20px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">${i18n.howToRedeem}</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
         <td width="44" valign="middle" style="width:44px;padding:0;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
@@ -299,8 +451,8 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         </td>
         <td width="14" style="padding:0;">&nbsp;</td>
         <td valign="middle" style="padding:0;">
-          <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:${C.fg};line-height:1.3;">Mostra l'email</p>
-          <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">Al consulente in negozio</p>
+          <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:${C.fg};line-height:1.3;">${i18n.step1Title}</p>
+          <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">${i18n.step1Sub}</p>
         </td>
       </tr></table>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0;"><tr><td style="border-top:1px solid ${C.border};height:0;font-size:0;line-height:0;">&nbsp;</td></tr></table>
@@ -312,8 +464,8 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         </td>
         <td width="14" style="padding:0;">&nbsp;</td>
         <td valign="middle" style="padding:0;">
-          <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:${C.fg};line-height:1.3;">Scegli il prodotto</p>
-          <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">Il tuo match o qualsiasi altro</p>
+          <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:${C.fg};line-height:1.3;">${i18n.step2Title}</p>
+          <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">${i18n.step2Sub}</p>
         </td>
       </tr></table>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0;"><tr><td style="border-top:1px solid ${C.border};height:0;font-size:0;line-height:0;">&nbsp;</td></tr></table>
@@ -325,8 +477,8 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         </td>
         <td width="14" style="padding:0;">&nbsp;</td>
         <td valign="middle" style="padding:0;">
-          <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:${C.fg};line-height:1.3;">Applica il codice</p>
-          <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">Al checkout — sconto immediato</p>
+          <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:${C.fg};line-height:1.3;">${i18n.step3Title}</p>
+          <p style="margin:0;font-size:11px;color:${C.muted};line-height:1.5;">${i18n.step3Sub}</p>
         </td>
       </tr></table>
     </td>
@@ -358,7 +510,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
   ${faq.length > 0 ? `
   <tr>
     <td style="background:${C.cardAlt};padding:28px 24px;border-top:1px solid ${C.border};">
-      <p style="margin:0 0 20px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">DOMANDE FREQUENTI</p>
+      <p style="margin:0 0 20px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">${i18n.faqSection}</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         ${faq.map((item, i) => `
         <tr><td style="padding:${i > 0 ? "14px" : "0"} 0 0;">
@@ -377,7 +529,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
 
   <tr>
     <td style="background:${C.cardAlt};padding:26px 24px;border-top:1px solid ${C.border};">
-      <p style="margin:0 0 18px;font-size:11px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:${C.orange};text-align:center;">AZIONE RICHIESTA</p>
+      <p style="margin:0 0 18px;font-size:11px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:${C.orange};text-align:center;">${i18n.actionRequired}</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
         <td width="44" valign="middle" style="width:44px;padding:0;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
@@ -386,8 +538,8 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         </td>
         <td width="14" style="padding:0;">&nbsp;</td>
         <td valign="middle" style="padding:0;">
-          <p style="margin:0 0 3px;font-size:12px;font-weight:700;color:${C.fg};line-height:1.3;">Salva l'email</p>
-          <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Avrai il codice a portata di mano</p>
+          <p style="margin:0 0 3px;font-size:12px;font-weight:700;color:${C.fg};line-height:1.3;">${i18n.saveEmail}</p>
+          <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">${i18n.saveEmailSub}</p>
         </td>
       </tr></table>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0;"><tr><td style="border-top:1px solid ${C.border};height:0;font-size:0;line-height:0;">&nbsp;</td></tr></table>
@@ -399,8 +551,8 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         </td>
         <td width="14" style="padding:0;">&nbsp;</td>
         <td valign="middle" style="padding:0;">
-          <p style="margin:0 0 3px;font-size:12px;font-weight:700;color:${C.fg};line-height:1.3;">Entro 24 ore</p>
-          <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Il codice scade presto</p>
+          <p style="margin:0 0 3px;font-size:12px;font-weight:700;color:${C.fg};line-height:1.3;">${i18n.within24h}</p>
+          <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">${i18n.within24hSub}</p>
         </td>
       </tr></table>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0;"><tr><td style="border-top:1px solid ${C.border};height:0;font-size:0;line-height:0;">&nbsp;</td></tr></table>
@@ -412,8 +564,8 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         </td>
         <td width="14" style="padding:0;">&nbsp;</td>
         <td valign="middle" style="padding:0;">
-          <p style="margin:0 0 3px;font-size:12px;font-weight:700;color:${C.fg};line-height:1.3;">Vieni in store</p>
-          <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">Mostra al consulente</p>
+          <p style="margin:0 0 3px;font-size:12px;font-weight:700;color:${C.fg};line-height:1.3;">${i18n.visitStore}</p>
+          <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.5;">${i18n.visitStoreSub}</p>
         </td>
       </tr></table>
     </td>
@@ -421,7 +573,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
 
   <tr>
     <td style="background:${C.card};padding:14px 28px;text-align:center;border-top:1px solid ${C.border};">
-      <p style="margin:0;font-size:11px;color:${C.muted};">Le immagini non si caricano? Clicca <strong style="color:${C.fg};">&ldquo;Mostra immagini&rdquo;</strong> in cima all&rsquo;email per visualizzare il prodotto e il video del consulente.</p>
+      <p style="margin:0;font-size:11px;color:${C.muted};">${i18n.imagesNote}</p>
     </td>
   </tr>
 
@@ -432,9 +584,9 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
       ${fullName ? `<p style="margin:0 0 10px;font-size:12px;color:${C.muted};">Inviato a <strong style="color:${C.fg};">${fullName}</strong>${recipientEmail ? ` · ${recipientEmail}` : ""}</p>` : ""}
       <div style="border-top:1px solid ${C.border};margin:12px auto;max-width:200px;"></div>
       <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.8;">
-        Dati crittografati · Conformità GDPR<br/>
-        Hai ricevuto questa email perché hai partecipato a Webi-Match in negozio.<br/>
-        <span style="color:${C.orange};">Il codice sconto è valido 24 ore dalla ricezione.</span>
+        ${i18n.gdpr}<br/>
+        ${i18n.receivedNote}<br/>
+        <span style="color:${C.orange};">${i18n.codeExpiry}</span>
       </p>
     </td>
   </tr>
@@ -570,9 +722,17 @@ serve(async (req) => {
     .select("sender_name, subject_template, header_title, header_subtitle, footer_store_name")
     .eq("id", 1)
     .maybeSingle();
+  const sessionLang = (String(record.language ?? "it")) as Lang;
+  const defaultSubject: Record<Lang, string> = {
+    it: "{{nome}}, il tuo match è {{pct}}% — Codice sconto valido 24h ⏰",
+    en: "{{nome}}, your match is {{pct}}% — Discount code valid 24h ⏰",
+    pt: "{{nome}}, o seu match é {{pct}}% — Código de desconto válido 24h ⏰",
+    es: "{{nome}}, tu match es {{pct}}% — Código de descuento válido 24h ⏰",
+    fr: "{{nome}}, votre match est de {{pct}}% — Code de réduction valable 24h ⏰",
+  };
   const tpl = {
     sender_name:       String(tplRow?.sender_name       ?? "Costanzo Annichini"),
-    subject_template:  String(tplRow?.subject_template  ?? "{{nome}}, il tuo match è {{pct}}% — Codice sconto valido 24h ⏰"),
+    subject_template:  String(tplRow?.subject_template  ?? (defaultSubject[sessionLang] ?? defaultSubject.it)),
     header_title:      String(tplRow?.header_title      ?? "Abbiamo trovato il tuo match!"),
     header_subtitle:   String(tplRow?.header_subtitle   ?? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il gadget perfetto per il tuo stile di vita."),
     footer_store_name: String(tplRow?.footer_store_name ?? "COSTANZO ANNICHINI"),

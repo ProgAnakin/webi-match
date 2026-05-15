@@ -9,6 +9,7 @@ import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";
 import { getStoredStoreId, getStoreById } from "@/data/stores";
 import { supabase } from "@/integrations/supabase/client";
+import { useViewportKeyboard } from "@/hooks/useViewportKeyboard";
 
 // Staff / test emails that bypass the 1-hour participation cooldown.
 // Remove an entry here when the account should be subject to normal rules.
@@ -64,6 +65,7 @@ const LanguageSelector = () => {
 // ─── Welcome Form ───────────────────────────────────────────────────────────────────────────
 const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const { t } = useLang();
+  useViewportKeyboard();
   const [nome, setNome] = useState("");
   const [cognome, setCognome] = useState("");
   const [email, setEmail] = useState("");
@@ -154,19 +156,23 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
     : "border-border focus:ring-primary"
   }`;
 
+  const scrollOnFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
+    setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
+  }, []);
+
   return (
-    <div className="w-full space-y-3">
+    <div className="w-full space-y-3" style={{ paddingBottom: "var(--keyboard-height, 0px)" }}>
       <div className="flex gap-3">
         <div className="flex-1">
           <input type="text" placeholder={t.welcome.firstName} value={nome}
-            onChange={handleNome} onKeyDown={onKeyDown} autoComplete="given-name" className={nomeClass} />
+            onChange={handleNome} onKeyDown={onKeyDown} onFocus={scrollOnFocus} autoComplete="given-name" className={nomeClass} />
           {showNomeError && (
             <p className="mt-1 text-center text-xs text-destructive">{t.welcome.firstNameError}</p>
           )}
         </div>
         <div className="flex-1">
           <input type="text" placeholder={t.welcome.lastName} value={cognome}
-            onChange={handleCognome} onKeyDown={onKeyDown} autoComplete="family-name" className={cognomeClass} />
+            onChange={handleCognome} onKeyDown={onKeyDown} onFocus={scrollOnFocus} autoComplete="family-name" className={cognomeClass} />
           {showCognomeError && (
             <p className="mt-1 text-center text-xs text-destructive">{t.welcome.lastNameError}</p>
           )}
@@ -177,6 +183,7 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
         <input type="email" placeholder={t.welcome.emailPlaceholder}
           value={email} onChange={handleEmail}
           onBlur={() => setEmailTouched(true)}
+          onFocus={scrollOnFocus}
           onKeyDown={onKeyDown} autoComplete="email" className={emailClass} />
         {showEmailOk && (
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500">
