@@ -38,11 +38,22 @@ Every architectural choice, every line of code, every database migration in this
 
 > Live deployment running daily across multiple Webidoo Store locations on iPad.
 
-| Attract loop | Welcome | Quiz | Match Result | Manager Dashboard |
-|:---:|:---:|:---:|:---:|:---:|
-| ![](docs/screenshots/attract.png) | ![](docs/screenshots/welcome.png) | ![](docs/screenshots/quiz.png) | ![](docs/screenshots/result.png) | ![](docs/screenshots/manager.png) |
-
-📺 **[Watch the 30-second flow demo](docs/screenshots/demo.gif)**
+<table align="center">
+  <tr>
+    <td align="center"><b>Attract loop</b></td>
+    <td align="center"><b>Welcome</b></td>
+    <td align="center"><b>Quiz</b></td>
+    <td align="center"><b>Match Result</b></td>
+    <td align="center"><b>Manager Dashboard</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/attract.png" width="175"/></td>
+    <td><img src="docs/screenshots/welcome.png" width="175"/></td>
+    <td><img src="docs/screenshots/quiz.png" width="175"/></td>
+    <td><img src="docs/screenshots/result.png" width="175"/></td>
+    <td><img src="docs/screenshots/manager.png" width="175"/></td>
+  </tr>
+</table>
 
 ---
 
@@ -260,7 +271,7 @@ supabase/
 ### Local Setup
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/ProgAnakin/webi-match.git
 cd webi-match
 npm install
 cp .env.example .env
@@ -272,7 +283,7 @@ npm run dev
 
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 VITE_SENTRY_DSN=https://your-sentry-dsn (optional)
 ```
 
