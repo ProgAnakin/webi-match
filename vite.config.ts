@@ -24,6 +24,8 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         // Pre-cache all build assets for offline use
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,woff2}"],
+        // Exclude large static assets that aren't needed for offline kiosk operation
+        globIgnores: ["screenshots/**", "splash/**"],
         // Runtime caching for Supabase API calls (network-first, 5 s timeout)
         runtimeCaching: [
           {

@@ -277,7 +277,7 @@ const Index = () => {
       email_sent: false,
       nome: user.nome,
       cognome: user.cognome,
-      store_id: getStoredStoreId(),
+      store_id: getStoredStoreId() ?? "corso-vercelli",
       // Product snapshot — used by the Edge Function to build the email
       product_name:  matchedProduct.name,
       product_price: matchedProduct.price,
