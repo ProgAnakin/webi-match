@@ -17,6 +17,35 @@
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "/screenshots/attract.png",
+      "sizes": "1024x1366",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Attract screen — invites customers to tap and start the experience"
+    },
+    {
+      "src": "/screenshots/quiz.png",
+      "sizes": "1024x1366",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Swipe quiz — 8 personalised questions answered by gesture"
+    },
+    {
+      "src": "/screenshots/result.png",
+      "sizes": "1024x1366",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Match result — instant product recommendation with discount code"
+    },
+    {
+      "src": "/screenshots/manager.png",
+      "sizes": "1024x1366",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Manager dashboard — real-time sessions, catalogue and KPIs"
+    }
+  ],
   "prefer_related_applications": false
 }

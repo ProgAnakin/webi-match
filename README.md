@@ -16,6 +16,10 @@
 
 *Customers swipe through 8 personalised questions — Tinder-style — and receive an instant product recommendation with a tailored discount and a personalised video from a consultant.*
 
+### 🌐 [**Live Demo → webi-match.vercel.app**](https://webi-match.vercel.app)
+
+*Best experienced on iPad (1024×1366) in landscape · Works on any modern browser*
+
 </div>
 
 ---

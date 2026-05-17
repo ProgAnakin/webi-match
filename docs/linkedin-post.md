@@ -37,8 +37,8 @@ il cliente risponde a 8 domande con un gesto swipe (tipo Tinder), riceve in temp
 
 Il codice è su GitHub. Il progetto gira ogni giorno in produzione su iPad nelle sedi Webidoo Store.
 
-👉 [Link al repo GitHub]
-👉 [Link al tuo profilo LinkedIn / portfolio]
+👉 https://github.com/ProgAnakin/webi-match
+👉 https://webi-match.vercel.app (demo live)
 
 #React #TypeScript #Supabase #PWA #FullStack #OpenSource #SideProject #WebDevelopment #iPad #RetailTech
 
@@ -79,8 +79,8 @@ The code is on GitHub. It runs in production every day on iPads in Webidoo Store
 
 I'm [looking for new opportunities / open to connecting with builders / happy to discuss the architecture] — let's talk.
 
-👉 [GitHub repo link]
-👉 [Your portfolio / website]
+👉 https://github.com/ProgAnakin/webi-match
+👉 https://webi-match.vercel.app (live demo)
 
 #React #TypeScript #Supabase #PWA #FullStack #SideProject #WebDevelopment #RetailTech #iPad #OpenToWork
 
