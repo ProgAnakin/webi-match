@@ -725,11 +725,11 @@ serve(async (req) => {
     .eq("language", sessionLang)
     .maybeSingle();
   const tpl = {
-    sender_name:       String(tplRow?.sender_name       ?? "Costanzo Annichini"),
+    sender_name:       String(tplRow?.sender_name       ?? "Webidoo Store"),
     subject_template:  String(tplRow?.subject_template  ?? "{{nome}}, il tuo match è {{pct}}% — Codice sconto valido 24h ⏰"),
     header_title:      String(tplRow?.header_title      ?? "Abbiamo trovato il tuo match!"),
     header_subtitle:   String(tplRow?.header_subtitle   ?? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il gadget perfetto per il tuo stile di vita."),
-    footer_store_name: String(tplRow?.footer_store_name ?? "COSTANZO ANNICHINI"),
+    footer_store_name: String(tplRow?.footer_store_name ?? "Costanzo Annichini"),
   };
 
   const nome     = String(record.nome ?? "").trim();

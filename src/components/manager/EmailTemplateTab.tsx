@@ -36,39 +36,39 @@ interface EmailTemplate {
 
 const DEFAULTS_BY_LANG: Record<Lang, EmailTemplate> = {
   it: {
-    sender_name: "Costanzo Annichini",
+    sender_name: "Webidoo Store",
     subject_template: "{{nome}}, il tuo match è {{pct}}% — Codice sconto valido 24h ⏰",
     header_title: "Abbiamo trovato il tuo match!",
     header_subtitle: "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il gadget perfetto per il tuo stile di vita.",
-    footer_store_name: "COSTANZO ANNICHINI",
+    footer_store_name: "Costanzo Annichini",
   },
   en: {
-    sender_name: "Costanzo Annichini",
+    sender_name: "Webidoo Store",
     subject_template: "{{nome}}, your match is {{pct}}% — Discount code valid 24h ⏰",
     header_title: "We found your match!",
     header_subtitle: "Our algorithm analysed your answers and selected the perfect gadget for your lifestyle.",
-    footer_store_name: "COSTANZO ANNICHINI",
+    footer_store_name: "Costanzo Annichini",
   },
   fr: {
-    sender_name: "Costanzo Annichini",
+    sender_name: "Webidoo Store",
     subject_template: "{{nome}}, votre match est de {{pct}}% — Code de réduction valable 24h ⏰",
     header_title: "Nous avons trouvé votre match !",
     header_subtitle: "Notre algorithme a analysé vos réponses et a sélectionné le gadget parfait pour votre style de vie.",
-    footer_store_name: "COSTANZO ANNICHINI",
+    footer_store_name: "Costanzo Annichini",
   },
   es: {
-    sender_name: "Costanzo Annichini",
+    sender_name: "Webidoo Store",
     subject_template: "{{nome}}, tu match es {{pct}}% — Código de descuento válido 24h ⏰",
     header_title: "¡Encontramos tu match!",
     header_subtitle: "Nuestro algoritmo analizó tus respuestas y seleccionó el gadget perfecto para tu estilo de vida.",
-    footer_store_name: "COSTANZO ANNICHINI",
+    footer_store_name: "Costanzo Annichini",
   },
   pt: {
-    sender_name: "Costanzo Annichini",
+    sender_name: "Webidoo Store",
     subject_template: "{{nome}}, o seu match é {{pct}}% — Código de desconto válido 24h ⏰",
     header_title: "Encontrámos o seu match!",
     header_subtitle: "O nosso algoritmo analisou as suas respostas e selecionou o gadget perfeito para o seu estilo de vida.",
-    footer_store_name: "COSTANZO ANNICHINI",
+    footer_store_name: "Costanzo Annichini",
   },
 };
 
@@ -81,8 +81,8 @@ function interpolate(tpl: string): string {
 const FIELD_META: { key: keyof EmailTemplate; label: string; hint: string; multiline?: boolean }[] = [
   {
     key: "sender_name",
-    label: "Nome mittente",
-    hint: 'Apparirà come "Da: Nome mittente" nella casella del cliente.',
+    label: "Nome mittente (campo From:)",
+    hint: 'Nome che appare come mittente nell\'email client del cliente. Es: "Webidoo Store".',
   },
   {
     key: "subject_template",
@@ -104,8 +104,8 @@ const FIELD_META: { key: keyof EmailTemplate; label: string; hint: string; multi
   },
   {
     key: "footer_store_name",
-    label: "Nome store nel footer",
-    hint: "Mostrato in fondo all'email e sulla card del codice sconto.",
+    label: "Nome consulente (footer email)",
+    hint: "Mostrato in fondo all'email e sulla card del codice sconto. Es: \"Costanzo Annichini\".",
   },
 ];
 
