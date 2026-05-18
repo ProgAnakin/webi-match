@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import logo from "@/assets/webidoo-logo.png";
+import logo from "@/assets/webidoo-logo.webp";
 import { AttractBackground } from "./AttractBackground";
 import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";

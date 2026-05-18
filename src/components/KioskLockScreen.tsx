@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/webidoo-logo.png";
+import logo from "@/assets/webidoo-logo.webp";
 import { getClientId } from "@/lib/clientId";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"];

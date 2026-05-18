@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
-import logo from "@/assets/webidoo-logo.png";
+import logo from "@/assets/webidoo-logo.webp";
 import DiscoveryBackground from "./DiscoveryBackground";
 import AdminPinOverlay from "./AdminPinOverlay";
 import { useSound } from "@/hooks/useSound";
