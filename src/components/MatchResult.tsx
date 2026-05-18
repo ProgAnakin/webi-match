@@ -169,10 +169,13 @@ const MatchResult = ({
 
   useEffect(() => {
     let frame: number;
+    let cancelled = false;
     const timeout = setTimeout(() => {
+      if (cancelled) return;
       const slotDuration = 900;
       const slotStart = performance.now();
       const runSlot = (now: number) => {
+        if (cancelled) return;
         const elapsed  = now - slotStart;
         if (elapsed < slotDuration) {
           const progress = elapsed / slotDuration;
@@ -186,6 +189,7 @@ const MatchResult = ({
           const countStart    = performance.now();
           const countDuration = 1800;
           const runCount = (now2: number) => {
+            if (cancelled) return;
             const progress = Math.min((now2 - countStart) / countDuration, 1);
             const eased    = 1 - Math.pow(1 - progress, 3);
             setDisplayPercent(Math.round(eased * matchPercent));
@@ -196,7 +200,7 @@ const MatchResult = ({
       };
       frame = requestAnimationFrame(runSlot);
     }, 900);
-    return () => { cancelAnimationFrame(frame); clearTimeout(timeout); };
+    return () => { cancelled = true; cancelAnimationFrame(frame); clearTimeout(timeout); };
   // play and ringMotionValue are stable refs (useCallback / useMotionValue) — safe to omit.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchPercent]);

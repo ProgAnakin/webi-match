@@ -118,7 +118,7 @@ const Index = () => {
     const customData:   CustomRow[]   = [];
     const globalData:   GlobalRow[]   = [];
 
-    function applySnapshot(snap: StartupSnapshot, fromCache: boolean) {
+    function applySnapshot(snap: StartupSnapshot) {
       const hiddenIds = new Set(
         snap.globalData.filter((r) => r.hidden).map((r) => r.product_id),
       );
@@ -171,13 +171,13 @@ const Index = () => {
         setQuizCards(snap.cardsData);
         setTagMap(buildTagMap(snap.cardsData));
       }
-      // Only mark loaded on first call (cache) or always (live).
-      if (!fromCache || !settingsLoaded) setSettingsLoaded(true);
+      // Cache hit + live refresh both mark loaded — idempotent via React state batching.
+      setSettingsLoaded(true);
     }
 
     // Stale-while-revalidate: serve cache instantly, then refresh in background.
     const cached = readCache<StartupSnapshot>(cacheKey);
-    if (cached) applySnapshot(cached, true);
+    if (cached) applySnapshot(cached);
 
     Promise.all([
       supabase
@@ -212,9 +212,8 @@ const Index = () => {
       };
 
       writeCache(cacheKey, snap);
-      applySnapshot(snap, false);
+      applySnapshot(snap);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fallback: if startup data doesn't arrive within 10 s, force progress so the
@@ -266,6 +265,17 @@ const Index = () => {
   // handleClaim fires. We just persist the session and advance to success.
   const handleClaim = async () => {
     if (!matchedProduct || claiming) return;
+
+    // Hard guard: a session without a configured store must NOT be silently
+    // assigned to a default — that would attribute it to the wrong location
+    // and corrupt per-store analytics. Surface the error so staff fixes it.
+    const storeId = getStoredStoreId();
+    if (!storeId) {
+      console.error("[webi-match] No store_id configured — claim aborted.");
+      setClaimError(true);
+      return;
+    }
+
     setClaimError(false);
     setClaiming(true);
 
@@ -277,7 +287,7 @@ const Index = () => {
       email_sent: false,
       nome: user.nome,
       cognome: user.cognome,
-      store_id: getStoredStoreId() ?? "corso-vercelli",
+      store_id: storeId,
       // Product snapshot — used by the Edge Function to build the email
       product_name:  matchedProduct.name,
       product_price: matchedProduct.price,

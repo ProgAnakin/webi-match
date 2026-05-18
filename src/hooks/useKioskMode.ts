@@ -2,13 +2,17 @@ import { useState, useEffect, useCallback } from "react";
 
 const LOCK_KEY = "wb_kiosk_locked";
 
-async function enterFullscreen() {
+// Returns true when fullscreen is engaged OR unsupported (iOS Safari).
+// Returns false only when the API is available and the user actively denied the request,
+// so the caller can keep the kiosk state in sync with the actual screen state.
+async function enterFullscreen(): Promise<boolean> {
+  if (!document.fullscreenEnabled) return true; // unsupported — treat as "kiosk logical" without chrome
+  if (document.fullscreenElement) return true;
   try {
-    if (document.fullscreenEnabled && !document.fullscreenElement) {
-      await document.documentElement.requestFullscreen({ navigationUI: "hide" });
-    }
+    await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+    return true;
   } catch {
-    // iOS Safari doesn't support the Fullscreen API — fail silently.
+    return false;
   }
 }
 
@@ -29,9 +33,10 @@ export function useKioskMode() {
   }, []);
 
   const activateKiosk = useCallback(async () => {
+    const ok = await enterFullscreen();
+    if (!ok) return;
     localStorage.setItem(LOCK_KEY, "true");
     setIsKioskLocked(true);
-    await enterFullscreen();
   }, []);
 
   const deactivateKiosk = useCallback(async () => {

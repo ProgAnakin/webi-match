@@ -56,7 +56,9 @@ function matchBadgeLabel(pct: number): string {
 }
 
 function youtubeId(url: string): string | null {
-  const m = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  // Covers: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/shorts/ID,
+  // youtube.com/embed/ID, youtube-nocookie.com/embed/ID
+  const m = url.match(/(?:v=|youtu\.be\/|\/shorts\/|\/embed\/)([A-Za-z0-9_-]{11})/);
   return m ? m[1] : null;
 }
 
@@ -69,8 +71,16 @@ function genDiscountCode(discountPct: number): string {
   return `WEBI-${hex}${String(discountPct).padStart(2, "0")}`;
 }
 
-// Known valid store IDs — requests from unknown sources are silently dropped.
-const VALID_STORE_IDS = new Set(["corso-vercelli", "5-giornate", "verona", "bergamo"]);
+// Accept any kebab-case slug as a store_id — the list of stores is owned by the
+// front-end (src/data/stores.ts) and would otherwise require redeploying this
+// function every time a new location opens. The slug shape is restrictive enough
+// to filter out garbage / probing requests.
+//
+// Format: starts with a letter, 2-50 chars, lowercase letters / digits / hyphens.
+const STORE_ID_RE = /^[a-z0-9][a-z0-9-]{1,49}$/;
+function isValidStoreId(id: unknown): boolean {
+  return typeof id === "string" && STORE_ID_RE.test(id);
+}
 
 const BARCODE_RECTS = [
   [2,3,.55],[7,1,.80],[10,4,.50],[16,2,.70],[20,5,.55],[27,1,.85],[30,3,.50],
@@ -634,8 +644,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 
-  // Silently ignore sessions from unknown store IDs — they were not created by our app.
-  if (record.store_id && !VALID_STORE_IDS.has(String(record.store_id))) {
+  // Silently ignore sessions with a malformed store_id — they were not created by our app.
+  if (record.store_id && !isValidStoreId(record.store_id)) {
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 
@@ -646,17 +656,21 @@ serve(async (req) => {
 
   // Encrypt PII at rest — runs only when PII_ENCRYPTION_KEY secret is configured.
   // nome/cognome → AES-encrypted bytea; email → SHA-256 hash for future lookups.
-  // Fire-and-forget: encryption failure must never block email delivery.
+  // Awaited (not fire-and-forget): the encryption-at-rest guarantee must hold
+  // BEFORE the email goes out — otherwise a transient encrypt failure leaves
+  // plaintext PII in the database while the customer already received the email.
   if (PII_KEY) {
-    supabase.rpc("encrypt_session_pii", {
+    const { error: encErr } = await supabase.rpc("encrypt_session_pii", {
       p_session_id: String(record.id),
       p_nome:       String(record.nome    ?? ""),
       p_cognome:    String(record.cognome ?? ""),
       p_email:      String(record.email   ?? ""),
       p_key:        PII_KEY,
-    }).then(({ error }) => {
-      if (error) console.error("[on-session-created] pii encrypt failed:", error.message);
     });
+    if (encErr) {
+      console.error("[on-session-created] pii encrypt failed — aborting email send:", encErr.message);
+      return new Response(JSON.stringify({ ok: false, error: "encryption failed" }), { status: 500 });
+    }
   }
 
   // Server-side email rate limit — bypass-proof regardless of how the session was created.
@@ -763,7 +777,8 @@ serve(async (req) => {
   await supabase.from("quiz_sessions").update({ email_sent: true }).eq("id", record.id);
 
   const brevoData = await brevoRes.json();
-  console.log("[on-session-created] email sent:", brevoData.messageId, "→", record.email);
+  // Log messageId only — never raw email (Supabase Edge logs are operational, not for PII).
+  console.log("[on-session-created] email sent:", brevoData.messageId, "session:", record.id);
 
   // Server-side Google Sheets relay — fire-and-forget, never blocks email delivery.
   if (SHEETS_WEBHOOK) {

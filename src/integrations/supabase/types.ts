@@ -219,6 +219,7 @@ export type Database = {
           discount_percent: number | null
           code_redeemed: boolean
           code_redeemed_at: string | null
+          language: string | null
           created_at: string
         }
         Insert: {
@@ -239,6 +240,7 @@ export type Database = {
           discount_percent?: number | null
           code_redeemed?: boolean
           code_redeemed_at?: string | null
+          language?: string | null
           created_at?: string
         }
         Update: {
@@ -259,7 +261,71 @@ export type Database = {
           discount_percent?: number | null
           code_redeemed?: boolean
           code_redeemed_at?: string | null
+          language?: string | null
           created_at?: string
+        }
+        Relationships: []
+      }
+      custom_products: {
+        Row: {
+          id: string
+          name: string
+          description: string
+          price: string
+          rating: number
+          image_url: string | null
+          video_url: string
+          tags: string[]
+          faq: Json
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          name: string
+          description: string
+          price: string
+          rating?: number
+          image_url?: string | null
+          video_url?: string
+          tags?: string[]
+          faq?: Json
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string
+          price?: string
+          rating?: number
+          image_url?: string | null
+          video_url?: string
+          tags?: string[]
+          faq?: Json
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      product_global_status: {
+        Row: {
+          product_id: string
+          hidden: boolean
+          updated_at: string
+        }
+        Insert: {
+          product_id: string
+          hidden?: boolean
+          updated_at?: string
+        }
+        Update: {
+          product_id?: string
+          hidden?: boolean
+          updated_at?: string
         }
         Relationships: []
       }
@@ -272,13 +338,44 @@ export type Database = {
         Args: { p_email: string }
         Returns: { in_cooldown: boolean; hours_remaining: number }[]
       }
+      check_login_rate_limit: {
+        Args: { p_email: string }
+        Returns: { allowed: boolean; locked_seconds: number; attempts_left: number }
+      }
+      record_login_attempt: {
+        Args: { p_email: string; p_success: boolean }
+        Returns: undefined
+      }
       get_my_store_role: {
         Args: Record<string, never>
         Returns: { role: string; store_id: string | null }[]
       }
       verify_staff_pin: {
-        Args: { p_pin: string; p_client_id: string; p_user_agent: string }
-        Returns: { valid: boolean; store_id: string | null }[]
+        Args: {
+          pin_input: string
+          client_id?: string
+          user_agent?: string
+          ip_address?: string | null
+        }
+        Returns: { valid: boolean; locked_seconds: number }
+      }
+      encrypt_session_pii: {
+        Args: {
+          p_session_id: string
+          p_nome: string
+          p_cognome: string
+          p_email: string
+          p_key: string
+        }
+        Returns: undefined
+      }
+      mark_code_redeemed: {
+        Args: { p_session_id: string }
+        Returns: number
+      }
+      purge_sessions_older_than: {
+        Args: { p_days?: number }
+        Returns: number
       }
     }
     Enums: {

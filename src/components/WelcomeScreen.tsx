@@ -10,13 +10,7 @@ import { LANGUAGES } from "@/i18n/translations";
 import { getStoredStoreId, getStoreById } from "@/data/stores";
 import { supabase } from "@/integrations/supabase/client";
 import { useViewportKeyboard } from "@/hooks/useViewportKeyboard";
-
-// Staff / test emails that bypass the 1-hour participation cooldown.
-// Remove an entry here when the account should be subject to normal rules.
-const COOLDOWN_BYPASS = new Set([
-  "costanzo.annichini@gmail.com",
-  "costatocb@gmail.com",
-]);
+import { COOLDOWN_BYPASS_EMAILS } from "@/config/staffEmails";
 
 export interface UserInfo {
   nome: string;
@@ -108,7 +102,7 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    if (!COOLDOWN_BYPASS.has(normalizedEmail)) {
+    if (!COOLDOWN_BYPASS_EMAILS.has(normalizedEmail)) {
       setChecking(true);
       try {
         const { data } = await supabase.rpc("check_email_cooldown", {

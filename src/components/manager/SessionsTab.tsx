@@ -130,7 +130,6 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     if (!isGlobal) q = q.eq("store_id", storeId);
     const { data } = await q;
     setKpiData((data ?? []) as typeof kpiData);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId, isGlobal]);
 
   const fetchSessions = useCallback(async () => {
@@ -214,8 +213,8 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
   const markRedeemed = async (s: Session) => {
     if (redeemingId) return;
     setRedeemingId(s.id);
-    const { data: rowsUpdated, error } = await supabase.rpc("mark_code_redeemed", { p_session_id: s.id } as never);
-    if (!error && (rowsUpdated as number) > 0) {
+    const { data: rowsUpdated, error } = await supabase.rpc("mark_code_redeemed", { p_session_id: s.id });
+    if (!error && (rowsUpdated ?? 0) > 0) {
       setSessions((prev) =>
         prev.map((row) =>
           row.id === s.id
@@ -283,10 +282,10 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
   const executePurge = useCallback(async () => {
     setPurging(true);
-    const { data } = await supabase.rpc("purge_sessions_older_than", { p_days: 7 } as never);
+    const { data } = await supabase.rpc("purge_sessions_older_than", { p_days: 7 });
     setPurging(false);
     setShowPurgeModal(false);
-    const deleted = (data as number) ?? 0;
+    const deleted = data ?? 0;
     toast.success(`${deleted} sessioni eliminate con successo.`);
     fetchSessions();
     fetchKpiData();
