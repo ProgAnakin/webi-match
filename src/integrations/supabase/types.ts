@@ -16,7 +16,7 @@ export type Database = {
     Tables: {
       email_template: {
         Row: {
-          id: number
+          language: string
           sender_name: string
           subject_template: string
           header_title: string
@@ -25,7 +25,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          id?: number
+          language: string
           sender_name?: string
           subject_template?: string
           header_title?: string
@@ -34,7 +34,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          id?: number
+          language?: string
           sender_name?: string
           subject_template?: string
           header_title?: string
