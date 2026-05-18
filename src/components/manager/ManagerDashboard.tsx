@@ -13,11 +13,12 @@ import { SessionsTab } from "./SessionsTab";
 import { ProductCatalogTab } from "./ProductCatalogTab";
 import { QuizCardsTab } from "./QuizCardsTab";
 import { EmailTemplateTab } from "./EmailTemplateTab";
+import { RolesTab } from "./RolesTab";
 
 import { resizeImage } from "@/lib/imageProcessing";
 
 type ActiveTab = "catalogo" | "sessioni" | "storico" | "gestione";
-type GestioneTab = "catalogo" | "carte" | "email";
+type GestioneTab = "catalogo" | "carte" | "email" | "ruoli";
 
 /** product_id → active boolean, loaded from Supabase */
 type SettingsMap = Record<string, boolean>;
@@ -755,10 +756,21 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
               >
                 📧 Email
               </button>
+              <button
+                onClick={() => setGestioneTab("ruoli")}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-colors ${
+                  gestioneTab === "ruoli"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                👥 Ruoli
+              </button>
             </div>
             {gestioneTab === "catalogo" && <ProductCatalogTab />}
             {gestioneTab === "carte"    && <QuizCardsTab />}
             {gestioneTab === "email"    && <EmailTemplateTab />}
+            {gestioneTab === "ruoli"    && <RolesTab />}
           </div>
         )}
 

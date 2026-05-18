@@ -42,7 +42,8 @@ Every PR must pass the CI pipeline:
 ```bash
 npm run lint        # ESLint
 npx tsc --noEmit    # TypeScript strict typecheck
-npm test            # Vitest unit tests (currently 78 tests)
+npm test            # Vitest unit tests (currently 75 tests)
+npm run test:e2e    # Playwright E2E (7 tests, requires test:e2e:install first)
 npm run build       # Production build smoke test
 ```
 

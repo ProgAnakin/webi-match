@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml/badge.svg)](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml)
 [![Lighthouse](https://img.shields.io/badge/Lighthouse-PWA%20%E2%9C%93-FF6B35?logo=lighthouse&logoColor=white)](https://web.dev/measure/)
-[![Tests](https://img.shields.io/badge/tests-78%20passing-22c55e)](./src/__tests__)
+[![Tests](https://img.shields.io/badge/tests-75%20unit%20%2B%207%20e2e-22c55e)](./src/__tests__)
 [![A11y](https://img.shields.io/badge/WCAG-2.1%20AA-blueviolet)](./README.md#-security--quality-highlights)
 [![Languages](https://img.shields.io/badge/i18n-5%20languages-f5831c)](./src/i18n/translations.ts)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -169,7 +169,7 @@ flowchart LR
 | **Webhooks** | DB webhooks gated by valid `store_id` allowlist · unknown stores silently dropped |
 | **Accessibility** | WCAG 2.1 AA · all tap targets ≥ 44×44px (Apple HIG) · `focus-visible:ring-2` everywhere · `aria-modal` + focus trap on every dialog · `prefers-reduced-motion` respected via Framer Motion `MotionConfig` |
 | **Internationalisation** | 5 fully translated languages, including the transactional emails sent to customers |
-| **Testing** | 78 unit tests (Vitest) · 7 E2E tests (Playwright) · CI on every push |
+| **Testing** | 75 unit tests (Vitest) · 7 E2E tests (Playwright, in CI) · typecheck + lint + build on every push |
 | **Observability** | Sentry error tracking + session replay · structured logging in Edge Functions |
 | **Performance** | Manual chunk splitting · lazy-loaded admin routes · image auto-resize ≤ 1024px JPEG q=80 · PWA precaching · debounced search |
 | **iPad / Kiosk** | `interactive-widget=resizes-content` prevents URL bar on keyboard · `visualViewport` API for keyboard-aware layouts · iOS splash screens · wake lock · `100dvh` everywhere |

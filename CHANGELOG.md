@@ -46,6 +46,21 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 - `package.json` scripts: added `test:e2e` and `test:e2e:install`.
 - `.github/workflows/ci.yml`: new `e2e` job runs Playwright against the built app. Marked `continue-on-error` until the suite proves stable for ~2 weeks; promote to required after.
 - 75 unit tests passing (was 78 before, lost 15 with the deleted `buildEmailHtml.test.ts`, gained 12 with the new `validators.test.ts`).
+- `npm audit fix` brought prod+dev vulnerabilities from 11 → 5 (3 low + 2 moderate, all in dev tooling). Remaining 5 require breaking changes (Vite major upgrade); deferred.
+
+### Added — Multi-store role management UI
+- New `RolesTab` (`src/components/manager/RolesTab.tsx`) under `/manager → Gestione → Ruoli`. Lets a manager list every `store_roles` entry (joined to `auth.users.email`), upsert a role for any email, and remove an entry — all without leaving the dashboard.
+- New migration `20260518000002_store_roles_admin_rpc.sql` exposes three `SECURITY DEFINER` RPCs:
+  - `list_store_roles_admin()` — returns all rows, manager-only.
+  - `upsert_store_role_admin(p_user_email, p_role, p_store_id)` — UPSERT keyed on `auth.users.email`. Validates the role enum and requires a `store_id` for `consulente_responsabile`.
+  - `delete_store_role_admin(p_role_id)` — refuses self-deletion (caller can't lock themselves out).
+- Each RPC checks the caller's own `store_roles.role === 'manager'` before doing anything; non-managers receive a clear forbidden error surfaced in the UI.
+- `types.ts` updated to include the 3 new RPCs.
+
+### Pending (next minor)
+- **Translation API**: `QuizCardsTab` "🌐 Traduci" button is still disabled but now carries an inline TODO with the implementation plan (DeepL / Google Translate API key + new `translate-card` Edge Function).
+- **Capacitor iOS/Android**: scripts ready (`cap:ios`, `cap:android`) but `ios/` and `android/` directories not yet generated (needs Xcode / Android Studio).
+- **Lighthouse CI**: README claims a PWA badge but no CI workflow yet runs Lighthouse on PRs.
 
 ---
 

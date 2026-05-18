@@ -377,6 +377,29 @@ export type Database = {
         Args: { p_days?: number }
         Returns: number
       }
+      list_store_roles_admin: {
+        Args: Record<string, never>
+        Returns: {
+          id: string
+          user_id: string
+          user_email: string
+          role: string
+          store_id: string | null
+          created_at: string
+        }[]
+      }
+      upsert_store_role_admin: {
+        Args: {
+          p_user_email: string
+          p_role: string
+          p_store_id?: string | null
+        }
+        Returns: string
+      }
+      delete_store_role_admin: {
+        Args: { p_role_id: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

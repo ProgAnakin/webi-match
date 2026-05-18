@@ -477,10 +477,21 @@ export function QuizCardsTab() {
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                     Traduzioni (opzionali)
                   </span>
+                  {/*
+                    TODO: wire to a translation Edge Function.
+                    Plan:
+                      1. Add Supabase secret DEEPL_API_KEY (or GOOGLE_TRANSLATE_API_KEY).
+                      2. Create supabase/functions/translate-card/index.ts that takes
+                         { text_it, target_langs: ["en","pt","es","fr"] } and returns
+                         the translations.
+                      3. Replace the disabled handler below with an async call that
+                         posts to /functions/v1/translate-card and patches the form
+                         state with the response.
+                  */}
                   <button
                     type="button"
                     disabled
-                    title="Traduzione automatica non ancora disponibile"
+                    title="Traduzione automatica non ancora disponibile — vedi TODO nel componente"
                     className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/30 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground/40 cursor-not-allowed opacity-50"
                   >
                     <Globe className="h-3 w-3" />
