@@ -743,7 +743,7 @@ serve(async (req) => {
     method: "POST",
     headers: { "api-key": BREVO_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({
-      sender: { name: tpl.sender_name, email: "costanzo.annichini@webidoo.com" },
+      sender: { name: tpl.sender_name, email: "costanzobruno.annichini@webidoo.com" },
       // Customers should not reply directly. Point Reply-To at a noreply mailbox
       // so the "Reply" button in email clients doesn't send anything to a real inbox.
       replyTo: { name: "Webidoo Store (no-reply)", email: "noreply@webidoo.com" },
