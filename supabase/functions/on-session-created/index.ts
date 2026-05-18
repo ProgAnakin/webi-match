@@ -282,6 +282,10 @@ const EMAIL_I18N: Record<Lang, {
 function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ q: string; a: string }>, tpl?: EmailTpl): string {
   const lang = (String(record.language ?? "it") as Lang);
   const i18n = EMAIL_I18N[lang] ?? EMAIL_I18N.it;
+  // header_title / header_subtitle are editable rich-text fields from /manager
+  // and intentionally contain inline HTML (<strong>, <em>, <span style>). They are
+  // interpolated raw — do NOT wrap in escHtml. Authoring is gated by PIN auth and
+  // email clients sandbox <script>/event handlers, so the XSS surface is minimal.
   const headerTitle    = tpl?.header_title    ?? "Abbiamo trovato il tuo match!";
   const headerSubtitle = tpl?.header_subtitle ?? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il <strong style=\"color:#f0f4ff;\">gadget perfetto per il tuo stile di vita</strong>.";
   const footerName     = tpl?.footer_store_name ?? "COSTANZO ANNICHINI";
@@ -350,9 +354,9 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         </td></tr>
       </table>
       <h1 style="margin:22px 0 8px;font-size:30px;font-weight:800;color:${C.fg};line-height:1.15;letter-spacing:-0.01em;">
-        ${nome ? `Ciao <span style="color:${C.orange};">${nome}</span>,<br/>${escHtml(headerTitle)}` : escHtml(headerTitle)}
+        ${nome ? `Ciao <span style="color:${C.orange};">${nome}</span>,<br/>${headerTitle}` : headerTitle}
       </h1>
-      <p style="margin:0;font-size:15px;color:${C.muted};line-height:1.6;">${escHtml(headerSubtitle)}</p>
+      <p style="margin:0;font-size:15px;color:${C.muted};line-height:1.6;">${headerSubtitle}</p>
     </td>
   </tr>
 
