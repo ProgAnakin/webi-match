@@ -2,18 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/webidoo-logo.png";
-
-function getClientId(): string {
-  const idKey = "wb_client_id";
-  const tsKey = "wb_client_id_rotated";
-  const dayMs = 86_400_000;
-  const lastTs = Number(localStorage.getItem(tsKey) ?? 0);
-  if (!localStorage.getItem(idKey) || Date.now() - lastTs > dayMs) {
-    localStorage.setItem(idKey, crypto.randomUUID());
-    localStorage.setItem(tsKey, String(Date.now()));
-  }
-  return localStorage.getItem(idKey)!;
-}
+import { getClientId } from "@/lib/clientId";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"];
 

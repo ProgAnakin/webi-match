@@ -23,7 +23,7 @@ interface Session {
   code_redeemed_at: string | null;
 }
 
-type StatusFilter = "all" | "enviada" | "processando" | "sem_email" | "falhou";
+type StatusFilter = "all" | "inviata" | "in_elaborazione" | "senza_email" | "fallita";
 
 function productName(id: string) {
   return products.find((p) => p.id === id)?.name ?? id;
@@ -41,12 +41,12 @@ function formatDate(iso: string) {
   });
 }
 
-function getSessionStatus(s: Session): "enviada" | "processando" | "sem_email" | "falhou" {
-  if (s.email_sent) return "enviada";
+function getSessionStatus(s: Session): "inviata" | "in_elaborazione" | "senza_email" | "fallita" {
+  if (s.email_sent) return "inviata";
   const ageMin = (Date.now() - new Date(s.created_at).getTime()) / 60_000;
-  if (ageMin < 5) return "processando";
-  if (s.discount_code) return "sem_email";
-  return "falhou";
+  if (ageMin < 5) return "in_elaborazione";
+  if (s.discount_code) return "senza_email";
+  return "fallita";
 }
 
 function isCodeExpired(s: Session): boolean {
@@ -60,10 +60,10 @@ function hoursUntilExpiry(s: Session): number | null {
 }
 
 const STATUS_META = {
-  enviada:     { label: "INVIATA",         icon: Mail,        cls: "border-green-500/40 bg-green-500/10 text-green-400"       },
-  processando: { label: "IN ELABORAZIONE", icon: Clock,       cls: "border-amber-500/40 bg-amber-500/10 text-amber-400"       },
-  sem_email:   { label: "SENZA EMAIL",     icon: AlertCircle, cls: "border-orange-500/40 bg-orange-500/10 text-orange-400"    },
-  falhou:      { label: "FALLITA",         icon: XCircle,     cls: "border-destructive/40 bg-destructive/10 text-destructive" },
+  inviata:     { label: "INVIATA",         icon: Mail,        cls: "border-green-500/40 bg-green-500/10 text-green-400"       },
+  in_elaborazione: { label: "IN ELABORAZIONE", icon: Clock,       cls: "border-amber-500/40 bg-amber-500/10 text-amber-400"       },
+  senza_email:   { label: "SENZA EMAIL",     icon: AlertCircle, cls: "border-orange-500/40 bg-orange-500/10 text-orange-400"    },
+  fallita:      { label: "FALLITA",         icon: XCircle,     cls: "border-destructive/40 bg-destructive/10 text-destructive" },
 };
 
 interface SessionsTabProps {
@@ -302,17 +302,17 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
   const counts = {
     all:         kpiData.length,
-    enviada:     kpiData.filter((s) => s.email_sent).length,
-    processando: kpiData.filter((s) => {
+    inviata:     kpiData.filter((s) => s.email_sent).length,
+    in_elaborazione: kpiData.filter((s) => {
       if (s.email_sent) return false;
       return (Date.now() - new Date(s.created_at).getTime()) / 60_000 < 5;
     }).length,
-    sem_email:   kpiData.filter((s) => {
+    senza_email:   kpiData.filter((s) => {
       if (s.email_sent) return false;
       if (!s.discount_code) return false;
       return (Date.now() - new Date(s.created_at).getTime()) / 60_000 >= 5;
     }).length,
-    falhou:      kpiData.filter((s) => !s.email_sent && !s.discount_code).length,
+    fallita:      kpiData.filter((s) => !s.email_sent && !s.discount_code).length,
   };
 
   const expiredReusable = kpiData.filter(
@@ -355,19 +355,19 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       >
         <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4 text-center">
-          <p className="text-2xl font-bold text-green-400">{counts.enviada}</p>
+          <p className="text-2xl font-bold text-green-400">{counts.inviata}</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Email inviate</p>
         </div>
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
-          <p className="text-2xl font-bold text-amber-400">{counts.processando}</p>
+          <p className="text-2xl font-bold text-amber-400">{counts.in_elaborazione}</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">In elaborazione</p>
         </div>
         <div className="rounded-2xl border border-orange-500/20 bg-orange-500/5 p-4 text-center">
-          <p className="text-2xl font-bold text-orange-400">{counts.sem_email}</p>
+          <p className="text-2xl font-bold text-orange-400">{counts.senza_email}</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Senza email</p>
         </div>
         <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-center">
-          <p className="text-2xl font-bold text-destructive">{counts.falhou}</p>
+          <p className="text-2xl font-bold text-destructive">{counts.fallita}</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Fallite</p>
         </div>
         <div className="rounded-2xl border border-border bg-muted/20 p-4 text-center">
@@ -483,25 +483,25 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
       {/* Status filter + actions */}
       <div className="flex flex-wrap gap-2">
-        {(["all", "enviada", "processando", "sem_email", "falhou"] as StatusFilter[]).map((f) => (
+        {(["all", "inviata", "in_elaborazione", "senza_email", "fallita"] as StatusFilter[]).map((f) => (
           <button
             key={f}
             onClick={() => setStatusFilter(f)}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
               statusFilter === f
                 ? f === "all"         ? "bg-primary text-primary-foreground"
-                : f === "enviada"     ? "bg-green-500/20  text-green-400  border border-green-500/40"
-                : f === "processando" ? "bg-amber-500/20  text-amber-400  border border-amber-500/40"
-                : f === "sem_email"   ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
+                : f === "inviata"     ? "bg-green-500/20  text-green-400  border border-green-500/40"
+                : f === "in_elaborazione" ? "bg-amber-500/20  text-amber-400  border border-amber-500/40"
+                : f === "senza_email"   ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
                 :                       "bg-destructive/20 text-destructive border border-destructive/40"
                 : "bg-muted text-muted-foreground"
             }`}
           >
             {f === "all"         ? `Tutti (${counts.all})`
-              : f === "enviada"     ? `Inviata (${counts.enviada})`
-              : f === "processando" ? `Elaborazione (${counts.processando})`
-              : f === "sem_email"   ? `Senza email (${counts.sem_email})`
-              :                       `Fallita (${counts.falhou})`}
+              : f === "inviata"     ? `Inviata (${counts.inviata})`
+              : f === "in_elaborazione" ? `Elaborazione (${counts.in_elaborazione})`
+              : f === "senza_email"   ? `Senza email (${counts.senza_email})`
+              :                       `Fallita (${counts.fallita})`}
           </button>
         ))}
 

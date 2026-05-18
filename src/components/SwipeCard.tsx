@@ -2,6 +2,7 @@ import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import type { QuizCard } from "@/data/quiz-cards";
 import { resolveCardText } from "@/data/quiz-cards";
 import { useLang } from "@/i18n/LanguageContext";
+import { haptic } from "@/lib/haptic";
 
 interface SwipeCardProps {
   card: QuizCard;
@@ -9,10 +10,6 @@ interface SwipeCardProps {
   onSwipe: (direction: "left" | "right") => void;
   exitDirection?: "left" | "right";
   index?: number;
-}
-
-function haptic(ms: number) {
-  try { navigator.vibrate?.(ms); } catch { /* unsupported */ }
 }
 
 const SwipeCard = ({ card, totalCards, onSwipe, exitDirection, index = 0 }: SwipeCardProps) => {

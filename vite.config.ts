@@ -66,7 +66,7 @@ export default defineConfig(({ mode }) => ({
           "supabase":      ["@supabase/supabase-js"],
           "router":        ["react-router-dom"],
           "react-query":   ["@tanstack/react-query"],
-          "radix":         ["@radix-ui/react-label", "@radix-ui/react-toast", "@radix-ui/react-tooltip"],
+          "radix":         ["@radix-ui/react-toast", "@radix-ui/react-tooltip"],
         },
       },
     },

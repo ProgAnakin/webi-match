@@ -9,14 +9,11 @@ import type { QuizCard } from "@/data/quiz-cards";
 import { questionsToCards } from "@/data/quiz-cards";
 import { useSound } from "@/hooks/useSound";
 import { useLang } from "@/i18n/LanguageContext";
+import { haptic } from "@/lib/haptic";
 
 interface QuizScreenProps {
   onComplete: (answers: Record<number, boolean>) => void;
   cards?: QuizCard[];
-}
-
-function haptic(ms: number) {
-  try { navigator.vibrate?.(ms); } catch { /* unsupported */ }
 }
 
 const QuizScreen = ({ onComplete, cards: cardsProp }: QuizScreenProps) => {
