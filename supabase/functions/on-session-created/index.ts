@@ -273,8 +273,8 @@ const EMAIL_I18N: Record<Lang, {
 function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ q: string; a: string }>, tpl?: EmailTpl): string {
   const lang = (String(record.language ?? "it") as Lang);
   const i18n = EMAIL_I18N[lang] ?? EMAIL_I18N.it;
-  const headerTitle    = tpl?.header_title    ?? (lang === "it" ? "Abbiamo trovato il tuo match!" : lang === "en" ? "We found your match!" : lang === "pt" ? "Encontrámos o seu match!" : lang === "es" ? "¡Encontramos tu match!" : "Nous avons trouvé votre match !");
-  const headerSubtitle = tpl?.header_subtitle ?? (lang === "it" ? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il <strong style=\"color:#f0f4ff;\">gadget perfetto per il tuo stile di vita</strong>." : lang === "en" ? "Our algorithm analysed your answers and selected the <strong style=\"color:#f0f4ff;\">perfect gadget for your lifestyle</strong>." : lang === "pt" ? "O nosso algoritmo analisou as suas respostas e selecionou o <strong style=\"color:#f0f4ff;\">gadget perfeito para o seu estilo de vida</strong>." : lang === "es" ? "Nuestro algoritmo analizó tus respuestas y seleccionó el <strong style=\"color:#f0f4ff;\">gadget perfecto para tu estilo de vida</strong>." : "Notre algorithme a analysé vos réponses et a sélectionné le <strong style=\"color:#f0f4ff;\">gadget parfait pour votre style de vie</strong>.");
+  const headerTitle    = tpl?.header_title    ?? "Abbiamo trovato il tuo match!";
+  const headerSubtitle = tpl?.header_subtitle ?? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il <strong style=\"color:#f0f4ff;\">gadget perfetto per il tuo stile di vita</strong>.";
   const footerName     = tpl?.footer_store_name ?? "COSTANZO ANNICHINI";
   const nome         = escHtml(String(record.nome    ?? "").trim());
   const cognome      = escHtml(String(record.cognome ?? "").trim());
@@ -716,23 +716,17 @@ serve(async (req) => {
     }
   }
 
-  // Load editable email template (falls back to hardcoded defaults if unavailable).
+  // Load the editable email template row for this session's language.
+  // Each supported language has its own row in email_template (keyed by language column).
+  const sessionLang = (String(record.language ?? "it")) as Lang;
   const { data: tplRow } = await supabase
     .from("email_template")
     .select("sender_name, subject_template, header_title, header_subtitle, footer_store_name")
-    .eq("id", 1)
+    .eq("language", sessionLang)
     .maybeSingle();
-  const sessionLang = (String(record.language ?? "it")) as Lang;
-  const defaultSubject: Record<Lang, string> = {
-    it: "{{nome}}, il tuo match è {{pct}}% — Codice sconto valido 24h ⏰",
-    en: "{{nome}}, your match is {{pct}}% — Discount code valid 24h ⏰",
-    pt: "{{nome}}, o seu match é {{pct}}% — Código de desconto válido 24h ⏰",
-    es: "{{nome}}, tu match es {{pct}}% — Código de descuento válido 24h ⏰",
-    fr: "{{nome}}, votre match est de {{pct}}% — Code de réduction valable 24h ⏰",
-  };
   const tpl = {
     sender_name:       String(tplRow?.sender_name       ?? "Costanzo Annichini"),
-    subject_template:  String(tplRow?.subject_template  ?? (defaultSubject[sessionLang] ?? defaultSubject.it)),
+    subject_template:  String(tplRow?.subject_template  ?? "{{nome}}, il tuo match è {{pct}}% — Codice sconto valido 24h ⏰"),
     header_title:      String(tplRow?.header_title      ?? "Abbiamo trovato il tuo match!"),
     header_subtitle:   String(tplRow?.header_subtitle   ?? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il gadget perfetto per il tuo stile di vita."),
     footer_store_name: String(tplRow?.footer_store_name ?? "COSTANZO ANNICHINI"),
