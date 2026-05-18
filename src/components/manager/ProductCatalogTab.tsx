@@ -272,6 +272,8 @@ export function ProductCatalogTab() {
   };
 
   const archiveProduct = async (id: string, archive: boolean) => {
+    // Confirm on archive only — restore is a low-risk reversal.
+    if (archive && !window.confirm(`Archiviare il prodotto "${id}"? Sparirà dal quiz in tutte le store.`)) return;
     setDeletingId(id);
     await supabase
       .from("custom_products")
@@ -292,9 +294,12 @@ export function ProductCatalogTab() {
   };
 
   const toggleGlobalHidden = async (productId: string) => {
-    setTogglingId(productId);
     const currentlyHidden = globalStatus[productId] ?? false;
     const newHidden = !currentlyHidden;
+    // Confirm only on hide — the global toggle affects every store, so a
+    // misclick is operationally expensive. Showing back is harmless.
+    if (newHidden && !window.confirm(`Nascondere "${productId}" da TUTTE le store? I clienti non lo vedranno più nel quiz.`)) return;
+    setTogglingId(productId);
     await supabase.from("product_global_status").upsert({
       product_id: productId,
       hidden: newHidden,

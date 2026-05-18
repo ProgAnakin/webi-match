@@ -122,7 +122,7 @@ const QuizScreen = ({ onComplete, cards: cardsProp }: QuizScreenProps) => {
         {/* NO */}
         <motion.button
           onClick={() => { haptic(30); handleSwipe("left"); }}
-          className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-destructive/55 bg-destructive/10 text-destructive backdrop-blur-sm"
+          className="flex h-16 flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-destructive/55 bg-destructive/10 text-destructive backdrop-blur-sm"
           style={{ boxShadow: "0 0 20px hsl(0 84% 60% / 0.18), inset 0 0 10px hsl(0 84% 60% / 0.06)" }}
           whileTap={{ scale: 0.90, boxShadow: "0 0 52px hsl(0 84% 60% / 0.72), inset 0 0 20px hsl(0 84% 60% / 0.32)" }}
         >
@@ -142,7 +142,7 @@ const QuizScreen = ({ onComplete, cards: cardsProp }: QuizScreenProps) => {
         {/* YES */}
         <motion.button
           onClick={() => { haptic(45); handleSwipe("right"); }}
-          className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-success/55 bg-success/10 text-success backdrop-blur-sm"
+          className="flex h-16 flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-success/55 bg-success/10 text-success backdrop-blur-sm"
           style={{ boxShadow: "0 0 20px hsl(145 80% 42% / 0.18), inset 0 0 10px hsl(145 80% 42% / 0.06)" }}
           whileTap={{ scale: 0.90, boxShadow: "0 0 52px hsl(145 80% 42% / 0.72), inset 0 0 20px hsl(145 80% 42% / 0.32)" }}
         >

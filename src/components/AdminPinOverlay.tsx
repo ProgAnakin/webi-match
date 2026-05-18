@@ -140,9 +140,9 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
         >
           <div className="mb-5 text-center">
             <div className="mb-2 text-4xl">📍</div>
-            <h2 className="text-lg font-bold text-foreground">Seleziona la Sede</h2>
+            <h2 className="text-lg font-bold text-foreground">{t.admin.storeStep.title}</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Scegli la sede in cui si trova questo iPad
+              {t.admin.storeStep.subtitle}
             </p>
           </div>
 
@@ -194,14 +194,14 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
               className="gradient-primary shadow-glow w-full rounded-2xl px-6 py-3.5 text-sm font-bold text-primary-foreground active:scale-95 disabled:opacity-40"
               whileTap={{ scale: 0.97 }}
             >
-              ✓ Salva sede e torna al quiz
+              {t.admin.storeStep.saveAndReturn}
             </motion.button>
             <motion.button
               onClick={() => navigate("/stats")}
               className="w-full rounded-2xl border border-border bg-secondary px-6 py-3.5 text-sm font-semibold text-foreground active:scale-95"
               whileTap={{ scale: 0.97 }}
             >
-              📊 Vai ad Analytics / Manager
+              {t.admin.storeStep.goToAnalytics}
             </motion.button>
           </div>
 
@@ -210,12 +210,12 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-foreground">
-                  {isKioskLocked ? "🔒 Modalità Kiosk Attiva" : "🔓 Modalità Kiosk"}
+                  {isKioskLocked ? t.admin.storeStep.kioskActive : t.admin.storeStep.kioskInactive}
                 </p>
                 <p className="mt-0.5 text-[11px] text-muted-foreground leading-snug">
                   {isKioskLocked
-                    ? "Schermo a tutto schermo — barra indirizzi nascosta"
-                    : "Attiva per nascondere la barra del browser"}
+                    ? t.admin.storeStep.kioskActiveDesc
+                    : t.admin.storeStep.kioskInactiveDesc}
                 </p>
               </div>
               <motion.button
@@ -227,7 +227,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
                 }`}
                 whileTap={{ scale: 0.95 }}
               >
-                {isKioskLocked ? "Disattiva" : "Attiva"}
+                {isKioskLocked ? t.admin.storeStep.deactivate : t.admin.storeStep.activate}
               </motion.button>
             </div>
           </div>
@@ -255,8 +255,8 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
         {/* Header */}
         <div className="mb-6 text-center">
           <div className="mb-2 text-4xl">🔐</div>
-          <h2 className="text-lg font-bold text-foreground">Accesso Staff</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Inserisci il PIN per accedere</p>
+          <h2 className="text-lg font-bold text-foreground">{t.admin.pinStep.title}</h2>
+          <p className="mt-1 text-xs text-muted-foreground">{t.admin.pinStep.subtitle}</p>
         </div>
 
         {/* Locked banner */}
@@ -297,7 +297,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
           <p className="mb-3 text-center text-xs text-muted-foreground animate-pulse">{t.changeEmail.verifying}</p>
         )}
 
-        {/* Numeric keypad */}
+        {/* Numeric keypad — kiosk-friendly tap targets (≥64px) */}
         <div className={`grid grid-cols-3 gap-3 ${isLocked || verifying ? "pointer-events-none opacity-40" : ""}`}>
           {KEYS.map((key, i) => (
             key === "" ? (
@@ -306,7 +306,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
               <motion.button
                 key={i}
                 onClick={() => handleKey(key)}
-                className={`flex h-14 items-center justify-center rounded-2xl text-xl font-semibold transition-colors ${
+                className={`flex h-16 items-center justify-center rounded-2xl text-xl font-semibold transition-colors ${
                   key === "⌫"
                     ? "bg-muted text-muted-foreground"
                     : "bg-secondary text-foreground hover:bg-primary/20 active:bg-primary/30"
@@ -324,7 +324,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
           onClick={onClose}
           className="mt-5 w-full text-center text-sm text-muted-foreground underline underline-offset-2"
         >
-          Annulla
+          {t.admin.pinStep.cancel}
         </button>
       </motion.div>
     </motion.div>

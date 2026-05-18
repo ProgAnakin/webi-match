@@ -18,7 +18,11 @@ const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
 const SUPABASE_URL   = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-const SILENT_OK = JSON.stringify({ ok: true });
+const SILENT_OK   = JSON.stringify({ ok: true });
+// Payload is a fixed 7-field projection truncated to 500 chars each — a
+// well-behaved client tops out well below 10 KB. Reject anything bigger early
+// to avoid wasting function memory on malicious large bodies.
+const MAX_BODY_SIZE = 16 * 1024;
 
 serve(async (req) => {
   const CORS = {
@@ -57,6 +61,12 @@ serve(async (req) => {
     return new Response(JSON.stringify({ ok: true, skipped: true }), {
       headers: { ...CORS, "Content-Type": "application/json" },
     });
+  }
+
+  // Reject oversized bodies before reading them into memory.
+  const declaredLen = Number(req.headers.get("content-length") ?? 0);
+  if (declaredLen > MAX_BODY_SIZE) {
+    return new Response("Payload too large", { status: 413, headers: CORS });
   }
 
   let body: unknown;

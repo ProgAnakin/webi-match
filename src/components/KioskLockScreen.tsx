@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/webidoo-logo.webp";
 import { getClientId } from "@/lib/clientId";
+import { useLang } from "@/i18n/LanguageContext";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"];
 
@@ -12,6 +13,7 @@ interface KioskLockScreenProps {
 }
 
 export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenProps) => {
+  const { t } = useLang();
   const [showPin, setShowPin] = useState(false);
   const [pin, setPin] = useState("");
   const [shake, setShake] = useState(false);
@@ -88,8 +90,8 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
         >
           <div className="mb-6 text-center">
             <div className="mb-2 text-4xl">🔑</div>
-            <h2 className="text-lg font-bold text-foreground">Disattiva Modalità Kiosk</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Inserisci il PIN staff per disattivare</p>
+            <h2 className="text-lg font-bold text-foreground">{t.admin.kioskLock.pinTitle}</h2>
+            <p className="mt-1 text-xs text-muted-foreground">{t.admin.kioskLock.pinSubtitle}</p>
           </div>
 
           <AnimatePresence>
@@ -98,7 +100,7 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
                 initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-center text-xs text-destructive"
               >
-                Troppi tentativi. Riprova tra {lockedSeconds}s
+                {t.admin.kioskLock.tooManyAttempts(lockedSeconds)}
               </motion.div>
             )}
           </AnimatePresence>
@@ -122,9 +124,10 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
           </motion.div>
 
           {verifying && (
-            <p className="mb-3 text-center text-xs text-muted-foreground animate-pulse">Verifica in corso…</p>
+            <p className="mb-3 text-center text-xs text-muted-foreground animate-pulse">{t.admin.kioskLock.verifying}</p>
           )}
 
+          {/* Numeric keypad — kiosk-friendly tap targets (≥64px) */}
           <div className={`grid grid-cols-3 gap-3 ${isLocked || verifying ? "pointer-events-none opacity-40" : ""}`}>
             {KEYS.map((key, i) =>
               key === "" ? (
@@ -133,7 +136,7 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
                 <motion.button
                   key={i}
                   onClick={() => handleKey(key)}
-                  className={`flex h-14 items-center justify-center rounded-2xl text-xl font-semibold transition-colors ${
+                  className={`flex h-16 items-center justify-center rounded-2xl text-xl font-semibold transition-colors ${
                     key === "⌫"
                       ? "bg-muted text-muted-foreground"
                       : "bg-secondary text-foreground hover:bg-primary/20 active:bg-primary/30"
@@ -150,7 +153,7 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
             onClick={() => { setShowPin(false); setPin(""); }}
             className="mt-5 w-full text-center text-sm text-muted-foreground underline underline-offset-2"
           >
-            Annulla
+            {t.admin.kioskLock.cancel}
           </button>
         </motion.div>
       </div>
@@ -177,9 +180,9 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
         </motion.div>
 
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Schermo Bloccato</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t.admin.kioskLock.lockTitle}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Questo iPad è in modalità kiosk
+            {t.admin.kioskLock.lockSubtitle}
           </p>
         </div>
 
@@ -188,14 +191,14 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
           className="mt-2 w-full max-w-xs rounded-2xl bg-primary px-8 py-4 text-base font-bold text-primary-foreground shadow-lg active:opacity-90"
           whileTap={{ scale: 0.97 }}
         >
-          ▶ Avvia il Quiz
+          {t.admin.kioskLock.startQuiz}
         </motion.button>
 
         <button
           onClick={() => setShowPin(true)}
           className="text-sm text-muted-foreground underline underline-offset-2"
         >
-          Disattiva Modalità Kiosk
+          {t.admin.kioskLock.deactivateKiosk}
         </button>
       </div>
     </motion.div>

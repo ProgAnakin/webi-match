@@ -99,6 +99,43 @@ export interface T {
     minutes: string;
     perfect: string;
   };
+  // Staff-facing surfaces (admin overlay, kiosk lock screen, error boundary).
+  // English-first because non-Italian stores need readable copy too.
+  admin: {
+    storeStep: {
+      title: string;
+      subtitle: string;
+      saveAndReturn: string;
+      goToAnalytics: string;
+      kioskActive: string;
+      kioskInactive: string;
+      kioskActiveDesc: string;
+      kioskInactiveDesc: string;
+      deactivate: string;
+      activate: string;
+    };
+    pinStep: {
+      title: string;
+      subtitle: string;
+      cancel: string;
+    };
+    kioskLock: {
+      pinTitle: string;
+      pinSubtitle: string;
+      lockTitle: string;
+      lockSubtitle: string;
+      startQuiz: string;
+      deactivateKiosk: string;
+      tooManyAttempts: (s: number) => string;
+      verifying: string;
+      cancel: string;
+    };
+    errorBoundary: {
+      title: string;
+      subtitle: string;
+      reload: string;
+    };
+  };
   questions: Record<number, string>;
 }
 
@@ -211,6 +248,41 @@ export const translations: Record<Lang, T> = {
       swipes: "8 swipe",
       minutes: "2 min",
       perfect: "match perfetto ✓",
+    },
+    admin: {
+      storeStep: {
+        title: "Seleziona la Sede",
+        subtitle: "Scegli la sede in cui si trova questo iPad",
+        saveAndReturn: "✓ Salva sede e torna al quiz",
+        goToAnalytics: "📊 Vai ad Analytics / Manager",
+        kioskActive: "🔒 Modalità Kiosk Attiva",
+        kioskInactive: "🔓 Modalità Kiosk",
+        kioskActiveDesc: "Schermo a tutto schermo — barra indirizzi nascosta",
+        kioskInactiveDesc: "Attiva per nascondere la barra del browser",
+        deactivate: "Disattiva",
+        activate: "Attiva",
+      },
+      pinStep: {
+        title: "Accesso Staff",
+        subtitle: "Inserisci il PIN per accedere",
+        cancel: "Annulla",
+      },
+      kioskLock: {
+        pinTitle: "Disattiva Modalità Kiosk",
+        pinSubtitle: "Inserisci il PIN staff per disattivare",
+        lockTitle: "Schermo Bloccato",
+        lockSubtitle: "Questo iPad è in modalità kiosk",
+        startQuiz: "▶ Avvia il Quiz",
+        deactivateKiosk: "Disattiva Modalità Kiosk",
+        tooManyAttempts: (s) => `Troppi tentativi. Riprova tra ${s}s`,
+        verifying: "Verifica in corso…",
+        cancel: "Annulla",
+      },
+      errorBoundary: {
+        title: "Il sistema è momentaneamente offline",
+        subtitle: "Stiamo lavorando per ripristinarlo. Tornerà operativo a breve — nessuna azione richiesta.",
+        reload: "Ricarica",
+      },
     },
     questions: {
       1: "Ti alleni regolarmente o pratichi sport?",
@@ -325,6 +397,41 @@ export const translations: Record<Lang, T> = {
       minutes: "2 min",
       perfect: "perfect match ✓",
     },
+    admin: {
+      storeStep: {
+        title: "Select Store",
+        subtitle: "Choose the store where this iPad is located",
+        saveAndReturn: "✓ Save store and return to quiz",
+        goToAnalytics: "📊 Open Analytics / Manager",
+        kioskActive: "🔒 Kiosk Mode Active",
+        kioskInactive: "🔓 Kiosk Mode",
+        kioskActiveDesc: "Full-screen — browser address bar hidden",
+        kioskInactiveDesc: "Activate to hide the browser bar",
+        deactivate: "Deactivate",
+        activate: "Activate",
+      },
+      pinStep: {
+        title: "Staff Access",
+        subtitle: "Enter the PIN to continue",
+        cancel: "Cancel",
+      },
+      kioskLock: {
+        pinTitle: "Disable Kiosk Mode",
+        pinSubtitle: "Enter the staff PIN to disable",
+        lockTitle: "Screen Locked",
+        lockSubtitle: "This iPad is in kiosk mode",
+        startQuiz: "▶ Start the Quiz",
+        deactivateKiosk: "Disable Kiosk Mode",
+        tooManyAttempts: (s) => `Too many attempts. Try again in ${s}s`,
+        verifying: "Verifying…",
+        cancel: "Cancel",
+      },
+      errorBoundary: {
+        title: "The system is temporarily offline",
+        subtitle: "We're restoring it. It will be back shortly — no action required.",
+        reload: "Reload",
+      },
+    },
     questions: {
       1: "Do you exercise or play sports regularly?",
       2: "Is music always with you, even during workouts?",
@@ -437,6 +544,41 @@ export const translations: Record<Lang, T> = {
       swipes: "8 swipe",
       minutes: "2 min",
       perfect: "match perfeito ✓",
+    },
+    admin: {
+      storeStep: {
+        title: "Selecionar Loja",
+        subtitle: "Escolha a loja onde este iPad está",
+        saveAndReturn: "✓ Guardar loja e voltar ao quiz",
+        goToAnalytics: "📊 Ir para Analytics / Manager",
+        kioskActive: "🔒 Modo Kiosk Ativo",
+        kioskInactive: "🔓 Modo Kiosk",
+        kioskActiveDesc: "Ecrã inteiro — barra de endereço escondida",
+        kioskInactiveDesc: "Ativar para esconder a barra do navegador",
+        deactivate: "Desativar",
+        activate: "Ativar",
+      },
+      pinStep: {
+        title: "Acesso Staff",
+        subtitle: "Insira o PIN para continuar",
+        cancel: "Cancelar",
+      },
+      kioskLock: {
+        pinTitle: "Desativar Modo Kiosk",
+        pinSubtitle: "Insira o PIN do staff para desativar",
+        lockTitle: "Ecrã Bloqueado",
+        lockSubtitle: "Este iPad está em modo kiosk",
+        startQuiz: "▶ Iniciar o Quiz",
+        deactivateKiosk: "Desativar Modo Kiosk",
+        tooManyAttempts: (s) => `Demasiadas tentativas. Tente novamente em ${s}s`,
+        verifying: "A verificar…",
+        cancel: "Cancelar",
+      },
+      errorBoundary: {
+        title: "O sistema está temporariamente offline",
+        subtitle: "Estamos a restaurá-lo. Voltará em breve — nenhuma ação necessária.",
+        reload: "Recarregar",
+      },
     },
     questions: {
       1: "Você pratica esportes ou se exercita regularmente?",
@@ -551,6 +693,41 @@ export const translations: Record<Lang, T> = {
       minutes: "2 min",
       perfect: "match perfecto ✓",
     },
+    admin: {
+      storeStep: {
+        title: "Seleccionar Tienda",
+        subtitle: "Elige la tienda donde está este iPad",
+        saveAndReturn: "✓ Guardar tienda y volver al quiz",
+        goToAnalytics: "📊 Ir a Analytics / Manager",
+        kioskActive: "🔒 Modo Kiosk Activo",
+        kioskInactive: "🔓 Modo Kiosk",
+        kioskActiveDesc: "Pantalla completa — barra de direcciones oculta",
+        kioskInactiveDesc: "Activa para ocultar la barra del navegador",
+        deactivate: "Desactivar",
+        activate: "Activar",
+      },
+      pinStep: {
+        title: "Acceso Staff",
+        subtitle: "Introduce el PIN para continuar",
+        cancel: "Cancelar",
+      },
+      kioskLock: {
+        pinTitle: "Desactivar Modo Kiosk",
+        pinSubtitle: "Introduce el PIN del staff para desactivar",
+        lockTitle: "Pantalla Bloqueada",
+        lockSubtitle: "Este iPad está en modo kiosk",
+        startQuiz: "▶ Iniciar el Quiz",
+        deactivateKiosk: "Desactivar Modo Kiosk",
+        tooManyAttempts: (s) => `Demasiados intentos. Inténtalo de nuevo en ${s}s`,
+        verifying: "Verificando…",
+        cancel: "Cancelar",
+      },
+      errorBoundary: {
+        title: "El sistema está temporalmente fuera de línea",
+        subtitle: "Lo estamos restaurando. Volverá pronto — no se requiere ninguna acción.",
+        reload: "Recargar",
+      },
+    },
     questions: {
       1: "¿Practicas deporte o haces ejercicio regularmente?",
       2: "¿La música siempre te acompaña, incluso en tus entrenamientos?",
@@ -663,6 +840,41 @@ export const translations: Record<Lang, T> = {
       swipes: "8 swipes",
       minutes: "2 min",
       perfect: "match parfait ✓",
+    },
+    admin: {
+      storeStep: {
+        title: "Sélectionner la Boutique",
+        subtitle: "Choisissez la boutique où se trouve cet iPad",
+        saveAndReturn: "✓ Enregistrer la boutique et revenir au quiz",
+        goToAnalytics: "📊 Ouvrir Analytics / Manager",
+        kioskActive: "🔒 Mode Kiosk Actif",
+        kioskInactive: "🔓 Mode Kiosk",
+        kioskActiveDesc: "Plein écran — barre d'adresse masquée",
+        kioskInactiveDesc: "Activez pour masquer la barre du navigateur",
+        deactivate: "Désactiver",
+        activate: "Activer",
+      },
+      pinStep: {
+        title: "Accès Staff",
+        subtitle: "Entrez le PIN pour continuer",
+        cancel: "Annuler",
+      },
+      kioskLock: {
+        pinTitle: "Désactiver le Mode Kiosk",
+        pinSubtitle: "Entrez le PIN staff pour désactiver",
+        lockTitle: "Écran Verrouillé",
+        lockSubtitle: "Cet iPad est en mode kiosk",
+        startQuiz: "▶ Démarrer le Quiz",
+        deactivateKiosk: "Désactiver le Mode Kiosk",
+        tooManyAttempts: (s) => `Trop de tentatives. Réessayez dans ${s}s`,
+        verifying: "Vérification…",
+        cancel: "Annuler",
+      },
+      errorBoundary: {
+        title: "Le système est momentanément hors ligne",
+        subtitle: "Nous le restaurons. Il sera bientôt opérationnel — aucune action requise.",
+        reload: "Recharger",
+      },
     },
     questions: {
       1: "Faites-vous du sport ou de l'exercice régulièrement ?",

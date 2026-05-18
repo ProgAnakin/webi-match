@@ -70,6 +70,9 @@ function trackFunnel(funnelKey: string, eventType: "quiz_started" | "result_show
     store_id: getStoredStoreId(),
   }).then(({ error }) => {
     if (error) console.error("[webi-match] funnel event failed:", eventType, error);
+  }, (err) => {
+    // Network rejection — keep flow alive, just log it.
+    console.error("[webi-match] funnel event rejected:", eventType, err);
   });
 }
 
@@ -213,6 +216,13 @@ const Index = () => {
 
       writeCache(cacheKey, snap);
       applySnapshot(snap);
+    }).catch((err) => {
+      // Network rejection (vs. a Supabase error object handled above) would
+      // otherwise leave settingsLoaded=false forever and the kiosk stuck on the
+      // spinner until the 10 s fallback timeout fires.
+      console.error("[webi-match] startup Promise.all rejected:", err);
+      if (!cached) setSettingsLoadFailed(true);
+      setSettingsLoaded(true);
     });
   }, []);
 
@@ -467,6 +477,7 @@ const Index = () => {
               onChangeEmail={(email) => setUser((u) => ({ ...u, email }))}
               claiming={claiming}
               claimError={claimError}
+              isOnline={isOnline}
             />
           )}
           {screen === "success" && matchedProduct && (

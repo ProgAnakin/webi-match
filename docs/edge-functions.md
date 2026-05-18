@@ -15,7 +15,8 @@ Generates a unique discount code, sends a personalised HTML email via Brevo in t
 | Secret | Required | Description |
 |--------|----------|-------------|
 | `BREVO_API_KEY` | ✅ | Brevo (Sendinblue) API key for transactional email |
-| `PII_ENCRYPTION_KEY` | optional | AES key — if set, encrypts nome/cognome at rest via `pgp_sym_encrypt` |
+| `WEBHOOK_SECRET` | ✅ recommended | Shared secret verified against the `x-webhook-secret` header. Without it the function accepts any caller who knows the URL. Configure the matching header in Supabase Dashboard → Database → Webhooks → on-session-created |
+| `PII_ENCRYPTION_KEY` | optional | AES key — if set, encrypts nome/cognome at rest via `pgp_sym_encrypt`. The function logs a warning at cold start when this is missing |
 | `GOOGLE_SHEETS_WEBHOOK_URL` | optional | Apps Script doPost URL — if set, relays session data to a Sheet |
 | `WHITELIST_EMAILS` | optional | Comma-separated emails that bypass the 1 email/hour rate limit |
 

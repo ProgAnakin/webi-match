@@ -20,6 +20,7 @@ interface MatchResultProps {
   onChangeEmail: (email: string) => void;
   claiming?: boolean;
   claimError?: boolean;
+  isOnline?: boolean;
 }
 
 // Brand confetti palette: oranges, blues, amber, white. All indexes map to
@@ -129,13 +130,25 @@ const FireworkBurst = ({ bx, by, startDelay, cycle, count, colors }: BurstCfg & 
 const MatchResult = ({
   product, matchPercent, userName, userEmail,
   onClaim, onChangeEmail, claiming = false, claimError = false,
+  isOnline = true,
 }: MatchResultProps) => {
   const { t } = useLang();
   const [displayPercent, setDisplayPercent] = useState(0);
   const [imgError, setImgError] = useState(false);
   const [isScanning, setIsScanning] = useState(true);
+  const [localClaimError, setLocalClaimError] = useState<null | "invalid_email" | "offline">(null);
   const { play } = useSound();
   const tier = useDevicePerformance();
+
+  // Pre-flight validation: catch problems client-side BEFORE calling onClaim so
+  // the user gets specific, actionable feedback (vs. the generic backend error).
+  const handleClaim = useCallback(() => {
+    if (claiming) return;
+    if (!isOnline) { setLocalClaimError("offline"); return; }
+    if (!EMAIL_REGEX.test(userEmail.trim())) { setLocalClaimError("invalid_email"); return; }
+    setLocalClaimError(null);
+    onClaim();
+  }, [claiming, isOnline, userEmail, onClaim]);
 
   // ── Change-email state ────────────────────────────────────────────────────────────────────────────
   const emailTapCount = useRef(0);
@@ -435,14 +448,14 @@ const MatchResult = ({
                     <p className="mb-3 text-center text-xs font-medium text-destructive">{t.changeEmail.pinError}</p>
                   )}
 
-                  {/* Keypad */}
-                  <div className={`grid grid-cols-3 gap-2 ${pinVerifying || pinLockedSeconds > 0 ? "pointer-events-none opacity-40" : ""}`}>
+                  {/* Keypad — kiosk-friendly tap targets (≥64px) */}
+                  <div className={`grid grid-cols-3 gap-2.5 ${pinVerifying || pinLockedSeconds > 0 ? "pointer-events-none opacity-40" : ""}`}>
                     {PIN_KEYS.map((key, i) => (
                       <button
                         key={i}
                         disabled={key === ""}
                         onClick={() => key !== "" && handlePinKey(key as number | "⌫")}
-                        className={`rounded-xl py-3.5 text-lg font-bold transition-all active:scale-95 ${
+                        className={`min-h-[64px] rounded-xl py-4 text-xl font-bold transition-all active:scale-95 ${
                           key === "" ? "invisible" :
                           key === "⌫" ? "bg-secondary/60 text-muted-foreground hover:bg-secondary" :
                           "bg-secondary text-foreground hover:bg-secondary/80"
@@ -711,8 +724,8 @@ const MatchResult = ({
 
         {/* CTA */}
         <motion.button
-          onClick={onClaim}
-          disabled={claiming}
+          onClick={handleClaim}
+          disabled={claiming || !isOnline}
           className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-5 text-xl font-bold text-primary-foreground active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
           whileTap={{ scale: claiming ? 1 : 0.97 }}
           initial={{ opacity: 0, y: 16 }}
@@ -722,14 +735,16 @@ const MatchResult = ({
           {claiming ? "…" : t.result.cta}
         </motion.button>
 
-        {/* Claim error feedback */}
+        {/* Claim error feedback — local validation OR backend error */}
         <AnimatePresence>
-          {claimError && (
+          {(claimError || localClaimError) && (
             <motion.p
               className="text-center text-xs font-medium text-destructive"
               initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             >
-              {t.changeEmail.connectionError}
+              {localClaimError === "offline"        ? t.welcome.offlineBanner
+              : localClaimError === "invalid_email" ? t.changeEmail.emailInvalid
+              : t.changeEmail.connectionError}
             </motion.p>
           )}
         </AnimatePresence>

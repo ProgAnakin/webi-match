@@ -17,6 +17,27 @@ const SERVICE_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const PII_KEY          = Deno.env.get("PII_ENCRYPTION_KEY") ?? "";
 const ALLOWED_ORIGIN   = Deno.env.get("ALLOWED_ORIGIN") ?? "";
 const SHEETS_WEBHOOK   = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL") ?? "";
+// Shared secret for the Supabase Database Webhook. When set, the function
+// rejects requests that don't carry a matching x-webhook-secret header.
+// Leave unset only for local development — production must always set this.
+const WEBHOOK_SECRET   = Deno.env.get("WEBHOOK_SECRET") ?? "";
+
+if (!PII_KEY) {
+  // Loud, single-shot warning at cold start so operators notice in the logs
+  // that PII columns will be stored in plaintext.
+  console.warn("[on-session-created] PII_ENCRYPTION_KEY is NOT set — nome/cognome will be stored in plaintext.");
+}
+if (!WEBHOOK_SECRET) {
+  console.warn("[on-session-created] WEBHOOK_SECRET is NOT set — the function will accept unsigned webhook calls.");
+}
+
+// Constant-time comparison to avoid timing oracles on the shared secret.
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
 
 // Comma-separated list of emails that bypass the 1-email-per-hour rate limit.
 // Set via Supabase secret WHITELIST_EMAILS. Remove when testing is complete.
@@ -631,6 +652,17 @@ serve(async (req) => {
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 
+  // Webhook secret check — runs before parsing the body so unauthenticated
+  // callers can't even trigger JSON parsing. Configure the matching header
+  // "x-webhook-secret: <value>" in Supabase Dashboard → Database → Webhooks.
+  if (WEBHOOK_SECRET) {
+    const provided = req.headers.get("x-webhook-secret") ?? "";
+    if (!safeEqual(provided, WEBHOOK_SECRET)) {
+      // Silent 200 to avoid leaking whether the URL is a real webhook target.
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+  }
+
   let payload: Record<string, unknown>;
   try {
     payload = await req.json();
@@ -695,12 +727,17 @@ serve(async (req) => {
   }
 
   // Write discount_code first — email_sent stays false until Brevo confirms.
+  // If the UPDATE fails we ABORT the email send: otherwise the customer would
+  // receive an email referencing a code that was never persisted to the row.
   const { error: dbErr } = await supabase
     .from("quiz_sessions")
     .update({ discount_code: code })
     .eq("id", record.id);
 
-  if (dbErr) console.error("[on-session-created] db update failed:", dbErr.message);
+  if (dbErr || !code) {
+    console.error("[on-session-created] db update failed — aborting email:", dbErr?.message);
+    return new Response(JSON.stringify({ ok: false, error: "discount code persistence failed" }), { status: 500 });
+  }
 
   // Fetch product-specific FAQ: check product_settings first, then custom_products as fallback.
   const faq: Array<{ q: string; a: string }> = [];
