@@ -55,6 +55,9 @@ function matchBadgeLabel(pct: number): string {
   return "MATCH TROVATO";
 }
 
+// ⚠ Synced copy — kept in lockstep with src/lib/validators.ts (Deno can't
+// import from the Vite src/ tree). Unit tests live in
+// src/__tests__/validators.test.ts and lock the expected behaviour.
 function youtubeId(url: string): string | null {
   // Covers: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/shorts/ID,
   // youtube.com/embed/ID, youtube-nocookie.com/embed/ID
@@ -71,12 +74,8 @@ function genDiscountCode(discountPct: number): string {
   return `WEBI-${hex}${String(discountPct).padStart(2, "0")}`;
 }
 
-// Accept any kebab-case slug as a store_id — the list of stores is owned by the
-// front-end (src/data/stores.ts) and would otherwise require redeploying this
-// function every time a new location opens. The slug shape is restrictive enough
-// to filter out garbage / probing requests.
-//
-// Format: starts with a letter, 2-50 chars, lowercase letters / digits / hyphens.
+// ⚠ Synced copy — kept in lockstep with src/lib/validators.ts. Tests in
+// src/__tests__/validators.test.ts cover both code paths.
 const STORE_ID_RE = /^[a-z0-9][a-z0-9-]{1,49}$/;
 function isValidStoreId(id: unknown): boolean {
   return typeof id === "string" && STORE_ID_RE.test(id);
