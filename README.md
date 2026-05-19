@@ -24,13 +24,13 @@
 
 ## 💡 The Story Behind The Project
 
-I'm **Costanzo Annichini**, a specialist consultant at **Webidoo Store**. While working on the shop floor I noticed something simple but frustrating: the iPads installed in our stores were there to engage customers, but no one really used them. They sat unused next to the merchandise, waiting for a reason to be touched.
+I'm **Costanzo Annichini** — Tech Sales & Customer Success at **Webidoo Store**. While working on the shop floor I noticed something simple but frustrating: the iPads installed in our stores were there to engage customers, but no one really used them. They sat unused next to the merchandise, waiting for a reason to be touched.
 
 So I decided to build that reason — **on my own initiative, on my own time, with no brief, no specs, and no requests from above**. I designed, architected and shipped this project end-to-end: from the swipe interaction and the matching algorithm to the Supabase backend, the email automation, the multi-store manager dashboard, the security model and the PWA deployment.
 
 The goal: give customers a playful 2-minute experience that ends with a personalised gadget recommendation, a discount code, and a follow-up email — turning idle iPads into a conversion-driving touchpoint that benefits both customers and the consultants who work alongside them.
 
-— **Costanzo Annichini** · Specialist Consultant @ Webidoo Store
+— **Costanzo Annichini** · Tech Sales & Customer Success @ Webidoo Store
 
 ---
 
@@ -353,9 +353,9 @@ This project was conceived, designed and built end-to-end by Costanzo Annichini 
 
 ## 👤 Author
 
-**Costanzo Annichini** — Specialist Consultant @ Webidoo Store
+**Costanzo Annichini** — Tech Sales & Customer Success @ Webidoo Store
 
-A side-of-the-desk project, built to give customers a reason to actually touch the iPads in store. Architected and shipped solo — from swipe interaction to database security model to multilingual email automation.
+A side-of-the-desk project, built to give customers a reason to actually touch the iPads in store. Architected and shipped solo — from swipe interaction to database security model to multilingual email automation. The codebase is the engineering output of someone whose job description doesn't include shipping software.
 
 - **GitHub:** [github.com/ProgAnakin](https://github.com/ProgAnakin)
 - **LinkedIn:** [linkedin.com/in/costanzoannichini](https://www.linkedin.com/in/costanzoannichini/)
