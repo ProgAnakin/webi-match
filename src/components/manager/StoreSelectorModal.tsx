@@ -51,8 +51,8 @@ export const StoreSelectorModal = ({ currentId, onSelect, onClose }: StoreSelect
       >
         <div className="mb-6 text-center">
           <div className="mb-2 text-4xl">📍</div>
-          <h2 id="store-modal-title" className="text-lg font-bold text-foreground">Cambia Sede</h2>
-          <p className="mt-1 text-xs text-foreground/70">Seleziona la sede di questo dispositivo</p>
+          <h2 id="store-modal-title" className="text-lg font-bold text-foreground">Change Store</h2>
+          <p className="mt-1 text-xs text-foreground/70">Select the store for this device</p>
         </div>
         <div className="space-y-2.5">
           {STORES.map((store) => {
@@ -70,7 +70,7 @@ export const StoreSelectorModal = ({ currentId, onSelect, onClose }: StoreSelect
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold">{store.name}</span>
-                  {isActive && <span className="text-xs font-bold text-primary">✓ Attuale</span>}
+                  {isActive && <span className="text-xs font-bold text-primary">✓ Current</span>}
                 </div>
               </motion.button>
             );
@@ -80,7 +80,7 @@ export const StoreSelectorModal = ({ currentId, onSelect, onClose }: StoreSelect
           onClick={onClose}
           className="mt-5 w-full min-h-[44px] text-center text-sm text-foreground/70 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
         >
-          Annulla
+          Cancel
         </button>
       </motion.div>
     </motion.div>

@@ -5,9 +5,7 @@
 **An iPad-first product discovery kiosk for Webidoo Store**
 
 [![CI](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml/badge.svg)](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml)
-[![Lighthouse](https://img.shields.io/badge/Lighthouse-PWA%20%E2%9C%93-FF6B35?logo=lighthouse&logoColor=white)](https://web.dev/measure/)
-[![Tests](https://img.shields.io/badge/tests-75%20unit%20%2B%207%20e2e-22c55e)](./src/__tests__)
-[![A11y](https://img.shields.io/badge/WCAG-2.1%20AA-blueviolet)](./README.md#-security--quality-highlights)
+[![Tests](https://img.shields.io/badge/tests-75%20unit%20%2B%208%20e2e-22c55e)](./src/__tests__)
 [![Languages](https://img.shields.io/badge/i18n-5%20languages-f5831c)](./src/i18n/translations.ts)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
@@ -28,11 +26,9 @@
 
 I'm **Costanzo Annichini**, a specialist consultant at **Webidoo Store**. While working on the shop floor I noticed something simple but frustrating: the iPads installed in our stores were there to engage customers, but no one really used them. They sat unused next to the merchandise, waiting for a reason to be touched.
 
-So I decided to build that reason — **on my own initiative, on my own time, with no brief, no specs, and no requests from above**. I designed, architected and shipped this entire project end-to-end: from the swipe interaction and the matching algorithm, to the Supabase backend, the email automation, the multi-store manager dashboard, the security model and the PWA deployment.
+So I decided to build that reason — **on my own initiative, on my own time, with no brief, no specs, and no requests from above**. I designed, architected and shipped this project end-to-end: from the swipe interaction and the matching algorithm to the Supabase backend, the email automation, the multi-store manager dashboard, the security model and the PWA deployment.
 
 The goal: give customers a playful 2-minute experience that ends with a personalised gadget recommendation, a discount code, and a follow-up email — turning idle iPads into a conversion-driving touchpoint that benefits both customers and the consultants who work alongside them.
-
-Every architectural choice, every line of code, every database migration in this repository is mine. This is what I build when I'm given a free hand.
 
 — **Costanzo Annichini** · Specialist Consultant @ Webidoo Store
 
@@ -167,9 +163,9 @@ flowchart LR
 | **Injection Defence** | All search inputs escape `%` `_` `\` before PostgREST `.or()` interpolation · `escHtml()` in every email template field |
 | **CORS** | Strict origin allowlist · no wildcard fallback · silent rejection of unexpected origins |
 | **Webhooks** | DB webhooks gated by valid `store_id` allowlist · unknown stores silently dropped |
-| **Accessibility** | WCAG 2.1 AA · all tap targets ≥ 44×44px (Apple HIG) · `focus-visible:ring-2` everywhere · `aria-modal` + focus trap on every dialog · `prefers-reduced-motion` respected via Framer Motion `MotionConfig` |
+| **Accessibility** | Kiosk-targeted tap targets (≥ 64 px on the PIN keypad and quiz buttons) · `focus-visible:ring-2` rings on interactive elements · `prefers-reduced-motion` respected via Framer Motion `MotionConfig` · informational copy bumped above the `/65` opacity threshold for in-store lighting |
 | **Internationalisation** | 5 fully translated languages, including the transactional emails sent to customers |
-| **Testing** | 75 unit tests (Vitest) · 7 E2E tests (Playwright, in CI) · typecheck + lint + build on every push |
+| **Testing** | 75 unit tests (Vitest) · 8 E2E tests (Playwright) · typecheck + lint + build on every push via GitHub Actions |
 | **Observability** | Sentry error tracking + session replay · structured logging in Edge Functions |
 | **Performance** | Manual chunk splitting · lazy-loaded admin routes · image auto-resize ≤ 1024px JPEG q=80 · PWA precaching · debounced search |
 | **iPad / Kiosk** | `interactive-widget=resizes-content` prevents URL bar on keyboard · `visualViewport` API for keyboard-aware layouts · iOS splash screens · wake lock · `100dvh` everywhere |
@@ -178,17 +174,16 @@ flowchart LR
 
 ## ⚡ Performance
 
-| Metric | Target | Notes |
-|--------|--------|-------|
-| **Bundle (main)** | < 200 KB gzip | Manual `manualChunks` splits react-vendor, framer-motion, supabase, radix into separate cacheable chunks |
-| **LCP** | < 2.5s | Attract screen paints from CSS only — no image in critical path |
-| **PWA Score** | 100 | Full manifest, service worker, offline capability, installable |
-| **A11y Score** | 100 | WCAG 2.1 AA — all targets, focus rings, ARIA labels, contrast |
-| **Image pipeline** | ≤ 1024px JPEG q=80 | Auto-resize on upload in manager dashboard |
-| **Search debounce** | 300 ms | Prevents DB hit on every keystroke |
-| **Animation budget** | ≤ 0.15s stagger | Capped to prevent jank on 20+ session list on iPad |
+| Concern | Approach | Notes |
+|---|---|---|
+| **Bundle (main chunk)** | ~60 KB gzip | Manual `manualChunks` splits react-vendor, framer-motion, supabase and radix into separate cacheable chunks; admin routes lazy-loaded |
+| **LCP** | Attract screen paints from CSS only | No image in the critical path |
+| **PWA** | Full manifest + service worker + runtime cache | Installable on iPad standalone |
+| **Image pipeline** | Auto-resize ≤ 1024 px JPEG q=80 | Runs in the manager catalog before Supabase Storage upload |
+| **Search debounce** | 300 ms | Prevents a DB hit on every keystroke |
+| **Animation budget** | ≤ 0.15 s stagger | Capped to prevent jank on 20+ row session lists on iPad |
 
-> Run `npx lighthouse https://webi-match.vercel.app --view` to reproduce.
+> Run `npx lighthouse https://webi-match.vercel.app --view` to benchmark on your own network.
 
 ---
 
@@ -360,9 +355,9 @@ This project was conceived, designed and built end-to-end by Costanzo Annichini 
 
 **Costanzo Annichini** — Specialist Consultant @ Webidoo Store
 
-A side-of-the-desk project: built to give customers a reason to actually touch the iPads in store. Architected and shipped solo, end-to-end — from swipe interaction to database security model to multilingual email automation.
+A side-of-the-desk project, built to give customers a reason to actually touch the iPads in store. Architected and shipped solo — from swipe interaction to database security model to multilingual email automation.
 
 - **GitHub:** [github.com/ProgAnakin](https://github.com/ProgAnakin)
 - **LinkedIn:** [linkedin.com/in/costanzoannichini](https://www.linkedin.com/in/costanzoannichini/)
 
-> If you're a recruiter or engineer curious about the architecture, the [ADRs](./docs/adr/) document the key decisions. The [CHANGELOG](./CHANGELOG.md) documents every version. Happy to talk through any of it.
+Architectural trade-offs are documented in [`docs/adr/`](./docs/adr/); operational triage in [`docs/runbook.md`](./docs/runbook.md). Happy to discuss any of it.

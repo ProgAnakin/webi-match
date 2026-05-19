@@ -59,11 +59,11 @@ interface ManagerDashboardProps {
 function formatUpdatedAt(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const diffDays = Math.floor(diffMs / 86_400_000);
-  if (diffDays === 0) return "oggi";
-  if (diffDays === 1) return "ieri";
-  if (diffDays < 14) return `${diffDays} giorni fa`;
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "yesterday";
+  if (diffDays < 14) return `${diffDays} days ago`;
   const weeks = Math.floor(diffDays / 7);
-  return `${weeks} settimane fa`;
+  return `${weeks} weeks ago`;
 }
 
 /** Validate price formats: "€49,00", "49.00", "49,00", "€49" */
@@ -268,8 +268,8 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     if (error) {
       setSavingId(null);
       setSettings((prev) => ({ ...prev, [productId]: current }));
-      setSaveError("Errore nel salvataggio. Verifica la connessione e riprova.");
-      toast.error("Errore nel salvataggio. Verifica la connessione.");
+      setSaveError("Error saving. Check the connection and try again.");
+      toast.error("Error saving. Check the connection.");
       return false;
     }
 
@@ -328,7 +328,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const savePriceOverride = async (productId: string, price: string) => {
     const trimmed = price.trim();
     if (trimmed !== "" && !isValidPrice(trimmed)) {
-      setPriceError("Formato non valido (es. €49,00)");
+      setPriceError("Invalid format (e.g. €49.00)");
       return;
     }
     setPriceError(null);
@@ -352,7 +352,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const saveVideoUrl = async (productId: string, url: string) => {
     const trimmed = url.trim();
     if (trimmed !== "" && !isValidVideoUrl(trimmed)) {
-      setVideoError("URL non valido — usa YouTube o Vimeo");
+      setVideoError("Invalid URL — use YouTube or Vimeo");
       return;
     }
     setVideoError(null);
@@ -401,18 +401,18 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     for (const { productId, newPrice } of csvPreview) {
       await savePriceOverride(productId, newPrice);
     }
-    toast.success(`${csvPreview.length} prezzi aggiornati da CSV.`);
+    toast.success(`${csvPreview.length} prices updated from CSV.`);
     setCsvPreview([]);
     setShowCsvModal(false);
   };
 
   const uploadProductImage = async (productId: string, rawFile: File) => {
     if (rawFile.size > 5 * 1024 * 1024) {
-      toast.error("Immagine troppo grande — massimo 5 MB.");
+      toast.error("Image too large — maximum 5 MB.");
       return;
     }
     if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(rawFile.type)) {
-      toast.error("Formato non supportato — usa JPEG, PNG, WebP o GIF.");
+      toast.error("Unsupported format — use JPEG, PNG, WebP or GIF.");
       return;
     }
     setUploadingImageId(productId);
@@ -425,7 +425,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
       .upload(path, file, { upsert: true, contentType: "image/jpeg" });
 
     if (uploadError) {
-      toast.error("Errore upload immagine: " + uploadError.message);
+      toast.error("Image upload error: " + uploadError.message);
       setUploadingImageId(null);
       return;
     }
@@ -444,7 +444,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     });
 
     setImageOverrides((prev) => ({ ...prev, [productId]: imageUrl }));
-    toast.success("Immagine caricata.");
+    toast.success("Image uploaded.");
     setUploadingImageId(null);
   };
 
@@ -513,7 +513,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         fetchSettings();
-        toast.info("Catalogo aggiornato.");
+        toast.info("Catalog refreshed.");
       }
       if (e.key === "Escape") {
         if (bulkSelection.size > 0) setBulkSelection(new Set());
@@ -569,18 +569,18 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
         >
           <div>
-            <h1 className="text-2xl font-bold text-foreground">📦 Catalogo</h1>
+            <h1 className="text-2xl font-bold text-foreground">📦 Catalog</h1>
             <button
               onClick={() => userRole?.role !== "consulente_responsabile" && setShowStoreModal(true)}
               className={`mt-0.5 flex items-center gap-1 text-xs ${userRole?.role === "consulente_responsabile" ? "text-muted-foreground cursor-default" : "text-primary hover:underline"}`}
             >
               <MapPin className="h-3 w-3" />
               {currentStore?.shortName ?? storeId}
-              {userRole?.role === "consulente_responsabile" && <span className="ml-1 opacity-50">(bloccata)</span>}
+              {userRole?.role === "consulente_responsabile" && <span className="ml-1 opacity-50">(locked)</span>}
             </button>
             <p className="text-xs text-muted-foreground">
-              {loading ? "Caricamento…" : `${activeCount} di ${catalogProducts.length} prodotti attivi nel quiz`}
-              {bulkSelection.size > 0 && <span className="ml-2 font-semibold text-primary">· {bulkSelection.size} selezionati</span>}
+              {loading ? "Loading…" : `${activeCount} of ${catalogProducts.length} products active in the quiz`}
+              {bulkSelection.size > 0 && <span className="ml-2 font-semibold text-primary">· {bulkSelection.size} selected</span>}
             </p>
           </div>
           <div className="flex gap-2 flex-wrap justify-end">
@@ -588,28 +588,28 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
               <>
                 <button onClick={() => requestBulkToggle(false)}
                   className="flex items-center gap-1 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-400 active:scale-95">
-                  <PowerOff className="h-3 w-3" /> Disattiva {bulkSelection.size}
+                  <PowerOff className="h-3 w-3" /> Deactivate {bulkSelection.size}
                 </button>
                 <button onClick={() => requestBulkToggle(true)}
                   className="flex items-center gap-1 rounded-xl border border-green-500/40 bg-green-500/10 px-3 py-2 text-xs text-green-400 active:scale-95">
-                  <Power className="h-3 w-3" /> Attiva {bulkSelection.size}
+                  <Power className="h-3 w-3" /> Activate {bulkSelection.size}
                 </button>
                 <button onClick={() => setBulkSelection(new Set())}
                   className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
-                  <X className="h-3 w-3" /> Annulla
+                  <X className="h-3 w-3" /> Cancel
                 </button>
               </>
             )}
             <button onClick={fetchSettings}
               className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
-              <RotateCcw className="h-3 w-3" /> Aggiorna
+              <RotateCcw className="h-3 w-3" /> Refresh
             </button>
             <button onClick={downloadCsvTemplate}
               className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
-              <Download className="h-3 w-3" /> Template CSV
+              <Download className="h-3 w-3" /> CSV Template
             </button>
             <label className="flex items-center gap-1 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary active:scale-95 cursor-pointer">
-              <Upload className="h-3 w-3" /> Carica Prezzi
+              <Upload className="h-3 w-3" /> Upload Prices
               <input
                 type="file"
                 accept=".csv"
@@ -623,7 +623,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             </button>
             <button onClick={handleLogout}
               className="flex items-center gap-1 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive active:scale-95">
-              <LogOut className="h-3 w-3" /> Esci
+              <LogOut className="h-3 w-3" /> Log out
             </button>
             <button onClick={() => { supabase.auth.signOut(); navigate("/"); }}
               className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
@@ -652,20 +652,20 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
               className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm"
             >
               <p className="text-amber-300 font-semibold mb-2">
-                Stai per {bulkConfirm.enable ? "attivare" : "disattivare"} {bulkConfirm.count} prodotti. Confermi?
+                You are about to {bulkConfirm.enable ? "activate" : "deactivate"} {bulkConfirm.count} products. Confirm?
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => handleBulkToggle(bulkConfirm.enable)}
                   className="rounded-xl border border-amber-500/40 bg-amber-500/20 px-4 py-1.5 text-xs font-semibold text-amber-300 active:scale-95"
                 >
-                  Conferma
+                  Confirm
                 </button>
                 <button
                   onClick={() => setBulkConfirm(null)}
                   className="rounded-xl border border-border bg-card px-4 py-1.5 text-xs text-muted-foreground active:scale-95"
                 >
-                  Annulla
+                  Cancel
                 </button>
               </div>
             </motion.div>
@@ -685,7 +685,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            📦 Catalogo
+            📦 Catalog
           </button>
           <button
             onClick={() => setActiveTab("sessioni")}
@@ -695,7 +695,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Inbox className="h-3.5 w-3.5" /> Sessioni &amp; Codici
+            <Inbox className="h-3.5 w-3.5" /> Sessions &amp; Codes
           </button>
           <button
             onClick={() => setActiveTab("storico")}
@@ -705,7 +705,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <History className="h-3.5 w-3.5" /> Storico
+            <History className="h-3.5 w-3.5" /> History
           </button>
           {userRole?.role !== "consulente_responsabile" && (
             <button
@@ -716,7 +716,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              🗂️ Gestione
+              🗂️ Management
             </button>
           )}
         </motion.div>
@@ -734,7 +734,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                📦 Catalogo globale
+                📦 Global catalog
               </button>
               <button
                 onClick={() => setGestioneTab("carte")}
@@ -744,7 +744,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                🃏 Carte Quiz
+                🃏 Quiz Cards
               </button>
               <button
                 onClick={() => setGestioneTab("email")}
@@ -764,7 +764,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                👥 Ruoli
+                👥 Roles
               </button>
             </div>
             {gestioneTab === "catalogo" && <ProductCatalogTab />}
@@ -786,22 +786,22 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         {activeTab === "storico" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">Storico modifiche catalogo</h2>
+              <h2 className="text-sm font-semibold text-foreground">Catalog change history</h2>
               <button
                 onClick={fetchAuditLog}
                 className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground active:scale-95"
               >
-                <RotateCcw className="h-3 w-3" /> Aggiorna
+                <RotateCcw className="h-3 w-3" /> Refresh
               </button>
             </div>
 
             {auditLoading ? (
-              <div className="py-16 text-center text-muted-foreground text-sm">Caricamento storico…</div>
+              <div className="py-16 text-center text-muted-foreground text-sm">Loading history…</div>
             ) : auditError || auditLog.length === 0 ? (
               <div className="rounded-2xl border border-border bg-muted/20 py-12 text-center">
                 <p className="text-2xl mb-2">📋</p>
-                <p className="text-sm font-medium text-foreground">Nessuno storico disponibile</p>
-                <p className="text-xs text-muted-foreground mt-1">Le modifiche future appariranno qui.</p>
+                <p className="text-sm font-medium text-foreground">No history available</p>
+                <p className="text-xs text-muted-foreground mt-1">Future changes will appear here.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -821,7 +821,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-foreground">{prodName}</p>
                         <p className="text-xs text-muted-foreground">
-                          {isActivated ? "Attivato" : "Disattivato"}
+                          {isActivated ? "Activated" : "Deactivated"}
                           {entry.store_id && <span className="ml-1.5">· {auditStoreName(entry.store_id)}</span>}
                         </p>
                       </div>
@@ -842,9 +842,9 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-xs text-muted-foreground leading-relaxed"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
         >
-          💡 I prodotti <strong className="text-foreground">In pausa</strong> vengono esclusi dal
-          match del quiz — utile per stock esaurito o partnership terminata. Il cambiamento è
-          immediato: la prossima sessione del quiz userà già la lista aggiornata.
+          💡 Products marked <strong className="text-foreground">Paused</strong> are excluded from
+          quiz matches — useful for out-of-stock items or ended partnerships. Changes apply
+          immediately: the next quiz session will use the updated list.
         </motion.div>
 
         {/* Search + tag filter */}
@@ -853,7 +853,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <input
-                type="text" placeholder="Cerca prodotto…" value={search}
+                type="text" placeholder="Search products…" value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full rounded-xl border border-border bg-card pl-9 pr-9 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
@@ -869,7 +869,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   filterTag === null ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                 }`}>
-                Tutti
+                All
               </button>
               {allTags.map((tag) => (
                 <button key={tag} onClick={() => setFilterTag(filterTag === tag ? null : tag)}
@@ -902,7 +902,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground text-sm">
-            Nessun prodotto trovato per "{search || filterTag}".
+            No products found for "{search || filterTag}".
           </div>
         ) : (
           <div className="space-y-3">
@@ -916,7 +916,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                 className="h-4 w-4 cursor-pointer"
               />
               <label htmlFor="select-all-checkbox" className="cursor-pointer text-xs text-muted-foreground select-none">
-                Seleziona tutti ({filteredProducts.length})
+                Select all ({filteredProducts.length})
               </label>
             </div>
 
@@ -959,7 +959,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                           isActive ? "text-green-400" : "text-muted-foreground"
                         }`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-green-400" : "bg-muted-foreground"}`} />
-                          {isActive ? "Attivo" : "In pausa"}
+                          {isActive ? "Active" : "Paused"}
                         </span>
                         <div className="flex items-center gap-1.5">
                           <h3 className="text-sm font-bold leading-snug text-foreground">{product.name}</h3>
@@ -971,7 +971,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                         </div>
                         {updatedAt && (
                           <p className="mt-0.5 text-[10px] text-muted-foreground/50">
-                            Aggiornato: {formatUpdatedAt(updatedAt)}
+                            Updated: {formatUpdatedAt(updatedAt)}
                           </p>
                         )}
                       </div>
@@ -986,8 +986,8 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                         whileTap={{ scale: 0.95 }}
                       >
                         {isSaving ? <span className="animate-pulse">…</span>
-                          : isActive ? <><PowerOff className="h-3 w-3" /> Disattiva</>
-                          : <><Power className="h-3 w-3" /> Riattiva</>}
+                          : isActive ? <><PowerOff className="h-3 w-3" /> Deactivate</>
+                          : <><Power className="h-3 w-3" /> Reactivate</>}
                       </motion.button>
                     </div>
 
@@ -1040,7 +1040,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
 
                       {/* Discount */}
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Sconto:</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Discount:</span>
                         {DISCOUNT_OPTIONS.map((opt) => {
                           const sel = (discountOverrides[product.id] ?? 5) === opt;
                           return (
@@ -1074,7 +1074,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                           uploadingImageId === product.id ? "animate-pulse" : ""
                         }`}>
                           <Camera className="h-3 w-3" />
-                          {uploadingImageId === product.id ? "…" : "Foto"}
+                          {uploadingImageId === product.id ? "…" : "Photo"}
                           <input type="file" accept="image/*" className="hidden"
                             disabled={uploadingImageId !== null}
                             onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadProductImage(product.id, f); e.target.value = ""; }} />
@@ -1143,7 +1143,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         )}
 
         <p className="pb-4 text-center text-xs text-muted-foreground">
-          Webi Match · Gestione Catalogo · Costanzo Annichini
+          Webi Match · Catalog Management · Costanzo Annichini
         </p>
 
         </>)} {/* end catalogo tab */}
@@ -1195,7 +1195,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
               initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-lg font-bold text-foreground mb-4">Conferma aggiornamento prezzi</h2>
+              <h2 className="text-lg font-bold text-foreground mb-4">Confirm price update</h2>
               <div className="space-y-2 mb-6">
                 {csvPreview.map(({ productId, newPrice }) => {
                   const prod = products.find((p) => p.id === productId);
@@ -1212,13 +1212,13 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                   onClick={() => setShowCsvModal(false)}
                   className="flex-1 rounded-xl border border-border bg-muted px-4 py-2 text-sm text-muted-foreground active:scale-95"
                 >
-                  Annulla
+                  Cancel
                 </button>
                 <button
                   onClick={applyPriceUpload}
                   className="flex-1 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary active:scale-95"
                 >
-                  Applica {csvPreview.length}
+                  Apply {csvPreview.length}
                 </button>
               </div>
             </motion.div>

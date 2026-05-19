@@ -9,8 +9,8 @@ This directory holds the visual assets referenced in the top-level `README.md`. 
 | `attract.png`    | Idle attract screen at `/`                                | 1024 × 1366 portrait | Wait ~30s on `/` so the attract loop is fully visible. |
 | `welcome.png`    | Welcome + name/email form (after tapping the attract)      | 1024 × 1366 portrait | Show the language switcher in the top-right. |
 | `quiz.png`       | A mid-quiz card mid-swipe                                  | 1024 × 1366 portrait | Capture the swipe motion frame if possible. |
-| `result.png`     | The match-result screen with discount code                 | 1024 × 1366 portrait | Hide the real customer name with `Ciao Demo!` for the screenshot. |
-| `manager.png`    | `/manager` → Sessioni tab with realistic session list      | 1366 × 1024 landscape | Use a seeded demo store, **no real customer PII**. |
+| `result.png`     | The match-result screen with discount code                 | 1024 × 1366 portrait | Use a demo name like `Hi Demo!` for the screenshot — never a real customer. |
+| `manager.png`    | `/manager` → Sessions tab with a realistic session list    | 1366 × 1024 landscape | Use a seeded demo store, **no real customer PII**. |
 | `demo.gif`       | 20-30 second screen recording of the full flow            | 1024 × 1366 portrait | Compress with `gifski` or `ffmpeg` → < 5 MB. |
 
 ## How to capture cleanly

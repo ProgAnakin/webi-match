@@ -77,7 +77,7 @@ export const FaqModal = ({ productName, initial, onSave, onClose }: FaqModalProp
         {/* X — transparent, top-right */}
         <button
           onClick={onClose}
-          aria-label="Chiudi"
+          aria-label="Close"
           className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-xl text-foreground/40 transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <X className="h-4 w-4" />
@@ -103,24 +103,24 @@ export const FaqModal = ({ productName, initial, onSave, onClose }: FaqModalProp
                   {n}
                 </span>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Domanda {n}
+                  Question {n}
                 </span>
               </div>
 
               <input
                 value={data[`q${n}` as keyof FaqData]}
                 onChange={(e) => update(`q${n}` as keyof FaqData, e.target.value)}
-                placeholder={`Inserisci la domanda ${n}…`}
+                placeholder={`Enter question ${n}…`}
                 className="mb-3 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary"
               />
 
               <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Risposta
+                Answer
               </label>
               <textarea
                 value={data[`a${n}` as keyof FaqData]}
                 onChange={(e) => update(`a${n}` as keyof FaqData, e.target.value)}
-                placeholder={`Inserisci la risposta ${n}…`}
+                placeholder={`Enter answer ${n}…`}
                 rows={3}
                 className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary"
               />
@@ -140,12 +140,12 @@ export const FaqModal = ({ productName, initial, onSave, onClose }: FaqModalProp
           {saving ? (
             <span className="flex items-center justify-center gap-2">
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              Salvataggio…
+              Saving…
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2">
               <Check className="h-4 w-4" />
-              Salva FAQ — {productName}
+              Save FAQ — {productName}
             </span>
           )}
         </motion.button>

@@ -156,11 +156,11 @@ export function RolesTab() {
           disabled={submitting || !emailInput.trim()}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary"
         >
-          {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Salvataggio…</> : <>Salva ruolo</>}
+          {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</> : <>Save role</>}
         </button>
 
         <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
-          Se l'email è già presente, il ruolo viene aggiornato. Un utente può avere un solo ruolo.
+          If the email already exists, the role is updated. A user can only have one role.
         </p>
       </form>
 
@@ -169,10 +169,10 @@ export function RolesTab() {
         <div className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
           <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium">Impossibile caricare i ruoli</p>
+            <p className="font-medium">Unable to load roles</p>
             <p className="opacity-80 mt-0.5">{error}</p>
             {error.includes("forbidden") && (
-              <p className="mt-1">Solo gli utenti con ruolo <strong>manager</strong> possono gestire ruoli.</p>
+              <p className="mt-1">Only users with the <strong>manager</strong> role can manage roles.</p>
             )}
           </div>
         </div>
@@ -189,7 +189,7 @@ export function RolesTab() {
         </div>
       ) : rows.length === 0 && !error ? (
         <p className="rounded-xl border border-border bg-muted/10 px-4 py-6 text-center text-xs text-muted-foreground">
-          Nessun ruolo configurato. Aggiungi il primo qui sopra.
+          No roles configured. Add the first one above.
         </p>
       ) : (
         <ul className="space-y-2">
@@ -209,7 +209,7 @@ export function RolesTab() {
                         ? "bg-primary/15 text-primary border border-primary/30"
                         : "bg-blue-500/15 text-blue-400 border border-blue-500/30"
                     }`}>
-                      {r.role === "manager" ? "Manager" : "Consulente"}
+                      {r.role === "manager" ? "Manager" : "Consultant"}
                     </span>
                     {storeName && <span className="ml-2">📍 {storeName}</span>}
                   </p>
@@ -222,20 +222,20 @@ export function RolesTab() {
                       disabled={deletingId === r.id}
                       className="rounded-lg bg-destructive px-3 py-2 text-xs font-bold text-white active:scale-95 disabled:opacity-50 min-h-[44px] focus-visible:ring-2 focus-visible:ring-destructive"
                     >
-                      {deletingId === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Conferma"}
+                      {deletingId === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirm"}
                     </button>
                     <button
                       onClick={() => setConfirmDeleteId(null)}
                       className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground active:scale-95 min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary"
                     >
-                      Annulla
+                      Cancel
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={() => setConfirmDeleteId(r.id)}
-                    title="Rimuovi ruolo"
-                    aria-label={`Rimuovi ruolo di ${r.user_email}`}
+                    title="Remove role"
+                    aria-label={`Remove role for ${r.user_email}`}
                     className="rounded-lg border border-border bg-muted/30 p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 active:scale-95 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
