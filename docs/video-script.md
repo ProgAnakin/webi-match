@@ -1,99 +1,126 @@
 # Video Script — Webi-Match Demo (90 seconds)
 
-*Formato consigliato: screen recording iPad verticale 1024×1366, narrazione in voce, sottotitoli. Carica direttamente su LinkedIn.*
+*Recommended format: vertical iPad screen recording (1024×1366), voice-over,
+burnt-in subtitles. Upload natively to LinkedIn — native video reaches 5–10×
+more people than an external link.*
 
 ---
 
-## Struttura
+## Timeline
 
-| Segmento | Durata | Schermo | Audio |
+| Segment | Duration | On screen | Audio |
 |---|---|---|---|
-| Hook visivo | 0–5s | Attract loop animato | Musica ambientale generativa |
-| Il problema | 5–15s | Voce over su attract | "Gli iPad erano lì, inutilizzati..." |
-| Inizio quiz | 15–25s | Tap → lingua → form | Dimostrazione silenziosa |
-| Swipe quiz | 25–50s | 4-5 swipe veloci | "8 domande, una gestione alla volta" |
-| Match result | 50–65s | Schermata risultato | "Match istantaneo + codice sconto" |
-| Dashboard | 65–80s | Tab sessioni / catalogo | "Il manager vede tutto in real-time" |
-| CTA | 80–90s | Repo / connessione | "Codice su GitHub — link nei commenti" |
+| Visual hook | 0–5s | Animated attract loop | Soft ambient pad |
+| The problem | 5–15s | Voice-over on attract | "These iPads were sitting there, untouched…" |
+| Quiz start | 15–25s | Tap → language → form | Silent demo, ambient continues |
+| Quiz swipes | 25–50s | 4–5 quick swipes | "Eight questions. One at a time." |
+| Match result | 50–65s | Result screen | "Instant match + unique discount code." |
+| Manager dashboard | 65–80s | Sessions / catalog tabs | "Everything tracked in real-time on the back end." |
+| CTA | 80–90s | Repo / profile shot | "Code on GitHub. Link in the comments." |
 
 ---
 
-## Script parlato (italiano, 90 secondi)
+## Voice-over script (English · 90 seconds)
 
 ```
 [0s — attract loop]
-Questi iPad stavano in store senza che nessuno li usasse.
-Così ho costruito un motivo per toccarli.
+These iPads were sitting in our stores, untouched.
+So I built a reason to pick them up.
 
-[10s — tap sull'attract]
-Webi-Match: un kiosk PWA che gira su iPad, costruito da zero,
-da solo, nel tempo libero.
+[10s — tap on attract]
+Webi-Match — an iPad kiosk PWA. Solo, on my own time, no brief.
 
-[15s — selezione lingua]
-Il cliente sceglie la lingua — italiano, inglese, portoghese,
-spagnolo o francese.
+[15s — language pick]
+Customer picks a language. Italian, English, Portuguese, Spanish, French.
 
-[20s — form nome/email]
-Inserisce nome e email. L'interfaccia gestisce la tastiera
-virtuale senza rompere il fullscreen.
+[20s — name + email form]
+Enters name and email. The keyboard layout adapts without breaking the
+fullscreen kiosk mode.
 
-[28s — inizio swipe]
-Otto domande. Una alla volta. Si risponde con uno swipe.
-Come sfogliare una mazzo di carte.
+[28s — first swipe]
+Eight questions. One at a time. Swipe right for yes, left for no —
+like flipping through a deck of cards.
 
-[45s — schermata risultato]
-Risultato istantaneo. Prodotto consigliato, percentuale di match,
-codice sconto unico e un'email personalizzata — già in arrivo.
+[45s — result screen]
+Instant match. Recommended product, compatibility percentage, a unique
+discount code, and a personalised email already on its way.
 
-[55s — dashboard manager]
-Sul backend: dashboard manager con sessioni in tempo reale,
-catalogo prodotti, configurazione quiz.
+[55s — manager dashboard]
+On the back end: a real-time manager dashboard. Sessions, product
+catalog, drag-and-drop quiz authoring.
 
-[65s — tab sessioni con filtri]
-Il manager vede ogni sessione, filtra per data, prodotto,
-percentuale di match. Può segnare i codici come riscattati.
+[65s — sessions tab with filters]
+Every session is tracked. Filter by date, product, match percentage.
+Mark codes as redeemed at the counter.
 
-[75s — codice / architettura]
-Sotto il cofano: React, TypeScript, Supabase con RLS e cifratura
-PII, Edge Functions Deno, 78 test automatizzati, CI GitHub Actions.
+[75s — architecture quick shot]
+Under the hood: React, TypeScript, Supabase with RLS and PII encryption,
+Deno Edge Functions, 75 automated tests, GitHub Actions CI.
 
 [82s — CTA]
-Il codice è pubblico su GitHub. Link nei commenti.
-Se ti piace quello che hai visto, colleghiamoci.
+Code is on GitHub. Link in the comments.
+If you like what you saw — let's connect.
 ```
 
 ---
 
-## Note di regia
+## Production notes
 
-### Catturare
-- Usa DevTools → device "iPad Pro 11" (1024×1366 portrait) per il kiosk.
-- Per il dashboard, usa landscape 1366×1024.
-- Prova a catturare almeno una swipe "elastica" — il rimbalzo fisico è il dettaglio più impressionante.
+### Capturing the footage
 
-### Montaggio
+- iPad kiosk shots: Chrome/Brave DevTools → device toolbar → **iPad Pro 11" (1024×1366), portrait**.
+- Manager dashboard shots: switch to **landscape 1366×1024**.
+- Try to capture at least one elastic swipe — the spring physics on the rebound is the most photogenic detail of the whole app.
+- For real-iPad recording: AirPlay to a Mac → record with QuickTime → MP4. Higher fidelity than DevTools but more setup.
+
+### Editing
+
+Quick ffmpeg pass to compress and normalise framerate before upload:
+
 ```bash
-# Taglia + comprimi con ffmpeg
 ffmpeg -i raw-recording.mov \
   -vf "scale=720:-1:flags=lanczos,fps=30" \
   -c:v libx264 -crf 23 -preset fast \
   -c:a aac -b:a 128k \
   demo-linkedin.mp4
 
-# Carica demo-linkedin.mp4 direttamente su LinkedIn (non YouTube)
-# Il video nativo ha 5-10× più reach del link esterno
+# Upload demo-linkedin.mp4 directly to LinkedIn — do NOT link to YouTube.
+# Native video reaches 5–10× more people than an external link.
 ```
 
-### Sottotitoli
-Genera con `auto-subtitle` o Whisper e aggiungi il file `.srt` quando carichi su LinkedIn — aumenta il reach del 20-30% (molti guardano senza audio).
+### Subtitles
+
+Generate burnt-in subtitles with [auto-subtitle](https://github.com/abdeladim-s/subsai) or [Whisper](https://github.com/openai/whisper), then attach the `.srt` file when uploading to LinkedIn. ~70% of LinkedIn users watch with sound off — subtitles add 20–30% to reach.
+
+```bash
+# Whisper baseline (English, large model — best quality, slow)
+whisper demo-linkedin.mp4 --language English --model large --output_format srt
+```
+
+### Music
+
+Pick a track that's:
+- Calm but not sleepy (keep ambient bed under -18 LUFS so voice cuts through)
+- Royalty-free for commercial use on LinkedIn (Epidemic Sound, Artlist, or YouTube Audio Library)
+- Avoid drops at the wrong moment — keep the energy curve flat, the visuals carry the rhythm
 
 ---
 
-## Versione breve (30 secondi — per Reel/Story/Twitter)
+## Short version (30 seconds — Reels / Stories / X)
 
-| Segmento | Durata | Contenuto |
+| Segment | Duration | Content |
 |---|---|---|
-| Hook | 0–3s | "Construí esto solo, en mi tiempo libre" (overlay text) |
-| Swipe quiz | 3–15s | 4 swipe veloci con musica |
-| Match result | 15–22s | Risultato + codice sconto |
-| CTA | 22–30s | Stack tecnologico in overlay + "GitHub nei commenti" |
+| Hook | 0–3s | Overlay: *"I built this solo, on my own time."* |
+| Quiz swipes | 3–15s | 4 quick swipes with music |
+| Match result | 15–22s | Result + discount code |
+| CTA | 22–30s | Stack overlay (React · TypeScript · Supabase · Edge Functions) + *"GitHub in the comments"* |
+
+No voice-over on this one — pure motion + on-screen text. Designed for sound-off scrolling.
+
+---
+
+## Naming and post hygiene
+
+- Filename: `webi-match-demo-90s.mp4` (filename appears in the LinkedIn post metadata, keep it on-brand).
+- Thumbnail / first frame: must work as a static preview — pick a moment with the result screen visible, NOT the attract loop (most LinkedIn viewers see a still frame first and tap to play).
+- Alt text on the LinkedIn upload: *"90-second demo of Webi-Match: an iPad kiosk PWA for product discovery, with manager dashboard."* (helps reach + accessibility.)
