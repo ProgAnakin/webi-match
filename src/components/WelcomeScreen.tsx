@@ -221,7 +221,7 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
           <span>🔒</span>
           <span>{t.welcome.privacy}</span>
         </div>
-        <p className="text-center text-[11px] text-muted-foreground/50">{t.welcome.noSpam}</p>
+        <p className="text-center text-[11px] text-muted-foreground/70">{t.welcome.noSpam}</p>
       </div>
     </div>
   );
@@ -255,17 +255,26 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
   const { t } = useLang();
   const [showPin, setShowPin] = useState(false);
   const [storeBadgeKey, setStoreBadgeKey] = useState(0);
+  // Mirror tapCount.current to React state once it passes the discoverability
+  // threshold so a subtle dot indicator can render — gives new staff a visual
+  // cue that they're on the right track to opening the admin overlay.
+  const [tapsVisible, setTapsVisible] = useState(0);
   const tapCount = useRef(0);
   const tapTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const handleLogoTap = useCallback(() => {
     tapCount.current += 1;
     clearTimeout(tapTimer.current);
+    setTapsVisible(tapCount.current >= 3 ? tapCount.current : 0);
     if (tapCount.current >= LOGO_TAPS_REQUIRED) {
       tapCount.current = 0;
+      setTapsVisible(0);
       setShowPin(true);
     } else {
-      tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000);
+      tapTimer.current = setTimeout(() => {
+        tapCount.current = 0;
+        setTapsVisible(0);
+      }, 2000);
     }
   }, []);
 
@@ -318,6 +327,30 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.1 }}
         />
+
+        {/* Subtle dot progress — only shown from the 3rd tap onward so the
+            easter-egg stays hidden from customers but new staff can see they
+            are unlocking something. */}
+        <AnimatePresence>
+          {tapsVisible > 0 && (
+            <motion.div
+              key="taps-hint"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="-mt-3 flex items-center gap-1.5"
+            >
+              {Array.from({ length: LOGO_TAPS_REQUIRED }, (_, i) => (
+                <span
+                  key={i}
+                  className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                    i < tapsVisible ? "bg-primary" : "bg-muted-foreground/30"
+                  }`}
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <motion.div
           className="text-center"

@@ -133,7 +133,7 @@ const QuizScreen = ({ onComplete, cards: cardsProp }: QuizScreenProps) => {
         {/* Center label */}
         <div className="flex w-14 shrink-0 flex-col items-center gap-1">
           <div className="h-px w-full bg-border/30" />
-          <p className="text-center text-[7px] font-black uppercase leading-tight tracking-[0.14em] text-muted-foreground/45">
+          <p className="text-center text-[7px] font-black uppercase leading-tight tracking-[0.14em] text-muted-foreground/65">
             {t.quiz.chooseDestiny}
           </p>
           <div className="h-px w-full bg-border/30" />

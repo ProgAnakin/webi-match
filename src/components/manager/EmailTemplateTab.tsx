@@ -78,6 +78,19 @@ function interpolate(tpl: string): string {
   return tpl.replace(/\{\{nome\}\}/g, SAMPLE.nome).replace(/\{\{pct\}\}/g, SAMPLE.pct);
 }
 
+// header_title and header_subtitle are interpolated as raw HTML by the Edge
+// Function so managers can use <strong>/<em>/<span style=…> for emphasis.
+// Strip anything that could execute JS before persisting: <script>, on*=
+// handlers, javascript: URLs, and data: URIs that could carry payloads.
+function sanitizeTemplateHtml(html: string): string {
+  return String(html)
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<iframe\b[\s\S]*?<\/iframe>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/javascript:/gi, "")
+    .replace(/data:text\/html/gi, "");
+}
+
 const FIELD_META: { key: keyof EmailTemplate; label: string; hint: string; multiline?: boolean }[] = [
   {
     key: "sender_name",
@@ -217,14 +230,22 @@ export function EmailTemplateTab() {
   const saveTemplate = async () => {
     setSaving(true);
     setError(null);
+    const cleaned: EmailTemplate = {
+      ...forms[activeLang],
+      header_title:    sanitizeTemplateHtml(forms[activeLang].header_title),
+      header_subtitle: sanitizeTemplateHtml(forms[activeLang].header_subtitle),
+    };
     const { error: err } = await supabase
       .from("email_template")
-      .update({ ...forms[activeLang], updated_at: new Date().toISOString() })
+      .update({ ...cleaned, updated_at: new Date().toISOString() })
       .eq("language", activeLang);
     if (err) {
       setError(err.message);
       toast.error("Errore nel salvataggio template.");
     } else {
+      // Reflect the sanitized values back into the form so the user sees
+      // exactly what was persisted (and won't re-introduce scrubbed markup).
+      setForms((prev) => ({ ...prev, [activeLang]: cleaned }));
       try { localStorage.setItem(TTL_STORAGE_KEY, String(codeTtl)); } catch { /* ignore */ }
       setSaved(true);
       toast.success(`Template ${LANG_META[activeLang].flag} salvato.`);

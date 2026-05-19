@@ -717,7 +717,7 @@ const MatchResult = ({
             </div>
           </div>
 
-          <p className="mt-1.5 text-center text-[10px] text-muted-foreground/45 leading-relaxed">
+          <p className="mt-1.5 text-center text-[10px] text-muted-foreground/65 leading-relaxed">
             {t.changeEmail.emailHint}
           </p>
         </motion.div>
