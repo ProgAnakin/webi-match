@@ -303,12 +303,12 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
           initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
           <div>
             <h1 className="text-2xl font-bold text-foreground">📊 Analytics</h1>
-            <p className="text-xs text-muted-foreground">Dati in tempo reale · Costanzo Annichini</p>
+            <p className="text-xs text-muted-foreground">Real-time data · Costanzo Annichini</p>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => fetchData(true)}
               className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
-              <RefreshCw className="h-3 w-3" /> Aggiorna
+              <RefreshCw className="h-3 w-3" /> Refresh
             </button>
             <button onClick={() => setShowFilters((v) => !v)}
               className={`flex items-center gap-1 rounded-xl border px-3 py-2 text-xs active:scale-95 ${
@@ -317,7 +317,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                   : "border-border bg-card text-muted-foreground"
               }`}>
               <Calendar className="h-3 w-3" />
-              {isFiltered ? "Filtro attivo" : "Filtra"}
+              {isFiltered ? "Filter active" : "Filter"}
               {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </button>
             <button onClick={handleExportRequest}
@@ -327,10 +327,10 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             </button>
             <button onClick={() => navigate("/manager")}
               className="flex items-center gap-1 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary active:scale-95">
-              <Package className="h-3 w-3" /> Catalogo
+              <Package className="h-3 w-3" /> Catalog
             </button>
             <button onClick={() => setShowMfaModal(true)}
-              title={hasMfa ? "2FA attivo" : "Configura 2FA"}
+              title={hasMfa ? "2FA active" : "Set up 2FA"}
               className={`flex items-center gap-1 rounded-xl border px-3 py-2 text-xs active:scale-95 ${
                 hasMfa
                   ? "border-green-500/40 bg-green-500/10 text-green-400"
@@ -341,7 +341,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             </button>
             <button onClick={handleLogout}
               className="flex items-center gap-1 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive active:scale-95">
-              <LogOut className="h-3 w-3" /> Esci
+              <LogOut className="h-3 w-3" /> Log out
             </button>
             <button onClick={() => { supabase.auth.signOut(); navigate("/"); }}
               className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
@@ -358,16 +358,16 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
               exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
               <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                  Filtra per data
+                  Filter by date
                 </p>
 
                 {/* 1. Date shortcuts */}
                 <div className="flex flex-wrap gap-1.5">
                   {[
-                    { label: "Oggi",        from: todayStr(),       to: todayStr() },
-                    { label: "7 giorni",    from: daysAgoStr(6),    to: todayStr() },
-                    { label: "30 giorni",   from: daysAgoStr(29),   to: todayStr() },
-                    { label: "Questo mese", from: startOfMonthStr(), to: todayStr() },
+                    { label: "Today",       from: todayStr(),       to: todayStr() },
+                    { label: "7 days",      from: daysAgoStr(6),    to: todayStr() },
+                    { label: "30 days",     from: daysAgoStr(29),   to: todayStr() },
+                    { label: "This month", from: startOfMonthStr(), to: todayStr() },
                   ].map((s) => (
                     <button
                       key={s.label}

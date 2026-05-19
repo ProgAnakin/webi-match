@@ -1236,13 +1236,13 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             exit={{ opacity: 0, y: 16, scale: 0.95 }}
           >
             <span className="text-sm text-foreground">
-              Modifica salvata.
+              Change saved.
             </span>
             <button
               onClick={handleUndo}
               className="flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary active:scale-95"
             >
-              <Undo2 className="h-3.5 w-3.5" /> Annulla ({undoCountdown}s)
+              <Undo2 className="h-3.5 w-3.5" /> Undo ({undoCountdown}s)
             </button>
           </motion.div>
         )}
