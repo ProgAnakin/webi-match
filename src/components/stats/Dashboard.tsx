@@ -385,13 +385,13 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
 
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <label className="text-xs text-muted-foreground mb-1 block">Da</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">From</label>
                     <input type="date" value={dateFrom}
                       onChange={(e) => setDateFrom(e.target.value)}
                       className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs text-muted-foreground mb-1 block">A</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">To</label>
                     <input type="date" value={dateTo}
                       onChange={(e) => setDateTo(e.target.value)}
                       className={`w-full rounded-xl border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 ${
@@ -405,18 +405,18 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                 {/* 9. Date range validation error */}
                 {dateRangeInvalid && (
                   <p className="text-xs font-medium text-destructive">
-                    La data finale deve essere ≥ alla data iniziale
+                    End date must be ≥ start date
                   </p>
                 )}
 
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1.5">Sede</p>
+                  <p className="text-xs text-muted-foreground mb-1.5">Store</p>
                   <div className="flex flex-wrap gap-1.5">
                     <button onClick={() => setFilterStore(null)}
                       className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                         filterStore === null ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                       }`}>
-                      Tutte
+                      All
                     </button>
                     {STORES.map((store) => (
                       <button key={store.id}
@@ -432,15 +432,15 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                 {isFiltered && (
                   <button onClick={clearAllFilters}
                     className="text-xs text-primary underline underline-offset-2">
-                    Rimuovi tutti i filtri
+                    Clear all filters
                   </button>
                 )}
                 {isFiltered && !dateRangeInvalid && (
                   <p className="text-xs text-muted-foreground">
                     <span className="font-semibold text-foreground">{filteredSessions.length}</span>
-                    {filterStore ? ` sessioni · ${getStoreById(filterStore)?.shortName ?? filterStore}` : " sessioni nel periodo"}
+                    {filterStore ? ` sessions · ${getStoreById(filterStore)?.shortName ?? filterStore}` : " sessions in this period"}
                     {filterStore && (
-                      <span className="ml-1 text-muted-foreground/60">({globalTotal} totale)</span>
+                      <span className="ml-1 text-muted-foreground/60">({globalTotal} total)</span>
                     )}
                   </p>
                 )}
@@ -453,7 +453,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
         {dateRangeInvalid && (
           <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-center">
             <p className="text-sm font-medium text-destructive">
-              La data finale deve essere ≥ alla data iniziale. Correggi il filtro per visualizzare i dati.
+              End date must be ≥ start date. Correct the filter to view the data.
             </p>
           </div>
         )}
@@ -473,8 +473,8 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
 
         {hasError && (
           <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center">
-            <p className="text-sm text-destructive">Impossibile caricare i dati. Riprova o contatta l'amministratore.</p>
-            <button onClick={() => fetchData(true)} className="mt-3 text-xs text-primary underline">Riprova</button>
+            <p className="text-sm text-destructive">Unable to load data. Try again or contact the administrator.</p>
+            <button onClick={() => fetchData(true)} className="mt-3 text-xs text-primary underline">Retry</button>
           </div>
         )}
 
@@ -485,32 +485,32 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               {/* 3. Trend indicators: pass trendMetrics props (null when no prev period available) */}
               <StatCard
-                label="Sessioni totali"
+                label="Total sessions"
                 value={total}
                 trend={trendMetrics.trendTotal}
                 sub={filterStore
-                  ? `${getStoreById(filterStore)?.shortName} · ${globalTotal} globale`
-                  : (isFiltered ? "nel periodo" : undefined)}
+                  ? `${getStoreById(filterStore)?.shortName} · ${globalTotal} global`
+                  : (isFiltered ? "in this period" : undefined)}
               />
-              <StatCard label="Email raccolte" value={uniqueEmails} trend={trendMetrics.trendTotal} sub={isFiltered ? "nel periodo" : undefined} />
-              <StatCard label="Match medio" value={`${avgMatch}%`} trend={trendMetrics.trendAvgMatch} />
-              <StatCard label="Oggi" value={todaySessions} sub="sessioni" />
-              <StatCard label="Email consegnate" value={`${emailDeliveryRate}%`} sub={`${emailSentCount} / ${total}`} />
-              <StatCard label="Visitatori tornati" value={returningCount} sub="email duplicate" />
+              <StatCard label="Emails collected" value={uniqueEmails} trend={trendMetrics.trendTotal} sub={isFiltered ? "in this period" : undefined} />
+              <StatCard label="Average match" value={`${avgMatch}%`} trend={trendMetrics.trendAvgMatch} />
+              <StatCard label="Today" value={todaySessions} sub="sessions" />
+              <StatCard label="Emails delivered" value={`${emailDeliveryRate}%`} sub={`${emailSentCount} / ${total}`} />
+              <StatCard label="Returning visitors" value={returningCount} sub="duplicate emails" />
 
               {/* 4. Conversion rate KPI card */}
               {tassoClaimPct !== null && (
                 <StatCard
-                  label="Tasso claim"
+                  label="Claim rate"
                   value={`${tassoClaimPct}%`}
-                  sub="claim / risultato mostrato"
+                  sub="claim / result shown"
                 />
               )}
               {tassoClaimPct === null && funnel && (
                 <div className="rounded-2xl border border-border bg-card p-5 text-center shadow-card">
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Tasso claim</p>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Claim rate</p>
                   <p className="text-4xl font-bold text-muted-foreground/40">—</p>
-                  <p className="mt-1 text-xs text-muted-foreground">nessun dato funnel</p>
+                  <p className="mt-1 text-xs text-muted-foreground">no funnel data</p>
                 </div>
               )}
             </motion.div>
@@ -528,8 +528,8 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
                 <span>
                   {tassoClaimColor === "green" ? "✅" : tassoClaimColor === "amber" ? "⚠️" : "❌"}&nbsp;
-                  Tasso claim: <strong>{tassoClaimPct}%</strong>
-                  {tassoClaimColor === "green" ? " — ottimo!" : tassoClaimColor === "amber" ? " — nella media" : " — da migliorare"}
+                  Claim rate: <strong>{tassoClaimPct}%</strong>
+                  {tassoClaimColor === "green" ? " — great!" : tassoClaimColor === "amber" ? " — average" : " — needs improvement"}
                 </span>
                 <span className="text-muted-foreground">
                   {funnel?.claimed ?? 0} / {funnel?.resultShown ?? 0}
@@ -541,17 +541,17 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <div className="mb-1 flex items-center gap-2">
-                <h2 className="font-bold text-foreground">🏆 Prodotti più reclamati</h2>
+                <h2 className="font-bold text-foreground">🏆 Most claimed products</h2>
                 <TrendingUp className="h-4 w-4 text-primary" />
               </div>
-              <p className="mb-4 text-[11px] text-muted-foreground">Ogni sessione = un utente che ha completato il claim · clicca per filtrare sessioni</p>
+              <p className="mb-4 text-[11px] text-muted-foreground">Each session = one user who completed the claim · click to filter sessions</p>
               {productStats.length === 0 ? (
                 <div className="text-center py-3">
                   <p className="text-sm font-medium text-foreground">
-                    {isFiltered ? "Nessun prodotto nel periodo selezionato" : "Nessun match ancora"}
+                    {isFiltered ? "No products in the selected period" : "No matches yet"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {isFiltered ? "Espandi le date per vedere i dati." : "I prodotti più matchati appariranno qui."}
+                    {isFiltered ? "Expand the date range to see data." : "The most matched products will appear here."}
                   </p>
                 </div>
               ) : (
@@ -623,10 +623,10 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             {/* Last 7 days chart */}
             <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-              <h2 className="mb-1 font-bold text-foreground">📅 Ultimi 7 giorni</h2>
+              <h2 className="mb-1 font-bold text-foreground">📅 Last 7 days</h2>
               {isFiltered && (
                 <p className="mb-4 text-[10px] text-muted-foreground">
-                  Il grafico mostra sempre gli ultimi 7 giorni reali, indipendente dal filtro data.
+                  The chart always shows the last 7 real days, independent of the date filter.
                 </p>
               )}
               <div className="flex h-28 items-end justify-between gap-2 mt-4">
@@ -650,9 +650,9 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             {sessions.length > 0 && (
               <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
-                <h2 className="mb-1 font-bold text-foreground">🕐 Orario di picco</h2>
+                <h2 className="mb-1 font-bold text-foreground">🕐 Peak hours</h2>
                 <p className="mb-4 text-[11px] text-muted-foreground">
-                  Distribuzione sessioni per ora del giorno · picco alle <strong className="text-foreground">{peakHour}:00</strong>
+                  Session distribution by hour of day · peak at <strong className="text-foreground">{peakHour}:00</strong>
                 </p>
                 <div className="flex h-20 items-end gap-[3px]">
                   {hourlyCounts.map((count, h) => (
@@ -678,8 +678,8 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             {total > 0 && (
               <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34 }}>
-                <h2 className="mb-1 font-bold text-foreground">🎯 Distribuzione Match %</h2>
-                <p className="mb-4 text-[11px] text-muted-foreground">Quanti utenti ricadono in ogni fascia di compatibilità</p>
+                <h2 className="mb-1 font-bold text-foreground">🎯 Match % distribution</h2>
+                <p className="mb-4 text-[11px] text-muted-foreground">How many users fall into each compatibility bracket</p>
                 <div className="space-y-3">
                   {matchBrackets.map((b) => (
                     <div key={b.label}>
@@ -707,11 +707,11 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             {funnel && funnel.started > 0 && (
               <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-                <h2 className="mb-4 font-bold text-foreground">🔽 Funnel di abbandono</h2>
+                <h2 className="mb-4 font-bold text-foreground">🔽 Drop-off funnel</h2>
                 {[
-                  { label: "Quiz avviati",       value: funnel.started,     color: "bg-blue-500"   },
-                  { label: "Risultato mostrato", value: funnel.resultShown, color: "bg-orange-500" },
-                  { label: "Reclamati (claim)",  value: funnel.claimed,     color: "bg-green-500"  },
+                  { label: "Quizzes started",    value: funnel.started,     color: "bg-blue-500"   },
+                  { label: "Result shown",       value: funnel.resultShown, color: "bg-orange-500" },
+                  { label: "Claimed",            value: funnel.claimed,     color: "bg-green-500"  },
                 ].map(({ label, value, color }, i, arr) => {
                   const pctOfTotal = arr[0].value ? Math.round((value / arr[0].value) * 100) : 0;
                   const pctOfPrev  = i > 0 && arr[i - 1].value ? Math.round((value / arr[i - 1].value) * 100) : null;
@@ -728,11 +728,11 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                               : pctOfPrev >= 40 ? "bg-orange-500/15 text-orange-600"
                               : "bg-destructive/15 text-destructive"
                             }`}>
-                              {pctOfPrev}% dal passo prec.
+                              {pctOfPrev}% from prev. step
                             </span>
                           )}
                           {dropoff > 0 && (
-                            <span className="text-muted-foreground">−{dropoff} usciti</span>
+                            <span className="text-muted-foreground">−{dropoff} dropped</span>
                           )}
                         </div>
                       </div>
@@ -744,12 +744,12 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                           transition={{ duration: 0.6, delay: 0.1 * i }}
                         />
                       </div>
-                      <p className="mt-0.5 text-right text-[10px] text-muted-foreground">{pctOfTotal}% del totale avviati</p>
+                      <p className="mt-0.5 text-right text-[10px] text-muted-foreground">{pctOfTotal}% of total started</p>
                     </div>
                   );
                 })}
                 <div className="mt-3 flex items-center justify-between rounded-xl bg-muted/50 px-4 py-2.5">
-                  <span className="text-xs text-muted-foreground">Conversione finale (avviati → claim)</span>
+                  <span className="text-xs text-muted-foreground">Final conversion (started → claim)</span>
                   <span className={`text-sm font-bold ${
                     funnel.started && (funnel.claimed / funnel.started) >= 0.5 ? "text-green-600"
                     : funnel.started && (funnel.claimed / funnel.started) >= 0.25 ? "text-orange-500"
@@ -766,13 +766,13 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h2 className="font-bold text-foreground">🕐 Sessioni</h2>
+                  <h2 className="font-bold text-foreground">🕐 Sessions</h2>
                   {filteredSessions.length > 0 && (
                     <p className="text-[11px] text-muted-foreground mt-0.5">
                       {search.trim()
-                        ? `${searchedSessions.length} risultati · ${filteredSessions.length} totali`
-                        : `${filteredSessions.length} totali`}
-                      {totalPages > 1 && ` · pagina ${page + 1} di ${totalPages}`}
+                        ? `${searchedSessions.length} results · ${filteredSessions.length} total`
+                        : `${filteredSessions.length} total`}
+                      {totalPages > 1 && ` · page ${page + 1} of ${totalPages}`}
                     </p>
                   )}
                 </div>
@@ -780,7 +780,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                   <button onClick={handleExportRequest}
                     className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-muted-foreground active:scale-95">
                     <Download className="h-3 w-3" />
-                    {filterStore ? `Esporta ${getStoreById(filterStore)?.shortName ?? ""}` : "Esporta CSV"}
+                    {filterStore ? `Export ${getStoreById(filterStore)?.shortName ?? ""}` : "Export CSV"}
                   </button>
                 )}
               </div>
@@ -788,8 +788,8 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
               {/* 8. Redemption rate line */}
               {codesGenerated > 0 && (
                 <p className="mb-3 text-xs text-muted-foreground">
-                  <span className="font-semibold text-foreground">{codesGenerated}</span> codici generati ·{" "}
-                  <span className="font-semibold text-foreground">{codesUsed}</span> usati{" "}
+                  <span className="font-semibold text-foreground">{codesGenerated}</span> codes generated ·{" "}
+                  <span className="font-semibold text-foreground">{codesUsed}</span> used{" "}
                   <span className={`font-semibold ${redemptionPct >= 30 ? "text-green-500" : redemptionPct >= 15 ? "text-amber-500" : "text-destructive"}`}>
                     ({redemptionPct}%)
                   </span>
@@ -802,7 +802,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                     type="search"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Cerca per nome, email o prodotto..."
+                    placeholder="Search by name, email or product..."
                     className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   {search && (
@@ -819,19 +819,19 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                 <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">
                   <p className="text-2xl mb-2">📫</p>
                   <p className="text-sm font-medium text-foreground">
-                    {isFiltered ? "Nessuna sessione trovata" : "Nessuna sessione ancora"}
+                    {isFiltered ? "No sessions found" : "No sessions yet"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {isFiltered
-                      ? "Prova ad espandere le date o a cambiare la sede selezionata."
-                      : "Avvia il quiz sull'iPad per iniziare a raccogliere dati."}
+                      ? "Try expanding the date range or changing the selected store."
+                      : "Start the quiz on the iPad to begin collecting data."}
                   </p>
                 </div>
               ) : searchedSessions.length === 0 ? (
                 <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">
                   <p className="text-2xl mb-2">🔍</p>
-                  <p className="text-sm font-medium text-foreground">Nessun risultato trovato</p>
-                  <p className="text-xs text-muted-foreground mt-1">Prova con nome, email o nome prodotto.</p>
+                  <p className="text-sm font-medium text-foreground">No results found</p>
+                  <p className="text-xs text-muted-foreground mt-1">Try a name, email or product name.</p>
                 </div>
               ) : (
                 <>
@@ -856,7 +856,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                             <p className="text-[10px] text-muted-foreground">{formatDate(s.created_at)}</p>
                             {s.discount_code && (
                               <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-                                {s.code_redeemed ? "✅ usato" : "🎟 generato"}
+                                {s.code_redeemed ? "✅ used" : "🎟 generated"}
                               </p>
                             )}
                           </div>
@@ -920,31 +920,31 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
               className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-2xl"
               initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }}
             >
-              <p className="text-sm font-bold text-foreground mb-2">⚠️ Dati personali — GDPR</p>
+              <p className="text-sm font-bold text-foreground mb-2">⚠️ Personal data — GDPR</p>
               <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-                Il file contiene <strong className="text-foreground">indirizzi email</strong> dei clienti.
-                Tratta questi dati in conformità al GDPR: non condividere il file, non conservarlo più del necessario
-                e cancellalo dopo l'uso.
+                The file contains customer <strong className="text-foreground">email addresses</strong>.
+                Handle this data in compliance with GDPR: do not share the file, do not keep it longer than necessary,
+                and delete it after use.
               </p>
               <div className="mb-5 rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                <strong className="text-foreground">{filteredSessions.length}</strong> sessioni
+                <strong className="text-foreground">{filteredSessions.length}</strong> sessions
                 {filterStore && <> · <span className="text-primary">{getStoreById(filterStore)?.shortName ?? filterStore}</span></>}
-                {dateFrom && <> · da {dateFrom}</>}
-                {dateTo && <> a {dateTo}</>}
+                {dateFrom && <> · from {dateFrom}</>}
+                {dateTo && <> to {dateTo}</>}
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={() => setConfirmExport(false)}
                   className="flex-1 rounded-xl border border-border bg-muted px-4 py-2.5 text-sm text-muted-foreground active:scale-95"
                 >
-                  Annulla
+                  Cancel
                 </button>
                 <button
                   onClick={handleExportConfirm}
                   className="flex-1 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-semibold text-primary active:scale-95"
                 >
                   <Download className="inline h-3.5 w-3.5 mr-1.5" />
-                  Scarica CSV
+                  Download CSV
                 </button>
               </div>
             </motion.div>

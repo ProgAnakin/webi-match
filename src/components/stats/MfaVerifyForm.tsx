@@ -17,14 +17,14 @@ export const MfaVerifyForm = ({ onVerified, onCancel }: MfaVerifyFormProps) => {
     setLoading(true); setError("");
     const { data: factors } = await supabase.auth.mfa.listFactors();
     const totp = factors?.totp?.[0];
-    if (!totp) { setError("Nessun fattore 2FA trovato."); setLoading(false); return; }
+    if (!totp) { setError("No 2FA factor found."); setLoading(false); return; }
     const { data: challenge, error: chalErr } = await supabase.auth.mfa.challenge({ factorId: totp.id });
-    if (chalErr || !challenge) { setError("Errore. Riprova."); setLoading(false); return; }
+    if (chalErr || !challenge) { setError("Error. Try again."); setLoading(false); return; }
     const { error: verErr } = await supabase.auth.mfa.verify({
       factorId: totp.id, challengeId: challenge.id, code,
     });
     setLoading(false);
-    if (verErr) { setError("Codice non valido. Riprova."); setCode(""); }
+    if (verErr) { setError("Invalid code. Try again."); setCode(""); }
     else onVerified();
   };
 
@@ -33,8 +33,8 @@ export const MfaVerifyForm = ({ onVerified, onCancel }: MfaVerifyFormProps) => {
       <motion.div className="w-full max-w-sm space-y-5 text-center"
         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
         <div className="text-5xl">🔐</div>
-        <h1 className="text-2xl font-bold text-foreground">Verifica 2FA</h1>
-        <p className="text-sm text-muted-foreground">Inserisci il codice a 6 cifre dall'app autenticatore</p>
+        <h1 className="text-2xl font-bold text-foreground">2FA Verification</h1>
+        <p className="text-sm text-muted-foreground">Enter the 6-digit code from your authenticator app</p>
         <input
           type="text" inputMode="numeric" maxLength={6} placeholder="000000"
           value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, "")); setError(""); }}
@@ -49,10 +49,10 @@ export const MfaVerifyForm = ({ onVerified, onCancel }: MfaVerifyFormProps) => {
         </AnimatePresence>
         <button onClick={handleVerify} disabled={loading || code.length !== 6}
           className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-4 text-lg font-bold text-primary-foreground active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-          {loading ? "Verifica…" : "Conferma"}
+          {loading ? "Verifying…" : "Confirm"}
         </button>
         <button onClick={onCancel} className="text-sm text-muted-foreground underline underline-offset-2">
-          Annulla e torna al login
+          Cancel and return to login
         </button>
       </motion.div>
     </div>

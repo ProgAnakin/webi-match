@@ -50,7 +50,7 @@ export const MfaSetupModal = ({ onClose, onEnabled }: MfaSetupModalProps) => {
     setLoading(true); setError("");
     const { error: verErr } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
     setLoading(false);
-    if (verErr) { setError("Codice non valido. Riprova."); setCode(""); }
+    if (verErr) { setError("Invalid code. Try again."); setCode(""); }
     else { setStep("done"); }
   };
 
@@ -65,41 +65,41 @@ export const MfaSetupModal = ({ onClose, onEnabled }: MfaSetupModalProps) => {
         initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-foreground">🔐 Autenticazione 2FA</h2>
+          <h2 className="text-lg font-bold text-foreground">🔐 2FA Authentication</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {step === "loading" && (
-          <p className="text-center text-muted-foreground py-8">Preparazione…</p>
+          <p className="text-center text-muted-foreground py-8">Preparing…</p>
         )}
 
         {step === "error" && (
           <div className="space-y-4 text-center">
-            <p className="text-sm text-destructive">Errore durante la configurazione. Riprova.</p>
-            <button onClick={onClose} className="text-sm text-primary underline">Chiudi</button>
+            <p className="text-sm text-destructive">Setup error. Try again.</p>
+            <button onClick={onClose} className="text-sm text-primary underline">Close</button>
           </div>
         )}
 
         {step === "already" && (
           <div className="space-y-4 text-center">
             <div className="text-4xl">✅</div>
-            <p className="text-sm text-foreground font-medium">2FA già attivo sul tuo account.</p>
-            <p className="text-xs text-muted-foreground">Usa l'app autenticatore per accedere.</p>
+            <p className="text-sm text-foreground font-medium">2FA already active on your account.</p>
+            <p className="text-xs text-muted-foreground">Use your authenticator app to sign in.</p>
             <button onClick={handleDisable}
               className="w-full rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              Disabilita 2FA
+              Disable 2FA
             </button>
-            <button onClick={onClose} className="text-sm text-muted-foreground underline">Annulla</button>
+            <button onClick={onClose} className="text-sm text-muted-foreground underline">Cancel</button>
           </div>
         )}
 
         {step === "qr" && (
           <div className="space-y-5">
             <p className="text-sm text-muted-foreground text-center">
-              Scansiona il QR code con <strong className="text-foreground">Google Authenticator</strong>,{" "}
-              <strong className="text-foreground">Authy</strong> o simile.
+              Scan the QR code with <strong className="text-foreground">Google Authenticator</strong>,{" "}
+              <strong className="text-foreground">Authy</strong> or similar.
             </p>
             {qrCode && (
               <div className="flex justify-center">
@@ -108,12 +108,12 @@ export const MfaSetupModal = ({ onClose, onEnabled }: MfaSetupModalProps) => {
             )}
             <div className="rounded-xl bg-muted px-3 py-2 text-center">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] text-muted-foreground">Codice manuale</p>
+                <p className="text-[10px] text-muted-foreground">Manual code</p>
                 <button
                   onClick={() => setShowSecret((v) => !v)}
                   className="text-[10px] text-primary underline underline-offset-2"
                 >
-                  {showSecret ? "Nascondi" : "Mostra"}
+                  {showSecret ? "Hide" : "Show"}
                 </button>
               </div>
               {showSecret
@@ -123,7 +123,7 @@ export const MfaSetupModal = ({ onClose, onEnabled }: MfaSetupModalProps) => {
             </div>
             <button onClick={() => setStep("verify")}
               className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-3 text-sm font-bold text-primary-foreground active:scale-95">
-              Ho scansionato → Continua
+              I've scanned → Continue
             </button>
           </div>
         )}
@@ -131,7 +131,7 @@ export const MfaSetupModal = ({ onClose, onEnabled }: MfaSetupModalProps) => {
         {step === "verify" && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground text-center">
-              Inserisci il codice a 6 cifre dall'app per confermare.
+              Enter the 6-digit code from the app to confirm.
             </p>
             <input type="text" inputMode="numeric" maxLength={6} placeholder="000000"
               value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, "")); setError(""); }}
@@ -145,10 +145,10 @@ export const MfaSetupModal = ({ onClose, onEnabled }: MfaSetupModalProps) => {
             </AnimatePresence>
             <button onClick={handleConfirm} disabled={loading || code.length !== 6}
               className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-3 text-sm font-bold text-primary-foreground active:scale-95 disabled:opacity-50">
-              {loading ? "Verifica…" : "Attiva 2FA"}
+              {loading ? "Verifying…" : "Activate 2FA"}
             </button>
             <button onClick={() => setStep("qr")} className="text-sm text-muted-foreground underline w-full text-center">
-              ← Torna al QR code
+              ← Back to QR code
             </button>
           </div>
         )}
@@ -156,13 +156,13 @@ export const MfaSetupModal = ({ onClose, onEnabled }: MfaSetupModalProps) => {
         {step === "done" && (
           <div className="space-y-4 text-center">
             <div className="text-5xl">🎉</div>
-            <p className="text-lg font-bold text-foreground">2FA attivato!</p>
+            <p className="text-lg font-bold text-foreground">2FA activated!</p>
             <p className="text-sm text-muted-foreground">
-              Al prossimo accesso ti verrà chiesto il codice dall'app autenticatore.
+              The next time you sign in, you'll be asked for the code from your authenticator app.
             </p>
             <button onClick={() => { onEnabled(); onClose(); }}
               className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-3 text-sm font-bold text-primary-foreground active:scale-95">
-              Perfetto!
+              Got it!
             </button>
           </div>
         )}

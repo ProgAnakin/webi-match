@@ -41,7 +41,7 @@ export const LoginForm = ({ onLoginSuccess, onMfaRequired }: LoginFormProps) => 
     if (limit?.locked) {
       setLockedSeconds(limit.locked_seconds);
       setLoading(false);
-      setError("Troppi tentativi. Riprova tra qualche minuto.");
+      setError("Too many attempts. Try again in a few minutes.");
       return;
     }
 
@@ -56,7 +56,7 @@ export const LoginForm = ({ onLoginSuccess, onMfaRequired }: LoginFormProps) => 
 
     setLoading(false);
     if (authError) {
-      setError("Credenziali non valide.");
+      setError("Invalid credentials.");
     } else {
       const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (aal?.nextLevel === "aal2" && aal?.currentLevel !== "aal2") {
@@ -72,8 +72,8 @@ export const LoginForm = ({ onLoginSuccess, onMfaRequired }: LoginFormProps) => 
       <motion.div className="w-full max-w-sm space-y-5 text-center"
         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
         <div className="text-5xl">📊</div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard Analytics</h1>
-        <p className="text-sm text-muted-foreground">Accesso riservato</p>
+        <h1 className="text-2xl font-bold text-foreground">Analytics Dashboard</h1>
+        <p className="text-sm text-muted-foreground">Restricted access</p>
         <div className="space-y-3 text-left">
           <input type="email" placeholder="Email" value={email} autoComplete="email"
             onChange={(e) => { setEmail(e.target.value); setError(""); }}
@@ -93,7 +93,7 @@ export const LoginForm = ({ onLoginSuccess, onMfaRequired }: LoginFormProps) => 
         <button onClick={handleLogin}
           disabled={loading || isLocked || !email.trim() || !password.trim()}
           className="gradient-primary shadow-glow w-full rounded-2xl px-8 py-4 text-lg font-bold text-primary-foreground active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-          {loading ? "Accesso in corso…" : isLocked ? `Bloccato — ${lockedSeconds}s` : "Accedi"}
+          {loading ? "Signing in…" : isLocked ? `Locked — ${lockedSeconds}s` : "Sign in"}
         </button>
       </motion.div>
     </div>
