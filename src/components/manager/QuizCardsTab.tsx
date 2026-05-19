@@ -39,16 +39,16 @@ function tagToSlug(tag: string): string {
 // ── Card preview ──────────────────────────────────────────────────────────────
 function CardPreview({ form, totalCards }: { form: CardForm; totalCards: number }) {
   const cardBg = "linear-gradient(158deg, hsl(228,52%,20%) 0%, hsl(228,68%,11%) 100%)";
-  const text = form.text_it.trim() || "Testo della domanda…";
+  const text = form.text_it.trim() || "Question text…";
   const emoji = form.emoji.trim() || "❓";
-  const tag = tagToSlug(form.tag) || "categoria";
+  const tag = tagToSlug(form.tag) || "category";
   const step = String(1).padStart(2, "0");
   const total = String(Math.max(totalCards, 1)).padStart(2, "0");
 
   return (
     <div className="col-span-2 mt-1">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-        Anteprima carta
+        Card preview
       </p>
       <div
         className="relative mx-auto w-full max-w-[220px] rounded-[18px] overflow-hidden select-none"
@@ -154,7 +154,7 @@ function SortableCard({
         {...attributes}
         {...listeners}
         className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground touch-none"
-        title="Trascina per riordinare"
+        title="Drag to reorder"
       >
         <GripVertical className="h-4 w-4" />
       </button>
@@ -185,7 +185,7 @@ function SortableCard({
               return (
                 <span
                   key={lang}
-                  title={`${lang.toUpperCase()}: ${hasTranslation ? "✓" : "usa italiano"}`}
+                  title={`${lang.toUpperCase()}: ${hasTranslation ? "✓" : "uses Italian"}`}
                   className={`text-[8px] font-bold rounded-sm px-0.5 ${hasTranslation ? "text-green-400 bg-green-400/10" : "text-muted-foreground/30 bg-muted/20"}`}
                 >
                   {lang.toUpperCase()}
@@ -202,14 +202,14 @@ function SortableCard({
         <button
           onClick={() => onEdit(card)}
           className="rounded-xl p-2 text-muted-foreground hover:text-foreground active:scale-95"
-          title="Modifica"
+          title="Edit"
         >
           <Pencil className="h-3.5 w-3.5" />
         </button>
         <button
           onClick={() => onToggle(card)}
           disabled={togglingId === card.id}
-          title={card.active ? "Nascondi carta" : "Attiva carta"}
+          title={card.active ? "Hide card" : "Activate card"}
           className={`rounded-xl p-2 transition-colors active:scale-95 ${
             card.active ? "bg-green-500/10 text-green-400" : "bg-muted/40 text-muted-foreground"
           }`}
@@ -286,12 +286,12 @@ export function QuizCardsTab() {
   };
 
   const saveCard = async () => {
-    if (!form.emoji.trim()) { setFormError("L'emoji è obbligatoria."); return; }
-    if (!form.tag.trim()) { setFormError("Il tag categoria è obbligatorio."); return; }
-    if (!form.text_it.trim()) { setFormError("Il testo in italiano è obbligatorio."); return; }
+    if (!form.emoji.trim()) { setFormError("Emoji is required."); return; }
+    if (!form.tag.trim()) { setFormError("Category tag is required."); return; }
+    if (!form.text_it.trim()) { setFormError("Italian text is required."); return; }
 
     const slug = tagToSlug(form.tag);
-    if (!slug) { setFormError("Tag non valido — usa solo lettere e trattini."); return; }
+    if (!slug) { setFormError("Invalid tag — use only letters and hyphens."); return; }
 
     setSaving(true);
     setFormError(null);
@@ -311,7 +311,7 @@ export function QuizCardsTab() {
       const { error } = await supabase.from("quiz_cards").update(payload).eq("id", editingId);
       if (error) { setFormError(error.message); setSaving(false); return; }
       logAudit("quiz_card_edit", editingId, slug);
-      toast.success("Carta aggiornata.");
+      toast.success("Card updated.");
     } else {
       const maxOrder = cards.reduce((m, c) => Math.max(m, c.sort_order), 0);
       const { data: inserted, error } = await supabase
@@ -321,7 +321,7 @@ export function QuizCardsTab() {
         .single();
       if (error) { setFormError(error.message); setSaving(false); return; }
       logAudit("quiz_card_add", inserted?.id ?? null, slug, true);
-      toast.success("Carta aggiunta al quiz.");
+      toast.success("Card added to quiz.");
     }
 
     await fetchCards();
@@ -381,7 +381,7 @@ export function QuizCardsTab() {
       )
     );
     setCards((prev) => prev.map((c) => selected.has(c.id) ? { ...c, active: targetActive } : c));
-    toast.success(`${selected.size} carte ${targetActive ? "attivate" : "disattivate"}.`);
+    toast.success(`${selected.size} cards ${targetActive ? "activated" : "deactivated"}.`);
     setSelected(new Set());
     setBulkWorking(false);
   };
@@ -394,22 +394,22 @@ export function QuizCardsTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-foreground">Carte del Quiz</h2>
+          <h2 className="text-sm font-semibold text-foreground">Quiz Cards</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {loading ? "Caricamento…" : `${activeCount} di ${cards.length} carte attive nel quiz`}
+            {loading ? "Loading…" : `${activeCount} of ${cards.length} cards active in the quiz`}
           </p>
         </div>
         <button
           onClick={openAddForm}
           className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground active:scale-95"
         >
-          <Plus className="h-3.5 w-3.5" /> Nuova carta
+          <Plus className="h-3.5 w-3.5" /> New card
         </button>
       </div>
 
       {/* Info banner */}
       <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-xs text-muted-foreground leading-relaxed">
-        💡 Trascina le carte per riordinarle. Usa le checkbox per azioni in blocco. Le carte attive compaiono nel quiz nell'ordine indicato.
+        💡 Drag cards to reorder them. Use the checkboxes for bulk actions. Active cards appear in the quiz in the order shown.
       </div>
 
       {/* Add / Edit form */}
@@ -421,7 +421,7 @@ export function QuizCardsTab() {
           >
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground">
-                {editingId !== null ? "Modifica carta" : "Nuova carta"}
+                {editingId !== null ? "Edit card" : "New card"}
               </h3>
               <button onClick={cancelForm} className="text-muted-foreground active:scale-95">
                 <X className="h-4 w-4" />
@@ -430,7 +430,7 @@ export function QuizCardsTab() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-medium text-muted-foreground mb-1">Emoji centrale *</label>
+                <label className="block text-[10px] font-medium text-muted-foreground mb-1">Center emoji *</label>
                 <input
                   type="text"
                   value={form.emoji}
@@ -443,29 +443,29 @@ export function QuizCardsTab() {
 
               <div>
                 <label className="block text-[10px] font-medium text-muted-foreground mb-1">
-                  Tag categoria * <span className="font-normal">(slug, es. "coffee")</span>
+                  Category tag * <span className="font-normal">(slug, e.g. "coffee")</span>
                 </label>
                 <input
                   type="text"
                   value={form.tag}
                   onChange={(e) => setForm((f) => ({ ...f, tag: e.target.value }))}
-                  placeholder="es. coffee"
+                  placeholder="e.g. coffee"
                   className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
                 />
                 <p className="mt-1 text-[10px] text-muted-foreground/60">
-                  Il tag apparirà automaticamente nel modulo prodotti.
+                  The tag will appear automatically in the products form.
                 </p>
               </div>
 
               <div className="col-span-2">
                 <label className="block text-[10px] font-medium text-muted-foreground mb-1">
-                  Testo domanda — Italiano *
+                  Question text — Italian *
                 </label>
                 <textarea
                   value={form.text_it}
                   onChange={(e) => setForm((f) => ({ ...f, text_it: e.target.value }))}
                   rows={2}
-                  placeholder="Es. Ami il caffè di qualità anche in viaggio?"
+                  placeholder="E.g. Do you love quality coffee even when travelling?"
                   className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                 />
               </div>
@@ -475,7 +475,7 @@ export function QuizCardsTab() {
               <div className="col-span-2 rounded-xl border border-border/50 bg-muted/10 p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Traduzioni (opzionali)
+                    Translations (optional)
                   </span>
                   {/*
                     TODO: wire to a translation Edge Function.
@@ -491,11 +491,11 @@ export function QuizCardsTab() {
                   <button
                     type="button"
                     disabled
-                    title="Traduzione automatica non ancora disponibile — vedi TODO nel componente"
+                    title="Automatic translation not yet available — see TODO in the component"
                     className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/30 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground/40 cursor-not-allowed opacity-50"
                   >
                     <Globe className="h-3 w-3" />
-                    🌐 Traduci
+                    🌐 Translate
                   </button>
                 </div>
 
@@ -503,13 +503,13 @@ export function QuizCardsTab() {
                   className="rounded-lg bg-amber-500/8 border border-amber-500/20 px-3 py-2 text-[10px] text-amber-400/70 leading-relaxed cursor-pointer"
                   onClick={() => setShowTranslateInfo((v) => !v)}
                 >
-                  <span className="font-semibold">ℹ️ Traduzione automatica</span>
+                  <span className="font-semibold">ℹ️ Automatic translation</span>
                   {showTranslateInfo ? (
                     <p className="mt-1">
-                      La traduzione automatica sarà disponibile in futuro. Puoi inserire le traduzioni manualmente.
+                      Automatic translation will be available in the future. You can enter translations manually.
                     </p>
                   ) : (
-                    <span className="ml-1 opacity-60">— tappa per i dettagli</span>
+                    <span className="ml-1 opacity-60">— tap for details</span>
                   )}
                 </div>
 
@@ -525,7 +525,7 @@ export function QuizCardsTab() {
                       type="text"
                       value={form[key]}
                       onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                      placeholder="Lascia vuoto → usa il testo italiano"
+                      placeholder="Leave empty → uses Italian text"
                       className="w-full rounded-xl border border-border/50 bg-muted/20 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/35 focus:outline-none focus:ring-1 focus:ring-primary/50"
                     />
                   </div>
@@ -542,14 +542,14 @@ export function QuizCardsTab() {
                 onClick={cancelForm}
                 className="rounded-xl border border-border bg-muted/20 px-4 py-2 text-xs text-muted-foreground active:scale-95"
               >
-                Annulla
+                Cancel
               </button>
               <button
                 onClick={saveCard}
                 disabled={saving}
                 className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground active:scale-95 disabled:opacity-60"
               >
-                {saving ? "Salvataggio…" : editingId !== null ? "Aggiorna" : "Aggiungi carta"}
+                {saving ? "Saving…" : editingId !== null ? "Update" : "Add card"}
               </button>
             </div>
           </motion.div>
@@ -562,14 +562,14 @@ export function QuizCardsTab() {
       ) : loadError ? (
         <div className="rounded-2xl border border-destructive/30 bg-destructive/10 py-12 text-center">
           <p className="text-2xl mb-2">⚠️</p>
-          <p className="text-sm font-medium text-destructive">Errore nel caricamento delle carte</p>
+          <p className="text-sm font-medium text-destructive">Error loading cards</p>
           <p className="text-xs text-muted-foreground mt-1">{loadError}</p>
         </div>
       ) : cards.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-muted/10 py-12 text-center">
           <p className="text-2xl mb-2">🃏</p>
-          <p className="text-sm font-medium text-foreground">Nessuna carta trovata</p>
-          <p className="text-xs text-muted-foreground mt-1">Clicca "Nuova carta" per crearne una.</p>
+          <p className="text-sm font-medium text-foreground">No cards found</p>
+          <p className="text-xs text-muted-foreground mt-1">Click "New card" to create one.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -583,7 +583,7 @@ export function QuizCardsTab() {
               className="h-4 w-4 cursor-pointer"
             />
             <label htmlFor="select-all-cards" className="text-xs text-muted-foreground cursor-pointer select-none">
-              Seleziona tutti ({cards.length})
+              Select all ({cards.length})
             </label>
             <AnimatePresence>
               {selected.size > 0 && (
@@ -591,26 +591,26 @@ export function QuizCardsTab() {
                   initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}
                   className="flex items-center gap-2 ml-2"
                 >
-                  <span className="text-xs font-semibold text-primary">{selected.size} selezionate</span>
+                  <span className="text-xs font-semibold text-primary">{selected.size} selected</span>
                   <button
                     onClick={() => bulkToggle(true)}
                     disabled={bulkWorking}
                     className="flex items-center gap-1 rounded-full border border-green-500/40 bg-green-500/10 px-2.5 py-1 text-[10px] font-semibold text-green-400 active:scale-95 disabled:opacity-50"
                   >
-                    <Eye className="h-3 w-3" /> Attiva
+                    <Eye className="h-3 w-3" /> Activate
                   </button>
                   <button
                     onClick={() => bulkToggle(false)}
                     disabled={bulkWorking}
                     className="flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-400 active:scale-95 disabled:opacity-50"
                   >
-                    <EyeOff className="h-3 w-3" /> Disattiva
+                    <EyeOff className="h-3 w-3" /> Deactivate
                   </button>
                   <button
                     onClick={() => setSelected(new Set())}
                     className="text-[10px] text-muted-foreground hover:text-foreground"
                   >
-                    Annulla
+                    Cancel
                   </button>
                 </motion.div>
               )}
@@ -642,7 +642,7 @@ export function QuizCardsTab() {
           onClick={fetchCards}
           className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground active:scale-95"
         >
-          <RotateCcw className="h-3 w-3" /> Aggiorna carte
+          <RotateCcw className="h-3 w-3" /> Refresh cards
         </button>
       </div>
     </div>

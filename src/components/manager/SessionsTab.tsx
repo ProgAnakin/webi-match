@@ -60,10 +60,10 @@ function hoursUntilExpiry(s: Session): number | null {
 }
 
 const STATUS_META = {
-  inviata:     { label: "INVIATA",         icon: Mail,        cls: "border-green-500/40 bg-green-500/10 text-green-400"       },
-  in_elaborazione: { label: "IN ELABORAZIONE", icon: Clock,       cls: "border-amber-500/40 bg-amber-500/10 text-amber-400"       },
-  senza_email:   { label: "SENZA EMAIL",     icon: AlertCircle, cls: "border-orange-500/40 bg-orange-500/10 text-orange-400"    },
-  fallita:      { label: "FALLITA",         icon: XCircle,     cls: "border-destructive/40 bg-destructive/10 text-destructive" },
+  inviata:     { label: "SENT",            icon: Mail,        cls: "border-green-500/40 bg-green-500/10 text-green-400"       },
+  in_elaborazione: { label: "PROCESSING",      icon: Clock,       cls: "border-amber-500/40 bg-amber-500/10 text-amber-400"       },
+  senza_email:   { label: "NO EMAIL",        icon: AlertCircle, cls: "border-orange-500/40 bg-orange-500/10 text-orange-400"    },
+  fallita:      { label: "FAILED",          icon: XCircle,     cls: "border-destructive/40 bg-destructive/10 text-destructive" },
 };
 
 interface SessionsTabProps {
@@ -206,7 +206,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
       await navigator.clipboard.writeText(code);
       setCopiedCode(code);
       setTimeout(() => setCopiedCode(null), 2000);
-      toast.success("Codice copiato!");
+      toast.success("Code copied!");
     } catch { /* clipboard unavailable */ }
   };
 
@@ -222,11 +222,11 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             : row
         )
       );
-      toast.success("Codice segnato come usato.");
+      toast.success("Code marked as used.");
     } else if (!error && (rowsUpdated as number) === 0) {
-      toast.error("0 righe aggiornate — controlla la funzione SQL.");
+      toast.error("0 rows updated — check the SQL function.");
     } else if (error) {
-      toast.error(`Errore: ${error.message}`);
+      toast.error(`Error: ${error.message}`);
     }
     setRedeemingId(null);
   };
@@ -241,13 +241,13 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     const { data } = await query;
     const rows = (data ?? []) as Session[];
 
-    const headers = ["Nome", "Cognome", "Email", "Prodotto", "Match %", "Store", "Data", "Codice Sconto", "Stato Codice", "Usato Il"];
+    const headers = ["First Name", "Last Name", "Email", "Product", "Match %", "Store", "Date", "Discount Code", "Code Status", "Used At"];
     const csvRows = rows.map((s) => [
       s.nome ?? "", s.cognome ?? "", s.email,
       productName(s.matched_product_id), s.match_percent,
       storeName(s.store_id), formatDate(s.created_at),
       s.discount_code ?? "",
-      s.code_redeemed ? "usato" : isCodeExpired(s) ? "scaduto" : s.discount_code ? "valido" : "sem codice",
+      s.code_redeemed ? "used" : isCodeExpired(s) ? "expired" : s.discount_code ? "valid" : "no code",
       s.code_redeemed_at ? formatDate(s.code_redeemed_at) : "",
     ]);
 
@@ -259,12 +259,12 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `webi-match-sessioni-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `webi-match-sessions-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success(`${rows.length} sessioni esportate in CSV.`);
+    toast.success(`${rows.length} sessions exported to CSV.`);
     setExporting(false);
   }, [storeId, isGlobal]);
 
@@ -286,7 +286,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
     setPurging(false);
     setShowPurgeModal(false);
     const deleted = data ?? 0;
-    toast.success(`${deleted} sessioni eliminate con successo.`);
+    toast.success(`${deleted} sessions deleted successfully.`);
     fetchSessions();
     fetchKpiData();
     fetchNegado();
@@ -356,28 +356,28 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
       >
         <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4 text-center">
           <p className="text-2xl font-bold text-green-400">{counts.inviata}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Email inviate</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Emails sent</p>
         </div>
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
           <p className="text-2xl font-bold text-amber-400">{counts.in_elaborazione}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">In elaborazione</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Processing</p>
         </div>
         <div className="rounded-2xl border border-orange-500/20 bg-orange-500/5 p-4 text-center">
           <p className="text-2xl font-bold text-orange-400">{counts.senza_email}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Senza email</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">No email</p>
         </div>
         <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-center">
           <p className="text-2xl font-bold text-destructive">{counts.fallita}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Fallite</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Failed</p>
         </div>
         <div className="rounded-2xl border border-border bg-muted/20 p-4 text-center">
           <p className="text-2xl font-bold text-foreground">{negadoCount}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Match negato</p>
-          <p className="mt-0.5 text-[9px] text-foreground/40">({localNegado} da lista)</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">No match</p>
+          <p className="mt-0.5 text-[9px] text-foreground/40">({localNegado} from list)</p>
         </div>
         <div className={`rounded-2xl border p-4 text-center ${redemptionBorderBg}`}>
           <p className={`text-2xl font-bold ${redemptionColor}`}>{redemptionUsed}/{redemptionTotal}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Codici usati</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Codes used</p>
           <p className={`mt-0.5 text-[9px] font-semibold ${redemptionColor}`}>{redemptionPct}%</p>
         </div>
       </motion.div>
@@ -387,7 +387,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
           className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-xs text-muted-foreground"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         >
-          💡 <strong className="text-foreground">{expiredReusable}</strong> codici scaduti (più di 24h) possono essere riutilizzati manualmente per nuovi clienti.
+          💡 <strong className="text-foreground">{expiredReusable}</strong> expired codes (older than 24h) can be reused manually for new customers.
         </motion.div>
       )}
 
@@ -398,7 +398,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <input
               type="text"
-              placeholder="Cerca per email, nome o codice sconto…"
+              placeholder="Search by email, name or discount code…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-xl border border-border bg-card pl-9 pr-9 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
@@ -411,7 +411,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
           </div>
           <button
             onClick={() => setShowAdvanced((v) => !v)}
-            title="Filtri avanzati"
+            title="Advanced filters"
             className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
               showAdvanced || hasAdvancedFilter
                 ? "border-primary/40 bg-primary/10 text-primary"
@@ -419,7 +419,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             }`}
           >
             <Filter className="h-3.5 w-3.5" />
-            {hasAdvancedFilter ? "Filtri attivi" : "Filtri"}
+            {hasAdvancedFilter ? "Filters active" : "Filters"}
           </button>
         </div>
 
@@ -433,30 +433,30 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
               <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-                    <CalendarDays className="h-3 w-3" /> Filtri avanzati
+                    <CalendarDays className="h-3 w-3" /> Advanced filters
                   </p>
                   {hasAdvancedFilter && (
                     <button onClick={clearAdvanced} className="text-[10px] text-primary hover:underline">
-                      Azzera filtri
+                      Clear filters
                     </button>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] text-muted-foreground mb-1">Data da</label>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Date from</label>
                     <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)}
                       className="w-full rounded-lg border border-border bg-muted/30 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-muted-foreground mb-1">Data a</label>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Date to</label>
                     <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)}
                       className="w-full rounded-lg border border-border bg-muted/30 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10px] text-muted-foreground mb-1">Prodotto</label>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Product</label>
                     <select value={filterProductId} onChange={(e) => setFilterProductId(e.target.value)}
                       className="w-full rounded-lg border border-border bg-muted/30 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
-                      <option value="">Tutti i prodotti</option>
+                      <option value="">All products</option>
                       {allProducts.map((p) => (
                         <option key={p.id} value={p.id}>{p.name}</option>
                       ))}
@@ -497,11 +497,11 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                 : "bg-muted text-muted-foreground"
             }`}
           >
-            {f === "all"         ? `Tutti (${counts.all})`
-              : f === "inviata"     ? `Inviata (${counts.inviata})`
-              : f === "in_elaborazione" ? `Elaborazione (${counts.in_elaborazione})`
-              : f === "senza_email"   ? `Senza email (${counts.senza_email})`
-              :                       `Fallita (${counts.fallita})`}
+            {f === "all"         ? `All (${counts.all})`
+              : f === "inviata"     ? `Sent (${counts.inviata})`
+              : f === "in_elaborazione" ? `Processing (${counts.in_elaborazione})`
+              : f === "senza_email"   ? `No email (${counts.senza_email})`
+              :                       `Failed (${counts.fallita})`}
           </button>
         ))}
 
@@ -510,24 +510,24 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             onClick={exportToCSV}
             disabled={exporting}
             className="flex min-h-[44px] items-center gap-1 rounded-xl border border-border bg-card px-3 text-xs text-foreground/70 hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-400 active:scale-95 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            title="Esporta tutte le sessioni in CSV"
+            title="Export all sessions to CSV"
           >
-            <Download className="h-3.5 w-3.5" /> {exporting ? "…" : "Esporta CSV"}
+            <Download className="h-3.5 w-3.5" /> {exporting ? "…" : "Export CSV"}
           </button>
 
           <button
             onClick={openPurgeModal}
             className="flex min-h-[44px] items-center gap-1 rounded-xl border border-border bg-card px-3 text-xs text-foreground/70 hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-95 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            title="Elimina sessioni più vecchie di 7 giorni"
+            title="Delete sessions older than 7 days"
           >
-            <Trash2 className="h-3.5 w-3.5" /> Pulisci (7gg)
+            <Trash2 className="h-3.5 w-3.5" /> Purge (7d)
           </button>
 
           <button
             onClick={() => { fetchSessions(); fetchKpiData(); fetchNegado(); }}
             className="flex min-h-[44px] items-center gap-1 rounded-xl border border-border bg-card px-3 text-xs text-foreground/70 active:scale-95 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <RefreshCw className="h-3.5 w-3.5" /> Aggiorna
+            <RefreshCw className="h-3.5 w-3.5" /> Refresh
           </button>
         </div>
       </div>
@@ -539,20 +539,20 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         <div className="rounded-2xl border border-border bg-muted/20 py-12 text-center">
           <p className="text-2xl mb-2">📭</p>
           <p className="text-sm font-medium text-foreground">
-            {search || hasAdvancedFilter ? "Nessun risultato trovato" : "Nessuna sessione"}
+            {search || hasAdvancedFilter ? "No results found" : "No sessions"}
           </p>
           {(search || hasAdvancedFilter) && (
-            <p className="text-xs text-muted-foreground mt-1">Prova con criteri diversi.</p>
+            <p className="text-xs text-muted-foreground mt-1">Try different criteria.</p>
           )}
         </div>
       ) : (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              {totalCount} sessioni{search ? ` (ricerca: "${search}")` : ""}
-              {hasAdvancedFilter && " · filtri attivi"}
-              {statusFilter !== "all" && ` · filtro: ${statusFilter}`}
-              {totalPages > 1 && ` · pagina ${safePage} di ${totalPages}`}
+              {totalCount} sessions{search ? ` (search: "${search}")` : ""}
+              {hasAdvancedFilter && " · filters active"}
+              {statusFilter !== "all" && ` · filter: ${statusFilter}`}
+              {totalPages > 1 && ` · page ${safePage} of ${totalPages}`}
             </p>
             {totalPages > 1 && (
               <div className="flex items-center gap-1">
@@ -630,21 +630,21 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                             </code>
 
                             {s.code_redeemed ? (
-                              <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold text-green-400 uppercase">usato</span>
+                              <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold text-green-400 uppercase">used</span>
                             ) : expired ? (
-                              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground uppercase">scaduto</span>
+                              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground uppercase">expired</span>
                             ) : expiringSoon ? (
                               <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 text-[9px] font-bold text-amber-400 uppercase">
-                                scade in {hrsLeft}h
+                                expires in {hrsLeft}h
                               </span>
                             ) : (
-                              <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold text-green-400 uppercase">valido</span>
+                              <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold text-green-400 uppercase">valid</span>
                             )}
 
                             <button
                               onClick={() => copyCode(s.discount_code!)}
                               className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-foreground/70 hover:text-foreground active:scale-95 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                              title="Copia codice"
+                              title="Copy code"
                             >
                               {copiedCode === s.discount_code
                                 ? <Check className="h-3.5 w-3.5 text-green-400" />
@@ -657,22 +657,22 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                               onClick={() => markRedeemed(s)}
                               disabled={isRedeeming}
                               className="flex min-h-[32px] items-center gap-1 rounded-lg border border-border bg-muted/30 px-2 py-1 text-[10px] font-semibold text-foreground/70 hover:border-green-500/40 hover:bg-green-500/10 hover:text-green-400 active:scale-95 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                              title="Segna codice come utilizzato dal cliente"
+                              title="Mark code as used by the customer"
                             >
                               <CheckCircle2 className="h-3.5 w-3.5" />
-                              {isRedeeming ? "…" : "Segna come usato"}
+                              {isRedeeming ? "…" : "Mark as used"}
                             </button>
                           )}
 
                           {s.code_redeemed && s.code_redeemed_at && (
                             <p className="text-[9px] text-muted-foreground/50">
-                              Usato il {formatDate(s.code_redeemed_at)}
+                              Used on {formatDate(s.code_redeemed_at)}
                             </p>
                           )}
                         </div>
                       ) : (
                         <span className="flex items-center gap-1 text-[10px] text-muted-foreground/50">
-                          <XCircle className="h-3 w-3" /> Nessun codice
+                          <XCircle className="h-3 w-3" /> No code
                         </span>
                       )}
                     </div>
@@ -689,7 +689,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                 disabled={safePage === 1}
                 className="flex min-h-[44px] items-center gap-1 rounded-xl border border-border bg-card px-3 text-xs text-foreground/70 disabled:opacity-30 active:scale-95 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <ChevronLeft className="h-3.5 w-3.5" /> Precedente
+                <ChevronLeft className="h-3.5 w-3.5" /> Previous
               </button>
               <span className="text-xs text-foreground/70">{safePage} / {totalPages}</span>
               <button
@@ -697,7 +697,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                 disabled={safePage === totalPages}
                 className="flex min-h-[44px] items-center gap-1 rounded-xl border border-border bg-card px-3 text-xs text-foreground/70 disabled:opacity-30 active:scale-95 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                Successiva <ChevronRight className="h-3.5 w-3.5" />
+                Next <ChevronRight className="h-3.5 w-3.5" />
               </button>
             </div>
           )}
@@ -705,7 +705,7 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
       )}
 
       <p className="pb-2 text-center text-xs text-muted-foreground">
-        {totalCount} sessioni totali · 20 per pagina · Codici scadono 24h dopo la creazione · Aggiornamento live ⚡
+        {totalCount} total sessions · 20 per page · Codes expire 24h after creation · Live updates ⚡
       </p>
 
       {/* ── Purge confirmation modal ──────────────────────────────────────── */}
@@ -731,24 +731,24 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                   <Trash2 className="h-5 w-5 text-destructive" />
                 </div>
                 <div>
-                  <p id="purge-modal-title" className="text-sm font-bold text-foreground">Pulizia cronologia</p>
-                  <p className="text-xs text-foreground/70">Sessioni più vecchie di 7 giorni</p>
+                  <p id="purge-modal-title" className="text-sm font-bold text-foreground">Purge history</p>
+                  <p className="text-xs text-foreground/70">Sessions older than 7 days</p>
                 </div>
               </div>
 
               <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-400">
-                <p className="font-semibold mb-1">⚠ Azione irreversibile</p>
+                <p className="font-semibold mb-1">⚠ Irreversible action</p>
                 <p>
                   {purgePreviewCount === null
-                    ? "Calcolo sessioni da eliminare…"
+                    ? "Calculating sessions to delete…"
                     : purgePreviewCount === 0
-                    ? "Nessuna sessione da eliminare (tutte entro 7 giorni)."
-                    : `${purgePreviewCount} sessioni verranno eliminate definitivamente.`}
+                    ? "No sessions to delete (all within 7 days)."
+                    : `${purgePreviewCount} sessions will be permanently deleted.`}
                 </p>
               </div>
 
               <p className="mb-5 text-xs text-foreground/70">
-                Prima di procedere, usa il pulsante <strong className="text-foreground">Esporta CSV</strong> per salvare tutti i dati clienti.
+                Before proceeding, use the <strong className="text-foreground">Export CSV</strong> button to save all customer data.
               </p>
 
               <div className="flex gap-2">
@@ -757,14 +757,14 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                   disabled={purging}
                   className="flex-1 min-h-[44px] rounded-xl border border-border bg-muted/30 py-2.5 text-sm font-semibold text-foreground/70 hover:text-foreground active:scale-95 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  Annulla
+                  Cancel
                 </button>
                 <button
                   onClick={executePurge}
                   disabled={purging || purgePreviewCount === 0}
                   className="flex-1 min-h-[44px] rounded-xl border border-destructive/40 bg-destructive/10 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/20 active:scale-95 transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
                 >
-                  {purging ? "Eliminando…" : "Elimina"}
+                  {purging ? "Deleting…" : "Delete"}
                 </button>
               </div>
             </motion.div>

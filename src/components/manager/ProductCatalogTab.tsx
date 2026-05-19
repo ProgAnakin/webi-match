@@ -178,11 +178,11 @@ export function ProductCatalogTab() {
 
   const uploadImage = async (rawFile: File) => {
     if (rawFile.size > 5 * 1024 * 1024) {
-      setFormError("Immagine troppo grande — massimo 5 MB.");
+      setFormError("Image too large — maximum 5 MB.");
       return;
     }
     if (!["image/jpeg", "image/png", "image/webp"].includes(rawFile.type)) {
-      setFormError("Formato non supportato — usa JPEG, PNG o WebP.");
+      setFormError("Unsupported format — use JPEG, PNG or WebP.");
       return;
     }
     setUploadingImage(true);
@@ -194,7 +194,7 @@ export function ProductCatalogTab() {
       .from("product-images")
       .upload(path, file, { upsert: true, contentType: "image/jpeg" });
     if (error) {
-      setFormError("Errore upload immagine: " + error.message);
+      setFormError("Image upload error: " + error.message);
       setUploadingImage(false);
       return;
     }
@@ -206,17 +206,17 @@ export function ProductCatalogTab() {
   const saveProduct = async () => {
     const safeName = stripHtml(form.name);
     const safeDesc = stripHtml(form.description);
-    if (!safeName) { setFormError("Il nome è obbligatorio."); return; }
-    if (safeName.length > 60) { setFormError("Nome troppo lungo — massimo 60 caratteri."); return; }
-    if (!form.id.trim()) { setFormError("L'ID prodotto è obbligatorio."); return; }
-    if (!safeDesc) { setFormError("La descrizione è obbligatoria."); return; }
-    if (safeDesc.length > 300) { setFormError("Descrizione troppo lunga — massimo 300 caratteri."); return; }
+    if (!safeName) { setFormError("Name is required."); return; }
+    if (safeName.length > 60) { setFormError("Name too long — maximum 60 characters."); return; }
+    if (!form.id.trim()) { setFormError("Product ID is required."); return; }
+    if (!safeDesc) { setFormError("Description is required."); return; }
+    if (safeDesc.length > 300) { setFormError("Description too long — maximum 300 characters."); return; }
     // Apply sanitized values
     form.name = safeName;
     form.description = safeDesc;
-    if (!form.price.trim() || form.price === "€") { setFormError("Il prezzo è obbligatorio."); return; }
-    if (!/^€?\d+([.,]\d{1,2})?$/.test(form.price.trim())) { setFormError("Formato prezzo non valido (es. €79,00 oppure 79.00)."); return; }
-    if (form.tags.length === 0) { setFormError("Seleziona almeno un tag di corrispondenza."); return; }
+    if (!form.price.trim() || form.price === "€") { setFormError("Price is required."); return; }
+    if (!/^€?\d+([.,]\d{1,2})?$/.test(form.price.trim())) { setFormError("Invalid price format (e.g. €79.00 or 79.00)."); return; }
+    if (form.tags.length === 0) { setFormError("Select at least one matching tag."); return; }
 
     setSaving(true);
     setFormError(null);
@@ -228,14 +228,14 @@ export function ProductCatalogTab() {
       // Check against core products
       const coreCollision = coreProducts.some((p) => p.id === slugId);
       if (coreCollision) {
-        setFormError(`L'ID "${slugId}" è già usato da un prodotto base. Scegli un ID diverso.`);
+        setFormError(`ID "${slugId}" is already used by a base product. Choose a different ID.`);
         setSaving(false);
         return;
       }
       // Check against custom products
       const { data: existing } = await supabase.from("custom_products").select("id").eq("id", slugId).maybeSingle();
       if (existing) {
-        setFormError(`L'ID "${slugId}" esiste già nel catalogo. Scegli un ID diverso.`);
+        setFormError(`ID "${slugId}" already exists in the catalog. Choose a different ID.`);
         setSaving(false);
         return;
       }
@@ -265,7 +265,7 @@ export function ProductCatalogTab() {
       setSaving(false);
       return;
     }
-    toast.success(editingId ? "Prodotto aggiornato." : "Prodotto aggiunto al catalogo.");
+    toast.success(editingId ? "Product updated." : "Product added to catalog.");
     await fetchData();
     cancelForm();
     setSaving(false);
@@ -273,22 +273,22 @@ export function ProductCatalogTab() {
 
   const archiveProduct = async (id: string, archive: boolean) => {
     // Confirm on archive only — restore is a low-risk reversal.
-    if (archive && !window.confirm(`Archiviare il prodotto "${id}"? Sparirà dal quiz in tutte le store.`)) return;
+    if (archive && !window.confirm(`Archive product "${id}"? It will disappear from the quiz in all stores.`)) return;
     setDeletingId(id);
     await supabase
       .from("custom_products")
       .update({ status: archive ? "archived" : "active", updated_at: new Date().toISOString() })
       .eq("id", id);
-    toast.success(archive ? "Prodotto archiviato." : "Prodotto ripristinato.");
+    toast.success(archive ? "Product archived." : "Product restored.");
     await fetchData();
     setDeletingId(null);
   };
 
   const deleteProduct = async (id: string) => {
-    if (!window.confirm(`Eliminare definitivamente il prodotto "${id}"? L'azione è irreversibile.`)) return;
+    if (!window.confirm(`Permanently delete product "${id}"? This action cannot be undone.`)) return;
     setDeletingId(id);
     await supabase.from("custom_products").delete().eq("id", id);
-    toast.success("Prodotto eliminato definitivamente.");
+    toast.success("Product permanently deleted.");
     await fetchData();
     setDeletingId(null);
   };
@@ -298,7 +298,7 @@ export function ProductCatalogTab() {
     const newHidden = !currentlyHidden;
     // Confirm only on hide — the global toggle affects every store, so a
     // misclick is operationally expensive. Showing back is harmless.
-    if (newHidden && !window.confirm(`Nascondere "${productId}" da TUTTE le store? I clienti non lo vedranno più nel quiz.`)) return;
+    if (newHidden && !window.confirm(`Hide "${productId}" from ALL stores? Customers will no longer see it in the quiz.`)) return;
     setTogglingId(productId);
     await supabase.from("product_global_status").upsert({
       product_id: productId,
@@ -316,16 +316,16 @@ export function ProductCatalogTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-foreground">Gestione Catalogo Globale</h2>
+          <h2 className="text-sm font-semibold text-foreground">Global Catalog Management</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Aggiungi nuovi prodotti o nascondi quelli esistenti in tutte le store.
+            Add new products or hide existing ones across all stores.
           </p>
         </div>
         <button
           onClick={openAddForm}
           className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground active:scale-95"
         >
-          <Plus className="h-3.5 w-3.5" /> Aggiungi
+          <Plus className="h-3.5 w-3.5" /> Add
         </button>
       </div>
 
@@ -334,7 +334,7 @@ export function ProductCatalogTab() {
         <div className="rounded-2xl border border-primary/30 bg-card p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground">
-              {editingId ? "Modifica prodotto" : "Nuovo prodotto"}
+              {editingId ? "Edit product" : "New product"}
             </h3>
             <button onClick={cancelForm} className="text-muted-foreground active:scale-95">
               <X className="h-4 w-4" />
@@ -344,12 +344,12 @@ export function ProductCatalogTab() {
           <div className="grid grid-cols-2 gap-3">
             {/* Name */}
             <div className="col-span-2">
-              <label className="block text-[10px] font-medium text-muted-foreground mb-1">Nome *</label>
+              <label className="block text-[10px] font-medium text-muted-foreground mb-1">Name *</label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => handleNameChange(e.target.value)}
-                placeholder="Es. AirPods Pro 3"
+                placeholder="E.g. AirPods Pro 3"
                 className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -357,13 +357,13 @@ export function ProductCatalogTab() {
             {/* ID */}
             <div className="col-span-2">
               <label className="block text-[10px] font-medium text-muted-foreground mb-1">
-                ID prodotto * <span className="font-normal">(auto-generato, modificabile)</span>
+                Product ID * <span className="font-normal">(auto-generated, editable)</span>
               </label>
               <input
                 type="text"
                 value={form.id}
                 onChange={(e) => setForm((f) => ({ ...f, id: e.target.value }))}
-                placeholder="es. airpods-pro-3"
+                placeholder="e.g. airpods-pro-3"
                 disabled={!!editingId}
                 className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
               />
@@ -371,24 +371,24 @@ export function ProductCatalogTab() {
 
             {/* Description */}
             <div className="col-span-2">
-              <label className="block text-[10px] font-medium text-muted-foreground mb-1">Descrizione *</label>
+              <label className="block text-[10px] font-medium text-muted-foreground mb-1">Description *</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 rows={3}
-                placeholder="Descrizione breve do produto…"
+                placeholder="Short product description…"
                 className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
               />
             </div>
 
             {/* Price */}
             <div>
-              <label className="block text-[10px] font-medium text-muted-foreground mb-1">Prezzo *</label>
+              <label className="block text-[10px] font-medium text-muted-foreground mb-1">Price *</label>
               <input
                 type="text"
                 value={form.price}
                 onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-                placeholder="€79,00"
+                placeholder="€79.00"
                 className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -411,7 +411,7 @@ export function ProductCatalogTab() {
 
             {/* Video URL */}
             <div className="col-span-2">
-              <label className="block text-[10px] font-medium text-muted-foreground mb-1">URL Video</label>
+              <label className="block text-[10px] font-medium text-muted-foreground mb-1">Video URL</label>
               <input
                 type="text"
                 value={form.video_url}
@@ -423,7 +423,7 @@ export function ProductCatalogTab() {
 
             {/* Image upload */}
             <div className="col-span-2">
-              <label className="block text-[10px] font-medium text-muted-foreground mb-1">Immagine prodotto</label>
+              <label className="block text-[10px] font-medium text-muted-foreground mb-1">Product image</label>
               <div className="flex items-center gap-3">
                 {form.image_url && (
                   <img
@@ -434,7 +434,7 @@ export function ProductCatalogTab() {
                 )}
                 <label className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground active:scale-95 hover:border-primary/40">
                   <Upload className="h-3.5 w-3.5" />
-                  {uploadingImage ? "Caricamento…" : form.image_url ? "Cambia foto" : "Carica foto"}
+                  {uploadingImage ? "Uploading…" : form.image_url ? "Change photo" : "Upload photo"}
                   <input
                     type="file"
                     accept="image/*"
@@ -444,7 +444,7 @@ export function ProductCatalogTab() {
                   />
                 </label>
                 {!form.id && (
-                  <span className="text-[10px] text-muted-foreground/60">Inserisci prima il nome per generare l'ID</span>
+                  <span className="text-[10px] text-muted-foreground/60">Enter the name first to generate the ID</span>
                 )}
               </div>
             </div>
@@ -452,7 +452,7 @@ export function ProductCatalogTab() {
             {/* Tags */}
             <div className="col-span-2">
               <label className="block text-[10px] font-medium text-muted-foreground mb-2">
-                Tag di corrispondenza * <span className="font-normal">(almeno 1, idealmente 3)</span>
+                Matching tags * <span className="font-normal">(at least 1, ideally 3)</span>
               </label>
               <div className="flex flex-wrap gap-2">
                 {availableTags.map((tag) => (
@@ -474,21 +474,21 @@ export function ProductCatalogTab() {
 
             {/* FAQ */}
             <div className="col-span-2 space-y-3">
-              <label className="block text-[10px] font-medium text-muted-foreground">FAQ (opzionale)</label>
+              <label className="block text-[10px] font-medium text-muted-foreground">FAQ (optional)</label>
               {form.faq.map((entry, i) => (
                 <div key={i} className="grid grid-cols-2 gap-2">
                   <input
                     type="text"
                     value={entry.q}
                     onChange={(e) => updateFaq(i, "q", e.target.value)}
-                    placeholder={`Domanda ${i + 1}`}
+                    placeholder={`Question ${i + 1}`}
                     className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                   <input
                     type="text"
                     value={entry.a}
                     onChange={(e) => updateFaq(i, "a", e.target.value)}
-                    placeholder={`Risposta ${i + 1}`}
+                    placeholder={`Answer ${i + 1}`}
                     className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
@@ -505,14 +505,14 @@ export function ProductCatalogTab() {
               onClick={cancelForm}
               className="rounded-xl border border-border bg-muted/20 px-4 py-2 text-xs text-muted-foreground active:scale-95"
             >
-              Annulla
+              Cancel
             </button>
             <button
               onClick={saveProduct}
               disabled={saving}
               className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground active:scale-95 disabled:opacity-60"
             >
-              {saving ? "Salvataggio…" : editingId ? "Aggiorna" : "Aggiungi al catalogo"}
+              {saving ? "Saving…" : editingId ? "Update" : "Add to catalog"}
             </button>
           </div>
         </div>
@@ -522,9 +522,9 @@ export function ProductCatalogTab() {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Prodotti base ({coreProducts.length})
+            Base products ({coreProducts.length})
           </h3>
-          <span className="text-[10px] text-muted-foreground/60">Disattiva per nasconderli da tutte le store</span>
+          <span className="text-[10px] text-muted-foreground/60">Disable to hide them from all stores</span>
         </div>
         {coreProducts.map((p) => {
           const hidden = globalStatus[p.id] ?? false;
@@ -543,7 +543,7 @@ export function ProductCatalogTab() {
               <button
                 onClick={() => toggleGlobalHidden(p.id)}
                 disabled={togglingId === p.id}
-                title={hidden ? "Mostra in tutte le store" : "Nascondi da tutte le store"}
+                title={hidden ? "Show in all stores" : "Hide from all stores"}
                 className={`shrink-0 rounded-xl p-2 transition-colors active:scale-95 ${
                   hidden
                     ? "bg-muted/40 text-muted-foreground"
@@ -561,15 +561,15 @@ export function ProductCatalogTab() {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Prodotti aggiunti ({customProducts.filter((p) => p.status === "active").length} attivi
-            {customProducts.some((p) => p.status === "archived") && ` · ${customProducts.filter((p) => p.status === "archived").length} archiviati`})
+            Added products ({customProducts.filter((p) => p.status === "active").length} active
+            {customProducts.some((p) => p.status === "archived") && ` · ${customProducts.filter((p) => p.status === "archived").length} archived`})
           </h3>
           {customProducts.some((p) => p.status === "archived") && (
             <button
               onClick={() => setShowArchived((v) => !v)}
               className="text-[10px] text-muted-foreground/70 hover:text-muted-foreground"
             >
-              {showArchived ? "Nascondi archiviati" : "Mostra archiviati"}
+              {showArchived ? "Hide archived" : "Show archived"}
             </button>
           )}
         </div>
@@ -579,8 +579,8 @@ export function ProductCatalogTab() {
         ) : visibleCustom.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-muted/10 py-10 text-center">
             <p className="text-2xl mb-2">📦</p>
-            <p className="text-sm font-medium text-foreground">Nessun prodotto custom</p>
-            <p className="text-xs text-muted-foreground mt-1">Clicca "Aggiungi" per creare il primo.</p>
+            <p className="text-sm font-medium text-foreground">No custom products</p>
+            <p className="text-xs text-muted-foreground mt-1">Click "Add" to create the first one.</p>
           </div>
         ) : (
           visibleCustom.map((p) => {
@@ -609,7 +609,7 @@ export function ProductCatalogTab() {
                     <p className="truncate text-sm font-semibold text-foreground">{p.name}</p>
                     {isArchived && (
                       <span className="shrink-0 rounded-full bg-muted/40 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
-                        Archiviato
+                        Archived
                       </span>
                     )}
                   </div>
@@ -621,7 +621,7 @@ export function ProductCatalogTab() {
                     <button
                       onClick={() => toggleGlobalHidden(p.id)}
                       disabled={togglingId === p.id}
-                      title={hidden ? "Mostra" : "Nascondi"}
+                      title={hidden ? "Show" : "Hide"}
                       className={`rounded-xl p-2 transition-colors active:scale-95 ${
                         hidden ? "bg-muted/40 text-muted-foreground" : "bg-green-500/10 text-green-400"
                       }`}
@@ -642,7 +642,7 @@ export function ProductCatalogTab() {
                   <button
                     onClick={() => archiveProduct(p.id, !isArchived)}
                     disabled={deletingId === p.id}
-                    title={isArchived ? "Ripristina" : "Archivia"}
+                    title={isArchived ? "Restore" : "Archive"}
                     className="rounded-xl p-2 text-muted-foreground hover:text-foreground active:scale-95"
                   >
                     {isArchived ? <RotateCcw className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -652,7 +652,7 @@ export function ProductCatalogTab() {
                     <button
                       onClick={() => deleteProduct(p.id)}
                       disabled={deletingId === p.id}
-                      title="Elimina definitivamente"
+                      title="Delete permanently"
                       className="rounded-xl p-2 text-destructive/70 hover:text-destructive active:scale-95"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -671,7 +671,7 @@ export function ProductCatalogTab() {
           onClick={fetchData}
           className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground active:scale-95"
         >
-          <RotateCcw className="h-3 w-3" /> Aggiorna catalogo
+          <RotateCcw className="h-3 w-3" /> Refresh catalog
         </button>
       </div>
     </div>

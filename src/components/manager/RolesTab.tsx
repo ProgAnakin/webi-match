@@ -66,10 +66,10 @@ export function RolesTab() {
     });
     setSubmitting(false);
     if (rpcErr) {
-      toast.error(`Errore: ${rpcErr.message}`);
+      toast.error(`Error: ${rpcErr.message}`);
       return;
     }
-    toast.success(`Ruolo salvato per ${trimmedEmail}.`);
+    toast.success(`Role saved for ${trimmedEmail}.`);
     setEmailInput("");
     await fetchRoles();
   };
@@ -82,10 +82,10 @@ export function RolesTab() {
     setDeletingId(null);
     setConfirmDeleteId(null);
     if (rpcErr) {
-      toast.error(`Errore: ${rpcErr.message}`);
+      toast.error(`Error: ${rpcErr.message}`);
       return;
     }
-    toast.success("Ruolo rimosso.");
+    toast.success("Role removed.");
     await fetchRoles();
   };
 
@@ -93,10 +93,10 @@ export function RolesTab() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-sm font-semibold text-foreground">Ruoli Staff</h2>
+        <h2 className="text-sm font-semibold text-foreground">Staff Roles</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Gestisci chi accede a <code>/manager</code> e <code>/stats</code>. Ogni utente deve
-          esistere in <em>Supabase Auth → Users</em> prima di poter ricevere un ruolo.
+          Manage who can access <code>/manager</code> and <code>/stats</code>. Each user must
+          exist in <em>Supabase Auth → Users</em> before they can be assigned a role.
         </p>
       </div>
 
@@ -107,12 +107,12 @@ export function RolesTab() {
       >
         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
           <UserPlus className="inline h-3 w-3 mr-1 -mt-0.5" />
-          Aggiungi o aggiorna ruolo
+          Add or update role
         </p>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <label className="text-[10px] font-medium text-muted-foreground">Email utente</label>
+            <label className="text-[10px] font-medium text-muted-foreground">User email</label>
             <input
               type="email"
               required
@@ -124,21 +124,21 @@ export function RolesTab() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-medium text-muted-foreground">Ruolo</label>
+            <label className="text-[10px] font-medium text-muted-foreground">Role</label>
             <select
               value={roleInput}
               onChange={(e) => setRoleInput(e.target.value as RoleType)}
               className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[44px]"
             >
-              <option value="consulente_responsabile">Consulente responsabile (1 store)</option>
-              <option value="manager">Manager (tutti gli store)</option>
+              <option value="consulente_responsabile">Store consultant (1 store)</option>
+              <option value="manager">Manager (all stores)</option>
             </select>
           </div>
         </div>
 
         {roleInput === "consulente_responsabile" && (
           <div className="space-y-1">
-            <label className="text-[10px] font-medium text-muted-foreground">Store assegnato</label>
+            <label className="text-[10px] font-medium text-muted-foreground">Assigned store</label>
             <select
               value={storeInput}
               onChange={(e) => setStoreInput(e.target.value)}
