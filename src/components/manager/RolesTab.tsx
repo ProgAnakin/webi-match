@@ -13,7 +13,13 @@ interface RoleRow {
   created_at: string;
 }
 
-type RoleType = "manager" | "consulente_responsabile";
+type RoleType = "manager" | "consulente_responsabile" | "consulente";
+
+const ROLE_LABEL: Record<string, string> = {
+  manager: "Manager",
+  consulente_responsabile: "Store consultant",
+  consulente: "Consultant",
+};
 
 /**
  * /manager → Gestione → Ruoli.
@@ -62,7 +68,9 @@ export function RolesTab() {
     const { error: rpcErr } = await supabase.rpc("upsert_store_role_admin", {
       p_user_email: trimmedEmail,
       p_role: roleInput,
-      p_store_id: roleInput === "manager" ? null : storeInput,
+      // Only a store consultant is pinned to a store; manager and the
+      // training-only consultant are global.
+      p_store_id: roleInput === "consulente_responsabile" ? storeInput : null,
     });
     setSubmitting(false);
     if (rpcErr) {
@@ -95,8 +103,9 @@ export function RolesTab() {
       <div>
         <h2 className="text-sm font-semibold text-foreground">Staff Roles</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Manage who can access <code>/manager</code> and <code>/stats</code>. Each user must
-          exist in <em>Supabase Auth → Users</em> before they can be assigned a role.
+          Manage who can access <code>/manager</code>, <code>/stats</code> and{" "}
+          <code>/consulente</code>. Each user must exist in{" "}
+          <em>Supabase Auth → Users</em> before they can be assigned a role.
         </p>
       </div>
 
@@ -130,6 +139,7 @@ export function RolesTab() {
               onChange={(e) => setRoleInput(e.target.value as RoleType)}
               className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[44px]"
             >
+              <option value="consulente">Consultant (/consulente training only)</option>
               <option value="consulente_responsabile">Store consultant (1 store)</option>
               <option value="manager">Manager (all stores)</option>
             </select>
@@ -207,9 +217,11 @@ export function RolesTab() {
                     <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
                       r.role === "manager"
                         ? "bg-primary/15 text-primary border border-primary/30"
+                        : r.role === "consulente"
+                        ? "bg-sky-500/15 text-sky-400 border border-sky-500/30"
                         : "bg-blue-500/15 text-blue-400 border border-blue-500/30"
                     }`}>
-                      {r.role === "manager" ? "Manager" : "Consultant"}
+                      {ROLE_LABEL[r.role] ?? r.role}
                     </span>
                     {storeName && <span className="ml-2">📍 {storeName}</span>}
                   </p>
