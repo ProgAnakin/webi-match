@@ -1,22 +1,15 @@
 // Staff emails that bypass the 1-hour-per-address participation cooldown.
 //
-// ⚠ Two-sided list — MUST be kept in sync with the Supabase Edge Function
-// secret `WHITELIST_EMAILS` on `on-session-created`. The client-side list
-// only affects the UI (skips the cooldown screen so staff can demo back-to-back);
-// the actual anti-abuse rate limit is enforced server-side using
-// `WHITELIST_EMAILS`. If you add a staff email here without also updating the
-// secret, the kiosk will let them through but the Edge Function will still
-// rate-limit their emails.
+// The client-side list is cosmetic only — it skips the cooldown screen so
+// staff can demo the kiosk back-to-back. The real anti-abuse rate limit is
+// enforced server-side by the Edge Function secret `WHITELIST_EMAILS` on
+// `on-session-created`.
 //
-// To update:
-//   1. Edit this file (lowercase, trim whitespace).
-//   2. Supabase Dashboard → Edge Functions → on-session-created → Secrets →
-//      WHITELIST_EMAILS = "email1@x.com,email2@y.com".
-//   3. Redeploy the Edge Function so the secret is picked up.
-//
-// Long-term: migrate this to a `staff_emails` table with RLS so it can be
-// managed through the manager dashboard.
-export const COOLDOWN_BYPASS_EMAILS = new Set([
-  "costanzo.annichini@gmail.com",
-  "costatocb@gmail.com",
-]);
+// Provided via the VITE_COOLDOWN_BYPASS_EMAILS env var (comma-separated) so
+// personal addresses are never committed to source control or the public
+// bundle. Keep it in sync with the WHITELIST_EMAILS Edge Function secret.
+const raw = (import.meta.env.VITE_COOLDOWN_BYPASS_EMAILS as string | undefined) ?? "";
+
+export const COOLDOWN_BYPASS_EMAILS = new Set(
+  raw.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean),
+);

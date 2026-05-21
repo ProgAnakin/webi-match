@@ -2,7 +2,7 @@
 //
 // PRIMARY path  → checks the STAFF_PIN secret directly (no DB required).
 //   Setup:  Supabase Dashboard → Edge Functions → verify-pin → Secrets
-//           Add secret  STAFF_PIN = 0123
+//           Add secret  STAFF_PIN = <your-pin>
 //
 // FALLBACK path → bcrypt comparison against app_config.staff_pin_hash in the DB.
 //   Used automatically when STAFF_PIN secret is not set.

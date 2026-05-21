@@ -169,11 +169,11 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 - **verify-pin Edge Function rewrite** — primary check reads `STAFF_PIN` Supabase secret directly (no DB round-trip); constant-time comparison; 5-failure / 2-min IP lockout in-memory
-- **Migration `20260507000004`** — idempotently seeds staff PIN hash to "0123" and clears lockouts
+- **Migration `20260507000004`** — sets up the `app_config` staff-PIN storage table and RLS
 - **`.env.example`** — documented `STAFF_PIN` as required secret with setup instructions
 
 ### Fixed
-- PIN "0123" consistently failing for `/manager` and `/stats` — root cause was unpopulated `staff_pin_hash` in `app_config`
+- Staff PIN consistently failing for `/manager` and `/stats` — root cause was an unpopulated `staff_pin_hash` in `app_config`
 
 ---
 

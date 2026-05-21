@@ -71,7 +71,7 @@ Verifies the staff PIN with constant-time comparison to prevent timing attacks. 
 
 | Secret | Required | Description |
 |--------|----------|-------------|
-| `STAFF_PIN` | recommended | Plaintext PIN (e.g. `"0123"`). If absent, falls back to DB bcrypt path |
+| `STAFF_PIN` | recommended | Plaintext staff PIN. If absent, falls back to the DB bcrypt path |
 
 ### Request
 
@@ -79,7 +79,7 @@ Verifies the staff PIN with constant-time comparison to prevent timing attacks. 
 POST /functions/v1/verify-pin
 Content-Type: application/json
 
-{ "pin_input": "0123" }
+{ "pin_input": "<staff-pin>" }
 ```
 
 ### Response
