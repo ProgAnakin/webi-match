@@ -28,7 +28,7 @@ if (!PII_KEY) {
   console.warn("[on-session-created] PII_ENCRYPTION_KEY is NOT set — nome/cognome will be stored in plaintext.");
 }
 if (!WEBHOOK_SECRET) {
-  console.warn("[on-session-created] WEBHOOK_SECRET is NOT set — the function will accept unsigned webhook calls.");
+  console.error("[on-session-created] WEBHOOK_SECRET is NOT set — the function will REJECT every request until it is configured.");
 }
 
 // Constant-time comparison to avoid timing oracles on the shared secret.
@@ -652,13 +652,16 @@ serve(async (req) => {
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 
-  // Webhook secret check — runs before parsing the body so unauthenticated
-  // callers can't even trigger JSON parsing. Configure the matching header
-  // "x-webhook-secret: <value>" in Supabase Dashboard → Database → Webhooks.
-  if (WEBHOOK_SECRET) {
+  // Webhook secret check — MANDATORY. Runs before parsing the body so
+  // unauthenticated callers can't even trigger JSON parsing. If the secret is
+  // not configured the function fails CLOSED (rejects everything) rather than
+  // open. Configure the matching header "x-webhook-secret: <value>" in
+  // Supabase Dashboard → Database → Webhooks.
+  {
     const provided = req.headers.get("x-webhook-secret") ?? "";
-    if (!safeEqual(provided, WEBHOOK_SECRET)) {
+    if (!WEBHOOK_SECRET || !safeEqual(provided, WEBHOOK_SECRET)) {
       // Silent 200 to avoid leaking whether the URL is a real webhook target.
+      console.error("[on-session-created] rejected — missing or invalid webhook secret");
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }
   }

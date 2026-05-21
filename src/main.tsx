@@ -11,7 +11,17 @@ if (SENTRY_DSN) {
     environment: import.meta.env.MODE,
     tracesSampleRate: 0.2,
     replaysOnErrorSampleRate: 1.0,
-    integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      // Session Replay would otherwise record the kiosk's name/email entry
+      // form and the staff login — mask all text, inputs and media so no
+      // customer PII or credentials are sent to Sentry.
+      Sentry.replayIntegration({
+        maskAllText: true,
+        maskAllInputs: true,
+        blockAllMedia: true,
+      }),
+    ],
   });
 }
 
