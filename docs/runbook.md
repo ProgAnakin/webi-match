@@ -191,57 +191,6 @@ Or via the Dashboard → Edge Functions → click the function → copy/paste
 
 ---
 
-## 8. Changing the staff PIN
-
-The staff PIN (used by the AdminPinOverlay and the manager/stats login)
-is verified by the `verify-pin` Edge Function. It has **two sources**:
-
-- **Primary** — the `STAFF_PIN` Edge Function secret (plaintext). When set,
-  this is the value that's checked.
-- **Fallback** — a bcrypt hash in `app_config.staff_pin_hash`. Used only
-  when the `STAFF_PIN` secret is absent.
-
-The on-screen keypad has 4 dots, so the PIN **must be exactly 4 digits**
-(changing the length would also require editing `AdminPinOverlay.tsx` /
-`KioskLockScreen.tsx` / `MatchResult.tsx`).
-
-### Steps to change it
-
-**1. Update the `STAFF_PIN` secret** (the one that's actually used)
-
-- Supabase Dashboard → Edge Functions → `verify-pin` → **Manage secrets**
-- Edit `STAFF_PIN` → enter the new 4-digit value → Save
-- **Redeploy `verify-pin`** so the new value is picked up immediately
-  (warm instances keep the old value until they're recycled).
-
-**2. Update the DB fallback hash** (optional, keeps both paths in sync)
-
-Supabase Dashboard → SQL Editor → run, with your new PIN:
-
-```sql
-INSERT INTO public.app_config (key, value)
-VALUES ('staff_pin_hash',
-        extensions.crypt('NEW_PIN', extensions.gen_salt('bf')))
-ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
-```
-
-**3. Clear any active lockout** (only if someone is currently locked out
-after failed attempts)
-
-```sql
-DELETE FROM public.admin_access_log
-WHERE created_at > now() - interval '15 minutes'
-  AND success = false;
-```
-
-**4. Test** — open the AdminPinOverlay (6 taps on the logo) or `/manager`
-and enter the new PIN.
-
-> If you only do step 1, that's enough — the secret takes priority. Step 2
-> just keeps the fallback consistent in case the secret is ever removed.
-
----
-
 ## Useful queries
 
 ```sql
