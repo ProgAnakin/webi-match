@@ -14,6 +14,7 @@ export interface ProductGuide {
   manager_advice_it: string;
   manager_advice_en: string;
   manager_advice_audio_url: string | null;
+  video_url: string;
   updated_at: string;
 }
 

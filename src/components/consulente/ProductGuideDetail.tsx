@@ -1,6 +1,7 @@
-import { ChevronLeft, Eye, FileText, Lightbulb, MessageSquareQuote, Paperclip } from "lucide-react";
+import { ChevronLeft, Eye, FileText, Lightbulb, MessageSquareQuote, Paperclip, Video } from "lucide-react";
 import type { ProductGuide, GuideLang } from "./types";
 import { localisedGuide } from "./types";
+import { youtubeId } from "@/lib/validators";
 
 interface ProductGuideDetailProps {
   guide: ProductGuide;
@@ -40,6 +41,9 @@ const Section = ({
 
 export const ProductGuideDetail = ({ guide, lang, customerDescription, onBack }: ProductGuideDetailProps) => {
   const { description, insight1, insight2, managerAdvice } = localisedGuide(guide, lang);
+  const videoLink = guide.video_url.trim();
+  const videoId = videoLink ? youtubeId(videoLink) : null;
+  const isHttpLink = /^https?:\/\//i.test(videoLink);
 
   return (
     <div className="space-y-4">
@@ -82,6 +86,40 @@ export const ProductGuideDetail = ({ guide, lang, customerDescription, onBack }:
           </p>
         )}
       </div>
+
+      {/* Product video — the manager's 30-second explainer link */}
+      {videoLink && (
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/15 text-sky-400">
+              <Video className="h-4 w-4" />
+            </span>
+            <h3 className="text-sm font-bold text-foreground">Product video</h3>
+          </div>
+          {videoId ? (
+            <div className="aspect-video overflow-hidden rounded-xl border border-border">
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+                title="Product video"
+                className="h-full w-full"
+                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          ) : isHttpLink ? (
+            <a
+              href={videoLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-sky-400 underline"
+            >
+              Open video ↗
+            </a>
+          ) : (
+            <p className="text-xs italic text-muted-foreground/60">Invalid video link.</p>
+          )}
+        </div>
+      )}
 
       {/* 1. Description */}
       <Section icon={<FileText className="h-4 w-4" />} title="Product description" body={description} />

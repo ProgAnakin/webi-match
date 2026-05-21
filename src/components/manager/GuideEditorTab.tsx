@@ -13,6 +13,8 @@ interface GuideForm {
   insight_1_it: string;      insight_1_en: string;
   insight_2_it: string;      insight_2_en: string;
   manager_advice_it: string; manager_advice_en: string;
+  // Single YouTube link — not language-specific.
+  video_url: string;
 }
 
 interface ProductRef {
@@ -27,10 +29,11 @@ const EMPTY_FORM: GuideForm = {
   insight_1_it: "",      insight_1_en: "",
   insight_2_it: "",      insight_2_en: "",
   manager_advice_it: "", manager_advice_en: "",
+  video_url: "",
 };
 
 const GUIDE_COLUMNS =
-  "description_it, description_en, insight_1_it, insight_1_en, insight_2_it, insight_2_en, manager_advice_it, manager_advice_en";
+  "description_it, description_en, insight_1_it, insight_1_en, insight_2_it, insight_2_en, manager_advice_it, manager_advice_en, video_url";
 
 const FIELD_GROUPS: { lang: "it" | "en"; flag: string; label: string }[] = [
   { lang: "it", flag: "🇮🇹", label: "Italiano (primary)" },
@@ -200,6 +203,21 @@ export function GuideEditorTab() {
           <div className="py-12 text-center text-xs text-muted-foreground">Loading guide…</div>
         ) : (
           <>
+            {/* Video link — single YouTube URL, not language-specific */}
+            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+              <label className="block text-xs font-semibold text-foreground">🎬 Video link (YouTube)</label>
+              <p className="text-[10px] text-muted-foreground">
+                Optional. The 30-second product explainer — consultants watch it inline at /consulente.
+              </p>
+              <input
+                type="url"
+                value={form.video_url}
+                onChange={(e) => setForm((f) => ({ ...f, video_url: e.target.value }))}
+                placeholder="https://youtube.com/watch?v=…"
+                className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
             {FIELD_GROUPS.map((group) => (
               <div key={group.lang} className="space-y-3">
                 <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
