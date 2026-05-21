@@ -5,10 +5,20 @@ import { supabase } from "@/integrations/supabase/client";
 interface LoginFormProps {
   onLoginSuccess: () => void;
   onMfaRequired: () => void;
+  /** Header copy — defaults to the analytics dashboard. /consulente overrides it. */
+  title?: string;
+  subtitle?: string;
+  icon?: string;
 }
 
 // Rate limiting is enforced server-side via check_login_rate_limit RPC.
-export const LoginForm = ({ onLoginSuccess, onMfaRequired }: LoginFormProps) => {
+export const LoginForm = ({
+  onLoginSuccess,
+  onMfaRequired,
+  title = "Analytics Dashboard",
+  subtitle = "Restricted access",
+  icon = "📊",
+}: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -71,9 +81,9 @@ export const LoginForm = ({ onLoginSuccess, onMfaRequired }: LoginFormProps) => 
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-8">
       <motion.div className="w-full max-w-sm space-y-5 text-center"
         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="text-5xl">📊</div>
-        <h1 className="text-2xl font-bold text-foreground">Analytics Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Restricted access</p>
+        <div className="text-5xl">{icon}</div>
+        <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+        <p className="text-sm text-muted-foreground">{subtitle}</p>
         <div className="space-y-3 text-left">
           <input type="email" placeholder="Email" value={email} autoComplete="email"
             onChange={(e) => { setEmail(e.target.value); setError(""); }}

@@ -10,10 +10,12 @@ import NotFound from "./pages/NotFound.tsx";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-// Admin/analytics pages are lazy-loaded — never included in the kiosk bundle.
-// They're only accessed by staff via the /stats and /manager routes.
+// Admin/analytics/training pages are lazy-loaded — never included in the kiosk
+// bundle. They're only accessed by staff via the /stats, /manager and
+// /consulente routes.
 const Stats         = lazy(() => import("./pages/Stats.tsx"));
 const Manager       = lazy(() => import("./pages/Manager.tsx"));
+const Consulente    = lazy(() => import("./pages/Consulente.tsx"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
 
 const AdminFallback = () => (
@@ -46,6 +48,9 @@ const App = () => (
             } />
             <Route path="/manager" element={
               <Suspense fallback={<AdminFallback />}><Manager /></Suspense>
+            } />
+            <Route path="/consulente" element={
+              <Suspense fallback={<AdminFallback />}><Consulente /></Suspense>
             } />
             <Route path="/reset-password" element={
               <Suspense fallback={<AdminFallback />}><ResetPassword /></Suspense>
