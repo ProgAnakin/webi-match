@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { LogOut, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { products as coreProducts } from "@/data/products";
 import type { ProductGuide, GuideLang } from "./types";
 import { ProductGuideList } from "./ProductGuideList";
 import { ProductGuideDetail } from "./ProductGuideDetail";
@@ -13,17 +14,27 @@ interface ConsulenteDashboardProps {
 // distinct from the orange /manager dashboard so staff never confuse the two.
 export const ConsulenteDashboard = ({ onLogout }: ConsulenteDashboardProps) => {
   const [guides, setGuides] = useState<ProductGuide[]>([]);
+  // product_id → the customer-facing description (same text shown below the
+  // product photo on the match result). Pulled live from the product catalog.
+  const [customerDescriptions, setCustomerDescriptions] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [lang, setLang] = useState<GuideLang>("it");
 
   const fetchGuides = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("product_guides")
-      .select("*")
-      .order("product_name", { ascending: true });
-    setGuides((data ?? []) as ProductGuide[]);
+    const [guidesRes, customRes] = await Promise.all([
+      supabase.from("product_guides").select("*").order("product_name", { ascending: true }),
+      supabase.from("custom_products").select("id, description"),
+    ]);
+    setGuides((guidesRes.data ?? []) as ProductGuide[]);
+
+    const descMap: Record<string, string> = {};
+    for (const p of coreProducts) descMap[p.id] = p.description;
+    for (const c of (customRes.data ?? []) as { id: string; description: string | null }[]) {
+      descMap[c.id] = c.description ?? "";
+    }
+    setCustomerDescriptions(descMap);
     setLoading(false);
   }, []);
 
@@ -82,6 +93,7 @@ export const ConsulenteDashboard = ({ onLogout }: ConsulenteDashboardProps) => {
           <ProductGuideDetail
             guide={selected}
             lang={lang}
+            customerDescription={customerDescriptions[selected.product_id] ?? ""}
             onBack={() => setSelectedId(null)}
           />
         ) : (

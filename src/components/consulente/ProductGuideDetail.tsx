@@ -1,10 +1,14 @@
-import { ChevronLeft, FileText, Lightbulb, MessageSquareQuote, Paperclip } from "lucide-react";
+import { ChevronLeft, Eye, FileText, Lightbulb, MessageSquareQuote, Paperclip } from "lucide-react";
 import type { ProductGuide, GuideLang } from "./types";
 import { localisedGuide } from "./types";
 
 interface ProductGuideDetailProps {
   guide: ProductGuide;
   lang: GuideLang;
+  /** The catalog description shown to the customer below the product photo
+   *  on their match result — pulled live from src/data/products.ts or
+   *  custom_products. Not editable here; it mirrors what the customer reads. */
+  customerDescription: string;
   onBack: () => void;
 }
 
@@ -34,7 +38,7 @@ const Section = ({
   );
 };
 
-export const ProductGuideDetail = ({ guide, lang, onBack }: ProductGuideDetailProps) => {
+export const ProductGuideDetail = ({ guide, lang, customerDescription, onBack }: ProductGuideDetailProps) => {
   const { description, insight1, insight2, managerAdvice } = localisedGuide(guide, lang);
 
   return (
@@ -52,6 +56,31 @@ export const ProductGuideDetail = ({ guide, lang, onBack }: ProductGuideDetailPr
         <p className="text-xs text-muted-foreground">
           Updated {new Date(guide.updated_at).toLocaleDateString()}
         </p>
+      </div>
+
+      {/* What the customer sees — the exact catalog text shown below the product
+          photo on the match result. Read-only, mirrored live from the catalog. */}
+      <div className="rounded-2xl border border-sky-500/30 bg-sky-500/5 p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-400">
+            <Eye className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-foreground">What the customer sees</h3>
+            <p className="text-[10px] text-muted-foreground">
+              Text shown under the product photo on the customer's match result
+            </p>
+          </div>
+        </div>
+        {customerDescription.trim() ? (
+          <p className="text-sm italic leading-relaxed text-muted-foreground">
+            “{customerDescription}”
+          </p>
+        ) : (
+          <p className="text-xs italic text-muted-foreground/60">
+            No catalog description found for this product.
+          </p>
+        )}
       </div>
 
       {/* 1. Description */}
