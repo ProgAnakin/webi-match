@@ -29,6 +29,7 @@ const AdminSpinner = () => (
 const Consulente = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("checking");
+  const [role, setRole] = useState<string | null>(null);
 
   // Verifies the signed-in user holds an allowed store_roles role.
   const resolveRole = async () => {
@@ -51,6 +52,7 @@ const Consulente = () => {
       setStep("denied");
       return;
     }
+    setRole(res.data.role);
     setStep("dashboard");
   };
 
@@ -167,6 +169,7 @@ const Consulente = () => {
         {step === "dashboard" && (
           <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <ConsulenteDashboard
+              role={role}
               onLogout={async () => { await supabase.auth.signOut(); setStep("login"); }}
             />
           </motion.div>

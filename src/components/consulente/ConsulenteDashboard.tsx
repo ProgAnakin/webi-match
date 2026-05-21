@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { LogOut, GraduationCap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { LogOut, GraduationCap, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products as coreProducts } from "@/data/products";
 import type { ProductGuide, GuideLang } from "./types";
@@ -8,11 +9,14 @@ import { ProductGuideDetail } from "./ProductGuideDetail";
 
 interface ConsulenteDashboardProps {
   onLogout: () => void;
+  /** The signed-in user's store role — managers get a shortcut back to /manager. */
+  role: string | null;
 }
 
 // Read-only consultant training zone. Sky/blue accent throughout — deliberately
 // distinct from the orange /manager dashboard so staff never confuse the two.
-export const ConsulenteDashboard = ({ onLogout }: ConsulenteDashboardProps) => {
+export const ConsulenteDashboard = ({ onLogout, role }: ConsulenteDashboardProps) => {
+  const navigate = useNavigate();
   const [guides, setGuides] = useState<ProductGuide[]>([]);
   // product_id → the customer-facing description (same text shown below the
   // product photo on the match result). Pulled live from the product catalog.
@@ -67,6 +71,17 @@ export const ConsulenteDashboard = ({ onLogout }: ConsulenteDashboardProps) => {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Managers came here already authenticated (and MFA-cleared) —
+                jump straight back to /manager without a second 2FA. */}
+            {role === "manager" && (
+              <button
+                onClick={() => navigate("/manager")}
+                title="Back to Manager"
+                className="flex h-8 items-center gap-1 rounded-xl border border-border bg-card px-2.5 text-xs font-semibold text-muted-foreground active:scale-95"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" /> Manager
+              </button>
+            )}
             {/* Language toggle */}
             <div className="flex overflow-hidden rounded-xl border border-border">
               {(["it", "en"] as GuideLang[]).map((l) => (

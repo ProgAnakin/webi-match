@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Eye, EyeOff, Pencil, Plus, RotateCcw, Trash2, Upload, X } from "lucide-react";
+import { Check, Eye, EyeOff, Pencil, Plus, RotateCcw, Trash2, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products as coreProducts } from "@/data/products";
 import { AVAILABLE_TAGS } from "@/data/products";
@@ -99,6 +99,10 @@ export function ProductCatalogTab() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  // Multi-select bulk delete
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -310,6 +314,39 @@ export function ProductCatalogTab() {
   };
 
   const visibleCustom = customProducts.filter((p) => showArchived || p.status === "active");
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allVisibleSelected =
+    visibleCustom.length > 0 && visibleCustom.every((p) => selectedIds.has(p.id));
+
+  const toggleSelectAll = () => {
+    setSelectedIds(allVisibleSelected ? new Set() : new Set(visibleCustom.map((p) => p.id)));
+  };
+
+  // Bulk permanent delete — runs after the centered confirmation modal.
+  const bulkDelete = async () => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    setBulkDeleting(true);
+    const { error } = await supabase.from("custom_products").delete().in("id", ids);
+    setBulkDeleting(false);
+    setShowBulkDeleteModal(false);
+    if (error) {
+      toast.error("Error deleting products.");
+      return;
+    }
+    toast.success(`${ids.length} product${ids.length > 1 ? "s" : ""} permanently deleted.`);
+    setSelectedIds(new Set());
+    await fetchData();
+  };
 
   return (
     <div className="space-y-6">
@@ -574,6 +611,31 @@ export function ProductCatalogTab() {
           )}
         </div>
 
+        {/* Select-all + bulk delete bar */}
+        {!loading && visibleCustom.length > 0 && (
+          <div className="flex items-center justify-between gap-2">
+            <button
+              onClick={toggleSelectAll}
+              className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+            >
+              <span className={`flex h-4 w-4 items-center justify-center rounded border ${
+                allVisibleSelected ? "border-primary bg-primary text-primary-foreground" : "border-border"
+              }`}>
+                {allVisibleSelected && <Check className="h-3 w-3" />}
+              </span>
+              Select all ({visibleCustom.length})
+            </button>
+            {selectedIds.size > 0 && (
+              <button
+                onClick={() => setShowBulkDeleteModal(true)}
+                className="flex items-center gap-1.5 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive active:scale-95"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete selected ({selectedIds.size})
+              </button>
+            )}
+          </div>
+        )}
+
         {loading ? (
           <ProductSkeleton />
         ) : visibleCustom.length === 0 ? (
@@ -589,8 +651,21 @@ export function ProductCatalogTab() {
             return (
               <div
                 key={p.id}
-                className={`flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 ${isArchived || hidden ? "opacity-50" : ""}`}
+                className={`flex items-center gap-3 rounded-xl border bg-card px-4 py-3 ${
+                  selectedIds.has(p.id) ? "border-primary/60" : "border-border"
+                } ${isArchived || hidden ? "opacity-50" : ""}`}
               >
+                <button
+                  onClick={() => toggleSelect(p.id)}
+                  aria-label={selectedIds.has(p.id) ? "Deselect product" : "Select product"}
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${
+                    selectedIds.has(p.id)
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  {selectedIds.has(p.id) && <Check className="h-3.5 w-3.5" />}
+                </button>
                 {p.image_url ? (
                   <img
                     src={p.image_url}
@@ -674,6 +749,54 @@ export function ProductCatalogTab() {
           <RotateCcw className="h-3 w-3" /> Refresh catalog
         </button>
       </div>
+
+      {/* Bulk-delete confirmation modal — centered */}
+      {showBulkDeleteModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-6"
+          onClick={() => !bulkDeleting && setShowBulkDeleteModal(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-destructive/30 bg-destructive/10">
+                <Trash2 className="h-5 w-5 text-destructive" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground">Delete products</p>
+                <p className="text-xs text-foreground/70">{selectedIds.size} selected</p>
+              </div>
+            </div>
+            <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-400">
+              <p className="font-semibold mb-1">⚠ Irreversible action</p>
+              <p>
+                {selectedIds.size} product{selectedIds.size > 1 ? "s" : ""} will be permanently
+                removed from the catalog. This cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => !bulkDeleting && setShowBulkDeleteModal(false)}
+                disabled={bulkDeleting}
+                className="flex-1 rounded-xl border border-border bg-muted/30 py-2.5 text-sm font-semibold text-foreground/70 hover:text-foreground active:scale-95 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={bulkDelete}
+                disabled={bulkDeleting}
+                className="flex-1 rounded-xl border border-destructive/40 bg-destructive/10 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/20 active:scale-95 disabled:opacity-50"
+              >
+                {bulkDeleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

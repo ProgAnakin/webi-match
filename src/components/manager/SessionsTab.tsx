@@ -222,6 +222,11 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
             : row
         )
       );
+      // Keep the "codes used" KPI in sync without a page refresh — that card
+      // is computed from kpiData, a separate dataset from the session list.
+      setKpiData((prev) =>
+        prev.map((row) => (row.id === s.id ? { ...row, code_redeemed: true } : row))
+      );
       toast.success("Code marked as used.");
     } else if (!error && (rowsUpdated as number) === 0) {
       toast.error("0 rows updated — check the SQL function.");
@@ -518,9 +523,9 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
           <button
             onClick={openPurgeModal}
             className="flex min-h-[44px] items-center gap-1 rounded-xl border border-border bg-card px-3 text-xs text-foreground/70 hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-95 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            title="Delete sessions older than 7 days"
+            title="Delete sessions older than 7 days — keeps only the last 7 days"
           >
-            <Trash2 className="h-3.5 w-3.5" /> Purge (7d)
+            <Trash2 className="h-3.5 w-3.5" /> Delete &gt; 7d old
           </button>
 
           <button
@@ -731,8 +736,8 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
                   <Trash2 className="h-5 w-5 text-destructive" />
                 </div>
                 <div>
-                  <p id="purge-modal-title" className="text-sm font-bold text-foreground">Purge history</p>
-                  <p className="text-xs text-foreground/70">Sessions older than 7 days</p>
+                  <p id="purge-modal-title" className="text-sm font-bold text-foreground">Delete old sessions</p>
+                  <p className="text-xs text-foreground/70">Removes sessions older than 7 days · keeps the last 7 days</p>
                 </div>
               </div>
 
