@@ -41,14 +41,14 @@ export type AuthStep = "login" | "mfa" | "dashboard";
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
-export const DAY_LABELS = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+export const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function productName(id: string): string {
   return products.find((p) => p.id === id)?.name ?? id;
 }
 
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString("it-IT", {
+  return new Date(iso).toLocaleString("en-GB", {
     day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
   });
 }
@@ -76,7 +76,7 @@ export function exportCSV(
   fromDate?: string,
   toDate?: string,
 ): void {
-  const header = ["Nome", "Cognome", "Email", "Prodotto", "Match %", "Sede", "Data"];
+  const header = ["First name", "Last name", "Email", "Product", "Match %", "Store", "Date"];
   const rows = sessions.map((s) => [
     `"${csvSafe(s.nome ?? "")}"`,
     `"${csvSafe(s.cognome ?? "")}"`,
@@ -84,14 +84,14 @@ export function exportCSV(
     `"${csvSafe(productName(s.matched_product_id))}"`,
     s.match_percent,
     `"${csvSafe(storeName(s.store_id))}"`,
-    `"${new Date(s.created_at).toLocaleString("it-IT")}"`,
+    `"${new Date(s.created_at).toLocaleString("en-GB")}"`,
   ]);
   const csv = [header, ...rows].map((r) => r.join(";")).join("\n");
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  const suffix = fromDate && toDate ? `_${fromDate}_a_${toDate}` : "";
+  const suffix = fromDate && toDate ? `_${fromDate}_to_${toDate}` : "";
   a.download = `webi-match${suffix}_${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();

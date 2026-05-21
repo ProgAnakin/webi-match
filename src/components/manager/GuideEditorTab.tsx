@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Search, Save, Check, ChevronLeft, BookOpen, Paperclip } from "lucide-react";
+import { Search, Save, Check, ChevronLeft, BookOpen, Paperclip, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products as coreProducts } from "@/data/products";
 import { toast } from "sonner";
@@ -18,7 +18,8 @@ interface GuideForm {
 interface ProductRef {
   id: string;
   name: string;
-  source: "core" | "custom";
+  // "orphan" = a guide exists but its product is no longer in the catalog.
+  source: "core" | "custom" | "orphan";
 }
 
 const EMPTY_FORM: GuideForm = {
@@ -47,7 +48,8 @@ const FIELDS: { key: FieldKey; label: string; hint: string }[] = [
 
 export function GuideEditorTab() {
   const [customNames, setCustomNames] = useState<ProductRef[]>([]);
-  const [guidedIds, setGuidedIds] = useState<Set<string>>(new Set());
+  // product_id → product_name for every product that already has a guide row.
+  const [guideNames, setGuideNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
 
@@ -61,25 +63,36 @@ export function GuideEditorTab() {
     setLoading(true);
     const [customRes, guidesRes] = await Promise.all([
       supabase.from("custom_products").select("id, name").eq("status", "active"),
-      supabase.from("product_guides").select("product_id"),
+      supabase.from("product_guides").select("product_id, product_name"),
     ]);
     setCustomNames(
       (customRes.data ?? []).map((r) => ({ id: r.id, name: r.name, source: "custom" as const })),
     );
-    setGuidedIds(new Set((guidesRes.data ?? []).map((r) => r.product_id)));
+    const gNames: Record<string, string> = {};
+    for (const r of (guidesRes.data ?? []) as { product_id: string; product_name: string }[]) {
+      gNames[r.product_id] = r.product_name;
+    }
+    setGuideNames(gNames);
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Core products (hardcoded) + active custom products (DB), de-duplicated by id.
+  // Core products (hardcoded) + active custom products (DB) + orphan guides,
+  // de-duplicated by id.
   const allProducts = useMemo<ProductRef[]>(() => {
-    const core: ProductRef[] = coreProducts.map((p) => ({ id: p.id, name: p.name, source: "core" }));
-    const seen = new Set(core.map((p) => p.id));
-    const merged = [...core];
-    for (const c of customNames) if (!seen.has(c.id)) merged.push(c);
+    const merged: ProductRef[] = coreProducts.map((p) => ({ id: p.id, name: p.name, source: "core" }));
+    const seen = new Set(merged.map((p) => p.id));
+    for (const c of customNames) {
+      if (!seen.has(c.id)) { merged.push(c); seen.add(c.id); }
+    }
+    // Orphan guides — the guide outlived its product (deleted custom product).
+    // Surfaced so the manager can still open and delete them.
+    for (const [pid, pname] of Object.entries(guideNames)) {
+      if (!seen.has(pid)) { merged.push({ id: pid, name: pname || pid, source: "orphan" }); seen.add(pid); }
+    }
     return merged.sort((a, b) => a.name.localeCompare(b.name));
-  }, [customNames]);
+  }, [customNames, guideNames]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -95,7 +108,16 @@ export function GuideEditorTab() {
       .select(GUIDE_COLUMNS)
       .eq("product_id", p.id)
       .maybeSingle();
-    setForm(data ? { ...EMPTY_FORM, ...data } : EMPTY_FORM);
+    // Coalesce — keep only string values so a NULL column can never turn a
+    // textarea into an uncontrolled input.
+    const merged: GuideForm = { ...EMPTY_FORM };
+    if (data) {
+      for (const k of Object.keys(EMPTY_FORM) as (keyof GuideForm)[]) {
+        const v = (data as Record<string, unknown>)[k];
+        if (typeof v === "string") merged[k] = v;
+      }
+    }
+    setForm(merged);
     setLoadingGuide(false);
   };
 
@@ -115,14 +137,34 @@ export function GuideEditorTab() {
       toast.error("Error saving guide.");
       return;
     }
-    setGuidedIds((prev) => new Set(prev).add(selected.id));
+    setGuideNames((prev) => ({ ...prev, [selected.id]: selected.name }));
     setSaved(true);
     toast.success("Guide saved.");
     setTimeout(() => setSaved(false), 2500);
   };
 
+  const deleteGuide = async () => {
+    if (!selected) return;
+    if (!window.confirm(`Delete the guide for "${selected.name}"? This cannot be undone.`)) return;
+    setSaving(true);
+    const { error } = await supabase.from("product_guides").delete().eq("product_id", selected.id);
+    setSaving(false);
+    if (error) {
+      toast.error("Error deleting guide.");
+      return;
+    }
+    setGuideNames((prev) => {
+      const next = { ...prev };
+      delete next[selected.id];
+      return next;
+    });
+    toast.success("Guide deleted.");
+    setSelected(null);
+  };
+
   // ─── Editor view ───────────────────────────────────────────────────────────
   if (selected) {
+    const hasGuide = selected.id in guideNames;
     return (
       <div className="space-y-5">
         <button
@@ -147,6 +189,12 @@ export function GuideEditorTab() {
             {saved ? <><Check className="h-3 w-3" /> Saved!</> : <><Save className="h-3 w-3" /> {saving ? "Saving…" : "Save"}</>}
           </button>
         </div>
+
+        {selected.source === "orphan" && (
+          <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-300">
+            ⚠ This product is no longer in the catalog. The guide still exists — edit it or delete it below.
+          </p>
+        )}
 
         {loadingGuide ? (
           <div className="py-12 text-center text-xs text-muted-foreground">Loading guide…</div>
@@ -188,6 +236,17 @@ export function GuideEditorTab() {
                 Uploading spec sheets / manuals for consultants to download will be enabled in a later release.
               </p>
             </div>
+
+            {/* Delete — only when a guide row actually exists */}
+            {hasGuide && (
+              <button
+                onClick={deleteGuide}
+                disabled={saving}
+                className="flex items-center gap-1.5 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive active:scale-95 disabled:opacity-60"
+              >
+                <Trash2 className="h-3 w-3" /> Delete this guide
+              </button>
+            )}
           </>
         )}
       </div>
@@ -220,7 +279,8 @@ export function GuideEditorTab() {
       ) : (
         <div className="space-y-2">
           {filtered.map((p) => {
-            const hasGuide = guidedIds.has(p.id);
+            const hasGuide = p.id in guideNames;
+            const isOrphan = p.source === "orphan";
             return (
               <button
                 key={p.id}
@@ -228,14 +288,16 @@ export function GuideEditorTab() {
                 className="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left transition-colors hover:border-primary/40 active:scale-[0.99]"
               >
                 <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                  hasGuide ? "bg-green-500/15 text-green-400" : "bg-muted/40 text-muted-foreground"
+                  isOrphan ? "bg-amber-500/15 text-amber-400"
+                  : hasGuide ? "bg-green-500/15 text-green-400"
+                  : "bg-muted/40 text-muted-foreground"
                 }`}>
                   <BookOpen className="h-4 w-4" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-foreground">{p.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {hasGuide ? "Guide published" : "No guide yet"}
+                    {isOrphan ? "Guide for a removed product" : hasGuide ? "Guide published" : "No guide yet"}
                   </p>
                 </div>
               </button>

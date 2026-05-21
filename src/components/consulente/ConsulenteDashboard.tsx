@@ -25,16 +25,25 @@ export const ConsulenteDashboard = ({ onLogout }: ConsulenteDashboardProps) => {
     setLoading(true);
     const [guidesRes, customRes] = await Promise.all([
       supabase.from("product_guides").select("*").order("product_name", { ascending: true }),
-      supabase.from("custom_products").select("id, description"),
+      supabase.from("custom_products").select("id, name, description"),
     ]);
-    setGuides((guidesRes.data ?? []) as ProductGuide[]);
 
     const descMap: Record<string, string> = {};
-    for (const p of coreProducts) descMap[p.id] = p.description;
-    for (const c of (customRes.data ?? []) as { id: string; description: string | null }[]) {
+    const nameMap: Record<string, string> = {};
+    for (const p of coreProducts) { descMap[p.id] = p.description; nameMap[p.id] = p.name; }
+    for (const c of (customRes.data ?? []) as { id: string; name: string; description: string | null }[]) {
       descMap[c.id] = c.description ?? "";
+      nameMap[c.id] = c.name;
     }
     setCustomerDescriptions(descMap);
+
+    // Refresh each guide's product_name from the live catalog so a rename in
+    // /manager reflects here without the manager having to re-save the guide.
+    const fresh = ((guidesRes.data ?? []) as ProductGuide[]).map((g) => ({
+      ...g,
+      product_name: nameMap[g.product_id] ?? g.product_name,
+    }));
+    setGuides(fresh);
     setLoading(false);
   }, []);
 

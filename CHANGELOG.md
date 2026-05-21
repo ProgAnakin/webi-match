@@ -6,6 +6,39 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.6.0] — 2026-05-21
+
+### Added
+- **Consultant training zone (`/consulente`)** — a read-only product knowledge
+  base for sales consultants. New `consulente` store role (login limited to
+  `/consulente`). Per-product guides — description, two selling insights and the
+  manager's advice — authored by hand in `/manager → Gestione → Guide`. No AI,
+  no external API. Each guide also mirrors the customer-facing catalog
+  description. IT primary / EN optional with Italian fallback. Migration
+  `20260519000001_consultant_guides` (tables `product_guides` and, on standby,
+  `product_guide_files`).
+- Cross-navigation: `/consulente` link from the kiosk store-selection overlay
+  and the `/manager` header; "Back to quiz" on the `/consulente` auth screens.
+- `purge_audit_log_older_than` RPC + retention policy (migration
+  `20260518000004_audit_log_retention`).
+
+### Changed
+- `useKioskMode` detects standalone display-mode (installed PWA). When the app
+  runs from the Home Screen the Fullscreen API is skipped — this removes the
+  iOS failure mode where focusing an input and opening the soft keyboard
+  force-exits fullscreen. `AdminPinOverlay` now tells staff to install the PWA.
+- `src/integrations/supabase/types.ts` extended with `product_guides` /
+  `product_guide_files`.
+
+### Fixed
+- `/stats` dashboard could hang on the loading spinner if a funnel-count query
+  rejected — the `Promise.all` is now guarded.
+- `/consulente` no longer shows "no access" on a transient network failure —
+  a connection error is separated from a genuine permissions denial.
+- CSV export and date formatting in `/stats` switched from Italian to English.
+- Guide editor: orphan guides (product later removed) are now reachable and
+  deletable; product names render live from the catalog instead of a snapshot.
+
 ## [1.5.1] — 2026-05-18
 
 ### Security

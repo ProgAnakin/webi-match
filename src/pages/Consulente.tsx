@@ -13,7 +13,7 @@ import { ConsulenteDashboard } from "@/components/consulente/ConsulenteDashboard
 // or manager. The training content itself is read-only here; managers author it
 // from /manager.
 
-type Step = "login" | "mfa" | "checking" | "dashboard" | "denied";
+type Step = "login" | "mfa" | "checking" | "dashboard" | "denied" | "loaderror";
 
 const ALLOWED_ROLES = ["consulente", "consulente_responsabile", "manager"];
 
@@ -32,11 +32,22 @@ const Consulente = () => {
 
   // Verifies the signed-in user holds an allowed store_roles role.
   const resolveRole = async () => {
-    const { data, error } = await supabase
-      .from("store_roles")
-      .select("role")
-      .maybeSingle();
-    if (error || !data || !ALLOWED_ROLES.includes(data.role)) {
+    let res;
+    try {
+      res = await supabase.from("store_roles").select("role").maybeSingle();
+    } catch (err) {
+      console.error("[webi-match] role lookup threw:", err);
+      setStep("loaderror");
+      return;
+    }
+    if (res.error) {
+      // Network / server failure — NOT a permissions problem. Let the user
+      // retry instead of wrongly telling a real consultant they have no access.
+      console.error("[webi-match] role lookup failed:", res.error);
+      setStep("loaderror");
+      return;
+    }
+    if (!res.data || !ALLOWED_ROLES.includes(res.data.role)) {
       setStep("denied");
       return;
     }
@@ -129,6 +140,26 @@ const Consulente = () => {
               className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground active:scale-95"
             >
               Sign out
+            </button>
+          </motion.div>
+        )}
+
+        {step === "loaderror" && (
+          <motion.div
+            key="loaderror"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-8 text-center"
+          >
+            <div className="text-5xl">📡</div>
+            <h1 className="text-xl font-bold text-foreground">Connection problem</h1>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              We couldn't verify your account. Check the connection and try again.
+            </p>
+            <button
+              onClick={() => { setStep("checking"); resolveRole(); }}
+              className="rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white active:scale-95"
+            >
+              Retry
             </button>
           </motion.div>
         )}

@@ -140,17 +140,23 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     if (error) setHasError(true);
     else setSessions((data ?? []) as QuizSession[]);
 
-    // Funnel counts (global, not date-filtered — kept as-is for overall funnel shape)
-    const [startedRes, resultRes, claimedRes] = await Promise.all([
-      supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "quiz_started"),
-      supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "result_shown"),
-      supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "claimed"),
-    ]);
-    setFunnel({
-      started:     startedRes.count  ?? 0,
-      resultShown: resultRes.count   ?? 0,
-      claimed:     claimedRes.count  ?? 0,
-    });
+    // Funnel counts (global, not date-filtered — kept as-is for overall funnel
+    // shape). Wrapped so a network rejection can't abort fetchData and leave
+    // the dashboard stuck on the loading spinner.
+    try {
+      const [startedRes, resultRes, claimedRes] = await Promise.all([
+        supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "quiz_started"),
+        supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "result_shown"),
+        supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "claimed"),
+      ]);
+      setFunnel({
+        started:     startedRes.count  ?? 0,
+        resultShown: resultRes.count   ?? 0,
+        claimed:     claimedRes.count  ?? 0,
+      });
+    } catch (err) {
+      console.error("[webi-match] funnel counts fetch failed:", err);
+    }
 
     setLoading(false);
   }, [dateFrom, dateTo, filterStore, dateRangeInvalid]);

@@ -150,6 +150,12 @@ flowchart LR
 - 📦 **Product performance** — match distribution, redemption rate, lead volume
 - 🏬 **Per-store breakdowns** — comparative store analytics
 
+### Consultant training zone (`/consulente`)
+- 🎓 **Read-only product knowledge base** for sales consultants
+- 📝 **Per-product guides** — description, two selling insights and the manager's advice, authored by hand in `/manager` (no AI, no external API)
+- 👁️ **Customer-facing description mirror** — shows the exact text the customer reads on their match result
+- 🌍 **IT / EN toggle** with Italian fallback
+
 ---
 
 ## 🛡️ Security & Quality Highlights
@@ -157,7 +163,7 @@ flowchart LR
 | Category | Implementation |
 |---|---|
 | **Authentication** | Supabase Auth · PIN + bcrypt fallback · in-memory IP-based lockout · MFA for stats |
-| **Authorisation** | Row-Level Security on every table · role-based access (`manager` / `consulente_responsabile`) · per-store data isolation |
+| **Authorisation** | Row-Level Security on every table · role-based access (`manager` / `consulente_responsabile` / `consulente`) · per-store data isolation |
 | **PII Protection** | AES encryption at rest for `nome`/`cognome` · SHA-256 email hashing for lookups · keys stored as Edge Function secrets |
 | **Rate Limiting** | Server-side enforced 1-email-per-hour per address · cannot be bypassed from client |
 | **Injection Defence** | All search inputs escape `%` `_` `\` before PostgREST `.or()` interpolation · `escHtml()` in every email template field |
@@ -318,7 +324,9 @@ The CI workflow runs typecheck, lint, test and build on every push to `main`, ev
 | `custom_products` | Per-store custom products (with collision-safe slug IDs) |
 | `quiz_cards` | Dynamic quiz question schema with drag-and-drop ordering |
 | `email_template` | Editable email template (subject, header title, subtitle, footer) |
-| `store_roles` | Role-based access mapping (`manager` / `consulente_responsabile`) |
+| `product_guides` | Per-product consultant training guides shown in `/consulente` |
+| `product_guide_files` | Downloadable manuals/spec sheets per product (schema ready, UI on standby) |
+| `store_roles` | Role-based access mapping (`manager` / `consulente_responsabile` / `consulente`) |
 | `manager_audit_log` | Dashboard action audit trail |
 | `admin_access_log` | PIN access tracking with IP + user-agent |
 | `app_settings` | Encrypted application secrets (PIN hash) |
@@ -331,8 +339,9 @@ Every table is protected by Row-Level Security. Rate limiting is enforced at the
 
 | Route | Access | Purpose |
 |-------|--------|---------|
-| `/manager` | PIN-protected | Product, quiz card, store and email-template configuration · session & code tracking |
+| `/manager` | PIN-protected | Product, quiz card, store, email-template and consultant-guide configuration · session & code tracking |
 | `/stats` | MFA-protected | Session data, funnel metrics, per-store performance |
+| `/consulente` | Login + role | Read-only product training zone for sales consultants |
 | `/reset-password` | Public | Password reset flow |
 
 ---

@@ -329,6 +329,81 @@ export type Database = {
         }
         Relationships: []
       }
+      product_guides: {
+        Row: {
+          product_id: string
+          product_name: string
+          description_it: string
+          description_en: string
+          insight_1_it: string
+          insight_1_en: string
+          insight_2_it: string
+          insight_2_en: string
+          manager_advice_it: string
+          manager_advice_en: string
+          manager_advice_audio_url: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          product_id: string
+          product_name?: string
+          description_it?: string
+          description_en?: string
+          insight_1_it?: string
+          insight_1_en?: string
+          insight_2_it?: string
+          insight_2_en?: string
+          manager_advice_it?: string
+          manager_advice_en?: string
+          manager_advice_audio_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          product_id?: string
+          product_name?: string
+          description_it?: string
+          description_en?: string
+          insight_1_it?: string
+          insight_1_en?: string
+          insight_2_it?: string
+          insight_2_en?: string
+          manager_advice_it?: string
+          manager_advice_en?: string
+          manager_advice_audio_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      product_guide_files: {
+        Row: {
+          id: string
+          product_id: string
+          label: string
+          file_path: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          label?: string
+          file_path: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          label?: string
+          file_path?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
