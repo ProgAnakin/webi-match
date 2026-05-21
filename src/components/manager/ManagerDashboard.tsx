@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BarChart2, Camera, Check, HelpCircle, History, Home, Link, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download, Inbox } from "lucide-react";
+import { BarChart2, Camera, Check, GraduationCap, HelpCircle, History, Home, Link, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download, Inbox } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { products, type Product } from "@/data/products";
@@ -621,6 +621,10 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             <button onClick={() => navigate("/stats")}
               className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
               <BarChart2 className="h-3 w-3" /> Analytics
+            </button>
+            <button onClick={() => navigate("/consulente")}
+              className="flex items-center gap-1 rounded-xl border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-xs text-sky-400 active:scale-95">
+              <GraduationCap className="h-3 w-3" /> Consulente
             </button>
             <button onClick={handleLogout}
               className="flex items-center gap-1 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive active:scale-95">

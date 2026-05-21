@@ -107,10 +107,12 @@ export interface T {
       subtitle: string;
       saveAndReturn: string;
       goToAnalytics: string;
+      goToConsulente: string;
       kioskActive: string;
       kioskInactive: string;
       kioskActiveDesc: string;
       kioskInactiveDesc: string;
+      kioskInstallHint: string;
       deactivate: string;
       activate: string;
     };
@@ -255,10 +257,12 @@ export const translations: Record<Lang, T> = {
         subtitle: "Scegli la sede in cui si trova questo iPad",
         saveAndReturn: "✓ Salva sede e torna al quiz",
         goToAnalytics: "📊 Vai ad Analytics / Manager",
+        goToConsulente: "🎓 Formazione Consulenti",
         kioskActive: "🔒 Modalità Kiosk Attiva",
         kioskInactive: "🔓 Modalità Kiosk",
         kioskActiveDesc: "Schermo a tutto schermo — barra indirizzi nascosta",
         kioskInactiveDesc: "Attiva per nascondere la barra del browser",
+        kioskInstallHint: "⚠ Per digitare (email, nome) senza uscire dal kiosk: aggiungi l'app alla Home dell'iPad — Condividi → \"Aggiungi a Home\" — e aprila da quell'icona.",
         deactivate: "Disattiva",
         activate: "Attiva",
       },
@@ -403,10 +407,12 @@ export const translations: Record<Lang, T> = {
         subtitle: "Choose the store where this iPad is located",
         saveAndReturn: "✓ Save store and return to quiz",
         goToAnalytics: "📊 Open Analytics / Manager",
+        goToConsulente: "🎓 Consultant Training",
         kioskActive: "🔒 Kiosk Mode Active",
         kioskInactive: "🔓 Kiosk Mode",
         kioskActiveDesc: "Full-screen — browser address bar hidden",
         kioskInactiveDesc: "Activate to hide the browser bar",
+        kioskInstallHint: "⚠ To type (email, name) without breaking kiosk mode: add the app to the iPad Home Screen — Share → \"Add to Home Screen\" — and open it from that icon.",
         deactivate: "Deactivate",
         activate: "Activate",
       },
@@ -551,10 +557,12 @@ export const translations: Record<Lang, T> = {
         subtitle: "Escolha a loja onde este iPad está",
         saveAndReturn: "✓ Guardar loja e voltar ao quiz",
         goToAnalytics: "📊 Ir para Analytics / Manager",
+        goToConsulente: "🎓 Formação Consultores",
         kioskActive: "🔒 Modo Kiosk Ativo",
         kioskInactive: "🔓 Modo Kiosk",
         kioskActiveDesc: "Ecrã inteiro — barra de endereço escondida",
         kioskInactiveDesc: "Ativar para esconder a barra do navegador",
+        kioskInstallHint: "⚠ Para digitar (email, nome) sem quebrar o modo kiosk: adicione o app à Tela de Início do iPad — Partilhar → \"Adicionar à Tela de Início\" — e abra por esse ícone.",
         deactivate: "Desativar",
         activate: "Ativar",
       },
@@ -699,10 +707,12 @@ export const translations: Record<Lang, T> = {
         subtitle: "Elige la tienda donde está este iPad",
         saveAndReturn: "✓ Guardar tienda y volver al quiz",
         goToAnalytics: "📊 Ir a Analytics / Manager",
+        goToConsulente: "🎓 Formación Consultores",
         kioskActive: "🔒 Modo Kiosk Activo",
         kioskInactive: "🔓 Modo Kiosk",
         kioskActiveDesc: "Pantalla completa — barra de direcciones oculta",
         kioskInactiveDesc: "Activa para ocultar la barra del navegador",
+        kioskInstallHint: "⚠ Para escribir (email, nombre) sin romper el modo kiosk: añade la app a la pantalla de inicio del iPad — Compartir → \"Añadir a inicio\" — y ábrela desde ese icono.",
         deactivate: "Desactivar",
         activate: "Activar",
       },
@@ -847,10 +857,12 @@ export const translations: Record<Lang, T> = {
         subtitle: "Choisissez la boutique où se trouve cet iPad",
         saveAndReturn: "✓ Enregistrer la boutique et revenir au quiz",
         goToAnalytics: "📊 Ouvrir Analytics / Manager",
+        goToConsulente: "🎓 Formation Consultants",
         kioskActive: "🔒 Mode Kiosk Actif",
         kioskInactive: "🔓 Mode Kiosk",
         kioskActiveDesc: "Plein écran — barre d'adresse masquée",
         kioskInactiveDesc: "Activez pour masquer la barre du navigateur",
+        kioskInstallHint: "⚠ Pour saisir (email, nom) sans casser le mode kiosk : ajoutez l'app à l'écran d'accueil de l'iPad — Partager → \"Sur l'écran d'accueil\" — et ouvrez-la depuis cette icône.",
         deactivate: "Désactiver",
         activate: "Activer",
       },

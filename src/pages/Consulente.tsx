@@ -75,13 +75,17 @@ const Consulente = () => {
 
   return (
     <>
-      <button
-        onClick={() => navigate("/")}
-        className="fixed left-4 top-4 z-50 flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground/60 transition-colors hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Home
-      </button>
+      {/* Exit to the quiz — shown on every step except the dashboard, which has
+          its own header. Serves as both "back" and "go straight to the quiz". */}
+      {step !== "dashboard" && (
+        <button
+          onClick={() => navigate("/")}
+          className="fixed left-4 top-4 z-50 flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground shadow-sm transition-colors hover:text-foreground active:scale-95"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back to quiz
+        </button>
+      )}
 
       <AnimatePresence mode="wait">
         {step === "login" && (

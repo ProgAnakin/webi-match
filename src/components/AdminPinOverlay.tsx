@@ -20,7 +20,7 @@ interface AdminPinOverlayProps {
 
 const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
   const { t } = useLang();
-  const { isKioskLocked, activateKiosk, deactivateKiosk } = useKioskMode();
+  const { isKioskLocked, activateKiosk, deactivateKiosk, isStandalone } = useKioskMode();
   const [step, setStep] = useState<Step>("pin");
   const [pin, setPin] = useState("");
   const [shake, setShake] = useState(false);
@@ -203,6 +203,13 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
             >
               {t.admin.storeStep.goToAnalytics}
             </motion.button>
+            <motion.button
+              onClick={() => navigate("/consulente")}
+              className="w-full rounded-2xl border border-sky-500/40 bg-sky-500/10 px-6 py-3.5 text-sm font-semibold text-sky-400 active:scale-95"
+              whileTap={{ scale: 0.97 }}
+            >
+              {t.admin.storeStep.goToConsulente}
+            </motion.button>
           </div>
 
           {/* Kiosk mode toggle */}
@@ -230,6 +237,14 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
                 {isKioskLocked ? t.admin.storeStep.deactivate : t.admin.storeStep.activate}
               </motion.button>
             </div>
+
+            {/* In a plain Safari tab the iOS keyboard exits the Fullscreen API.
+                Tell staff to install the PWA so kiosk survives data entry. */}
+            {!isStandalone && (
+              <p className="mt-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-[11px] leading-snug text-amber-300">
+                {t.admin.storeStep.kioskInstallHint}
+              </p>
+            )}
           </div>
         </motion.div>
       </motion.div>
