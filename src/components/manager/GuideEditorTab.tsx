@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Search, Save, Check, ChevronLeft, BookOpen } from "lucide-react";
+import { Search, Save, Check, ChevronLeft, BookOpen, Paperclip } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { products as coreProducts } from "@/data/products";
 import { toast } from "sonner";
@@ -9,12 +9,10 @@ import { toast } from "sonner";
 // product_guides table; Italian is primary, English is optional.
 
 interface GuideForm {
-  description_it: string;
-  specs_it: string;
-  tips_it: string;
-  description_en: string;
-  specs_en: string;
-  tips_en: string;
+  description_it: string;    description_en: string;
+  insight_1_it: string;      insight_1_en: string;
+  insight_2_it: string;      insight_2_en: string;
+  manager_advice_it: string; manager_advice_en: string;
 }
 
 interface ProductRef {
@@ -24,19 +22,27 @@ interface ProductRef {
 }
 
 const EMPTY_FORM: GuideForm = {
-  description_it: "", specs_it: "", tips_it: "",
-  description_en: "", specs_en: "", tips_en: "",
+  description_it: "",    description_en: "",
+  insight_1_it: "",      insight_1_en: "",
+  insight_2_it: "",      insight_2_en: "",
+  manager_advice_it: "", manager_advice_en: "",
 };
+
+const GUIDE_COLUMNS =
+  "description_it, description_en, insight_1_it, insight_1_en, insight_2_it, insight_2_en, manager_advice_it, manager_advice_en";
 
 const FIELD_GROUPS: { lang: "it" | "en"; flag: string; label: string }[] = [
   { lang: "it", flag: "🇮🇹", label: "Italiano (primary)" },
   { lang: "en", flag: "🇬🇧", label: "English (optional)" },
 ];
 
-const FIELDS: { key: "description" | "specs" | "tips"; label: string; hint: string }[] = [
-  { key: "description", label: "Description", hint: "A medium-length explanation of the product." },
-  { key: "specs",       label: "Specs & characteristics", hint: "Technical data sheet — one point per line." },
-  { key: "tips",        label: "Selling tips", hint: "Strong points and arguments to close the sale." },
+type FieldKey = "description" | "insight_1" | "insight_2" | "manager_advice";
+
+const FIELDS: { key: FieldKey; label: string; hint: string }[] = [
+  { key: "description",    label: "Product description",  hint: "What the product is — a clear, medium-length explanation." },
+  { key: "insight_1",      label: "Consultant insight 1", hint: "A selling angle or fact the consultant should know." },
+  { key: "insight_2",      label: "Consultant insight 2", hint: "A second selling angle or fact." },
+  { key: "manager_advice", label: "Manager's advice",     hint: "Your personal advice on how to sell this product." },
 ];
 
 export function GuideEditorTab() {
@@ -86,7 +92,7 @@ export function GuideEditorTab() {
     setLoadingGuide(true);
     const { data } = await supabase
       .from("product_guides")
-      .select("description_it, specs_it, tips_it, description_en, specs_en, tips_en")
+      .select(GUIDE_COLUMNS)
       .eq("product_id", p.id)
       .maybeSingle();
     setForm(data ? { ...EMPTY_FORM, ...data } : EMPTY_FORM);
@@ -145,28 +151,44 @@ export function GuideEditorTab() {
         {loadingGuide ? (
           <div className="py-12 text-center text-xs text-muted-foreground">Loading guide…</div>
         ) : (
-          FIELD_GROUPS.map((group) => (
-            <div key={group.lang} className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                {group.flag} {group.label}
+          <>
+            {FIELD_GROUPS.map((group) => (
+              <div key={group.lang} className="space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  {group.flag} {group.label}
+                </p>
+                {FIELDS.map((field) => {
+                  const formKey = `${field.key}_${group.lang}` as keyof GuideForm;
+                  return (
+                    <div key={formKey} className="rounded-xl border border-border bg-card p-4 space-y-2">
+                      <label className="block text-xs font-semibold text-foreground">{field.label}</label>
+                      <p className="text-[10px] text-muted-foreground">{field.hint}</p>
+                      <textarea
+                        value={form[formKey]}
+                        onChange={(e) => setForm((f) => ({ ...f, [formKey]: e.target.value }))}
+                        rows={4}
+                        className="w-full resize-y rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+
+            {/* Files & manuals — STANDBY (table exists, upload UI not built yet) */}
+            <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4">
+              <div className="flex items-center gap-2">
+                <Paperclip className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs font-semibold text-muted-foreground">Files &amp; manuals</p>
+                <span className="ml-auto rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+                  Coming soon
+                </span>
+              </div>
+              <p className="mt-1.5 text-[10px] text-muted-foreground/70">
+                Uploading spec sheets / manuals for consultants to download will be enabled in a later release.
               </p>
-              {FIELDS.map((field) => {
-                const formKey = `${field.key}_${group.lang}` as keyof GuideForm;
-                return (
-                  <div key={formKey} className="rounded-xl border border-border bg-card p-4 space-y-2">
-                    <label className="block text-xs font-semibold text-foreground">{field.label}</label>
-                    <p className="text-[10px] text-muted-foreground">{field.hint}</p>
-                    <textarea
-                      value={form[formKey]}
-                      onChange={(e) => setForm((f) => ({ ...f, [formKey]: e.target.value }))}
-                      rows={4}
-                      className="w-full resize-y rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                );
-              })}
             </div>
-          ))
+          </>
         )}
       </div>
     );

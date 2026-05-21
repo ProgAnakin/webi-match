@@ -6,23 +6,26 @@ export interface ProductGuide {
   product_id: string;
   product_name: string;
   description_it: string;
-  specs_it: string;
-  tips_it: string;
   description_en: string;
-  specs_en: string;
-  tips_en: string;
+  insight_1_it: string;
+  insight_1_en: string;
+  insight_2_it: string;
+  insight_2_en: string;
+  manager_advice_it: string;
+  manager_advice_en: string;
+  manager_advice_audio_url: string | null;
   updated_at: string;
 }
 
-// Resolves the three guide fields for the chosen language, falling back to
-// Italian when an English field was left blank by the manager.
+// Resolves every guide field for the chosen language, falling back to the
+// Italian value when the English field was left blank by the manager.
 export function localisedGuide(g: ProductGuide, lang: GuideLang) {
-  if (lang === "en") {
-    return {
-      description: g.description_en.trim() || g.description_it,
-      specs:       g.specs_en.trim()       || g.specs_it,
-      tips:        g.tips_en.trim()        || g.tips_it,
-    };
-  }
-  return { description: g.description_it, specs: g.specs_it, tips: g.tips_it };
+  const pick = (it: string, en: string) =>
+    lang === "en" ? (en.trim() || it) : it;
+  return {
+    description:   pick(g.description_it,    g.description_en),
+    insight1:      pick(g.insight_1_it,      g.insight_1_en),
+    insight2:      pick(g.insight_2_it,      g.insight_2_en),
+    managerAdvice: pick(g.manager_advice_it, g.manager_advice_en),
+  };
 }
