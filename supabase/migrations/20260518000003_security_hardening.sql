@@ -70,6 +70,7 @@ DROP POLICY IF EXISTS "audit_log_select_authenticated" ON public.manager_audit_l
 
 -- ── 5. quiz_cards: tighten the manage policy to managers only ───────────────
 DROP POLICY IF EXISTS "auth manage quiz_cards" ON public.quiz_cards;
+DROP POLICY IF EXISTS "manager manage quiz_cards" ON public.quiz_cards;
 
 CREATE POLICY "manager manage quiz_cards"
   ON public.quiz_cards
