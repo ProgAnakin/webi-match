@@ -23,7 +23,7 @@ interface Session {
   code_redeemed_at: string | null;
 }
 
-type StatusFilter = "all" | "inviata" | "in_elaborazione" | "senza_email" | "fallita";
+type StatusFilter = "all" | "sent" | "processing" | "no_email" | "failed";
 
 function productName(id: string) {
   return products.find((p) => p.id === id)?.name ?? id;
@@ -41,12 +41,12 @@ function formatDate(iso: string) {
   });
 }
 
-function getSessionStatus(s: Session): "inviata" | "in_elaborazione" | "senza_email" | "fallita" {
-  if (s.email_sent) return "inviata";
+function getSessionStatus(s: Session): "sent" | "processing" | "no_email" | "failed" {
+  if (s.email_sent) return "sent";
   const ageMin = (Date.now() - new Date(s.created_at).getTime()) / 60_000;
-  if (ageMin < 5) return "in_elaborazione";
-  if (s.discount_code) return "senza_email";
-  return "fallita";
+  if (ageMin < 5) return "processing";
+  if (s.discount_code) return "no_email";
+  return "failed";
 }
 
 function isCodeExpired(s: Session): boolean {
@@ -60,10 +60,10 @@ function hoursUntilExpiry(s: Session): number | null {
 }
 
 const STATUS_META = {
-  inviata:     { label: "SENT",            icon: Mail,        cls: "border-green-500/40 bg-green-500/10 text-green-400"       },
-  in_elaborazione: { label: "PROCESSING",      icon: Clock,       cls: "border-amber-500/40 bg-amber-500/10 text-amber-400"       },
-  senza_email:   { label: "NO EMAIL",        icon: AlertCircle, cls: "border-orange-500/40 bg-orange-500/10 text-orange-400"    },
-  fallita:      { label: "FAILED",          icon: XCircle,     cls: "border-destructive/40 bg-destructive/10 text-destructive" },
+  sent:     { label: "SENT",            icon: Mail,        cls: "border-green-500/40 bg-green-500/10 text-green-400"       },
+  processing: { label: "PROCESSING",      icon: Clock,       cls: "border-amber-500/40 bg-amber-500/10 text-amber-400"       },
+  no_email:   { label: "NO EMAIL",        icon: AlertCircle, cls: "border-orange-500/40 bg-orange-500/10 text-orange-400"    },
+  failed:      { label: "FAILED",          icon: XCircle,     cls: "border-destructive/40 bg-destructive/10 text-destructive" },
 };
 
 interface SessionsTabProps {
@@ -307,17 +307,17 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
   const counts = {
     all:         kpiData.length,
-    inviata:     kpiData.filter((s) => s.email_sent).length,
-    in_elaborazione: kpiData.filter((s) => {
+    sent:     kpiData.filter((s) => s.email_sent).length,
+    processing: kpiData.filter((s) => {
       if (s.email_sent) return false;
       return (Date.now() - new Date(s.created_at).getTime()) / 60_000 < 5;
     }).length,
-    senza_email:   kpiData.filter((s) => {
+    no_email:   kpiData.filter((s) => {
       if (s.email_sent) return false;
       if (!s.discount_code) return false;
       return (Date.now() - new Date(s.created_at).getTime()) / 60_000 >= 5;
     }).length,
-    fallita:      kpiData.filter((s) => !s.email_sent && !s.discount_code).length,
+    failed:      kpiData.filter((s) => !s.email_sent && !s.discount_code).length,
   };
 
   const expiredReusable = kpiData.filter(
@@ -360,19 +360,19 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       >
         <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4 text-center">
-          <p className="text-2xl font-bold text-green-400">{counts.inviata}</p>
+          <p className="text-2xl font-bold text-green-400">{counts.sent}</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Emails sent</p>
         </div>
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
-          <p className="text-2xl font-bold text-amber-400">{counts.in_elaborazione}</p>
+          <p className="text-2xl font-bold text-amber-400">{counts.processing}</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Processing</p>
         </div>
         <div className="rounded-2xl border border-orange-500/20 bg-orange-500/5 p-4 text-center">
-          <p className="text-2xl font-bold text-orange-400">{counts.senza_email}</p>
+          <p className="text-2xl font-bold text-orange-400">{counts.no_email}</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">No email</p>
         </div>
         <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-center">
-          <p className="text-2xl font-bold text-destructive">{counts.fallita}</p>
+          <p className="text-2xl font-bold text-destructive">{counts.failed}</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">Failed</p>
         </div>
         <div className="rounded-2xl border border-border bg-muted/20 p-4 text-center">
@@ -488,25 +488,25 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
 
       {/* Status filter + actions */}
       <div className="flex flex-wrap gap-2">
-        {(["all", "inviata", "in_elaborazione", "senza_email", "fallita"] as StatusFilter[]).map((f) => (
+        {(["all", "sent", "processing", "no_email", "failed"] as StatusFilter[]).map((f) => (
           <button
             key={f}
             onClick={() => setStatusFilter(f)}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
               statusFilter === f
                 ? f === "all"         ? "bg-primary text-primary-foreground"
-                : f === "inviata"     ? "bg-green-500/20  text-green-400  border border-green-500/40"
-                : f === "in_elaborazione" ? "bg-amber-500/20  text-amber-400  border border-amber-500/40"
-                : f === "senza_email"   ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
+                : f === "sent"     ? "bg-green-500/20  text-green-400  border border-green-500/40"
+                : f === "processing" ? "bg-amber-500/20  text-amber-400  border border-amber-500/40"
+                : f === "no_email"   ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
                 :                       "bg-destructive/20 text-destructive border border-destructive/40"
                 : "bg-muted text-muted-foreground"
             }`}
           >
             {f === "all"         ? `All (${counts.all})`
-              : f === "inviata"     ? `Sent (${counts.inviata})`
-              : f === "in_elaborazione" ? `Processing (${counts.in_elaborazione})`
-              : f === "senza_email"   ? `No email (${counts.senza_email})`
-              :                       `Failed (${counts.fallita})`}
+              : f === "sent"     ? `Sent (${counts.sent})`
+              : f === "processing" ? `Processing (${counts.processing})`
+              : f === "no_email"   ? `No email (${counts.no_email})`
+              :                       `Failed (${counts.failed})`}
           </button>
         ))}
 
