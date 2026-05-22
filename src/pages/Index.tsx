@@ -298,11 +298,14 @@ const Index = () => {
       nome: user.nome,
       cognome: user.cognome,
       store_id: storeId,
-      // Product snapshot — used by the Edge Function to build the email
+      // Product snapshot — used by the Edge Function to build the email.
+      // Video falls back to the product's own video_url when no per-store
+      // override exists (custom products carry their own link).
       product_name:  matchedProduct.name,
       product_price: matchedProduct.price,
       product_image: matchedProduct.image?.startsWith("https://") ? matchedProduct.image : null,
-      product_video: videoOverrides[matchedProduct.id] ?? null,
+      product_video: videoOverrides[matchedProduct.id]
+        ?? (matchedProduct.videoUrl && matchedProduct.videoUrl !== "#" ? matchedProduct.videoUrl : null),
       discount_percent: discountOverrides[matchedProduct.id] ?? 5,
       language: lang,
     };

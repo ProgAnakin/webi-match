@@ -940,8 +940,15 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
               const isActive = settings[product.id] !== false;
               const isSaving = savingId === product.id;
               const faqData = faqOverrides[product.id];
-              const faqComplete = !!(faqData?.q1 && faqData?.a1);
-              const faqPartial = !!(faqData?.q1 && !faqData?.a1);
+              // A custom product can carry its own FAQ (custom_products.faq);
+              // fall back to it so the button reflects reality, not just the
+              // per-store override.
+              const ownFaqHasContent = (product.faq ?? []).some((f) => f.q?.trim() && f.a?.trim());
+              const faqComplete = !!(faqData?.q1 && faqData?.a1) || ownFaqHasContent;
+              const faqPartial = !faqComplete && !!(faqData?.q1);
+              // Effective video: per-store override OR the product's own link.
+              const hasVideo = !!videoOverrides[product.id]
+                || (!!product.videoUrl && product.videoUrl !== "#");
               const updatedAt = updatedAtMap[product.id];
               return (
                 <motion.div
@@ -1117,14 +1124,21 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                         </div>
                       ) : (
                         <button
-                          onClick={() => { setEditingVideoId(product.id); setDraftVideo(videoOverrides[product.id] ?? ""); setVideoError(null); }}
+                          onClick={() => {
+                            setEditingVideoId(product.id);
+                            setDraftVideo(
+                              videoOverrides[product.id]
+                              ?? (product.videoUrl && product.videoUrl !== "#" ? product.videoUrl : "")
+                            );
+                            setVideoError(null);
+                          }}
                           className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium transition-colors ${
-                            videoOverrides[product.id]
+                            hasVideo
                               ? "border-green-500/40 bg-green-500/10 text-green-400"
                               : "border-border bg-muted/50 text-muted-foreground hover:bg-muted"
                           }`}>
                           <Link className="h-3 w-3" />
-                          {videoOverrides[product.id] ? "Video ✓" : "Video"}
+                          {hasVideo ? "Video ✓" : "Video"}
                         </button>
                       )}
 
