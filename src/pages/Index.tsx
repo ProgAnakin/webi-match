@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type TargetAndTransition, type Transition } from "framer-motion";
 import WelcomeScreen, { type UserInfo } from "@/components/WelcomeScreen";
 import QuizScreen from "@/components/QuizScreen";
 import MatchResult from "@/components/MatchResult";
@@ -23,7 +23,7 @@ import { readCache, writeCache } from "@/lib/startupCache";
 type Screen = "splash" | "welcome" | "loading_quiz" | "quiz" | "result" | "success";
 
 // ── Per-screen directional transitions ────────────────────────────────────────────────
-const screenAnim: Record<Screen, { initial: object; animate: object; exit: object; transition: object }> = {
+const screenAnim: Record<Screen, { initial: TargetAndTransition; animate: TargetAndTransition; exit: TargetAndTransition; transition: Transition }> = {
   loading_quiz: {
     initial:    { opacity: 0 },
     animate:    { opacity: 1 },

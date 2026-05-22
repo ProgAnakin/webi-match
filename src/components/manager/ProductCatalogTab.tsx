@@ -109,7 +109,8 @@ export function ProductCatalogTab() {
       supabase.from("custom_products").select("*").order("created_at", { ascending: false }),
       supabase.from("product_global_status").select("product_id, hidden"),
     ]);
-    setCustomProducts((customRes.data ?? []) as CustomProductRow[]);
+    // `faq` comes back as Json from the generated types — cast through unknown.
+    setCustomProducts((customRes.data ?? []) as unknown as CustomProductRow[]);
     const map: Record<string, boolean> = {};
     (globalRes.data ?? []).forEach((r: GlobalStatusRow) => { map[r.product_id] = r.hidden; });
     setGlobalStatus(map);
