@@ -15,82 +15,21 @@ import { QuizCardsTab } from "./QuizCardsTab";
 import { EmailTemplateTab } from "./EmailTemplateTab";
 import { RolesTab } from "./RolesTab";
 import { GuideEditorTab } from "./GuideEditorTab";
+import {
+  DISCOUNT_OPTIONS,
+  formatUpdatedAt, isValidPrice, isValidVideoUrl, formatAuditDate, auditStoreName,
+  type SettingsMap, type PriceMap, type ImageMap, type VideoMap,
+  type DiscountMap, type FaqMap, type UpdatedAtMap, type DiscountOption,
+  type UndoEntry, type AuditLogEntry,
+} from "./managerDashboardUtils";
 
 import { resizeImage } from "@/lib/imageProcessing";
 
 type ActiveTab = "catalogo" | "sessioni" | "storico" | "gestione";
 type GestioneTab = "catalogo" | "carte" | "email" | "ruoli" | "guida";
 
-/** product_id → active boolean, loaded from Supabase */
-type SettingsMap = Record<string, boolean>;
-/** product_id → price override string */
-type PriceMap = Record<string, string>;
-/** product_id → custom image URL */
-type ImageMap = Record<string, string>;
-/** product_id → YouTube video URL */
-type VideoMap = Record<string, string>;
-/** product_id → discount percent (5 | 8 | 10) */
-type DiscountMap = Record<string, number>;
-/** product_id → FAQ data */
-type FaqMap = Record<string, FaqData>;
-/** product_id → updated_at ISO string */
-type UpdatedAtMap = Record<string, string>;
-
-const DISCOUNT_OPTIONS = [5, 8, 10] as const;
-type DiscountOption = typeof DISCOUNT_OPTIONS[number];
-
-interface UndoEntry { productId: string; restoredValue: boolean; }
-
-interface AuditLogEntry {
-  id: string;
-  created_at: string;
-  action: string | null;
-  product_id: string | null;
-  old_active: boolean | null;
-  new_active: boolean | null;
-  store_id: string | null;
-  user_id: string | null;
-}
-
 interface ManagerDashboardProps {
   onLogout: () => void;
-}
-
-/** Format a timestamp as "oggi", "ieri", "X giorni fa", "X settimane fa" */
-function formatUpdatedAt(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const diffDays = Math.floor(diffMs / 86_400_000);
-  if (diffDays === 0) return "today";
-  if (diffDays === 1) return "yesterday";
-  if (diffDays < 14) return `${diffDays} days ago`;
-  const weeks = Math.floor(diffDays / 7);
-  return `${weeks} weeks ago`;
-}
-
-/** Validate price formats: "€49,00", "49.00", "49,00", "€49" */
-function isValidPrice(value: string): boolean {
-  const trimmed = value.trim();
-  if (trimmed === "") return true; // allow clearing
-  return /^€?\d+([.,]\d{1,2})?$/.test(trimmed);
-}
-
-/** Validate video URL — must contain youtube.com, youtu.be, or vimeo.com */
-function isValidVideoUrl(url: string): boolean {
-  const trimmed = url.trim();
-  if (trimmed === "") return true; // allow clearing
-  return trimmed.includes("youtube.com") || trimmed.includes("youtu.be") || trimmed.includes("vimeo.com");
-}
-
-function formatAuditDate(iso: string): string {
-  return new Date(iso).toLocaleString("it-IT", {
-    day: "2-digit", month: "2-digit", year: "2-digit",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
-
-function auditStoreName(id: string | null): string {
-  if (!id) return "—";
-  return STORES.find((s) => s.id === id)?.shortName ?? id;
 }
 
 export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {

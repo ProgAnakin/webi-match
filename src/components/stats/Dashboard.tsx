@@ -13,6 +13,7 @@ import { MfaSetupModal } from "./MfaSetupModal";
 import {
   QuizSession, FunnelCounts, DayCount, ProductStat,
   DAY_LABELS, productName, formatDate, storeName, exportCSV,
+  todayStr, daysAgoStr, startOfMonthStr,
 } from "./types";
 
 const FETCH_LIMIT = 5000;
@@ -22,21 +23,6 @@ const REFRESH_DEBOUNCE_MS = 3000;
 
 interface DashboardProps {
   onLogout: () => void;
-}
-
-// ─── Date helpers ────────────────────────────────────────────────────────────────────────────────
-function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-function daysAgoStr(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
-}
-function startOfMonthStr(): string {
-  const d = new Date();
-  d.setDate(1);
-  return d.toISOString().slice(0, 10);
 }
 
 export const Dashboard = ({ onLogout }: DashboardProps) => {

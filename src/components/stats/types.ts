@@ -58,6 +58,27 @@ export function storeName(id: string | null): string {
   return getStoreById(id)?.shortName ?? id;
 }
 
+// ─── Date-range helpers (YYYY-MM-DD) ──────────────────────────────────────────
+
+/** Today as an ISO date string (YYYY-MM-DD). */
+export function todayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** The date `n` days ago as an ISO date string. */
+export function daysAgoStr(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
+/** The first day of the current month as an ISO date string. */
+export function startOfMonthStr(): string {
+  const d = new Date();
+  d.setDate(1);
+  return d.toISOString().slice(0, 10);
+}
+
 /**
  * Sanitize a string for safe CSV embedding.
  * - Escapes double quotes (RFC 4180)
