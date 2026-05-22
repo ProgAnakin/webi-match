@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Check, Eye, EyeOff, Pencil, Plus, RotateCcw, Trash2, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { products as coreProducts } from "@/data/products";
 import { AVAILABLE_TAGS } from "@/data/products";
 import { toast } from "sonner";
 
@@ -227,16 +226,9 @@ export function ProductCatalogTab() {
 
     const slugId = form.id.trim();
 
-    // #4 — slug collision check for new products
+    // Slug collision check for new products — the whole catalog lives in
+    // custom_products, so a single check covers every product.
     if (!editingId) {
-      // Check against core products
-      const coreCollision = coreProducts.some((p) => p.id === slugId);
-      if (coreCollision) {
-        setFormError(`ID "${slugId}" is already used by a base product. Choose a different ID.`);
-        setSaving(false);
-        return;
-      }
-      // Check against custom products
       const { data: existing } = await supabase.from("custom_products").select("id").eq("id", slugId).maybeSingle();
       if (existing) {
         setFormError(`ID "${slugId}" already exists in the catalog. Choose a different ID.`);
@@ -555,50 +547,11 @@ export function ProductCatalogTab() {
         </div>
       )}
 
-      {/* Core products — global visibility */}
+      {/* Product list — the whole catalog lives in custom_products */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Base products ({coreProducts.length})
-          </h3>
-          <span className="text-[10px] text-muted-foreground/60">Disable to hide them from all stores</span>
-        </div>
-        {coreProducts.map((p) => {
-          const hidden = globalStatus[p.id] ?? false;
-          return (
-            <div
-              key={p.id}
-              className={`flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 ${hidden ? "opacity-50" : ""}`}
-            >
-              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-muted/30">
-                <img src={p.image} alt={p.name} loading="lazy" decoding="async" className="h-full w-full object-contain" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-foreground">{p.name}</p>
-                <p className="text-xs text-muted-foreground">{p.price} · {p.tags.join(", ")}</p>
-              </div>
-              <button
-                onClick={() => toggleGlobalHidden(p.id)}
-                disabled={togglingId === p.id}
-                title={hidden ? "Show in all stores" : "Hide from all stores"}
-                className={`shrink-0 rounded-xl p-2 transition-colors active:scale-95 ${
-                  hidden
-                    ? "bg-muted/40 text-muted-foreground"
-                    : "bg-green-500/10 text-green-400"
-                }`}
-              >
-                {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Custom products */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Added products ({customProducts.filter((p) => p.status === "active").length} active
+            Products ({customProducts.filter((p) => p.status === "active").length} active
             {customProducts.some((p) => p.status === "archived") && ` · ${customProducts.filter((p) => p.status === "archived").length} archived`})
           </h3>
           {customProducts.some((p) => p.status === "archived") && (

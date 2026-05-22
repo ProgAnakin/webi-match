@@ -6,7 +6,7 @@ import MatchResult from "@/components/MatchResult";
 import SuccessScreen from "@/components/SuccessScreen";
 import AttractScreen from "@/components/AttractScreen";
 import { KioskLockScreen } from "@/components/KioskLockScreen";
-import { getMatchedProduct, products as coreProducts, type Product } from "@/data/products";
+import { getMatchedProduct, type Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import { useInactivityReset } from "@/hooks/useInactivityReset";
 import { useWakeLock } from "@/hooks/useWakeLock";
@@ -95,7 +95,7 @@ const Index = () => {
   const [imageOverrides, setImageOverrides] = useState<Record<string, string>>({});
   const [videoOverrides, setVideoOverrides] = useState<Record<string, string>>({});
   const [discountOverrides, setDiscountOverrides] = useState<Record<string, number>>({});
-  const [allProducts, setAllProducts] = useState<Product[]>(coreProducts);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [settingsLoadFailed, setSettingsLoadFailed] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [quizCards, setQuizCards] = useState<QuizCard[] | null>(null);
@@ -136,9 +136,9 @@ const Index = () => {
         tags: r.tags ?? [],
         faq: r.faq ?? [],
       }));
-      const merged = [...coreProducts, ...customProductList].filter(
-        (p) => !hiddenIds.has(p.id),
-      );
+      // The whole catalog now lives in custom_products — no hardcoded base
+      // products are spread in any more.
+      const merged = customProductList.filter((p) => !hiddenIds.has(p.id));
       setAllProducts(merged);
 
       const data = snap.settingsData;

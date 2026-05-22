@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { BarChart2, Camera, Check, GraduationCap, HelpCircle, History, Home, Link, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download, Inbox } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { products, type Product } from "@/data/products";
+import { type Product } from "@/data/products";
 import { getStoredStoreId, setStoredStoreId, getStoreById, STORES } from "@/data/stores";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 import { StoreSelectorModal } from "./StoreSelectorModal";
@@ -157,8 +157,8 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     });
   }, []);
 
-  // Core + custom products, used everywhere the catalog list is rendered/filtered.
-  const catalogProducts = [...products, ...customProducts];
+  // The whole catalog lives in custom_products now — single source of truth.
+  const catalogProducts = customProducts;
   const customProductIds = new Set(customProducts.map((p) => p.id));
 
   const allTags = Array.from(new Set(catalogProducts.flatMap((p) => p.tags))).sort();
