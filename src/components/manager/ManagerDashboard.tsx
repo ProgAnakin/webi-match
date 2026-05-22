@@ -121,6 +121,8 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const [showStoreModal, setShowStoreModal] = useState(false);
   const [bulkSelection, setBulkSelection] = useState<Set<string>>(new Set());
   const [bulkConfirm, setBulkConfirm] = useState<{ enable: boolean; count: number } | null>(null);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [sending, setSending] = useState(false);
   const [showCsvModal, setShowCsvModal] = useState(false);
   const [csvPreview, setCsvPreview] = useState<{ productId: string; newPrice: string }[]>([]);
   // Undo last toggle — auto-dismisses after 8 s
@@ -382,6 +384,49 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     setBulkConfirm(null);
   };
 
+  // Copies the selected products into another store's catalog — carries this
+  // store's per-store config (price / image / video / discount / FAQ) and
+  // marks them active in the target store.
+  const sendToStore = async (targetStoreId: string) => {
+    const ids = [...bulkSelection];
+    if (ids.length === 0) return;
+    setSending(true);
+    const { data: srcRows } = await supabase
+      .from("product_settings")
+      .select("product_id, price_override, image_url, video_url, discount_percent, faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3")
+      .eq("store_id", storeId)
+      .in("product_id", ids);
+    const byId = new Map((srcRows ?? []).map((r) => [r.product_id, r]));
+    const payload = ids.map((pid) => {
+      const src = byId.get(pid);
+      return {
+        product_id: pid,
+        store_id: targetStoreId,
+        active: true,
+        price_override:   src?.price_override   ?? null,
+        image_url:        src?.image_url        ?? null,
+        video_url:        src?.video_url        ?? null,
+        discount_percent: src?.discount_percent ?? 5,
+        faq_q1: src?.faq_q1 ?? null, faq_a1: src?.faq_a1 ?? null,
+        faq_q2: src?.faq_q2 ?? null, faq_a2: src?.faq_a2 ?? null,
+        faq_q3: src?.faq_q3 ?? null, faq_a3: src?.faq_a3 ?? null,
+        updated_at: new Date().toISOString(),
+      };
+    });
+    const { error } = await supabase
+      .from("product_settings")
+      .upsert(payload, { onConflict: "product_id,store_id" });
+    setSending(false);
+    setShowSendModal(false);
+    if (error) {
+      toast.error("Error sending products to the store.");
+      return;
+    }
+    const target = getStoreById(targetStoreId);
+    toast.success(`${ids.length} product${ids.length > 1 ? "s" : ""} sent to ${target?.shortName ?? targetStoreId}.`);
+    setBulkSelection(new Set());
+  };
+
   const handleCsvUpload = async (file: File) => {
     const text = await file.text();
     const lines = text.trim().split("\n");
@@ -594,6 +639,10 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                 <button onClick={() => requestBulkToggle(true)}
                   className="flex items-center gap-1 rounded-xl border border-green-500/40 bg-green-500/10 px-3 py-2 text-xs text-green-400 active:scale-95">
                   <Power className="h-3 w-3" /> Activate {bulkSelection.size}
+                </button>
+                <button onClick={() => setShowSendModal(true)}
+                  className="flex items-center gap-1 rounded-xl border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-xs text-sky-400 active:scale-95">
+                  <MapPin className="h-3 w-3" /> Send to store {bulkSelection.size}
                 </button>
                 <button onClick={() => setBulkSelection(new Set())}
                   className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
@@ -949,6 +998,12 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
               // Effective video: per-store override OR the product's own link.
               const hasVideo = !!videoOverrides[product.id]
                 || (!!product.videoUrl && product.videoUrl !== "#");
+              // Effective image: per-store override OR the product's own image
+              // (a custom product created in the global catalog carries one).
+              const ownImage = product.image && product.image !== "/products/placeholder.png"
+                ? product.image : "";
+              const hasImageOverride = !!imageOverrides[product.id];
+              const shownImage = imageOverrides[product.id] || ownImage;
               const updatedAt = updatedAtMap[product.id];
               return (
                 <motion.div
@@ -1081,16 +1136,30 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                     {/* ── Row 3: media actions + tags ────────────────── */}
                     <div className="ml-7 mt-3 flex flex-wrap items-center gap-2">
 
-                      {/* Image */}
-                      {imageOverrides[product.id] ? (
+                      {/* Image — per-store override, falling back to the
+                          product's own image from the global catalog */}
+                      {shownImage ? (
                         <div className="flex items-center gap-1.5">
-                          <img src={imageOverrides[product.id]} alt={product.name}
+                          <img src={shownImage} alt={product.name}
                             loading="lazy" decoding="async"
                             className="h-8 w-12 rounded-md border border-border object-cover" />
-                          <button onClick={() => removeProductImage(product.id)}
-                            className="flex items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/10 px-2 py-1 text-[10px] text-destructive active:scale-95">
-                            <Trash2 className="h-3 w-3" />
-                          </button>
+                          {hasImageOverride ? (
+                            <button onClick={() => removeProductImage(product.id)}
+                              title="Remove the per-store image override"
+                              className="flex items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/10 px-2 py-1 text-[10px] text-destructive active:scale-95">
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          ) : (
+                            <label className={`flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-muted/50 px-2 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted active:scale-95 ${
+                              uploadingImageId === product.id ? "animate-pulse" : ""
+                            }`}>
+                              <Camera className="h-3 w-3" />
+                              {uploadingImageId === product.id ? "…" : "Store photo"}
+                              <input type="file" accept="image/*" className="hidden"
+                                disabled={uploadingImageId !== null}
+                                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadProductImage(product.id, f); e.target.value = ""; }} />
+                            </label>
+                          )}
                         </div>
                       ) : (
                         <label className={`flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:bg-muted active:scale-95 ${
@@ -1209,6 +1278,57 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             }}
             onClose={() => setShowStoreModal(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Send-to-store modal */}
+      <AnimatePresence>
+        {showSendModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-6"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => !sending && setShowSendModal(false)}
+          >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl"
+              initial={{ scale: 0.92, y: 16 }} animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 28 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-1 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-sky-400" />
+                <p className="text-sm font-bold text-foreground">Send to another store</p>
+              </div>
+              <p className="mb-4 text-xs text-muted-foreground leading-relaxed">
+                Copies {bulkSelection.size} product{bulkSelection.size > 1 ? "s" : ""} into the
+                chosen store's catalog (set as active), carrying this store's price, image, video
+                and discount. Pick the destination:
+              </p>
+              <div className="space-y-2">
+                {STORES.filter((s) => s.id !== storeId).map((s) => (
+                  <button
+                    key={s.id}
+                    disabled={sending}
+                    onClick={() => sendToStore(s.id)}
+                    className="flex w-full items-center justify-between rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm font-semibold text-foreground hover:border-sky-500/40 active:scale-95 disabled:opacity-50"
+                  >
+                    <span>{s.name}</span>
+                    <span className="text-xs text-sky-400">{sending ? "…" : "Send →"}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => !sending && setShowSendModal(false)}
+                disabled={sending}
+                className="mt-4 w-full rounded-xl border border-border bg-card py-2.5 text-sm font-semibold text-muted-foreground active:scale-95 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
