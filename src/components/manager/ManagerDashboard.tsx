@@ -1348,7 +1348,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
               <h2 className="text-lg font-bold text-foreground mb-4">Confirm price update</h2>
               <div className="space-y-2 mb-6">
                 {csvPreview.map(({ productId, newPrice }) => {
-                  const prod = products.find((p) => p.id === productId);
+                  const prod = catalogProducts.find((p) => p.id === productId);
                   return (
                     <div key={productId} className="text-xs p-2 rounded-lg border border-border bg-background/40">
                       <p className="font-semibold text-foreground">{prod?.name ?? productId}</p>
