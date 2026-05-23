@@ -2,7 +2,7 @@
 
 # 🎯 Webi-Match
 
-**An iPad-first product discovery kiosk for Webidoo Store**
+**An iPad-first product discovery kiosk for physical retail**
 
 [![CI](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml/badge.svg)](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-75%20unit%20%2B%208%20e2e-22c55e)](./src/__tests__)
@@ -22,15 +22,22 @@
 
 ---
 
-## 💡 The Story Behind The Project
+## Overview
 
-I'm **Costanzo Annichini** — Tech Sales & Customer Success at **Webidoo Store**. While working on the shop floor I noticed something simple but frustrating: the iPads installed in our stores were there to engage customers, but no one really used them. They sat unused next to the merchandise, waiting for a reason to be touched.
+**Webi-Match** turns idle in-store iPads into a conversion-driving touchpoint. A customer answers eight quick swipe questions, a matching algorithm recommends one product, generates a unique discount code, and delivers a personalised follow-up email in the customer's language. The whole experience runs in under two minutes.
 
-So I decided to build that reason — **on my own initiative, on my own time, with no brief, no specs, and no requests from above**. I designed, architected and shipped this project end-to-end: from the swipe interaction and the matching algorithm to the Supabase backend, the email automation, the multi-store manager dashboard, the security model and the PWA deployment.
+**Built for:** physical retail with a curated catalog — tech, beauty, gifts, sporting goods, fragrance — where customers know roughly what they want but get overwhelmed by choice.
 
-The goal: give customers a playful 2-minute experience that ends with a personalised gadget recommendation, a discount code, and a follow-up email — turning idle iPads into a conversion-driving touchpoint that benefits both customers and the consultants who work alongside them.
+**Status:** in production across multiple Webidoo Store locations on iPad.
 
-— **Costanzo Annichini** · Tech Sales & Customer Success @ Webidoo Store
+### What it delivers
+
+- 📥 **First-party lead capture** with explicit GDPR consent at the point of collection
+- 🎯 **Product matchmaking** — eight questions to one recommendation, reduces choice paralysis
+- 🎟️ **Personalised discount codes** generated server-side and emailed in the customer's chosen language (IT / EN / PT / ES / FR)
+- 🏪 **Multi-store, per-store catalogs** managed from a single dashboard, with one-click "send products to another store" between locations
+- 📊 **Real-time analytics** — conversion funnel, per-store breakdowns, code-redemption tracking
+- 🎓 **Consultant training module** — manager-authored sales guides per product, used to onboard new sales staff
 
 ---
 
@@ -158,6 +165,23 @@ flowchart LR
 
 ---
 
+## 🎯 Use Cases
+
+Webi-Match was designed and validated in tech retail, but the model transfers cleanly to any curated-catalog category.
+
+| Use case | Where it fits |
+|---|---|
+| **In-store lead capture** | Storefronts that want first-party, GDPR-consented email leads instead of paper sign-ups or QR-code prompts that nobody scans. |
+| **Choice-paralysis catalogs** | Tech, beauty, fragrance, sporting goods, wine, gifts — categories with 20–100 products where the customer needs guidance to one. |
+| **Gift-finding (seasonal)** | Christmas, birthdays, anniversaries, Valentine's. Customer answers about the recipient, gets a match — converts indecision into a sale. |
+| **Multi-store chains** | Each location curates its own active catalog with per-store pricing, imagery and discounts; one dashboard manages all of them; "send to store" copies a setup between locations. |
+| **Pop-ups, events, brand activations** | Installable PWA — boots on any iPad, no per-event setup. Useful for product launches, fairs, in-store campaigns. |
+| **Sales-staff training** | The `/consulente` module gives each product a sales guide (description, two insights, manager's advice, video link) — used to onboard new floor staff. |
+| **First-party marketing database** | Every consented capture feeds a GDPR-clean opt-in list, segmented by lifestyle/interest tags from the quiz answers. |
+| **Merchandising analytics** | Funnel + product-performance dashboards reveal which products customers gravitate to — informs assortment, procurement and per-store stocking. |
+
+---
+
 ## 🛡️ Security & Quality Highlights
 
 | Category | Implementation |
@@ -203,6 +227,7 @@ Key architectural trade-offs are documented in [`docs/adr/`](./docs/adr/):
 | [002](./docs/adr/002-pwa-over-native.md) | PWA over native iOS app (with Capacitor escape hatch) |
 | [003](./docs/adr/003-pii-encryption-at-rest.md) | PII encryption at the database layer (pgp_sym_encrypt + SHA-256) |
 | [004](./docs/adr/004-swipe-quiz-over-form.md) | Tinder-style swipe quiz over a traditional form |
+| [005](./docs/adr/005-synchronous-pii-encryption.md) | Synchronous PII encryption before email dispatch |
 
 ---
 
@@ -252,7 +277,7 @@ src/
 ├── hooks/               # useDebounce, useWakeLock, useInactivityReset, useBgMusic, useViewportKeyboard…
 ├── i18n/                # Full translations in 5 languages
 ├── integrations/        # Supabase client + generated types
-├── lib/                 # imageProcessing, startupCache, emailTemplate, utils
+├── lib/                 # imageProcessing, startupCache, validators, haptic, clientId, utils
 └── pages/               # Route-level page components
 
 supabase/
@@ -352,21 +377,17 @@ Place core product images in `public/products/` and reference them in `src/data/
 
 ---
 
-## 📜 License
-
-Proprietary — © Costanzo Annichini. All rights reserved.
-
-This project was conceived, designed and built end-to-end by Costanzo Annichini as an independent initiative to enrich the in-store experience at Webidoo Store. It is not affiliated with, sponsored by or representative of any official Webidoo product.
-
----
-
-## 👤 Author
+## 👤 Author & License
 
 **Costanzo Annichini** — Tech Sales & Customer Success @ Webidoo Store
 
-A side-of-the-desk project, built to give customers a reason to actually touch the iPads in store. Architected and shipped solo — from swipe interaction to database security model to multilingual email automation. The codebase is the engineering output of someone whose job description doesn't include shipping software.
+Webi-Match was conceived, designed and built end-to-end as an independent initiative — **outside of formal job duties, on personal time, with no brief from the company**. Architected and shipped solo, from the swipe interaction and matching algorithm to the Supabase backend, security model, multilingual email automation, and the manager + consultant dashboards.
 
 - **GitHub:** [github.com/ProgAnakin](https://github.com/ProgAnakin)
 - **LinkedIn:** [linkedin.com/in/costanzoannichini](https://www.linkedin.com/in/costanzoannichini/)
 
-Architectural trade-offs are documented in [`docs/adr/`](./docs/adr/); operational triage in [`docs/runbook.md`](./docs/runbook.md). Happy to discuss any of it.
+Architectural decisions: [`docs/adr/`](./docs/adr/) · Operational triage: [`docs/runbook.md`](./docs/runbook.md)
+
+### License
+
+Proprietary — © Costanzo Annichini. All rights reserved. Not affiliated with, sponsored by, or representative of any official Webidoo product.
