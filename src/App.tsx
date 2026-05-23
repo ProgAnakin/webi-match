@@ -17,6 +17,7 @@ const Stats         = lazy(() => import("./pages/Stats.tsx"));
 const Manager       = lazy(() => import("./pages/Manager.tsx"));
 const Consulente    = lazy(() => import("./pages/Consulente.tsx"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
+const Privacy       = lazy(() => import("./pages/Privacy.tsx"));
 
 const AdminFallback = () => (
   <div className="flex min-h-screen items-center justify-center bg-background">
@@ -54,6 +55,9 @@ const App = () => (
             } />
             <Route path="/reset-password" element={
               <Suspense fallback={<AdminFallback />}><ResetPassword /></Suspense>
+            } />
+            <Route path="/privacy" element={
+              <Suspense fallback={<AdminFallback />}><Privacy /></Suspense>
             } />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -27,6 +27,9 @@ export interface T {
     offlineBanner: string;
     privacy: string;
     noSpam: string;
+    consentLabel: string;
+    consentRead: string;
+    consentRequired: string;
   };
   quiz: {
     questionOf: (current: number, total: number) => string;
@@ -178,6 +181,9 @@ export const translations: Record<Lang, T> = {
       offlineBanner: "⚠ Connessione assente — il quiz funziona ma le email non verranno inviate",
       privacy: "Dati crittografati · Conformità GDPR",
       noSpam: "Niente spam. Puoi cancellarti in qualsiasi momento.",
+      consentLabel: "Accetto l'informativa sulla privacy",
+      consentRead: "Leggi",
+      consentRequired: "Devi accettare l'informativa per continuare",
     },
     quiz: {
       questionOf: (c, t) => `Domanda ${c} di ${t}`,
@@ -328,6 +334,9 @@ export const translations: Record<Lang, T> = {
       offlineBanner: "⚠ No connection — the quiz works but emails won't be sent",
       privacy: "Encrypted data · GDPR compliant",
       noSpam: "No spam. Unsubscribe anytime.",
+      consentLabel: "I accept the privacy notice",
+      consentRead: "Read",
+      consentRequired: "You must accept the privacy notice to continue",
     },
     quiz: {
       questionOf: (c, t) => `Question ${c} of ${t}`,
@@ -478,6 +487,9 @@ export const translations: Record<Lang, T> = {
       offlineBanner: "⚠ Sem conexão — o quiz funciona mas os e-mails não serão enviados",
       privacy: "Dados encriptados · Conformidade GDPR",
       noSpam: "Sem spam. Pode cancelar a qualquer momento.",
+      consentLabel: "Aceito a informativa de privacidade",
+      consentRead: "Ler",
+      consentRequired: "Você precisa aceitar a informativa para continuar",
     },
     quiz: {
       questionOf: (c, t) => `Pergunta ${c} de ${t}`,
@@ -628,6 +640,9 @@ export const translations: Record<Lang, T> = {
       offlineBanner: "⚠ Sin conexión — el quiz funciona pero no se enviarán emails",
       privacy: "Datos cifrados · Cumplimiento GDPR",
       noSpam: "Sin spam. Puedes darte de baja en cualquier momento.",
+      consentLabel: "Acepto la información de privacidad",
+      consentRead: "Leer",
+      consentRequired: "Debes aceptar la información de privacidad para continuar",
     },
     quiz: {
       questionOf: (c, t) => `Pregunta ${c} de ${t}`,
@@ -778,6 +793,9 @@ export const translations: Record<Lang, T> = {
       offlineBanner: "⚠ Pas de connexion — le quiz fonctionne mais les emails ne seront pas envoyés",
       privacy: "Données chiffrées · Conformité RGPD",
       noSpam: "Aucun spam. Désinscription possible à tout moment.",
+      consentLabel: "J'accepte la politique de confidentialité",
+      consentRead: "Lire",
+      consentRequired: "Vous devez accepter la politique pour continuer",
     },
     quiz: {
       questionOf: (c, t) => `Question ${c} sur ${t}`,

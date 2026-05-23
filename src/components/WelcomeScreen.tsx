@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import logo from "@/assets/webidoo-logo.webp";
 import DiscoveryBackground from "./DiscoveryBackground";
 import AdminPinOverlay from "./AdminPinOverlay";
+import { PrivacyNotice } from "./PrivacyNotice";
 import { useSound } from "@/hooks/useSound";
 import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";
@@ -67,6 +68,10 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   const [submitted, setSubmitted] = useState(false);
   const [checking, setChecking] = useState(false);
   const [cooldownHours, setCooldownHours] = useState<number | null>(null);
+  // GDPR consent: must be explicitly granted before the customer's email is
+  // captured. The modal shows the same notice rendered at /privacy.
+  const [consent, setConsent] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const { play } = useSound();
 
   const isEmailValid   = EMAIL_REGEX.test(email.trim());
@@ -99,6 +104,7 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
     setSubmitted(true);
     setEmailTouched(true);
     if (!isFormValid || checking) return;
+    if (!consent) return;
 
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -131,7 +137,9 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
     }
     play("start");
     onStart({ nome: nome.trim(), cognome: cognome.trim(), email: normalizedEmail });
-  }, [isFormValid, checking, nome, cognome, email, play, onStart]);
+  }, [isFormValid, checking, consent, nome, cognome, email, play, onStart]);
+
+  const showConsentError = submitted && isFormValid && !consent;
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleStart();
@@ -155,6 +163,7 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
   }, []);
 
   return (
+    <>
     <div className="w-full space-y-3" style={{ paddingBottom: "var(--keyboard-height, 0px)" }}>
       <div className="flex gap-3">
         <div className="flex-1">
@@ -207,6 +216,33 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
         </motion.p>
       )}
 
+      {/* GDPR consent — must be explicit before name/email leave the kiosk. */}
+      <div className="flex flex-col items-start gap-1 px-2 pt-1">
+        <div className="flex items-start gap-2">
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
+            />
+            <span className="text-sm leading-snug text-muted-foreground select-none">
+              {t.welcome.consentLabel}
+            </span>
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowPrivacyModal(true)}
+            className="shrink-0 text-xs font-semibold text-primary underline underline-offset-2"
+          >
+            {t.welcome.consentRead}
+          </button>
+        </div>
+        {showConsentError && (
+          <p className="text-xs text-destructive pl-6">{t.welcome.consentRequired}</p>
+        )}
+      </div>
+
       <motion.button
         onClick={handleStart}
         disabled={checking}
@@ -224,6 +260,35 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
         <p className="text-center text-[11px] text-muted-foreground/70">{t.welcome.noSpam}</p>
       </div>
     </div>
+
+    {/* Privacy notice modal — opened from the consent checkbox row */}
+    <AnimatePresence>
+      {showPrivacyModal && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          onClick={() => setShowPrivacyModal(false)}
+        >
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl"
+            initial={{ scale: 0.94, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowPrivacyModal(false)}
+              aria-label="Close"
+              className="absolute right-3 top-3 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <XCircle className="h-5 w-5" />
+            </button>
+            <PrivacyNotice />
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </>
   );
 };
 
@@ -288,7 +353,7 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
         <span className="text-[10px] text-muted-foreground/40 select-none">
-          © {new Date().getFullYear()} Costanzo Annichini · Webi-Match
+          © {new Date().getFullYear()} Webidoo Store · Webi-Match
         </span>
       </div>
 
@@ -320,7 +385,7 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
       >
         <motion.img
           src={logo}
-          alt="Costanzo Annichini"
+          alt="Webidoo Store"
           className="h-24 w-auto"
           onClick={handleLogoTap}
           initial={{ scale: 0.8, opacity: 0 }}
