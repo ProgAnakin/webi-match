@@ -295,7 +295,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
           initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
           <div>
             <h1 className="text-2xl font-bold text-foreground">📊 Analytics</h1>
-            <p className="text-xs text-muted-foreground">Real-time data · Costanzo Annichini</p>
+            <p className="text-xs text-muted-foreground">Real-time data · Webidoo Store</p>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => fetchData(true)}
@@ -884,7 +884,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             </motion.div>
 
             <p className="pb-4 text-center text-xs text-muted-foreground">
-              Webi Match · Analytics · Costanzo Annichini
+              Webi Match · Analytics · Webidoo Store
             </p>
           </>
         )}

@@ -69,7 +69,7 @@ export class ErrorBoundary extends Component<Props, State> {
               transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
             />
             <span className="text-xs text-muted-foreground/60 tracking-widest uppercase">
-              Webi-Match · Costanzo Annichini
+              Webi-Match · Webidoo Store
             </span>
           </div>
 

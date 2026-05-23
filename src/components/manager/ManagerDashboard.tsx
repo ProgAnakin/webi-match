@@ -1181,7 +1181,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         )}
 
         <p className="pb-4 text-center text-xs text-muted-foreground">
-          Webi Match · Catalog Management · Costanzo Annichini
+          Webi Match · Catalog Management · Webidoo Store
         </p>
 
         </>)} {/* end catalogo tab */}

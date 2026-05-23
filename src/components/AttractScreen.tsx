@@ -124,7 +124,7 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
           }} />
           <img
             src={logo}
-            alt="Costanzo Annichini"
+            alt="Webidoo Store"
             className="relative h-28 w-auto"
             style={{ animation: "at-logo-glow 3s ease-in-out infinite" }}
           />

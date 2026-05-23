@@ -169,7 +169,7 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
       transition={{ duration: 0.4 }}
     >
       <div className="flex flex-col items-center gap-6 px-8 text-center">
-        <img src={logo} alt="Costanzo Annichini" className="h-12 object-contain" />
+        <img src={logo} alt="Webidoo Store" className="h-12 object-contain" />
 
         <motion.div
           className="text-7xl"
