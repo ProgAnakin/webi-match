@@ -91,6 +91,8 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
   useEffect(() => {
     const id = setInterval(() => setMsgIndex((i) => (i + 1) % messages.length), 2500);
     return () => clearInterval(id);
+  // Mount-only: rotates the attract messages on a fixed 2.5 s cadence.
+  // `messages` is module-scope and stable across renders.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

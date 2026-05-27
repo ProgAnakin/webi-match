@@ -17,6 +17,10 @@ export interface UserInfo {
   nome: string;
   cognome: string;
   email: string;
+  /** ISO timestamp captured the moment the customer ticked the consent
+   *  checkbox and started the flow — written to quiz_sessions for GDPR
+   *  Art. 7(1) "demonstrate consent" compliance. */
+  consentGivenAt: string;
 }
 
 interface WelcomeScreenProps {
@@ -136,7 +140,12 @@ const WelcomeForm = ({ onStart }: { onStart: (user: UserInfo) => void }) => {
       setChecking(false);
     }
     play("start");
-    onStart({ nome: nome.trim(), cognome: cognome.trim(), email: normalizedEmail });
+    onStart({
+      nome: nome.trim(),
+      cognome: cognome.trim(),
+      email: normalizedEmail,
+      consentGivenAt: new Date().toISOString(),
+    });
   }, [isFormValid, checking, consent, nome, cognome, email, play, onStart]);
 
   const showConsentError = submitted && isFormValid && !consent;

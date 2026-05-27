@@ -82,7 +82,7 @@ const Index = () => {
   const isOnline = useOnlineStatus();
   const [showKioskLock, setShowKioskLock] = useState(isKioskLocked);
   const [screen, setScreen] = useState<Screen>("splash");
-  const [user, setUser] = useState<UserInfo>({ nome: "", cognome: "", email: "" });
+  const [user, setUser] = useState<UserInfo>({ nome: "", cognome: "", email: "", consentGivenAt: "" });
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
   const [matchPercent, setMatchPercent] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, boolean>>({});
@@ -308,6 +308,9 @@ const Index = () => {
         ?? (matchedProduct.videoUrl && matchedProduct.videoUrl !== "#" ? matchedProduct.videoUrl : null),
       discount_percent: discountOverrides[matchedProduct.id] ?? 5,
       language: lang,
+      // GDPR Art. 7(1) — demonstrable record of consent at the moment
+      // the customer ticked the privacy checkbox on the welcome screen.
+      consent_given_at: user.consentGivenAt,
     };
 
     // Retry up to 2 times with exponential backoff before giving up.
@@ -338,7 +341,7 @@ const Index = () => {
     try {
       if (user.email) sessionStorage.removeItem(`wb_cooldown_${user.email.trim().toLowerCase()}`);
     } catch { /* storage unavailable */ }
-    setUser({ nome: "", cognome: "", email: "" });
+    setUser({ nome: "", cognome: "", email: "", consentGivenAt: "" });
     setMatchedProduct(null);
     setMatchPercent(0);
     setQuizAnswers({});

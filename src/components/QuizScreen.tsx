@@ -54,6 +54,9 @@ const QuizScreen = ({ onComplete, cards: cardsProp }: QuizScreenProps) => {
         setTransitioning(false);
       }, 240);
     }
+  // `play` (from useSound) is a stable callback and intentionally omitted;
+  // adding it would re-create handleSwipe on every render and reset the
+  // ref-based transitioning guard above.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, answers, cards, onComplete]);
 

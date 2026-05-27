@@ -220,6 +220,7 @@ export type Database = {
           code_redeemed: boolean
           code_redeemed_at: string | null
           language: string | null
+          consent_given_at: string | null
           created_at: string
         }
         Insert: {
@@ -241,6 +242,7 @@ export type Database = {
           code_redeemed?: boolean
           code_redeemed_at?: string | null
           language?: string | null
+          consent_given_at?: string | null
           created_at?: string
         }
         Update: {
@@ -262,6 +264,7 @@ export type Database = {
           code_redeemed?: boolean
           code_redeemed_at?: string | null
           language?: string | null
+          consent_given_at?: string | null
           created_at?: string
         }
         Relationships: []
