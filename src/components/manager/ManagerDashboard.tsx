@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BarChart2, Camera, Check, GraduationCap, HelpCircle, History, Home, Link, LogOut, MapPin, Pencil, Power, PowerOff, RotateCcw, Search, Trash2, X, Undo2, Upload, Download, Inbox } from "lucide-react";
+import { RotateCcw, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { type Product } from "@/data/products";
-import { getStoredStoreId, setStoredStoreId, getStoreById, STORES } from "@/data/stores";
+import { getStoredStoreId, setStoredStoreId, getStoreById } from "@/data/stores";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 import { StoreSelectorModal } from "./StoreSelectorModal";
 import { FaqModal, FaqData, EMPTY_FAQ } from "./FaqModal";
@@ -15,18 +15,23 @@ import { QuizCardsTab } from "./QuizCardsTab";
 import { EmailTemplateTab } from "./EmailTemplateTab";
 import { RolesTab } from "./RolesTab";
 import { GuideEditorTab } from "./GuideEditorTab";
+import { BulkConfirmBanner, type BulkConfirmIntent } from "./BulkConfirmBanner";
+import { SendToStoreModal } from "./SendToStoreModal";
+import { CsvPreviewModal, type CsvPriceUpdate } from "./CsvPreviewModal";
+import { UndoSnackbar } from "./UndoSnackbar";
 import {
-  DISCOUNT_OPTIONS,
-  formatUpdatedAt, isValidPrice, isValidVideoUrl, formatAuditDate, auditStoreName,
+  isValidPrice, isValidVideoUrl,
   type SettingsMap, type PriceMap, type ImageMap, type VideoMap,
   type DiscountMap, type FaqMap, type UpdatedAtMap, type DiscountOption,
-  type UndoEntry, type AuditLogEntry,
 } from "./managerDashboardUtils";
+import { AuditLogTab } from "./AuditLogTab";
+import { PrimaryTabs, ManagementSubTabs, type ActiveTab, type GestioneTab } from "./TabSwitcher";
+import { ProductRow } from "./ProductRow";
+import { ManagerHeader } from "./ManagerHeader";
+import { useAuditLog } from "./useAuditLog";
+import { useUndoToggle } from "./useUndoToggle";
 
 import { resizeImage } from "@/lib/imageProcessing";
-
-type ActiveTab = "catalogo" | "sessioni" | "storico" | "gestione";
-type GestioneTab = "catalogo" | "carte" | "email" | "ruoli" | "guida";
 
 interface ManagerDashboardProps {
   onLogout: () => void;
@@ -59,27 +64,17 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   );
   const [showStoreModal, setShowStoreModal] = useState(false);
   const [bulkSelection, setBulkSelection] = useState<Set<string>>(new Set());
-  const [bulkConfirm, setBulkConfirm] = useState<{ enable: boolean; count: number } | null>(null);
+  const [bulkConfirm, setBulkConfirm] = useState<BulkConfirmIntent | null>(null);
   const [showSendModal, setShowSendModal] = useState(false);
   const [sending, setSending] = useState(false);
   const [showCsvModal, setShowCsvModal] = useState(false);
-  const [csvPreview, setCsvPreview] = useState<{ productId: string; newPrice: string }[]>([]);
-  // Undo last toggle — auto-dismisses after 8 s
-  const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
-  const [undoCountdown, setUndoCountdown] = useState(8);
-  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const undoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [csvPreview, setCsvPreview] = useState<CsvPriceUpdate[]>([]);
   const [userRole, setUserRole] = useState<{ role: string; store_id: string | null } | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("catalogo");
   const [gestioneTab, setGestioneTab] = useState<GestioneTab>("catalogo");
   // Custom products (added via Gestione) — merged into the catalog so they can
   // be managed per-store exactly like core products.
   const [customProducts, setCustomProducts] = useState<Product[]>([]);
-
-  // Storico (audit log) state
-  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
-  const [auditLoading, setAuditLoading] = useState(false);
-  const [auditError, setAuditError] = useState(false);
 
   const currentStore = getStoreById(storeId);
 
@@ -171,32 +166,9 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
 
   useEffect(() => { fetchCustomProducts(); }, [fetchCustomProducts]);
 
-  // Fetch audit log when storico tab is active
-  const fetchAuditLog = useCallback(async () => {
-    setAuditLoading(true);
-    setAuditError(false);
-    try {
-      const { data, error } = await supabase
-        .from("manager_audit_log")
-        .select("id, created_at, action, product_id, old_active, new_active, store_id, user_id")
-        .order("created_at", { ascending: false })
-        .limit(200);
-      if (error) {
-        setAuditError(true);
-      } else {
-        setAuditLog((data ?? []) as AuditLogEntry[]);
-      }
-    } catch {
-      setAuditError(true);
-    }
-    setAuditLoading(false);
-  }, []);
+  const auditLog = useAuditLog(activeTab === "storico");
 
-  useEffect(() => {
-    if (activeTab === "storico") fetchAuditLog();
-  }, [activeTab, fetchAuditLog]);
-
-  /** Core upsert — does NOT create an undo entry. Used by both toggleProduct and handleUndo. */
+  /** Core upsert — does NOT create an undo entry. Used by both toggleProduct and the undo revert. */
   const saveProductActive = async (productId: string, targetActive: boolean) => {
     const current = settings[productId] ?? true;
     setSettings((prev) => ({ ...prev, [productId]: targetActive }));
@@ -232,39 +204,15 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     return true;
   };
 
+  const undo = useUndoToggle(async (entry) => {
+    await saveProductActive(entry.productId, entry.restoredValue);
+  });
+
   const toggleProduct = async (productId: string) => {
     const current = settings[productId] ?? true;
     const ok = await saveProductActive(productId, !current);
     if (!ok) return;
-
-    // Arm 8-second undo window with countdown
-    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
-    setUndoEntry({ productId, restoredValue: current });
-    setUndoCountdown(8);
-
-    let remaining = 8;
-    undoIntervalRef.current = setInterval(() => {
-      remaining -= 1;
-      setUndoCountdown(remaining);
-      if (remaining <= 0) {
-        if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
-      }
-    }, 1000);
-
-    undoTimerRef.current = setTimeout(() => {
-      setUndoEntry(null);
-      if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
-    }, 8000);
-  };
-
-  const handleUndo = async () => {
-    if (!undoEntry) return;
-    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
-    const entry = undoEntry;
-    setUndoEntry(null);
-    await saveProductActive(entry.productId, entry.restoredValue);
+    undo.arm({ productId, restoredValue: current });
   };
 
   const savePriceOverride = async (productId: string, price: string) => {
@@ -548,82 +496,27 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     <div className="min-h-screen bg-background px-4 py-8">
       <div className="mx-auto max-w-2xl space-y-6">
 
-        {/* Header */}
-        <motion.div
-          className="flex items-center justify-between"
-          initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        >
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">📦 Catalog</h1>
-            <button
-              onClick={() => userRole?.role !== "consulente_responsabile" && setShowStoreModal(true)}
-              className={`mt-0.5 flex items-center gap-1 text-xs ${userRole?.role === "consulente_responsabile" ? "text-muted-foreground cursor-default" : "text-primary hover:underline"}`}
-            >
-              <MapPin className="h-3 w-3" />
-              {currentStore?.shortName ?? storeId}
-              {userRole?.role === "consulente_responsabile" && <span className="ml-1 opacity-50">(locked)</span>}
-            </button>
-            <p className="text-xs text-muted-foreground">
-              {loading ? "Loading…" : `${activeCount} of ${catalogProducts.length} products active in the quiz`}
-              {bulkSelection.size > 0 && <span className="ml-2 font-semibold text-primary">· {bulkSelection.size} selected</span>}
-            </p>
-          </div>
-          <div className="flex gap-2 flex-wrap justify-end">
-            {bulkSelection.size > 0 && (
-              <>
-                <button onClick={() => requestBulkToggle(false)}
-                  className="flex items-center gap-1 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-400 active:scale-95">
-                  <PowerOff className="h-3 w-3" /> Deactivate {bulkSelection.size}
-                </button>
-                <button onClick={() => requestBulkToggle(true)}
-                  className="flex items-center gap-1 rounded-xl border border-green-500/40 bg-green-500/10 px-3 py-2 text-xs text-green-400 active:scale-95">
-                  <Power className="h-3 w-3" /> Activate {bulkSelection.size}
-                </button>
-                <button onClick={() => setShowSendModal(true)}
-                  className="flex items-center gap-1 rounded-xl border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-xs text-sky-400 active:scale-95">
-                  <MapPin className="h-3 w-3" /> Send to store {bulkSelection.size}
-                </button>
-                <button onClick={() => setBulkSelection(new Set())}
-                  className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
-                  <X className="h-3 w-3" /> Cancel
-                </button>
-              </>
-            )}
-            <button onClick={fetchSettings}
-              className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
-              <RotateCcw className="h-3 w-3" /> Refresh
-            </button>
-            <button onClick={downloadCsvTemplate}
-              className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
-              <Download className="h-3 w-3" /> CSV Template
-            </button>
-            <label className="flex items-center gap-1 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary active:scale-95 cursor-pointer">
-              <Upload className="h-3 w-3" /> Upload Prices
-              <input
-                type="file"
-                accept=".csv"
-                onChange={(e) => e.target.files?.[0] && handleCsvUpload(e.target.files[0])}
-                className="hidden"
-              />
-            </label>
-            <button onClick={() => navigate("/stats")}
-              className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
-              <BarChart2 className="h-3 w-3" /> Analytics
-            </button>
-            <button onClick={() => navigate("/consulente")}
-              className="flex items-center gap-1 rounded-xl border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-xs text-sky-400 active:scale-95">
-              <GraduationCap className="h-3 w-3" /> Consulente
-            </button>
-            <button onClick={handleLogout}
-              className="flex items-center gap-1 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive active:scale-95">
-              <LogOut className="h-3 w-3" /> Log out
-            </button>
-            <button onClick={() => { supabase.auth.signOut(); navigate("/"); }}
-              className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
-              <Home className="h-3 w-3" /> Quiz
-            </button>
-          </div>
-        </motion.div>
+        <ManagerHeader
+          currentStore={currentStore}
+          storeId={storeId}
+          storeLocked={userRole?.role === "consulente_responsabile"}
+          loading={loading}
+          catalogSize={catalogProducts.length}
+          activeCount={activeCount}
+          bulkSelectionSize={bulkSelection.size}
+          onOpenStoreModal={() => setShowStoreModal(true)}
+          onBulkActivate={() => requestBulkToggle(true)}
+          onBulkDeactivate={() => requestBulkToggle(false)}
+          onOpenSendModal={() => setShowSendModal(true)}
+          onClearBulkSelection={() => setBulkSelection(new Set())}
+          onRefresh={fetchSettings}
+          onDownloadCsvTemplate={downloadCsvTemplate}
+          onCsvUpload={handleCsvUpload}
+          onOpenAnalytics={() => navigate("/stats")}
+          onOpenConsulente={() => navigate("/consulente")}
+          onLogout={handleLogout}
+          onBackToQuiz={() => { supabase.auth.signOut(); navigate("/"); }}
+        />
 
         {/* Error banner */}
         <AnimatePresence>
@@ -637,139 +530,21 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           )}
         </AnimatePresence>
 
-        {/* Bulk confirm inline banner */}
-        <AnimatePresence>
-          {bulkConfirm && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm"
-            >
-              <p className="text-amber-300 font-semibold mb-2">
-                You are about to {bulkConfirm.enable ? "activate" : "deactivate"} {bulkConfirm.count} products. Confirm?
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleBulkToggle(bulkConfirm.enable)}
-                  className="rounded-xl border border-amber-500/40 bg-amber-500/20 px-4 py-1.5 text-xs font-semibold text-amber-300 active:scale-95"
-                >
-                  Confirm
-                </button>
-                <button
-                  onClick={() => setBulkConfirm(null)}
-                  className="rounded-xl border border-border bg-card px-4 py-1.5 text-xs text-muted-foreground active:scale-95"
-                >
-                  Cancel
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <BulkConfirmBanner
+          intent={bulkConfirm}
+          onConfirm={handleBulkToggle}
+          onCancel={() => setBulkConfirm(null)}
+        />
 
-        {/* Tab switcher */}
-        <motion.div
-          className="flex gap-1 rounded-2xl border border-border bg-muted/30 p-1"
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}
-        >
-          <button
-            onClick={() => setActiveTab("catalogo")}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
-              activeTab === "catalogo"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            📦 Catalog
-          </button>
-          <button
-            onClick={() => setActiveTab("sessioni")}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
-              activeTab === "sessioni"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Inbox className="h-3.5 w-3.5" /> Sessions &amp; Codes
-          </button>
-          <button
-            onClick={() => setActiveTab("storico")}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
-              activeTab === "storico"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <History className="h-3.5 w-3.5" /> History
-          </button>
-          {userRole?.role !== "consulente_responsabile" && (
-            <button
-              onClick={() => setActiveTab("gestione")}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
-                activeTab === "gestione"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              🗂️ Management
-            </button>
-          )}
-        </motion.div>
+        <PrimaryTabs
+          active={activeTab}
+          showManagement={userRole?.role !== "consulente_responsabile"}
+          onChange={setActiveTab}
+        />
 
-        {/* Gestione globale (admin master only) */}
         {activeTab === "gestione" && (
           <div className="space-y-4">
-            {/* Sub-tab switcher */}
-            <div className="flex gap-1 rounded-2xl border border-border bg-muted/30 p-1">
-              <button
-                onClick={() => setGestioneTab("catalogo")}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-colors ${
-                  gestioneTab === "catalogo"
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                📦 Global catalog
-              </button>
-              <button
-                onClick={() => setGestioneTab("carte")}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-colors ${
-                  gestioneTab === "carte"
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                🃏 Quiz Cards
-              </button>
-              <button
-                onClick={() => setGestioneTab("email")}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-colors ${
-                  gestioneTab === "email"
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                📧 Email
-              </button>
-              <button
-                onClick={() => setGestioneTab("ruoli")}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-colors ${
-                  gestioneTab === "ruoli"
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                👥 Roles
-              </button>
-              <button
-                onClick={() => setGestioneTab("guida")}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-colors ${
-                  gestioneTab === "guida"
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                🎓 Guide
-              </button>
-            </div>
+            <ManagementSubTabs active={gestioneTab} onChange={setGestioneTab} />
             {gestioneTab === "catalogo" && <ProductCatalogTab />}
             {gestioneTab === "carte"    && <QuizCardsTab />}
             {gestioneTab === "email"    && <EmailTemplateTab />}
@@ -786,56 +561,14 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           />
         )}
 
-        {/* Storico (audit log) tab */}
         {activeTab === "storico" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">Catalog change history</h2>
-              <button
-                onClick={fetchAuditLog}
-                className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground active:scale-95"
-              >
-                <RotateCcw className="h-3 w-3" /> Refresh
-              </button>
-            </div>
-
-            {auditLoading ? (
-              <div className="py-16 text-center text-muted-foreground text-sm">Loading history…</div>
-            ) : auditError || auditLog.length === 0 ? (
-              <div className="rounded-2xl border border-border bg-muted/20 py-12 text-center">
-                <p className="text-2xl mb-2">📋</p>
-                <p className="text-sm font-medium text-foreground">No history available</p>
-                <p className="text-xs text-muted-foreground mt-1">Future changes will appear here.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {auditLog.map((entry) => {
-                  const prodName = entry.product_id
-                    ? (catalogProducts.find((p) => p.id === entry.product_id)?.name ?? entry.product_id)
-                    : "—";
-                  const isActivated = entry.new_active === true;
-                  return (
-                    <div
-                      key={entry.id}
-                      className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3"
-                    >
-                      <span className={`shrink-0 text-sm font-bold ${isActivated ? "text-green-400" : "text-destructive"}`}>
-                        {isActivated ? "✓" : "✗"}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-foreground">{prodName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {isActivated ? "Activated" : "Deactivated"}
-                          {entry.store_id && <span className="ml-1.5">· {auditStoreName(entry.store_id)}</span>}
-                        </p>
-                      </div>
-                      <p className="shrink-0 text-[10px] text-muted-foreground/60">{formatAuditDate(entry.created_at)}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <AuditLogTab
+            loading={auditLog.loading}
+            error={auditLog.error}
+            entries={auditLog.entries}
+            catalogProducts={catalogProducts}
+            onRefresh={auditLog.refetch}
+          />
         )}
 
         {/* Catalogo-only sections below */}
@@ -925,256 +658,73 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             </div>
 
             {filteredProducts.map((product, i) => {
-              const isActive = settings[product.id] !== false;
-              const isSaving = savingId === product.id;
               const faqData = faqOverrides[product.id];
-              // A custom product can carry its own FAQ (custom_products.faq);
-              // fall back to it so the button reflects reality, not just the
-              // per-store override.
               const ownFaqHasContent = (product.faq ?? []).some((f) => f.q?.trim() && f.a?.trim());
               const faqComplete = !!(faqData?.q1 && faqData?.a1) || ownFaqHasContent;
-              const faqPartial = !faqComplete && !!(faqData?.q1);
-              // Effective video: per-store override OR the product's own link.
-              const hasVideo = !!videoOverrides[product.id]
-                || (!!product.videoUrl && product.videoUrl !== "#");
-              // Effective image: per-store override OR the product's own image
-              // (a custom product created in the global catalog carries one).
               const ownImage = product.image && product.image !== "/products/placeholder.png"
                 ? product.image : "";
-              const hasImageOverride = !!imageOverrides[product.id];
-              const shownImage = imageOverrides[product.id] || ownImage;
-              const updatedAt = updatedAtMap[product.id];
+              const ownVideo = product.videoUrl && product.videoUrl !== "#" ? product.videoUrl : "";
               return (
-                <motion.div
+                <ProductRow
                   key={product.id}
-                  className={`overflow-hidden rounded-2xl border bg-card shadow-card transition-all duration-300 ${
-                    isActive ? "border-border" : "border-border/30"
-                  }`}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: isActive ? 1 : 0.52, y: 0 }}
-                  transition={{ delay: i * 0.04 }}
-                >
-                  {/* Status accent bar */}
-                  <div className={`h-0.5 w-full transition-colors duration-500 ${isActive ? "gradient-primary" : "bg-border/40"}`} />
-
-                  <div className="p-4">
-                    {/* ── Row 1: checkbox · status · name · toggle ─────── */}
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        checked={bulkSelection.has(product.id)}
-                        onChange={(e) => {
-                          const newSet = new Set(bulkSelection);
-                          if (e.target.checked) newSet.add(product.id);
-                          else newSet.delete(product.id);
-                          setBulkSelection(newSet);
-                        }}
-                        className="mt-1.5 h-4 w-4 shrink-0 cursor-pointer"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <span className={`mb-1 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${
-                          isActive ? "text-green-400" : "text-muted-foreground"
-                        }`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-green-400" : "bg-muted-foreground"}`} />
-                          {isActive ? "Active" : "Paused"}
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                          <h3 className="text-sm font-bold leading-snug text-foreground">{product.name}</h3>
-                          {customProductIds.has(product.id) && (
-                            <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary">
-                              Custom
-                            </span>
-                          )}
-                        </div>
-                        {updatedAt && (
-                          <p className="mt-0.5 text-[10px] text-muted-foreground/50">
-                            Updated: {formatUpdatedAt(updatedAt)}
-                          </p>
-                        )}
-                      </div>
-                      <motion.button
-                        onClick={() => !isSaving && toggleProduct(product.id)}
-                        disabled={isSaving}
-                        className={`shrink-0 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
-                          isActive
-                            ? "border-destructive/30 bg-destructive/10 text-destructive active:bg-destructive/20"
-                            : "border-green-500/30 bg-green-500/10 text-green-400 active:bg-green-500/20"
-                        }`}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        {isSaving ? <span className="animate-pulse">…</span>
-                          : isActive ? <><PowerOff className="h-3 w-3" /> Deactivate</>
-                          : <><Power className="h-3 w-3" /> Reactivate</>}
-                      </motion.button>
-                    </div>
-
-                    {/* ── Row 2: price · discount ──────────────────── */}
-                    <div className="ml-7 mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-                      {/* Price */}
-                      {editingPriceId === product.id ? (
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              autoFocus
-                              value={draftPrice}
-                              onChange={(e) => { setDraftPrice(e.target.value); setPriceError(null); }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") savePriceOverride(product.id, draftPrice);
-                                if (e.key === "Escape") { setEditingPriceId(null); setPriceError(null); }
-                              }}
-                              className="w-28 rounded-lg border border-primary bg-card px-2 py-1 text-sm font-semibold text-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                              placeholder="€0,00"
-                            />
-                            <button onClick={() => savePriceOverride(product.id, draftPrice)}
-                              className="rounded-lg bg-primary/20 p-1.5 text-primary hover:bg-primary/30">
-                              <Check className="h-3.5 w-3.5" />
-                            </button>
-                            <button onClick={() => { setEditingPriceId(null); setPriceError(null); }}
-                              className="rounded-lg bg-muted p-1.5 text-muted-foreground">
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                          {priceError && (
-                            <p className="text-[10px] text-destructive">{priceError}</p>
-                          )}
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => { setEditingPriceId(product.id); setDraftPrice(priceOverrides[product.id] ?? product.price); setPriceError(null); }}
-                          className="group flex items-center gap-1.5"
-                        >
-                          <span className="text-sm font-bold text-primary">
-                            {priceOverrides[product.id] ?? product.price}
-                          </span>
-                          {priceOverrides[product.id] && (
-                            <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-400">custom</span>
-                          )}
-                          <Pencil className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                        </button>
-                      )}
-
-                      <span className="hidden h-3 w-px bg-border/50 sm:block" />
-
-                      {/* Discount */}
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Discount:</span>
-                        {DISCOUNT_OPTIONS.map((opt) => {
-                          const sel = (discountOverrides[product.id] ?? 5) === opt;
-                          return (
-                            <button key={opt} onClick={() => saveDiscount(product.id, opt)}
-                              className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold transition-colors ${
-                                sel ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                              }`}>
-                              {opt}%
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* ── Row 3: media actions + tags ────────────────── */}
-                    <div className="ml-7 mt-3 flex flex-wrap items-center gap-2">
-
-                      {/* Image — per-store override, falling back to the
-                          product's own image from the global catalog */}
-                      {shownImage ? (
-                        <div className="flex items-center gap-1.5">
-                          <img src={shownImage} alt={product.name}
-                            loading="lazy" decoding="async"
-                            className="h-8 w-12 rounded-md border border-border object-cover" />
-                          {hasImageOverride ? (
-                            <button onClick={() => removeProductImage(product.id)}
-                              title="Remove the per-store image override"
-                              className="flex items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/10 px-2 py-1 text-[10px] text-destructive active:scale-95">
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          ) : (
-                            <label className={`flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-muted/50 px-2 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted active:scale-95 ${
-                              uploadingImageId === product.id ? "animate-pulse" : ""
-                            }`}>
-                              <Camera className="h-3 w-3" />
-                              {uploadingImageId === product.id ? "…" : "Store photo"}
-                              <input type="file" accept="image/*" className="hidden"
-                                disabled={uploadingImageId !== null}
-                                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadProductImage(product.id, f); e.target.value = ""; }} />
-                            </label>
-                          )}
-                        </div>
-                      ) : (
-                        <label className={`flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:bg-muted active:scale-95 ${
-                          uploadingImageId === product.id ? "animate-pulse" : ""
-                        }`}>
-                          <Camera className="h-3 w-3" />
-                          {uploadingImageId === product.id ? "…" : "Photo"}
-                          <input type="file" accept="image/*" className="hidden"
-                            disabled={uploadingImageId !== null}
-                            onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadProductImage(product.id, f); e.target.value = ""; }} />
-                        </label>
-                      )}
-
-                      {/* Video */}
-                      {editingVideoId === product.id ? (
-                        <div className="flex flex-col gap-1 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <input autoFocus value={draftVideo}
-                              onChange={(e) => { setDraftVideo(e.target.value); setVideoError(null); }}
-                              onKeyDown={(e) => { if (e.key === "Enter") saveVideoUrl(product.id, draftVideo); if (e.key === "Escape") { setEditingVideoId(null); setVideoError(null); } }}
-                              placeholder="https://youtube.com/watch?v=..."
-                              className="flex-1 rounded-lg border border-primary bg-card px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-                            <button onClick={() => saveVideoUrl(product.id, draftVideo)}
-                              className="rounded-lg bg-primary/20 p-1.5 text-primary"><Check className="h-3.5 w-3.5" /></button>
-                            <button onClick={() => { setEditingVideoId(null); setVideoError(null); }}
-                              className="rounded-lg bg-muted p-1.5 text-muted-foreground"><X className="h-3.5 w-3.5" /></button>
-                          </div>
-                          {videoError && (
-                            <p className="text-[10px] text-destructive">{videoError}</p>
-                          )}
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setEditingVideoId(product.id);
-                            setDraftVideo(
-                              videoOverrides[product.id]
-                              ?? (product.videoUrl && product.videoUrl !== "#" ? product.videoUrl : "")
-                            );
-                            setVideoError(null);
-                          }}
-                          className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium transition-colors ${
-                            hasVideo
-                              ? "border-green-500/40 bg-green-500/10 text-green-400"
-                              : "border-border bg-muted/50 text-muted-foreground hover:bg-muted"
-                          }`}>
-                          <Link className="h-3 w-3" />
-                          {hasVideo ? "Video ✓" : "Video"}
-                        </button>
-                      )}
-
-                      {/* FAQ */}
-                      <button
-                        onClick={() => setEditingFaqId(product.id)}
-                        className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium transition-colors ${
-                          faqComplete
-                            ? "border-primary/40 bg-primary/10 text-primary"
-                            : faqPartial
-                            ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
-                            : "border-border bg-muted/50 text-muted-foreground hover:bg-muted"
-                        }`}>
-                        <HelpCircle className="h-3 w-3" />
-                        {faqComplete ? "FAQ ✓" : faqPartial ? "FAQ ⚠" : "FAQ"}
-                      </button>
-
-                      {/* Tags */}
-                      <div className="ml-auto flex flex-wrap gap-1">
-                        {product.tags.map((tag) => (
-                          <span key={tag} className="rounded-full bg-muted px-2 py-0.5 text-[10px] capitalize text-muted-foreground">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
+                  product={product}
+                  index={i}
+                  isActive={settings[product.id] !== false}
+                  isSaving={savingId === product.id}
+                  isCustom={customProductIds.has(product.id)}
+                  updatedAt={updatedAtMap[product.id]}
+                  bulkSelected={bulkSelection.has(product.id)}
+                  onBulkSelectToggle={(selected) => {
+                    const next = new Set(bulkSelection);
+                    if (selected) next.add(product.id);
+                    else next.delete(product.id);
+                    setBulkSelection(next);
+                  }}
+                  onToggle={() => toggleProduct(product.id)}
+                  priceOverride={priceOverrides[product.id]}
+                  price={{
+                    active: editingPriceId === product.id,
+                    draft: draftPrice,
+                    error: priceError,
+                    onStart: (current) => {
+                      setEditingPriceId(product.id);
+                      setDraftPrice(current);
+                      setPriceError(null);
+                    },
+                    onChange: (value) => { setDraftPrice(value); setPriceError(null); },
+                    onSubmit: (value) => savePriceOverride(product.id, value),
+                    onCancel: () => { setEditingPriceId(null); setPriceError(null); },
+                  }}
+                  discount={(discountOverrides[product.id] ?? 5) as DiscountOption}
+                  onDiscountChange={(value) => saveDiscount(product.id, value)}
+                  image={{
+                    hasOverride: !!imageOverrides[product.id],
+                    shown: imageOverrides[product.id] || ownImage,
+                    uploading: uploadingImageId === product.id,
+                    anyUploading: uploadingImageId !== null,
+                    onUpload: (file) => uploadProductImage(product.id, file),
+                    onRemove: () => removeProductImage(product.id),
+                  }}
+                  video={{
+                    active: editingVideoId === product.id,
+                    draft: draftVideo,
+                    error: videoError,
+                    hasVideo: !!videoOverrides[product.id] || !!ownVideo,
+                    onStart: () => {
+                      setEditingVideoId(product.id);
+                      setDraftVideo(videoOverrides[product.id] ?? ownVideo);
+                      setVideoError(null);
+                    },
+                    onChange: (value) => { setDraftVideo(value); setVideoError(null); },
+                    onSubmit: (value) => saveVideoUrl(product.id, value),
+                    onCancel: () => { setEditingVideoId(null); setVideoError(null); },
+                  }}
+                  faq={{
+                    complete: faqComplete,
+                    partial: !faqComplete && !!(faqData?.q1),
+                    onOpen: () => setEditingFaqId(product.id),
+                  }}
+                />
               );
             })}
           </div>
@@ -1220,122 +770,28 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         )}
       </AnimatePresence>
 
-      {/* Send-to-store modal */}
-      <AnimatePresence>
-        {showSendModal && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-6"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => !sending && setShowSendModal(false)}
-          >
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl"
-              initial={{ scale: 0.92, y: 16 }} animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.92, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 28 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="mb-1 flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-sky-400" />
-                <p className="text-sm font-bold text-foreground">Send to another store</p>
-              </div>
-              <p className="mb-4 text-xs text-muted-foreground leading-relaxed">
-                Copies {bulkSelection.size} product{bulkSelection.size > 1 ? "s" : ""} into the
-                chosen store's catalog (set as active), carrying this store's price, image, video
-                and discount. Pick the destination:
-              </p>
-              <div className="space-y-2">
-                {STORES.filter((s) => s.id !== storeId).map((s) => (
-                  <button
-                    key={s.id}
-                    disabled={sending}
-                    onClick={() => sendToStore(s.id)}
-                    className="flex w-full items-center justify-between rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm font-semibold text-foreground hover:border-sky-500/40 active:scale-95 disabled:opacity-50"
-                  >
-                    <span>{s.name}</span>
-                    <span className="text-xs text-sky-400">{sending ? "…" : "Send →"}</span>
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => !sending && setShowSendModal(false)}
-                disabled={sending}
-                className="mt-4 w-full rounded-xl border border-border bg-card py-2.5 text-sm font-semibold text-muted-foreground active:scale-95 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <SendToStoreModal
+        open={showSendModal}
+        sourceStoreId={storeId}
+        selectionCount={bulkSelection.size}
+        sending={sending}
+        onSend={sendToStore}
+        onClose={() => setShowSendModal(false)}
+      />
 
-      {/* CSV Preview Modal */}
-      <AnimatePresence>
-        {showCsvModal && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setShowCsvModal(false)}
-          >
-            <motion.div
-              className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl max-h-[70vh] overflow-y-auto"
-              initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 className="text-lg font-bold text-foreground mb-4">Confirm price update</h2>
-              <div className="space-y-2 mb-6">
-                {csvPreview.map(({ productId, newPrice }) => {
-                  const prod = catalogProducts.find((p) => p.id === productId);
-                  return (
-                    <div key={productId} className="text-xs p-2 rounded-lg border border-border bg-background/40">
-                      <p className="font-semibold text-foreground">{prod?.name ?? productId}</p>
-                      <p className="text-muted-foreground">{prod?.price ?? "—"} → <span className="text-primary font-semibold">{newPrice}</span></p>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowCsvModal(false)}
-                  className="flex-1 rounded-xl border border-border bg-muted px-4 py-2 text-sm text-muted-foreground active:scale-95"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={applyPriceUpload}
-                  className="flex-1 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary active:scale-95"
-                >
-                  Apply {csvPreview.length}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <CsvPreviewModal
+        open={showCsvModal}
+        preview={csvPreview}
+        catalogProducts={catalogProducts}
+        onApply={applyPriceUpload}
+        onClose={() => setShowCsvModal(false)}
+      />
 
-      {/* Undo toast — fixed bottom, auto-dismisses after 8 s */}
-      <AnimatePresence>
-        {undoEntry && (
-          <motion.div
-            className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-border bg-card px-5 py-3.5 shadow-2xl"
-            initial={{ opacity: 0, y: 24, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.95 }}
-          >
-            <span className="text-sm text-foreground">
-              Change saved.
-            </span>
-            <button
-              onClick={handleUndo}
-              className="flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary active:scale-95"
-            >
-              <Undo2 className="h-3.5 w-3.5" /> Undo ({undoCountdown}s)
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <UndoSnackbar
+        visible={!!undo.entry}
+        countdown={undo.countdown}
+        onUndo={undo.trigger}
+      />
     </div>
   );
 };
