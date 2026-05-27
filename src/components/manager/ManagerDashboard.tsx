@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { RotateCcw, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { type Product } from "@/data/products";
 import { getStoredStoreId, setStoredStoreId, getStoreById } from "@/data/stores";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 import { StoreSelectorModal } from "./StoreSelectorModal";
@@ -19,19 +18,15 @@ import { BulkConfirmBanner, type BulkConfirmIntent } from "./BulkConfirmBanner";
 import { SendToStoreModal } from "./SendToStoreModal";
 import { CsvPreviewModal, type CsvPriceUpdate } from "./CsvPreviewModal";
 import { UndoSnackbar } from "./UndoSnackbar";
-import {
-  isValidPrice, isValidVideoUrl,
-  type SettingsMap, type PriceMap, type ImageMap, type VideoMap,
-  type DiscountMap, type FaqMap, type UpdatedAtMap, type DiscountOption,
-} from "./managerDashboardUtils";
+import { type DiscountOption } from "./managerDashboardUtils";
 import { AuditLogTab } from "./AuditLogTab";
 import { PrimaryTabs, ManagementSubTabs, type ActiveTab, type GestioneTab } from "./TabSwitcher";
 import { ProductRow } from "./ProductRow";
 import { ManagerHeader } from "./ManagerHeader";
 import { useAuditLog } from "./useAuditLog";
 import { useUndoToggle } from "./useUndoToggle";
-
-import { resizeImage } from "@/lib/imageProcessing";
+import { useProductCatalog } from "./useProductCatalog";
+import { useManagerKeybindings } from "./useManagerKeybindings";
 
 interface ManagerDashboardProps {
   onLogout: () => void;
@@ -39,24 +34,12 @@ interface ManagerDashboardProps {
 
 export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const navigate = useNavigate();
-  const [settings, setSettings] = useState<SettingsMap>({});
-  const [priceOverrides, setPriceOverrides] = useState<PriceMap>({});
-  const [imageOverrides, setImageOverrides] = useState<ImageMap>({});
-  const [videoOverrides, setVideoOverrides] = useState<VideoMap>({});
-  const [discountOverrides, setDiscountOverrides] = useState<DiscountMap>({});
-  const [faqOverrides, setFaqOverrides] = useState<FaqMap>({});
-  const [updatedAtMap, setUpdatedAtMap] = useState<UpdatedAtMap>({});
+  // ── UI state (drafts, modals, filters) ────────────────────────────
   const [editingFaqId, setEditingFaqId] = useState<string | null>(null);
-  const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
   const [draftVideo, setDraftVideo] = useState("");
-  const [videoError, setVideoError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [savingId, setSavingId] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [draftPrice, setDraftPrice] = useState("");
-  const [priceError, setPriceError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [storeId, setStoreIdState] = useState<string>(
@@ -72,9 +55,15 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const [userRole, setUserRole] = useState<{ role: string; store_id: string | null } | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("catalogo");
   const [gestioneTab, setGestioneTab] = useState<GestioneTab>("catalogo");
-  // Custom products (added via Gestione) — merged into the catalog so they can
-  // be managed per-store exactly like core products.
-  const [customProducts, setCustomProducts] = useState<Product[]>([]);
+
+  // ── Catalog data + per-store overrides + save handlers ────────────
+  const catalog = useProductCatalog(storeId);
+  const {
+    settings, priceOverrides, imageOverrides, videoOverrides,
+    discountOverrides, faqOverrides, updatedAtMap, customProducts,
+    loading, savingId, saveError, uploadingImageId, priceError, videoError,
+    setPriceError, setVideoError,
+  } = catalog;
 
   const currentStore = getStoreById(storeId);
 
@@ -93,170 +82,38 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     });
   }, []);
 
-  // The whole catalog lives in custom_products now — single source of truth.
   const catalogProducts = customProducts;
   const customProductIds = new Set(customProducts.map((p) => p.id));
-
   const allTags = Array.from(new Set(catalogProducts.flatMap((p) => p.tags))).sort();
-
-  const fetchSettings = useCallback(async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from("product_settings")
-      .select("product_id, active, price_override, image_url, video_url, discount_percent, faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3, updated_at")
-      .eq("store_id", storeId);
-    if (data) {
-      const map: SettingsMap = {};
-      const prices: PriceMap = {};
-      const images: ImageMap = {};
-      const videos: VideoMap = {};
-      const discounts: DiscountMap = {};
-      const faqs: FaqMap = {};
-      const updatedAt: UpdatedAtMap = {};
-      data.forEach((row) => {
-        map[row.product_id] = row.active;
-        if (row.price_override) prices[row.product_id] = row.price_override;
-        if (row.image_url) images[row.product_id] = row.image_url;
-        if (row.video_url) videos[row.product_id] = row.video_url;
-        if (row.discount_percent) discounts[row.product_id] = row.discount_percent;
-        const { faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3, updated_at: ua } = row;
-        if (faq_q1 || faq_q2 || faq_q3) {
-          faqs[row.product_id] = {
-            q1: faq_q1 ?? "", a1: faq_a1 ?? "",
-            q2: faq_q2 ?? "", a2: faq_a2 ?? "",
-            q3: faq_q3 ?? "", a3: faq_a3 ?? "",
-          };
-        }
-        if (ua) updatedAt[row.product_id] = ua;
-      });
-      setSettings(map);
-      setPriceOverrides(prices);
-      setImageOverrides(images);
-      setVideoOverrides(videos);
-      setDiscountOverrides(discounts);
-      setFaqOverrides(faqs);
-      setUpdatedAtMap(updatedAt);
-    }
-    setLoading(false);
-  }, [storeId]);
-
-  useEffect(() => { fetchSettings(); }, [fetchSettings]);
-
-  // Fetch active custom products so they appear in the catalog alongside core ones.
-  const fetchCustomProducts = useCallback(async () => {
-    const { data } = await supabase
-      .from("custom_products")
-      .select("id, name, description, price, rating, image_url, video_url, tags, faq")
-      .eq("status", "active");
-    if (!data) return;
-    setCustomProducts(
-      data.map((r) => ({
-        id: r.id,
-        name: r.name,
-        description: r.description,
-        price: r.price,
-        rating: r.rating,
-        image: r.image_url ?? "/products/placeholder.png",
-        videoUrl: r.video_url ?? "#",
-        tags: r.tags ?? [],
-        faq: (r.faq as { q: string; a: string }[]) ?? [],
-      })),
-    );
-  }, []);
-
-  useEffect(() => { fetchCustomProducts(); }, [fetchCustomProducts]);
 
   const auditLog = useAuditLog(activeTab === "storico");
 
-  /** Core upsert — does NOT create an undo entry. Used by both toggleProduct and the undo revert. */
-  const saveProductActive = async (productId: string, targetActive: boolean) => {
-    const current = settings[productId] ?? true;
-    setSettings((prev) => ({ ...prev, [productId]: targetActive }));
-    setSavingId(productId);
-    setSaveError(null);
-
-    const { error } = await supabase
-      .from("product_settings")
-      .upsert({ product_id: productId, store_id: storeId, active: targetActive, updated_at: new Date().toISOString() });
-
-    if (error) {
-      setSavingId(null);
-      setSettings((prev) => ({ ...prev, [productId]: current }));
-      setSaveError("Error saving. Check the connection and try again.");
-      toast.error("Error saving. Check the connection.");
-      return false;
-    }
-
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return; // session expired — skip audit log rather than write a null-author entry
-      supabase.from("manager_audit_log").insert({
-        user_id: data.user.id,
-        user_email: data.user.email,
-        product_id: productId,
-        action: "product_toggle",
-        old_active: current,
-        new_active: targetActive,
-        store_id: storeId,
-      });
-    });
-
-    setSavingId(null);
-    return true;
-  };
-
   const undo = useUndoToggle(async (entry) => {
-    await saveProductActive(entry.productId, entry.restoredValue);
+    await catalog.saveProductActive(entry.productId, entry.restoredValue);
   });
 
   const toggleProduct = async (productId: string) => {
     const current = settings[productId] ?? true;
-    const ok = await saveProductActive(productId, !current);
+    const ok = await catalog.saveProductActive(productId, !current);
     if (!ok) return;
     undo.arm({ productId, restoredValue: current });
   };
 
+  /** Closes the inline editor after a successful price save. */
   const savePriceOverride = async (productId: string, price: string) => {
-    const trimmed = price.trim();
-    if (trimmed !== "" && !isValidPrice(trimmed)) {
-      setPriceError("Invalid format (e.g. €49.00)");
-      return;
-    }
-    setPriceError(null);
-    const { error } = await supabase
-      .from("product_settings")
-      .upsert({
-        product_id: productId,
-        store_id: storeId,
-        price_override: trimmed || null,
-        updated_at: new Date().toISOString(),
-      });
-    if (!error) {
-      setPriceOverrides((prev) => {
-        if (!trimmed) { const n = { ...prev }; delete n[productId]; return n; }
-        return { ...prev, [productId]: trimmed };
-      });
-    }
-    setEditingPriceId(null);
+    const ok = await catalog.savePriceOverride(productId, price);
+    if (ok) setEditingPriceId(null);
   };
 
+  /** Closes the inline editor after a successful video save. */
   const saveVideoUrl = async (productId: string, url: string) => {
-    const trimmed = url.trim();
-    if (trimmed !== "" && !isValidVideoUrl(trimmed)) {
-      setVideoError("Invalid URL — use YouTube or Vimeo");
-      return;
-    }
-    setVideoError(null);
-    await supabase.from("product_settings").upsert({
-      product_id: productId,
-      store_id: storeId,
-      video_url: trimmed || null,
-      updated_at: new Date().toISOString(),
-    });
-    setVideoOverrides((prev) => {
-      if (!trimmed) { const n = { ...prev }; delete n[productId]; return n; }
-      return { ...prev, [productId]: trimmed };
-    });
-    setEditingVideoId(null);
+    const ok = await catalog.saveVideoUrl(productId, url);
+    if (ok) setEditingVideoId(null);
+  };
+
+  const saveFaq = async (productId: string, faq: FaqData) => {
+    await catalog.saveFaq(productId, faq);
+    setEditingFaqId(null);
   };
 
   const requestBulkToggle = (enable: boolean) => {
@@ -265,157 +122,38 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
 
   const handleBulkToggle = async (enable: boolean) => {
     for (const productId of bulkSelection) {
-      await saveProductActive(productId, enable);
+      await catalog.saveProductActive(productId, enable);
     }
     setBulkSelection(new Set());
     setBulkConfirm(null);
   };
 
-  // Copies the selected products into another store's catalog — carries this
-  // store's per-store config (price / image / video / discount / FAQ) and
-  // marks them active in the target store.
   const sendToStore = async (targetStoreId: string) => {
-    const ids = [...bulkSelection];
-    if (ids.length === 0) return;
     setSending(true);
-    const { data: srcRows } = await supabase
-      .from("product_settings")
-      .select("product_id, price_override, image_url, video_url, discount_percent, faq_q1, faq_a1, faq_q2, faq_a2, faq_q3, faq_a3")
-      .eq("store_id", storeId)
-      .in("product_id", ids);
-    const byId = new Map((srcRows ?? []).map((r) => [r.product_id, r]));
-    const payload = ids.map((pid) => {
-      const src = byId.get(pid);
-      return {
-        product_id: pid,
-        store_id: targetStoreId,
-        active: true,
-        price_override:   src?.price_override   ?? null,
-        image_url:        src?.image_url        ?? null,
-        video_url:        src?.video_url        ?? null,
-        discount_percent: src?.discount_percent ?? 5,
-        faq_q1: src?.faq_q1 ?? null, faq_a1: src?.faq_a1 ?? null,
-        faq_q2: src?.faq_q2 ?? null, faq_a2: src?.faq_a2 ?? null,
-        faq_q3: src?.faq_q3 ?? null, faq_a3: src?.faq_a3 ?? null,
-        updated_at: new Date().toISOString(),
-      };
-    });
-    const { error } = await supabase
-      .from("product_settings")
-      .upsert(payload, { onConflict: "product_id,store_id" });
+    const ok = await catalog.sendToStore([...bulkSelection], targetStoreId);
     setSending(false);
     setShowSendModal(false);
-    if (error) {
-      toast.error("Error sending products to the store.");
-      return;
-    }
-    const target = getStoreById(targetStoreId);
-    toast.success(`${ids.length} product${ids.length > 1 ? "s" : ""} sent to ${target?.shortName ?? targetStoreId}.`);
-    setBulkSelection(new Set());
+    if (ok) setBulkSelection(new Set());
   };
 
   const handleCsvUpload = async (file: File) => {
     const text = await file.text();
-    const lines = text.trim().split("\n");
-    const parsed: { productId: string; newPrice: string }[] = [];
-
-    for (const line of lines) {
+    const parsed: CsvPriceUpdate[] = [];
+    for (const line of text.trim().split("\n")) {
       const [productId, price] = line.split(",").map((s) => s.trim());
-      if (productId && price) {
-        parsed.push({ productId, newPrice: price });
-      }
+      if (productId && price) parsed.push({ productId, newPrice: price });
     }
-
     setCsvPreview(parsed);
     setShowCsvModal(true);
   };
 
   const applyPriceUpload = async () => {
     for (const { productId, newPrice } of csvPreview) {
-      await savePriceOverride(productId, newPrice);
+      await catalog.savePriceOverride(productId, newPrice);
     }
     toast.success(`${csvPreview.length} prices updated from CSV.`);
     setCsvPreview([]);
     setShowCsvModal(false);
-  };
-
-  const uploadProductImage = async (productId: string, rawFile: File) => {
-    if (rawFile.size > 5 * 1024 * 1024) {
-      toast.error("Image too large — maximum 5 MB.");
-      return;
-    }
-    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(rawFile.type)) {
-      toast.error("Unsupported format — use JPEG, PNG, WebP or GIF.");
-      return;
-    }
-    setUploadingImageId(productId);
-    // #8 — auto-resize to max 1024px before upload
-    const file = await resizeImage(rawFile);
-    const path = `${storeId}/${productId}.jpg`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("product-images")
-      .upload(path, file, { upsert: true, contentType: "image/jpeg" });
-
-    if (uploadError) {
-      toast.error("Image upload error: " + uploadError.message);
-      setUploadingImageId(null);
-      return;
-    }
-
-    const { data: urlData } = supabase.storage
-      .from("product-images")
-      .getPublicUrl(path);
-
-    const imageUrl = urlData.publicUrl;
-
-    await supabase.from("product_settings").upsert({
-      product_id: productId,
-      store_id: storeId,
-      image_url: imageUrl,
-      updated_at: new Date().toISOString(),
-    });
-
-    setImageOverrides((prev) => ({ ...prev, [productId]: imageUrl }));
-    toast.success("Image uploaded.");
-    setUploadingImageId(null);
-  };
-
-  const removeProductImage = async (productId: string) => {
-    await supabase.from("product_settings").upsert({
-      product_id: productId,
-      store_id: storeId,
-      image_url: null,
-      updated_at: new Date().toISOString(),
-    });
-    setImageOverrides((prev) => {
-      const next = { ...prev };
-      delete next[productId];
-      return next;
-    });
-  };
-
-  const saveDiscount = async (productId: string, pct: DiscountOption) => {
-    await supabase.from("product_settings").upsert({
-      product_id: productId,
-      store_id: storeId,
-      discount_percent: pct,
-      updated_at: new Date().toISOString(),
-    });
-    setDiscountOverrides((prev) => ({ ...prev, [productId]: pct }));
-  };
-
-  const saveFaq = async (productId: string, faq: FaqData) => {
-    await supabase.from("product_settings").upsert({
-      product_id: productId,
-      store_id: storeId,
-      faq_q1: faq.q1 || null, faq_a1: faq.a1 || null,
-      faq_q2: faq.q2 || null, faq_a2: faq.a2 || null,
-      faq_q3: faq.q3 || null, faq_a3: faq.a3 || null,
-      updated_at: new Date().toISOString(),
-    });
-    setFaqOverrides((prev) => ({ ...prev, [productId]: faq }));
-    setEditingFaqId(null);
   };
 
   const downloadCsvTemplate = () => {
@@ -438,27 +176,16 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
     onLogout();
   };
 
-  // #11 — Keyboard shortcuts: Ctrl+S → refresh settings, Esc → clear bulk selection / close modals
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      // Ignore if focused on an input/textarea
-      if (["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) return;
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        fetchSettings();
-        toast.info("Catalog refreshed.");
-      }
-      if (e.key === "Escape") {
-        if (bulkSelection.size > 0) setBulkSelection(new Set());
-        if (bulkConfirm) setBulkConfirm(null);
-        if (showCsvModal) setShowCsvModal(false);
-        if (showStoreModal) setShowStoreModal(false);
-        if (editingFaqId) setEditingFaqId(null);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [fetchSettings, bulkSelection.size, bulkConfirm, showCsvModal, showStoreModal, editingFaqId]);
+  useManagerKeybindings({
+    onRefresh: () => { catalog.refetch(); toast.info("Catalog refreshed."); },
+    onEscape: () => {
+      if (bulkSelection.size > 0) setBulkSelection(new Set());
+      if (bulkConfirm) setBulkConfirm(null);
+      if (showCsvModal) setShowCsvModal(false);
+      if (showStoreModal) setShowStoreModal(false);
+      if (editingFaqId) setEditingFaqId(null);
+    },
+  });
 
   const sortedProducts = [...catalogProducts].sort((a, b) => {
     const aOn = settings[a.id] !== false;
@@ -509,7 +236,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           onBulkDeactivate={() => requestBulkToggle(false)}
           onOpenSendModal={() => setShowSendModal(true)}
           onClearBulkSelection={() => setBulkSelection(new Set())}
-          onRefresh={fetchSettings}
+          onRefresh={catalog.refetch}
           onDownloadCsvTemplate={downloadCsvTemplate}
           onCsvUpload={handleCsvUpload}
           onOpenAnalytics={() => navigate("/stats")}
@@ -696,14 +423,14 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
                     onCancel: () => { setEditingPriceId(null); setPriceError(null); },
                   }}
                   discount={(discountOverrides[product.id] ?? 5) as DiscountOption}
-                  onDiscountChange={(value) => saveDiscount(product.id, value)}
+                  onDiscountChange={(value) => catalog.saveDiscount(product.id, value)}
                   image={{
                     hasOverride: !!imageOverrides[product.id],
                     shown: imageOverrides[product.id] || ownImage,
                     uploading: uploadingImageId === product.id,
                     anyUploading: uploadingImageId !== null,
-                    onUpload: (file) => uploadProductImage(product.id, file),
-                    onRemove: () => removeProductImage(product.id),
+                    onUpload: (file) => catalog.uploadProductImage(product.id, file),
+                    onRemove: () => catalog.removeProductImage(product.id),
                   }}
                   video={{
                     active: editingVideoId === product.id,
@@ -762,7 +489,6 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
             onSelect={(id) => {
               setStoredStoreId(id);
               setStoreIdState(id);
-              setSettings({});
               setShowStoreModal(false);
             }}
             onClose={() => setShowStoreModal(false)}
