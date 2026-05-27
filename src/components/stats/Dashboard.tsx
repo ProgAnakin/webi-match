@@ -1,25 +1,23 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  LogOut, RefreshCw, Package, Download, Shield, ShieldCheck,
-  Calendar, ChevronDown, ChevronUp, Home, ChevronLeft, ChevronRight, TrendingUp,
-} from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { STORES, getStoreById } from "@/data/stores";
+import { getStoreById } from "@/data/stores";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 import { StatCard } from "./StatCard";
 import { MfaSetupModal } from "./MfaSetupModal";
-import {
-  QuizSession, FunnelCounts, DayCount, ProductStat,
-  DAY_LABELS, productName, formatDate, storeName, exportCSV,
-  todayStr, daysAgoStr, startOfMonthStr,
-} from "./types";
-
-const FETCH_LIMIT = 5000;
-const PAGE_SIZE = 20;
-const PRODUCT_PAGE_SIZE = 8;
-const REFRESH_DEBOUNCE_MS = 3000;
+import { GdprExportConfirm } from "./GdprExportConfirm";
+import { DashboardFilterPanel } from "./DashboardFilterPanel";
+import { DashboardHeader } from "./DashboardHeader";
+import { SessionsList } from "./SessionsList";
+import { ProductLeaderboard } from "./charts/ProductLeaderboard";
+import { SevenDayChart, HourlyDistribution } from "./charts/TimeCharts";
+import { MatchHistogram } from "./charts/MatchHistogram";
+import { FunnelChart } from "./charts/FunnelChart";
+import { useDashboardFilters } from "./useDashboardFilters";
+import { useDashboardData } from "./useDashboardData";
+import { useDashboardMetrics } from "./useDashboardMetrics";
+import { exportCSV, productName } from "./types";
 
 interface DashboardProps {
   onLogout: () => void;
@@ -27,71 +25,27 @@ interface DashboardProps {
 
 export const Dashboard = ({ onLogout }: DashboardProps) => {
   const navigate = useNavigate();
+  useIdleLogout(onLogout);
 
-  // ── 2. URL persistence for filters (replaces useState for dateFrom/dateTo/filterStore) ──
-  const [searchParams, setSearchParams] = useSearchParams();
-  const dateFrom = searchParams.get("from") ?? "";
-  const dateTo = searchParams.get("to") ?? "";
-  const filterStore = searchParams.get("store") ?? null;
+  const filters = useDashboardFilters();
+  const { dateFrom, dateTo, filterStore, isFiltered, dateRangeInvalid } = filters;
 
-  const setDateFrom = (val: string) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (val) next.set("from", val); else next.delete("from");
-      return next;
-    }, { replace: true });
-  };
-  const setDateTo = (val: string) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (val) next.set("to", val); else next.delete("to");
-      return next;
-    }, { replace: true });
-  };
-  const setFilterStore = (val: string | null) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (val) next.set("store", val); else next.delete("store");
-      return next;
-    }, { replace: true });
-  };
-  const clearAllFilters = () => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.delete("from");
-      next.delete("to");
-      next.delete("store");
-      return next;
-    }, { replace: true });
-  };
+  const data = useDashboardData({ dateFrom, dateTo, filterStore, dateRangeInvalid });
+  const { sessions, funnel, loading, hasError } = data;
 
-  // ── 9. Date filter validation ────────────────────────────────────────────────────────────────
-  const dateRangeInvalid = !!(dateFrom && dateTo && dateTo < dateFrom);
-
-  const [sessions, setSessions] = useState<QuizSession[]>([]);
-  const [funnel, setFunnel] = useState<FunnelCounts | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const lastFetchRef = useRef<number>(0);
+  // Server already filtered by date + store — client-side filtering only adds
+  // text search across email / product / name on top of the fetched page.
+  const filteredSessions = sessions;
+  const metrics = useDashboardMetrics(filteredSessions);
+  const globalTotal = sessions.length;
 
   const [showFilters, setShowFilters] = useState(false);
-
   const [page, setPage] = useState(0);
   const [productPage, setProductPage] = useState(0);
   const [search, setSearch] = useState("");
   const [hasMfa, setHasMfa] = useState(false);
   const [showMfaModal, setShowMfaModal] = useState(false);
-  // GDPR export confirmation — true while awaiting user confirmation
   const [confirmExport, setConfirmExport] = useState(false);
-
-  useIdleLogout(onLogout);
-
-  /** Opens GDPR confirmation banner before downloading the CSV. */
-  const handleExportRequest = () => setConfirmExport(true);
-  const handleExportConfirm = () => {
-    setConfirmExport(false);
-    exportCSV(filteredSessions, dateFrom || undefined, dateTo || undefined);
-  };
 
   useEffect(() => {
     supabase.auth.mfa.listFactors().then(({ data }) => {
@@ -99,158 +53,24 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     });
   }, []);
 
-  // ── 6. Server-side filtering ────────────────────────────────────────────────────────────────
-  const fetchData = useCallback(async (isManual = false) => {
-    if (isManual && Date.now() - lastFetchRef.current < REFRESH_DEBOUNCE_MS) return;
-    lastFetchRef.current = Date.now();
-    setLoading(true); setHasError(false);
-
-    // Only fetch if dates are valid (or no date filter)
-    if (dateRangeInvalid) {
-      setLoading(false);
-      return;
-    }
-
-    let query = supabase
-      .from("quiz_sessions")
-      .select("id, email, nome, cognome, matched_product_id, match_percent, created_at, store_id, email_sent, discount_code, code_redeemed")
-      .order("created_at", { ascending: false })
-      .limit(FETCH_LIMIT);
-
-    // Server-side date filters
-    if (dateFrom) query = query.gte("created_at", dateFrom);
-    if (dateTo)   query = query.lte("created_at", dateTo + "T23:59:59");
-    if (filterStore) query = query.eq("store_id", filterStore);
-
-    const { data, error } = await query;
-    if (error) setHasError(true);
-    else setSessions((data ?? []) as QuizSession[]);
-
-    // Funnel counts (global, not date-filtered — kept as-is for overall funnel
-    // shape). Wrapped so a network rejection can't abort fetchData and leave
-    // the dashboard stuck on the loading spinner.
-    try {
-      const [startedRes, resultRes, claimedRes] = await Promise.all([
-        supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "quiz_started"),
-        supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "result_shown"),
-        supabase.from("quiz_funnel_events").select("*", { count: "exact", head: true }).eq("event_type", "claimed"),
-      ]);
-      setFunnel({
-        started:     startedRes.count  ?? 0,
-        resultShown: resultRes.count   ?? 0,
-        claimed:     claimedRes.count  ?? 0,
-      });
-    } catch (err) {
-      console.error("[webi-match] funnel counts fetch failed:", err);
-    }
-
-    setLoading(false);
-  }, [dateFrom, dateTo, filterStore, dateRangeInvalid]);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-  // Reset to first page whenever filters change
+  // Reset pagination whenever the underlying selection changes.
   useEffect(() => { setPage(0); setProductPage(0); }, [dateFrom, dateTo, filterStore]);
   useEffect(() => { setPage(0); }, [search]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    onLogout();
-  };
-
-  // ─── Filtered + computed data (all memoized to avoid re-computing on unrelated renders) ──
-  // Since server now applies date/store filters, client-side filtering is only needed for search
-
-  const filteredSessions = sessions; // server already filtered by date+store
-  const isFiltered = dateFrom !== "" || dateTo !== "" || filterStore !== null;
-  const total = filteredSessions.length;
-  const globalTotal = sessions.length;
-
-  const { uniqueEmails, avgMatch, todaySessions, productStats } = useMemo(() => {
-    const uniqueEmails = new Set(filteredSessions.map((s) => s.email.toLowerCase())).size;
-    const avgMatch = total
-      ? Math.round(filteredSessions.reduce((sum, s) => sum + s.match_percent, 0) / total)
-      : 0;
-    const todaySessions = filteredSessions.filter(
-      (s) => new Date(s.created_at).toDateString() === new Date().toDateString()
-    ).length;
-    const productCounts: Record<string, number> = {};
-    const productMatchSums: Record<string, number> = {};
-    filteredSessions.forEach((s) => {
-      productCounts[s.matched_product_id] = (productCounts[s.matched_product_id] ?? 0) + 1;
-      productMatchSums[s.matched_product_id] = (productMatchSums[s.matched_product_id] ?? 0) + s.match_percent;
+  const searchedSessions = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return filteredSessions;
+    return filteredSessions.filter((s) => {
+      const name = `${s.nome ?? ""} ${s.cognome ?? ""}`.toLowerCase();
+      return (
+        s.email.toLowerCase().includes(q) ||
+        productName(s.matched_product_id).toLowerCase().includes(q) ||
+        name.includes(q)
+      );
     });
-    const productStats: ProductStat[] = Object.entries(productCounts)
-      .map(([id, count]) => ({
-        id, name: productName(id), count,
-        percent: total ? Math.round((count / total) * 100) : 0,
-        avgMatch: Math.round((productMatchSums[id] ?? 0) / count),
-      }))
-      .sort((a, b) => b.count - a.count);
-    return { uniqueEmails, avgMatch, todaySessions, productStats };
-  }, [filteredSessions, total]);
+  }, [filteredSessions, search]);
 
-  // ── 3. Trend indicators ────────────────────────────────────────────────────────────────────────
-  // Trends require a previous period to compare against. Since we now use server-side
-  // filtering and sessions only contain the current period window, trend badges are
-  // shown as null (hidden) — a future enhancement could do a second Supabase query
-  // for the previous period. The StatCard component renders nothing when trend is null.
-  const trendMetrics = useMemo(
-    () => ({ trendTotal: null as number | null, trendToday: null as number | null, trendAvgMatch: null as number | null }),
-    [],
-  );
-
-  // ─── Extra metrics ────────────────────────────────────────────────────────────────────────────────
-
-  const { emailSentCount, emailDeliveryRate, hourlyCounts, peakHour, maxHourly,
-          matchBrackets, maxBracket, returningCount, dayCounts, maxDay,
-          codesGenerated, codesUsed } = useMemo(() => {
-    const emailSentCount = filteredSessions.filter((s) => s.email_sent === true).length;
-    const emailDeliveryRate = total ? Math.round((emailSentCount / total) * 100) : 0;
-
-    // Discount code metrics (for redemption rate — improvement #8)
-    const codesGenerated = filteredSessions.filter((s) => s.discount_code != null).length;
-    const codesUsed = filteredSessions.filter((s) => s.code_redeemed === true).length;
-
-    // Hourly distribution — follows active filters for consistency
-    const hourlyCounts: number[] = Array.from({ length: 24 }, (_, h) =>
-      filteredSessions.filter((s) => new Date(s.created_at).getHours() === h).length
-    );
-    const maxHourly = Math.max(...hourlyCounts, 1);
-    const peakHour = hourlyCounts.indexOf(Math.max(...hourlyCounts));
-
-    const matchBrackets = [
-      { label: "45–60%", min: 45, max: 60, color: "bg-blue-500"   },
-      { label: "61–75%", min: 61, max: 75, color: "bg-yellow-500" },
-      { label: "76–90%", min: 76, max: 90, color: "bg-orange-500" },
-      { label: "91–98%", min: 91, max: 98, color: "bg-green-500"  },
-    ].map((b) => ({
-      ...b,
-      count: filteredSessions.filter((s) => s.match_percent >= b.min && s.match_percent <= b.max).length,
-    }));
-    const maxBracket = Math.max(...matchBrackets.map((b) => b.count), 1);
-
-    const emailFreq: Record<string, number> = {};
-    filteredSessions.forEach((s) => { emailFreq[s.email.toLowerCase()] = (emailFreq[s.email.toLowerCase()] ?? 0) + 1; });
-    const returningCount = Object.values(emailFreq).filter((n) => n > 1).length;
-
-    // 7-day chart follows active filters for consistency with other metrics
-    const dayCounts: DayCount[] = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (6 - i));
-      const date = d.toISOString().slice(0, 10);
-      return {
-        day: DAY_LABELS[d.getDay()], date,
-        count: filteredSessions.filter((s) => s.created_at.slice(0, 10) === date).length,
-      };
-    });
-    const maxDay = Math.max(...dayCounts.map((d) => d.count), 1);
-
-    return { emailSentCount, emailDeliveryRate, hourlyCounts, peakHour, maxHourly,
-             matchBrackets, maxBracket, returningCount, dayCounts, maxDay,
-             codesGenerated, codesUsed };
-  }, [filteredSessions, total]);
-
-  // ── 4. Conversion rate (Tasso claim) ────────────────────────────────────────────────────────────
+  // Conversion rate (Tasso claim) — derived from the global funnel counts.
   const tassoClaimPct = funnel && funnel.resultShown > 0
     ? Math.round((funnel.claimed / funnel.resultShown) * 100)
     : null;
@@ -260,188 +80,48 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     : tassoClaimPct >= 15 ? "amber"
     : "red";
 
-  // Product pagination
-  const productTotalPages = Math.ceil(productStats.length / PRODUCT_PAGE_SIZE);
-  const pagedProductStats = productStats.slice(productPage * PRODUCT_PAGE_SIZE, (productPage + 1) * PRODUCT_PAGE_SIZE);
-
-  // Search + pagination for sessions (client-side text search only)
-  const searchedSessions = useMemo(() => {
-    const searchLower = search.toLowerCase().trim();
-    if (!searchLower) return filteredSessions;
-    return filteredSessions.filter((s) => {
-      const name = `${s.nome ?? ""} ${s.cognome ?? ""}`.toLowerCase();
-      return (
-        s.email.toLowerCase().includes(searchLower) ||
-        productName(s.matched_product_id).toLowerCase().includes(searchLower) ||
-        name.includes(searchLower)
-      );
-    });
-  }, [filteredSessions, search]);
-
-  const pagedSessions = searchedSessions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const totalPages = Math.ceil(searchedSessions.length / PAGE_SIZE);
-
-  // Redemption rate line (#8)
-  const redemptionPct = codesGenerated > 0 ? Math.round((codesUsed / codesGenerated) * 100) : 0;
-
-  // ─── Render ──────────────────────────────────────────────────────────────────────────────────────
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    onLogout();
+  };
+  const handleExportConfirm = () => {
+    setConfirmExport(false);
+    exportCSV(filteredSessions, dateFrom || undefined, dateTo || undefined);
+  };
 
   return (
     <div className="min-h-screen bg-background px-4 py-8">
       <div className="mx-auto max-w-2xl space-y-8">
 
-        {/* Header */}
-        <motion.div className="flex items-center justify-between"
-          initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">📊 Analytics</h1>
-            <p className="text-xs text-muted-foreground">Real-time data · Webidoo Store</p>
-          </div>
-          <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => fetchData(true)}
-              className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
-              <RefreshCw className="h-3 w-3" /> Refresh
-            </button>
-            <button onClick={() => setShowFilters((v) => !v)}
-              className={`flex items-center gap-1 rounded-xl border px-3 py-2 text-xs active:scale-95 ${
-                isFiltered
-                  ? "border-primary/40 bg-primary/10 text-primary"
-                  : "border-border bg-card text-muted-foreground"
-              }`}>
-              <Calendar className="h-3 w-3" />
-              {isFiltered ? "Filter active" : "Filter"}
-              {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            </button>
-            <button onClick={handleExportRequest}
-              disabled={filteredSessions.length === 0}
-              className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95 disabled:opacity-40">
-              <Download className="h-3 w-3" /> CSV
-            </button>
-            <button onClick={() => navigate("/manager")}
-              className="flex items-center gap-1 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary active:scale-95">
-              <Package className="h-3 w-3" /> Catalog
-            </button>
-            <button onClick={() => setShowMfaModal(true)}
-              title={hasMfa ? "2FA active" : "Set up 2FA"}
-              className={`flex items-center gap-1 rounded-xl border px-3 py-2 text-xs active:scale-95 ${
-                hasMfa
-                  ? "border-green-500/40 bg-green-500/10 text-green-400"
-                  : "border-border bg-card text-muted-foreground"
-              }`}>
-              {hasMfa ? <ShieldCheck className="h-3 w-3" /> : <Shield className="h-3 w-3" />}
-              2FA
-            </button>
-            <button onClick={handleLogout}
-              className="flex items-center gap-1 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive active:scale-95">
-              <LogOut className="h-3 w-3" /> Log out
-            </button>
-            <button onClick={() => { supabase.auth.signOut(); navigate("/"); }}
-              className="flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground active:scale-95">
-              <Home className="h-3 w-3" /> Quiz
-            </button>
-          </div>
-        </motion.div>
+        <DashboardHeader
+          isFiltered={isFiltered}
+          showFilters={showFilters}
+          exportDisabled={filteredSessions.length === 0}
+          hasMfa={hasMfa}
+          onRefresh={() => data.refetch(true)}
+          onToggleFilters={() => setShowFilters((v) => !v)}
+          onExport={() => setConfirmExport(true)}
+          onOpenCatalog={() => navigate("/manager")}
+          onOpenMfa={() => setShowMfaModal(true)}
+          onLogout={handleLogout}
+          onBackToQuiz={() => { supabase.auth.signOut(); navigate("/"); }}
+        />
 
-        {/* Date + store filter panel */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-              <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                  Filter by date
-                </p>
+        <DashboardFilterPanel
+          open={showFilters}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          filterStore={filterStore}
+          dateRangeInvalid={dateRangeInvalid}
+          isFiltered={isFiltered}
+          filteredCount={filteredSessions.length}
+          globalTotal={globalTotal}
+          setDateFrom={filters.setDateFrom}
+          setDateTo={filters.setDateTo}
+          setFilterStore={filters.setFilterStore}
+          clearAll={filters.clearAll}
+        />
 
-                {/* 1. Date shortcuts */}
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { label: "Today",       from: todayStr(),       to: todayStr() },
-                    { label: "7 days",      from: daysAgoStr(6),    to: todayStr() },
-                    { label: "30 days",     from: daysAgoStr(29),   to: todayStr() },
-                    { label: "This month", from: startOfMonthStr(), to: todayStr() },
-                  ].map((s) => (
-                    <button
-                      key={s.label}
-                      onClick={() => { setDateFrom(s.from); setDateTo(s.to); }}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                        dateFrom === s.from && dateTo === s.to
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary"
-                      }`}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <label className="text-xs text-muted-foreground mb-1 block">From</label>
-                    <input type="date" value={dateFrom}
-                      onChange={(e) => setDateFrom(e.target.value)}
-                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-xs text-muted-foreground mb-1 block">To</label>
-                    <input type="date" value={dateTo}
-                      onChange={(e) => setDateTo(e.target.value)}
-                      className={`w-full rounded-xl border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 ${
-                        dateRangeInvalid
-                          ? "border-destructive focus:ring-destructive"
-                          : "border-border focus:ring-primary"
-                      }`} />
-                  </div>
-                </div>
-
-                {/* 9. Date range validation error */}
-                {dateRangeInvalid && (
-                  <p className="text-xs font-medium text-destructive">
-                    End date must be ≥ start date
-                  </p>
-                )}
-
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1.5">Store</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    <button onClick={() => setFilterStore(null)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                        filterStore === null ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                      }`}>
-                      All
-                    </button>
-                    {STORES.map((store) => (
-                      <button key={store.id}
-                        onClick={() => setFilterStore(filterStore === store.id ? null : store.id)}
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                          filterStore === store.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                        }`}>
-                        {store.shortName}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {isFiltered && (
-                  <button onClick={clearAllFilters}
-                    className="text-xs text-primary underline underline-offset-2">
-                    Clear all filters
-                  </button>
-                )}
-                {isFiltered && !dateRangeInvalid && (
-                  <p className="text-xs text-muted-foreground">
-                    <span className="font-semibold text-foreground">{filteredSessions.length}</span>
-                    {filterStore ? ` sessions · ${getStoreById(filterStore)?.shortName ?? filterStore}` : " sessions in this period"}
-                    {filterStore && (
-                      <span className="ml-1 text-muted-foreground/60">({globalTotal} total)</span>
-                    )}
-                  </p>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* 9. Hard block when date range invalid */}
         {dateRangeInvalid && (
           <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-center">
             <p className="text-sm font-medium text-destructive">
@@ -450,7 +130,6 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
           </div>
         )}
 
-        {/* 5. Skeleton loader */}
         {loading && !dateRangeInvalid && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -466,37 +145,33 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
         {hasError && (
           <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center">
             <p className="text-sm text-destructive">Unable to load data. Try again or contact the administrator.</p>
-            <button onClick={() => fetchData(true)} className="mt-3 text-xs text-primary underline">Retry</button>
+            <button onClick={() => data.refetch(true)} className="mt-3 text-xs text-primary underline">Retry</button>
           </div>
         )}
 
         {!loading && !hasError && !dateRangeInvalid && (
           <>
             {/* KPI cards */}
-            <motion.div className="grid grid-cols-2 gap-4"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              {/* 3. Trend indicators: pass trendMetrics props (null when no prev period available) */}
+            <motion.div
+              className="grid grid-cols-2 gap-4"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            >
               <StatCard
                 label="Total sessions"
-                value={total}
-                trend={trendMetrics.trendTotal}
+                value={metrics.total}
+                trend={null}
                 sub={filterStore
                   ? `${getStoreById(filterStore)?.shortName} · ${globalTotal} global`
                   : (isFiltered ? "in this period" : undefined)}
               />
-              <StatCard label="Emails collected" value={uniqueEmails} trend={trendMetrics.trendTotal} sub={isFiltered ? "in this period" : undefined} />
-              <StatCard label="Average match" value={`${avgMatch}%`} trend={trendMetrics.trendAvgMatch} />
-              <StatCard label="Today" value={todaySessions} sub="sessions" />
-              <StatCard label="Emails delivered" value={`${emailDeliveryRate}%`} sub={`${emailSentCount} / ${total}`} />
-              <StatCard label="Returning visitors" value={returningCount} sub="duplicate emails" />
+              <StatCard label="Emails collected" value={metrics.uniqueEmails} trend={null} sub={isFiltered ? "in this period" : undefined} />
+              <StatCard label="Average match" value={`${metrics.avgMatch}%`} trend={null} />
+              <StatCard label="Today" value={metrics.todaySessions} sub="sessions" />
+              <StatCard label="Emails delivered" value={`${metrics.emailDeliveryRate}%`} sub={`${metrics.emailSentCount} / ${metrics.total}`} />
+              <StatCard label="Returning visitors" value={metrics.returningCount} sub="duplicate emails" />
 
-              {/* 4. Conversion rate KPI card */}
               {tassoClaimPct !== null && (
-                <StatCard
-                  label="Claim rate"
-                  value={`${tassoClaimPct}%`}
-                  sub="claim / result shown"
-                />
+                <StatCard label="Claim rate" value={`${tassoClaimPct}%`} sub="claim / result shown" />
               )}
               {tassoClaimPct === null && funnel && (
                 <div className="rounded-2xl border border-border bg-card p-5 text-center shadow-card">
@@ -507,7 +182,6 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
               )}
             </motion.div>
 
-            {/* Tasso claim color indicator strip */}
             {tassoClaimPct !== null && (
               <motion.div
                 className={`flex items-center justify-between rounded-xl px-4 py-2 text-xs font-medium ${
@@ -517,7 +191,8 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
                     ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
                     : "bg-destructive/10 text-destructive border border-destructive/20"
                 }`}
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+              >
                 <span>
                   {tassoClaimColor === "green" ? "✅" : tassoClaimColor === "amber" ? "⚠️" : "❌"}&nbsp;
                   Claim rate: <strong>{tassoClaimPct}%</strong>
@@ -529,359 +204,51 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
               </motion.div>
             )}
 
-            {/* Top products */}
-            <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <div className="mb-1 flex items-center gap-2">
-                <h2 className="font-bold text-foreground">🏆 Most claimed products</h2>
-                <TrendingUp className="h-4 w-4 text-primary" />
-              </div>
-              <p className="mb-4 text-[11px] text-muted-foreground">Each session = one user who completed the claim · click to filter sessions</p>
-              {productStats.length === 0 ? (
-                <div className="text-center py-3">
-                  <p className="text-sm font-medium text-foreground">
-                    {isFiltered ? "No products in the selected period" : "No matches yet"}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {isFiltered ? "Expand the date range to see data." : "The most matched products will appear here."}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-3" style={{ minHeight: `${PRODUCT_PAGE_SIZE * 38}px` }}>
-                    {pagedProductStats.map((p, i) => {
-                      const globalIdx = productPage * PRODUCT_PAGE_SIZE + i;
-                      return (
-                        <div key={p.id}
-                          // 7. Product drill-down: click sets search filter to product name
-                          className="cursor-pointer rounded-lg p-1 transition-colors hover:bg-primary/10"
-                          onClick={() => setSearch(p.name)}
-                        >
-                          <div className="mb-1 flex items-center justify-between text-xs">
-                            <span className="truncate pr-2 font-medium text-foreground">
-                              {["🥇", "🥈", "🥉"][globalIdx] ?? "  "} {p.name}
-                            </span>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {p.avgMatch !== undefined && (
-                                <span className="text-muted-foreground">⌀{p.avgMatch}%</span>
-                              )}
-                              <span className="font-bold text-primary">{p.count}x · {p.percent}%</span>
-                            </div>
-                          </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                            <motion.div className="h-full rounded-full gradient-primary"
-                              initial={{ width: 0 }} animate={{ width: `${p.percent}%` }}
-                              transition={{ duration: 0.6, delay: 0.3 + i * 0.05 }} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {productTotalPages > 1 && (
-                    <div className="mt-4 flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => setProductPage((p) => Math.max(0, p - 1))}
-                        disabled={productPage === 0}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground disabled:opacity-30 active:scale-95"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                      {Array.from({ length: productTotalPages }, (_, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => setProductPage(idx)}
-                          className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold active:scale-95 ${
-                            idx === productPage
-                              ? "border-primary/40 bg-primary/10 text-primary"
-                              : "border-border bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {idx + 1}
-                        </button>
-                      ))}
-                      <button
-                        onClick={() => setProductPage((p) => Math.min(productTotalPages - 1, p + 1))}
-                        disabled={productPage >= productTotalPages - 1}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground disabled:opacity-30 active:scale-95"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </motion.div>
+            <ProductLeaderboard
+              products={metrics.productStats}
+              page={productPage}
+              isFiltered={isFiltered}
+              onPageChange={setProductPage}
+              onProductClick={setSearch}
+            />
 
-            {/* Last 7 days chart */}
-            <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-              <h2 className="mb-1 font-bold text-foreground">📅 Last 7 days</h2>
-              {isFiltered && (
-                <p className="mb-4 text-[10px] text-muted-foreground">
-                  The chart always shows the last 7 real days, independent of the date filter.
-                </p>
-              )}
-              <div className="flex h-28 items-end justify-between gap-2 mt-4">
-                {dayCounts.map((d) => (
-                  <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
-                    <span className="text-xs font-bold text-primary">{d.count > 0 ? d.count : ""}</span>
-                    <div className="w-full rounded-t-lg bg-muted" style={{ height: "80px" }}>
-                      <motion.div className="w-full rounded-t-lg gradient-primary"
-                        initial={{ height: 0 }}
-                        animate={{ height: `${(d.count / maxDay) * 80}px` }}
-                        transition={{ duration: 0.5, delay: 0.4 }}
-                        style={{ marginTop: `${80 - (d.count / maxDay) * 80}px` }} />
-                    </div>
-                    <span className="text-[10px] text-muted-foreground">{d.day}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+            <SevenDayChart
+              dayCounts={metrics.dayCounts}
+              maxDay={metrics.maxDay}
+              isFiltered={isFiltered}
+            />
 
-            {/* Hourly distribution */}
             {sessions.length > 0 && (
-              <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
-                <h2 className="mb-1 font-bold text-foreground">🕐 Peak hours</h2>
-                <p className="mb-4 text-[11px] text-muted-foreground">
-                  Session distribution by hour of day · peak at <strong className="text-foreground">{peakHour}:00</strong>
-                </p>
-                <div className="flex h-20 items-end gap-[3px]">
-                  {hourlyCounts.map((count, h) => (
-                    <div key={h} className="flex flex-1 flex-col items-center gap-0.5">
-                      <div className="w-full rounded-t" style={{ height: "64px", position: "relative" }}>
-                        <motion.div
-                          className={`absolute bottom-0 w-full rounded-t ${h === peakHour ? "gradient-primary" : "bg-primary/40"}`}
-                          initial={{ height: 0 }}
-                          animate={{ height: `${(count / maxHourly) * 64}px` }}
-                          transition={{ duration: 0.5, delay: 0.33 + h * 0.01 }}
-                        />
-                      </div>
-                      {h % 6 === 0 && (
-                        <span className="text-[8px] text-muted-foreground">{h}h</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
+              <HourlyDistribution
+                hourlyCounts={metrics.hourlyCounts}
+                maxHourly={metrics.maxHourly}
+                peakHour={metrics.peakHour}
+              />
             )}
 
-            {/* Match % histogram */}
-            {total > 0 && (
-              <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34 }}>
-                <h2 className="mb-1 font-bold text-foreground">🎯 Match % distribution</h2>
-                <p className="mb-4 text-[11px] text-muted-foreground">How many users fall into each compatibility bracket</p>
-                <div className="space-y-3">
-                  {matchBrackets.map((b) => (
-                    <div key={b.label}>
-                      <div className="mb-1 flex items-center justify-between text-xs">
-                        <span className="font-medium text-foreground">{b.label}</span>
-                        <span className="font-bold text-primary">
-                          {b.count} · {total ? Math.round((b.count / total) * 100) : 0}%
-                        </span>
-                      </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                        <motion.div
-                          className={`h-full rounded-full ${b.color}`}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${maxBracket ? (b.count / maxBracket) * 100 : 0}%` }}
-                          transition={{ duration: 0.6, delay: 0.35 }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
+            {metrics.total > 0 && (
+              <MatchHistogram
+                brackets={metrics.matchBrackets}
+                maxBracket={metrics.maxBracket}
+                total={metrics.total}
+              />
             )}
 
-            {/* Funnel */}
-            {funnel && funnel.started > 0 && (
-              <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-                <h2 className="mb-4 font-bold text-foreground">🔽 Drop-off funnel</h2>
-                {[
-                  { label: "Quizzes started",    value: funnel.started,     color: "bg-blue-500"   },
-                  { label: "Result shown",       value: funnel.resultShown, color: "bg-orange-500" },
-                  { label: "Claimed",            value: funnel.claimed,     color: "bg-green-500"  },
-                ].map(({ label, value, color }, i, arr) => {
-                  const pctOfTotal = arr[0].value ? Math.round((value / arr[0].value) * 100) : 0;
-                  const pctOfPrev  = i > 0 && arr[i - 1].value ? Math.round((value / arr[i - 1].value) * 100) : null;
-                  const dropoff    = i > 0 ? arr[i - 1].value - value : 0;
-                  return (
-                    <div key={label} className="mb-4">
-                      <div className="mb-1 flex items-center justify-between text-xs">
-                        <span className="font-medium text-foreground">{label}</span>
-                        <div className="flex items-center gap-2 text-right">
-                          <span className="font-semibold text-foreground">{value}</span>
-                          {pctOfPrev !== null && (
-                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-                              pctOfPrev >= 70 ? "bg-green-500/15 text-green-600"
-                              : pctOfPrev >= 40 ? "bg-orange-500/15 text-orange-600"
-                              : "bg-destructive/15 text-destructive"
-                            }`}>
-                              {pctOfPrev}% from prev. step
-                            </span>
-                          )}
-                          {dropoff > 0 && (
-                            <span className="text-muted-foreground">−{dropoff} dropped</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                        <motion.div
-                          className={`h-full rounded-full ${color}`}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pctOfTotal}%` }}
-                          transition={{ duration: 0.6, delay: 0.1 * i }}
-                        />
-                      </div>
-                      <p className="mt-0.5 text-right text-[10px] text-muted-foreground">{pctOfTotal}% of total started</p>
-                    </div>
-                  );
-                })}
-                <div className="mt-3 flex items-center justify-between rounded-xl bg-muted/50 px-4 py-2.5">
-                  <span className="text-xs text-muted-foreground">Final conversion (started → claim)</span>
-                  <span className={`text-sm font-bold ${
-                    funnel.started && (funnel.claimed / funnel.started) >= 0.5 ? "text-green-600"
-                    : funnel.started && (funnel.claimed / funnel.started) >= 0.25 ? "text-orange-500"
-                    : "text-destructive"
-                  }`}>
-                    {funnel.started ? Math.round((funnel.claimed / funnel.started) * 100) : 0}%
-                  </span>
-                </div>
-              </motion.div>
-            )}
+            {funnel && funnel.started > 0 && <FunnelChart funnel={funnel} />}
 
-            {/* Sessions list */}
-            <motion.div className="rounded-2xl border border-border bg-card p-6 shadow-card"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h2 className="font-bold text-foreground">🕐 Sessions</h2>
-                  {filteredSessions.length > 0 && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {search.trim()
-                        ? `${searchedSessions.length} results · ${filteredSessions.length} total`
-                        : `${filteredSessions.length} total`}
-                      {totalPages > 1 && ` · page ${page + 1} of ${totalPages}`}
-                    </p>
-                  )}
-                </div>
-                {filteredSessions.length > 0 && (
-                  <button onClick={handleExportRequest}
-                    className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-muted-foreground active:scale-95">
-                    <Download className="h-3 w-3" />
-                    {filterStore ? `Export ${getStoreById(filterStore)?.shortName ?? ""}` : "Export CSV"}
-                  </button>
-                )}
-              </div>
-
-              {/* 8. Redemption rate line */}
-              {codesGenerated > 0 && (
-                <p className="mb-3 text-xs text-muted-foreground">
-                  <span className="font-semibold text-foreground">{codesGenerated}</span> codes generated ·{" "}
-                  <span className="font-semibold text-foreground">{codesUsed}</span> used{" "}
-                  <span className={`font-semibold ${redemptionPct >= 30 ? "text-green-500" : redemptionPct >= 15 ? "text-amber-500" : "text-destructive"}`}>
-                    ({redemptionPct}%)
-                  </span>
-                </p>
-              )}
-
-              {filteredSessions.length > 0 && (
-                <div className="mb-3 flex gap-2">
-                  <input
-                    type="search"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search by name, email or product..."
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  {search && (
-                    <button
-                      onClick={() => setSearch("")}
-                      className="rounded-xl border border-border bg-muted px-3 py-2 text-xs text-muted-foreground active:scale-95 shrink-0"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              )}
-              {filteredSessions.length === 0 ? (
-                <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">
-                  <p className="text-2xl mb-2">📫</p>
-                  <p className="text-sm font-medium text-foreground">
-                    {isFiltered ? "No sessions found" : "No sessions yet"}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {isFiltered
-                      ? "Try expanding the date range or changing the selected store."
-                      : "Start the quiz on the iPad to begin collecting data."}
-                  </p>
-                </div>
-              ) : searchedSessions.length === 0 ? (
-                <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">
-                  <p className="text-2xl mb-2">🔍</p>
-                  <p className="text-sm font-medium text-foreground">No results found</p>
-                  <p className="text-xs text-muted-foreground mt-1">Try a name, email or product name.</p>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-3">
-                    {pagedSessions.map((s) => {
-                      const fullName = [s.nome, s.cognome].filter(Boolean).join(" ");
-                      return (
-                        <div key={s.id}
-                          className="flex items-center justify-between rounded-xl border border-border bg-background/40 px-4 py-3 text-sm">
-                          <div className="overflow-hidden">
-                            {fullName && (
-                              <p className="truncate font-semibold text-foreground">{fullName}</p>
-                            )}
-                            <p className="truncate font-medium text-foreground/80">{s.email}</p>
-                            <p className="truncate text-xs text-muted-foreground">{productName(s.matched_product_id)}</p>
-                            {s.store_id && (
-                              <p className="text-[10px] text-primary/70 mt-0.5">📍 {storeName(s.store_id)}</p>
-                            )}
-                          </div>
-                          <div className="ml-3 shrink-0 text-right">
-                            <p className="font-bold text-primary">{s.match_percent}%</p>
-                            <p className="text-[10px] text-muted-foreground">{formatDate(s.created_at)}</p>
-                            {s.discount_code && (
-                              <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-                                {s.code_redeemed ? "✅ used" : "🎟 generated"}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Pagination controls */}
-                  {totalPages > 1 && (
-                    <div className="mt-4 flex items-center justify-center gap-3">
-                      <button
-                        onClick={() => setPage((p) => Math.max(0, p - 1))}
-                        disabled={page === 0}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground disabled:opacity-30 active:scale-95"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                      <span className="text-xs text-muted-foreground">
-                        {page + 1} / {totalPages}
-                      </span>
-                      <button
-                        onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                        disabled={page >= totalPages - 1}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground disabled:opacity-30 active:scale-95"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </motion.div>
+            <SessionsList
+              allSessions={filteredSessions}
+              searchedSessions={searchedSessions}
+              search={search}
+              page={page}
+              filterStore={filterStore}
+              isFiltered={isFiltered}
+              codesGenerated={metrics.codesGenerated}
+              codesUsed={metrics.codesUsed}
+              onSearchChange={setSearch}
+              onPageChange={setPage}
+              onExport={() => setConfirmExport(true)}
+            />
 
             <p className="pb-4 text-center text-xs text-muted-foreground">
               Webi Match · Analytics · Webidoo Store
@@ -890,7 +257,6 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
         )}
       </div>
 
-      {/* 2FA Modal */}
       <AnimatePresence>
         {showMfaModal && (
           <MfaSetupModal
@@ -900,49 +266,15 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
         )}
       </AnimatePresence>
 
-      {/* GDPR export confirmation */}
-      <AnimatePresence>
-        {confirmExport && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm p-4"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={(e) => e.target === e.currentTarget && setConfirmExport(false)}
-          >
-            <motion.div
-              className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-2xl"
-              initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }}
-            >
-              <p className="text-sm font-bold text-foreground mb-2">⚠️ Personal data — GDPR</p>
-              <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-                The file contains customer <strong className="text-foreground">email addresses</strong>.
-                Handle this data in compliance with GDPR: do not share the file, do not keep it longer than necessary,
-                and delete it after use.
-              </p>
-              <div className="mb-5 rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                <strong className="text-foreground">{filteredSessions.length}</strong> sessions
-                {filterStore && <> · <span className="text-primary">{getStoreById(filterStore)?.shortName ?? filterStore}</span></>}
-                {dateFrom && <> · from {dateFrom}</>}
-                {dateTo && <> to {dateTo}</>}
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setConfirmExport(false)}
-                  className="flex-1 rounded-xl border border-border bg-muted px-4 py-2.5 text-sm text-muted-foreground active:scale-95"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleExportConfirm}
-                  className="flex-1 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-semibold text-primary active:scale-95"
-                >
-                  <Download className="inline h-3.5 w-3.5 mr-1.5" />
-                  Download CSV
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <GdprExportConfirm
+        open={confirmExport}
+        sessionCount={filteredSessions.length}
+        filterStore={filterStore}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onConfirm={handleExportConfirm}
+        onCancel={() => setConfirmExport(false)}
+      />
     </div>
   );
 };
