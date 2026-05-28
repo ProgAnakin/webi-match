@@ -6,6 +6,56 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.6.1] — 2026-05-28
+
+### Security
+- **Close anon RLS hole on `quiz_cards`** — the `"anon manage quiz_cards"`
+  policy from migration `20260514000001` was never dropped (later hardening
+  migrations targeted the wrong name); any unauthenticated visitor could
+  rewrite the quiz via PostgREST. Migration
+  `20260528000001_close_anon_rls_holes` drops it.
+- **Drop unrate-limited `verify_staff_pin(text)` overload** — the 1-arg
+  version was still granted to anon with no rate limiting, allowing
+  brute-force against bcrypt. Removed; only the 4-arg form (with IP / UA
+  lockout) remains.
+- **Column-level GRANT for `quiz_sessions` redemption UPDATE** — the
+  RLS policy from `20260501000001` was row-level, so consulenti could
+  rewrite any column. Authenticated UPDATE now restricted to
+  `(code_redeemed, code_redeemed_at)` columns only.
+- **Fail-closed CORS** in `verify-pin` and `on-session-created` — when
+  `ALLOWED_ORIGIN` is unset, browser cross-origin requests are rejected
+  instead of being reflected.
+
+### Changed
+- **CSP**: allow Sentry endpoints (`*.sentry.io`, `*.ingest.sentry.io`)
+  in `connect-src` so error tracking actually works in production.
+  Removed `https://api.brevo.com` — Brevo is only called server-side.
+- **PWA runtime cache**: scope Supabase NetworkFirst cache to
+  `/rest/v1/` GETs only, avoiding stale auth tokens (`/auth/v1/*`) and
+  non-idempotent RPC writes.
+- **`SECURITY.md`** routes vulnerability reports to the maintainer's
+  personal address (`costanzobruno.annichini@webidoo.com`).
+
+### Added
+- `EMAIL_SENDER` Edge Function secret — the Brevo sender address is now
+  configurable instead of hardcoded.
+- `engines.node` pin (`>=20`) in `package.json` so Vercel and contributor
+  Node versions stay aligned.
+
+### Documentation
+- `README.md` + `CONTRIBUTING.md` reference the correct env var name
+  (`VITE_SUPABASE_PUBLISHABLE_KEY`); previously instructed contributors
+  to set `VITE_SUPABASE_ANON_KEY` which the code never reads.
+
+### Internal
+- Manager dashboard split into focused hooks/components
+  (`useProductCatalog`, `useDashboardData`, `useManagerKeybindings`).
+- Stats dashboard split into focused units.
+- GDPR consent timestamp persisted with 5-language privacy notice.
+- Various accessibility polish on PIN keypad and language picker.
+
+---
+
 ## [1.6.0] — 2026-05-21
 
 ### Added

@@ -17,7 +17,7 @@ git clone <repo>
 cd webi-match
 npm install
 cp .env.example .env
-# Fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
+# Fill in VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY
 npm run dev
 ```
 

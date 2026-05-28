@@ -26,12 +26,22 @@ const WINDOW_MS    = 5 * 60 * 1000; // 5-minute counting window
 const LOCKOUT_MS   = 2 * 60 * 1000; // 2-minute lockout after MAX_FAILURES
 
 function makeHeaders(origin: string) {
-  return {
+  // Fail-closed origin handling: only echo Access-Control-Allow-Origin when the
+  // request origin matches the configured allowlist (or wildcard). When
+  // ALLOWED_ORIGIN is unset and the request carries an Origin, the header is
+  // omitted so the browser blocks cross-origin reads. Server-to-server callers
+  // (no Origin header) are unaffected.
+  let allowOrigin: string | null = null;
+  if (ALLOWED_ORIGIN === "*") allowOrigin = "*";
+  else if (ALLOWED_ORIGIN && origin === ALLOWED_ORIGIN) allowOrigin = origin;
+
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin":  ALLOWED_ORIGIN === "*" ? "*" : origin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
   };
+  if (allowOrigin) headers["Access-Control-Allow-Origin"] = allowOrigin;
+  return headers;
 }
 
 function getClientIp(req: Request): string {
@@ -79,8 +89,17 @@ serve(async (req) => {
   // CORS preflight
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: h });
 
-  // Silent origin rejection
-  if (ALLOWED_ORIGIN !== "*" && origin && origin !== ALLOWED_ORIGIN) {
+  // Silent origin rejection. When ALLOWED_ORIGIN is unset we reject any caller
+  // that carried an Origin header (browser cross-origin); server-to-server
+  // callers (no Origin) still pass through.
+  if (ALLOWED_ORIGIN === "*") {
+    // wildcard — allow everything
+  } else if (ALLOWED_ORIGIN) {
+    if (origin && origin !== ALLOWED_ORIGIN) {
+      return new Response(SILENT, { status: 200, headers: h });
+    }
+  } else if (origin) {
+    // ALLOWED_ORIGIN unset + browser request → fail closed.
     return new Response(SILENT, { status: 200, headers: h });
   }
 

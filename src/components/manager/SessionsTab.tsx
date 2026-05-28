@@ -147,7 +147,8 @@ export const SessionsTab = ({ storeId, isGlobal }: SessionsTabProps) => {
       const q = debouncedSearch.trim()
         .replace(/\\/g, "\\\\")
         .replace(/%/g, "\\%")
-        .replace(/_/g, "\\_");
+        .replace(/_/g, "\\_")
+        .replace(/,/g, "");
       query = query.or(`email.ilike.%${q}%,discount_code.ilike.%${q}%,nome.ilike.%${q}%,cognome.ilike.%${q}%`);
     }
     // Advanced filters

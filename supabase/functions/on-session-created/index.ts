@@ -636,16 +636,31 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
 serve(async (req) => {
   const origin = req.headers.get("origin") ?? "";
 
+  // Fail-closed CORS: only echo Access-Control-Allow-Origin when the request
+  // origin matches the configured allowlist (or wildcard). Server-to-server
+  // callers (Supabase DB webhook, no Origin header) are unaffected.
+  let allowOrigin: string | null = null;
+  if (ALLOWED_ORIGIN === "*") allowOrigin = "*";
+  else if (ALLOWED_ORIGIN && origin === ALLOWED_ORIGIN) allowOrigin = origin;
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: {
-      "Access-Control-Allow-Origin":  ALLOWED_ORIGIN === "*" ? "*" : origin,
+    const corsHeaders: Record<string, string> = {
       "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
-    }});
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info, x-webhook-secret",
+    };
+    if (allowOrigin) corsHeaders["Access-Control-Allow-Origin"] = allowOrigin;
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
-  // Silent CORS rejection for unexpected origins
-  if (ALLOWED_ORIGIN !== "*" && origin && origin !== ALLOWED_ORIGIN) {
+  // Silent CORS rejection for unexpected origins (and for any browser caller
+  // when ALLOWED_ORIGIN is unset).
+  if (ALLOWED_ORIGIN === "*") {
+    // wildcard — allow everything
+  } else if (ALLOWED_ORIGIN) {
+    if (origin && origin !== ALLOWED_ORIGIN) {
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+  } else if (origin) {
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 

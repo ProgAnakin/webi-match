@@ -305,7 +305,7 @@ git clone https://github.com/ProgAnakin/webi-match.git
 cd webi-match
 npm install
 cp .env.example .env
-# Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+# Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY
 npm run dev
 ```
 
