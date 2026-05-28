@@ -321,6 +321,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
               <motion.button
                 key={i}
                 onClick={() => handleKey(key)}
+                aria-label={key === "⌫" ? "Backspace" : `Digit ${key}`}
                 className={`flex h-16 items-center justify-center rounded-2xl text-xl font-semibold transition-colors ${
                   key === "⌫"
                     ? "bg-muted text-muted-foreground"

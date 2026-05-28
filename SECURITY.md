@@ -7,7 +7,7 @@ If you believe you have found a security vulnerability in Webi-Match, please **d
 Send a private report by either:
 
 - Using GitHub's [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability) flow on this repository, **or**
-- Emailing the maintainer directly at `costanzobruno.annichini@webidoo.com`
+- Emailing the maintainer privately at `security@webidoo.com`
 
 Please include, where possible:
 

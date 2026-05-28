@@ -43,6 +43,8 @@ const LanguageModal = ({ onClose }: { onClose: () => void }) => {
               <button
                 key={code}
                 onClick={() => { setLang(code); setTimeout(onClose, 220); }}
+                aria-label={`Select ${name} language`}
+                aria-pressed={active}
                 className="flex items-center gap-4 rounded-2xl px-5 py-3.5 transition-all duration-200 active:scale-95"
                 style={active ? {
                   background: "linear-gradient(135deg, hsl(27,92%,55%), hsl(16,100%,48%))",

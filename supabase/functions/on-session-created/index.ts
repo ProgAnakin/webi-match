@@ -21,6 +21,7 @@ const SHEETS_WEBHOOK   = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL") ?? "";
 // rejects requests that don't carry a matching x-webhook-secret header.
 // Leave unset only for local development — production must always set this.
 const WEBHOOK_SECRET   = Deno.env.get("WEBHOOK_SECRET") ?? "";
+const EMAIL_SENDER     = Deno.env.get("EMAIL_SENDER") ?? "noreply@webidoo.com";
 
 if (!PII_KEY) {
   // Loud, single-shot warning at cold start so operators notice in the logs
@@ -800,7 +801,7 @@ serve(async (req) => {
     method: "POST",
     headers: { "api-key": BREVO_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({
-      sender: { name: tpl.sender_name, email: "costanzobruno.annichini@webidoo.com" },
+      sender: { name: tpl.sender_name, email: EMAIL_SENDER },
       // Customers should not reply directly. Point Reply-To at a noreply mailbox
       // so the "Reply" button in email clients doesn't send anything to a real inbox.
       replyTo: { name: "Webidoo Store (no-reply)", email: "noreply@webidoo.com" },

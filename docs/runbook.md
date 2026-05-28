@@ -22,9 +22,10 @@ arrived (including spam folder).
      find the address → **Resubscribe** / **Remove from blocklist**. Send
      again only with the customer's explicit consent.
    - `Errore` / `Error`: usually the wrong sender or DKIM failure. Check the
-     sender shown in the log — must be `costanzobruno.annichini@webidoo.com`.
-     If it's something else, the Edge Function deployment is stale; redeploy
-     `on-session-created` from the Dashboard.
+     sender shown in the log — must match the `EMAIL_SENDER` Edge Function
+     secret. If it's something else, the secret is unset (fallback is
+     `noreply@webidoo.com`) or the Edge Function deployment is stale;
+     redeploy `on-session-created` from the Dashboard.
    - **Nothing logged at all:** the Edge Function never called Brevo. Continue
      to step 2.
 
