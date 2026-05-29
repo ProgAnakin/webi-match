@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useLockoutCountdown } from "@/hooks/useLockoutCountdown";
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -23,22 +24,7 @@ export const LoginForm = ({
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [lockedSeconds, setLockedSeconds] = useState(0);
-  const lockCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const isLocked = lockedSeconds > 0;
-
-  useEffect(() => {
-    if (lockedSeconds <= 0) return;
-    if (lockCountdownRef.current) clearInterval(lockCountdownRef.current);
-    lockCountdownRef.current = setInterval(() => {
-      setLockedSeconds((s) => {
-        if (s <= 1) { clearInterval(lockCountdownRef.current!); return 0; }
-        return s - 1;
-      });
-    }, 1000);
-    return () => { if (lockCountdownRef.current) clearInterval(lockCountdownRef.current); };
-  }, [lockedSeconds]);
+  const { lockedSeconds, isLocked, setLockedSeconds } = useLockoutCountdown();
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim() || isLocked) return;

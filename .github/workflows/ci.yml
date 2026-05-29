@@ -44,9 +44,7 @@ jobs:
     name: Playwright E2E
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Keep e2e independent of ci so a flake doesn't block PRs — promote to a
-    # required check once it's been stable for ~2 weeks.
-    continue-on-error: true
+    # Required check. A red Playwright run blocks the PR.
 
     steps:
       - uses: actions/checkout@v4

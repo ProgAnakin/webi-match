@@ -1,9 +1,9 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/webidoo-logo.webp";
-import { getClientId } from "@/lib/clientId";
 import { useLang } from "@/i18n/LanguageContext";
+import { useLockoutCountdown } from "@/hooks/useLockoutCountdown";
+import { verifyStaffPin } from "@/lib/verifyStaffPin";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"];
 
@@ -18,22 +18,7 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
   const [pin, setPin] = useState("");
   const [shake, setShake] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  const [lockedSeconds, setLockedSeconds] = useState(0);
-  const lockRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const isLocked = lockedSeconds > 0;
-
-  useEffect(() => {
-    if (lockedSeconds <= 0) return;
-    if (lockRef.current) clearInterval(lockRef.current);
-    lockRef.current = setInterval(() => {
-      setLockedSeconds((s) => {
-        if (s <= 1) { clearInterval(lockRef.current!); return 0; }
-        return s - 1;
-      });
-    }, 1000);
-    return () => { if (lockRef.current) clearInterval(lockRef.current); };
-  }, [lockedSeconds]);
+  const { lockedSeconds, isLocked, setLockedSeconds } = useLockoutCountdown();
 
   const handleKey = useCallback(async (key: string) => {
     if (isLocked || verifying) return;
@@ -45,26 +30,7 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
     if (next.length < 4) return;
 
     setVerifying(true);
-    let result: { valid: boolean; locked_seconds: number } | null = null;
-
-    try {
-      const { data, error } = await supabase.functions.invoke("verify-pin", {
-        body: { pin_input: next, client_id: getClientId(), user_agent: navigator.userAgent },
-      });
-      if (!error && data && typeof (data as Record<string, unknown>).valid === "boolean") {
-        result = data as { valid: boolean; locked_seconds: number };
-      }
-    } catch { /* fallthrough to RPC */ }
-
-    if (!result) {
-      try {
-        const { data: rpcData } = await supabase.rpc("verify_staff_pin", {
-          pin_input: next, client_id: getClientId(), user_agent: navigator.userAgent,
-        });
-        result = rpcData as { valid: boolean; locked_seconds: number } | null;
-      } catch { /* network failure */ }
-    }
-
+    const result = await verifyStaffPin(next);
     setVerifying(false);
 
     if (result?.valid === true) {
@@ -76,7 +42,7 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
       setShake(true);
       setTimeout(() => { setShake(false); setPin(""); }, 600);
     }
-  }, [pin, isLocked, verifying, onDeactivate]);
+  }, [pin, isLocked, verifying, onDeactivate, setLockedSeconds]);
 
   // ── PIN entry view ─────────────────────────────────────────────────
   if (showPin) {

@@ -38,6 +38,33 @@ interface CustomProductRow {
   status: "active" | "archived";
 }
 
+// Narrow the supabase `Json` value back to a `{q,a}[]` shape, dropping any
+// malformed entry. Belt-and-braces — the manager UI only ever writes valid
+// shape, but a manual SQL edit could break it.
+function parseFaq(value: unknown): { q: string; a: string }[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (item): item is { q: string; a: string } =>
+      typeof item === "object" &&
+      item !== null &&
+      typeof (item as { q?: unknown }).q === "string" &&
+      typeof (item as { a?: unknown }).a === "string",
+  );
+}
+
+interface RawCustomProductRow extends Omit<CustomProductRow, "faq" | "status"> {
+  faq: unknown;
+  status: string;
+}
+
+function parseCustomProduct(row: RawCustomProductRow): CustomProductRow {
+  return {
+    ...row,
+    faq: parseFaq(row.faq),
+    status: row.status === "archived" ? "archived" : "active",
+  };
+}
+
 interface GlobalStatusRow {
   product_id: string;
   hidden: boolean;
@@ -109,8 +136,8 @@ export function ProductCatalogTab() {
       supabase.from("custom_products").select("*").order("created_at", { ascending: false }),
       supabase.from("product_global_status").select("product_id, hidden"),
     ]);
-    // `faq` comes back as Json from the generated types — cast through unknown.
-    setCustomProducts((customRes.data ?? []) as unknown as CustomProductRow[]);
+    // `faq` arrives as Json from supabase; parse it into the strict shape.
+    setCustomProducts(((customRes.data ?? []) as RawCustomProductRow[]).map(parseCustomProduct));
     const map: Record<string, boolean> = {};
     (globalRes.data ?? []).forEach((r: GlobalStatusRow) => { map[r.product_id] = r.hidden; });
     setGlobalStatus(map);

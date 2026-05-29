@@ -3,14 +3,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const config: CapacitorConfig = {
   appId: "com.annichini.webimatch",
   appName: "Webi Match",
-  // Vite build output directory
   webDir: "dist",
-  server: {
-    // Set to true only during development on a device connected to the same Wi-Fi
-    // as your machine; comment out for production builds.
-    // androidScheme: "http",
-    // url: "http://192.168.x.x:8080",
-  },
   android: {
     // Full-screen kiosk feel on Android tablets
     backgroundColor: "#0d1117",

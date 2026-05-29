@@ -1,11 +1,11 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { STORES, setStoredStoreId, getStoredStoreId } from "@/data/stores";
-import { supabase } from "@/integrations/supabase/client";
 import { useLang } from "@/i18n/LanguageContext";
 import { useKioskMode } from "@/hooks/useKioskMode";
-import { getClientId } from "@/lib/clientId";
+import { useLockoutCountdown } from "@/hooks/useLockoutCountdown";
+import { verifyStaffPin } from "@/lib/verifyStaffPin";
 
 // PIN validation is server-side via Supabase RPC (verify_staff_pin).
 // Lockout + attempt logging are also managed server-side.
@@ -25,30 +25,10 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
   const [pin, setPin] = useState("");
   const [shake, setShake] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  // Lockout managed by server response
-  const [lockedSeconds, setLockedSeconds] = useState(0);
+  const { lockedSeconds, isLocked, setLockedSeconds } = useLockoutCountdown();
   const [currentStoreId, setCurrentStoreId] = useState<string | null>(getStoredStoreId);
   const [savedStoreId, setSavedStoreId] = useState<string | null>(null); // for visual confirmation
   const navigate = useNavigate();
-  const lockCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const isLocked = lockedSeconds > 0;
-
-  // Client-side countdown driven by server-side locked_seconds
-  useEffect(() => {
-    if (lockedSeconds <= 0) return;
-    if (lockCountdownRef.current) clearInterval(lockCountdownRef.current);
-    lockCountdownRef.current = setInterval(() => {
-      setLockedSeconds((s) => {
-        if (s <= 1) {
-          clearInterval(lockCountdownRef.current!);
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-    return () => { if (lockCountdownRef.current) clearInterval(lockCountdownRef.current); };
-  }, [lockedSeconds]);
 
   const handleKey = useCallback(async (key: string) => {
     if (isLocked || verifying) return;
@@ -64,39 +44,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
 
     if (next.length === 4) {
       setVerifying(true);
-
-      let result: { valid: boolean; locked_seconds: number } | null = null;
-
-      // Attempt 1: Edge Function (captures real IP for brute-force lockout)
-      try {
-        const { data: fnData, error: fnError } = await supabase.functions.invoke("verify-pin", {
-          body: {
-            pin_input:  next,
-            client_id:  getClientId(),
-            user_agent: navigator.userAgent,
-          },
-        });
-        if (!fnError && fnData && typeof (fnData as Record<string, unknown>).valid === "boolean") {
-          result = fnData as { valid: boolean; locked_seconds: number };
-        }
-      } catch {
-        // Edge Function unreachable — fall through to direct RPC
-      }
-
-      // Attempt 2: direct RPC fallback (no IP capture, but always available)
-      if (!result) {
-        try {
-          const { data: rpcData } = await supabase.rpc("verify_staff_pin", {
-            pin_input:  next,
-            client_id:  getClientId(),
-            user_agent: navigator.userAgent,
-          });
-          result = rpcData as { valid: boolean; locked_seconds: number } | null;
-        } catch {
-          // network failure — result stays null, treated as invalid
-        }
-      }
-
+      const result = await verifyStaffPin(next);
       setVerifying(false);
 
       if (result?.valid === true) {
@@ -112,7 +60,7 @@ const AdminPinOverlay = ({ onClose }: AdminPinOverlayProps) => {
         }, 600);
       }
     }
-  }, [pin, isLocked, verifying]);
+  }, [pin, isLocked, verifying, setLockedSeconds]);
 
   const handleSelectStore = (storeId: string) => {
     setStoredStoreId(storeId);

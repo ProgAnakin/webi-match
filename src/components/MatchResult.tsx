@@ -4,8 +4,8 @@ import type { Product } from "@/data/products";
 import { useSound } from "@/hooks/useSound";
 import { useDevicePerformance } from "@/hooks/useDevicePerformance";
 import { useLang } from "@/i18n/LanguageContext";
-import { supabase } from "@/integrations/supabase/client";
-import { getClientId } from "@/lib/clientId";
+import { useLockoutCountdown } from "@/hooks/useLockoutCountdown";
+import { verifyStaffPin } from "@/lib/verifyStaffPin";
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const EMAIL_TAPS  = 5;
@@ -158,8 +158,10 @@ const MatchResult = ({
   const [pinValue, setPinValue]               = useState("");
   const [pinError, setPinError]               = useState(false);
   const [pinVerifying, setPinVerifying]       = useState(false);
-  const [pinLockedSeconds, setPinLockedSeconds] = useState(0);
-  const pinLockRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const {
+    lockedSeconds: pinLockedSeconds,
+    setLockedSeconds: setPinLockedSeconds,
+  } = useLockoutCountdown();
   const [newEmail, setNewEmail]               = useState("");
   const [newEmailTouched, setNewEmailTouched] = useState(false);
 
@@ -236,19 +238,6 @@ const MatchResult = ({
     }
   }, []);
 
-  // PIN lockout countdown driven by server response
-  useEffect(() => {
-    if (pinLockedSeconds <= 0) return;
-    if (pinLockRef.current) clearInterval(pinLockRef.current);
-    pinLockRef.current = setInterval(() => {
-      setPinLockedSeconds((s) => {
-        if (s <= 1) { clearInterval(pinLockRef.current!); return 0; }
-        return s - 1;
-      });
-    }, 1000);
-    return () => { if (pinLockRef.current) clearInterval(pinLockRef.current); };
-  }, [pinLockedSeconds]);
-
   // ── PIN keypad handler — server-side verification ──────────────────────────────────────────
   const handlePinKey = useCallback(async (key: number | "⌫") => {
     if (pinVerifying || pinLockedSeconds > 0) return;
@@ -258,31 +247,19 @@ const MatchResult = ({
     setPinValue(next);
     if (next.length === 4) {
       setPinVerifying(true);
-      try {
-        const { data, error } = await supabase.rpc("verify_staff_pin", {
-          pin_input: next,
-          client_id: getClientId(),
-          user_agent: navigator.userAgent,
-        });
-        const result = data as { valid: boolean; locked_seconds: number } | null;
-        if (!error && result?.valid === true) {
-          setPinVerifying(false);
-          setTimeout(() => setPinVerified(true), 150);
-        } else {
-          if (result?.locked_seconds && result.locked_seconds > 0) {
-            setPinLockedSeconds(result.locked_seconds);
-          }
-          setPinError(true);
-          setTimeout(() => { setPinValue(""); setPinError(false); }, 700);
-          setPinVerifying(false);
+      const result = await verifyStaffPin(next);
+      setPinVerifying(false);
+      if (result?.valid === true) {
+        setTimeout(() => setPinVerified(true), 150);
+      } else {
+        if (result?.locked_seconds && result.locked_seconds > 0) {
+          setPinLockedSeconds(result.locked_seconds);
         }
-      } catch {
         setPinError(true);
         setTimeout(() => { setPinValue(""); setPinError(false); }, 700);
-        setPinVerifying(false);
       }
     }
-  }, [pinValue, pinVerifying, pinLockedSeconds]);
+  }, [pinValue, pinVerifying, pinLockedSeconds, setPinLockedSeconds]);
 
   // ── Save new email ──────────────────────────────────────────────────────────────────────────────────
   const handleSaveEmail = useCallback(() => {
@@ -305,7 +282,7 @@ const MatchResult = ({
     setPinLockedSeconds(0);
     setNewEmail("");
     setNewEmailTouched(false);
-  }, []);
+  }, [setPinLockedSeconds]);
 
   return (
     <div className="relative flex h-dvh flex-col items-center justify-center overflow-hidden px-6 py-6">
