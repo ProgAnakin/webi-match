@@ -27,6 +27,8 @@ import { useAuditLog } from "./useAuditLog";
 import { useUndoToggle } from "./useUndoToggle";
 import { useProductCatalog } from "./useProductCatalog";
 import { useManagerKeybindings } from "./useManagerKeybindings";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { TabErrorFallback } from "./TabErrorFallback";
 
 interface ManagerDashboardProps {
   onLogout: () => void;
@@ -272,30 +274,44 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         {activeTab === "gestione" && (
           <div className="space-y-4">
             <ManagementSubTabs active={gestioneTab} onChange={setGestioneTab} />
-            {gestioneTab === "catalogo" && <ProductCatalogTab />}
-            {gestioneTab === "carte"    && <QuizCardsTab />}
-            {gestioneTab === "email"    && <EmailTemplateTab />}
-            {gestioneTab === "ruoli"    && <RolesTab />}
-            {gestioneTab === "guida"    && <GuideEditorTab />}
+            <ErrorBoundary
+              resetKeys={[gestioneTab]}
+              fallback={(reset) => <TabErrorFallback section="management" onRetry={reset} />}
+            >
+              {gestioneTab === "catalogo" && <ProductCatalogTab />}
+              {gestioneTab === "carte"    && <QuizCardsTab />}
+              {gestioneTab === "email"    && <EmailTemplateTab />}
+              {gestioneTab === "ruoli"    && <RolesTab />}
+              {gestioneTab === "guida"    && <GuideEditorTab />}
+            </ErrorBoundary>
           </div>
         )}
 
         {/* Sessions tab */}
         {activeTab === "sessioni" && (
-          <SessionsTab
-            storeId={storeId}
-            isGlobal={userRole?.role !== "consulente_responsabile"}
-          />
+          <ErrorBoundary
+            resetKeys={[storeId]}
+            fallback={(reset) => <TabErrorFallback section="Sessions" onRetry={reset} />}
+          >
+            <SessionsTab
+              storeId={storeId}
+              isGlobal={userRole?.role !== "consulente_responsabile"}
+            />
+          </ErrorBoundary>
         )}
 
         {activeTab === "storico" && (
-          <AuditLogTab
-            loading={auditLog.loading}
-            error={auditLog.error}
-            entries={auditLog.entries}
-            catalogProducts={catalogProducts}
-            onRefresh={auditLog.refetch}
-          />
+          <ErrorBoundary
+            fallback={(reset) => <TabErrorFallback section="Audit Log" onRetry={reset} />}
+          >
+            <AuditLogTab
+              loading={auditLog.loading}
+              error={auditLog.error}
+              entries={auditLog.entries}
+              catalogProducts={catalogProducts}
+              onRefresh={auditLog.refetch}
+            />
+          </ErrorBoundary>
         )}
 
         {/* Catalogo-only sections below */}

@@ -6,6 +6,32 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.6.3] — 2026-05-29
+
+### Added
+- **Granular error boundaries on the manager dashboard** — each tab
+  (Management, Sessions, Audit Log) is now wrapped in its own `ErrorBoundary`
+  with an in-place retry fallback. A crash in one tab (bad data row, render
+  bug) no longer blanks the whole dashboard; the header, store selector and
+  other tabs stay interactive. Boundaries auto-reset when the active tab or
+  store changes.
+- **Tests for security-critical paths** — `verifyStaffPin()` (Edge Function →
+  RPC dual-path fallback, malformed-payload rejection, both-paths-down → null)
+  and `useLockoutCountdown()` (decrement, clear, restart, unmount cleanup) now
+  covered. New `ErrorBoundary` fallback/reset behaviour tested. +20 cases.
+- **Dependabot** — weekly grouped npm + GitHub Actions update PRs, with
+  immediate security updates; major React bumps left to manual coordination.
+
+### Changed
+- `ErrorBoundary` accepts an optional `fallback` render-prop and `resetKeys`
+  for in-place, recoverable boundaries — the full-screen kiosk fallback is
+  unchanged when neither is passed.
+
+### Documentation
+- README links the CHANGELOG; CONTRIBUTING drops stale hard-coded test counts.
+
+---
+
 ## [1.6.2] — 2026-05-29
 
 ### Added

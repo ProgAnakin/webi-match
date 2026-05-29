@@ -1,0 +1,50 @@
+version: 2
+updates:
+  # npm dependencies — weekly, grouped to keep PR noise low. Security updates
+  # are always raised immediately regardless of the schedule below.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Rome"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      # Patch + minor bumps for prod deps in one PR — low risk, easy to review.
+      production-minor-patch:
+        applies-to: version-updates
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      # All dev-dependency updates batched together.
+      dev-dependencies:
+        applies-to: version-updates
+        dependency-type: "development"
+    ignore:
+      # Major React bumps are coordinated by hand (concurrent-mode / Capacitor
+      # webview compatibility), not auto-PR'd.
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions used in CI — keep the workflow runners current.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Rome"
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"

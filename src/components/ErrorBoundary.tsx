@@ -2,7 +2,17 @@ import { Component, ErrorInfo, ReactNode } from "react";
 import { motion } from "framer-motion";
 import { translations, type Lang } from "@/i18n/translations";
 
-interface Props { children: ReactNode; }
+interface Props {
+  children: ReactNode;
+  // When provided, this is rendered instead of the full-screen kiosk fallback.
+  // Used for granular, in-place boundaries (e.g. a single dashboard tab) so one
+  // failing section doesn't blank the whole page. Receives a reset callback
+  // that clears the error and re-renders the children.
+  fallback?: (reset: () => void) => ReactNode;
+  // Changing any value in this array clears the error state. Pass the active
+  // tab id so switching tabs recovers from a previously crashed tab.
+  resetKeys?: unknown[];
+}
 interface State { hasError: boolean; }
 
 // Class component can't use the useLang() hook, so we resolve the language by
@@ -27,8 +37,24 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error("[webi-match] uncaught render error:", error, info.componentStack);
   }
 
+  // Clear the error when any reset key changes (e.g. the user switches tabs)
+  // so a recovered section re-mounts instead of staying stuck on the fallback.
+  componentDidUpdate(prev: Props) {
+    if (!this.state.hasError) return;
+    const a = prev.resetKeys ?? [];
+    const b = this.props.resetKeys ?? [];
+    if (a.length !== b.length || a.some((v, i) => v !== b[i])) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  private reset = () => this.setState({ hasError: false });
+
   render() {
     if (!this.state.hasError) return this.props.children;
+
+    // Granular, in-place fallback (does not take over the screen).
+    if (this.props.fallback) return this.props.fallback(this.reset);
 
     const eb = translations[resolveLang()].admin.errorBoundary;
 

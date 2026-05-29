@@ -386,7 +386,7 @@ Webi-Match was conceived, designed and built end-to-end as an independent initia
 - **GitHub:** [github.com/ProgAnakin](https://github.com/ProgAnakin)
 - **LinkedIn:** [linkedin.com/in/costanzoannichini](https://www.linkedin.com/in/costanzoannichini/)
 
-Architectural decisions: [`docs/adr/`](./docs/adr/) · Operational triage: [`docs/runbook.md`](./docs/runbook.md)
+Architectural decisions: [`docs/adr/`](./docs/adr/) · Operational triage: [`docs/runbook.md`](./docs/runbook.md) · Release history: [`CHANGELOG.md`](./CHANGELOG.md)
 
 ### License
 
