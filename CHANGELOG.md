@@ -6,6 +6,23 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.6.2] — 2026-05-29
+
+### Added
+- **Sentry sourcemap upload** — `@sentry/vite-plugin` wired into
+  `vite.config.ts` so production stack traces resolve to original source
+  files instead of minified bundles. Upload only runs when `SENTRY_ORG`,
+  `SENTRY_PROJECT` and `SENTRY_AUTH_TOKEN` are all set in the build env;
+  sourcemaps are deleted from `dist/` after upload so they never reach
+  production. Local builds emit no `.map` files at all when those vars are
+  unset, eliminating any leak risk.
+
+### Documentation
+- `.env.example` now documents the three build-time Sentry vars alongside
+  the existing runtime `VITE_SENTRY_DSN`.
+
+---
+
 ## [1.6.1] — 2026-05-28
 
 ### Security

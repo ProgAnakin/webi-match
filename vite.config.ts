@@ -2,6 +2,15 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { VitePWA } from "vite-plugin-pwa";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
+
+// Sourcemap upload only runs when all three env vars are set (Vercel build).
+// Local builds skip the upload step silently — no token needed for `npm run build`.
+const sentryEnabled = !!(
+  process.env.SENTRY_AUTH_TOKEN &&
+  process.env.SENTRY_ORG &&
+  process.env.SENTRY_PROJECT
+);
 
 // https://vitejs.dev/config/
 export default defineConfig(() => ({
@@ -48,6 +57,17 @@ export default defineConfig(() => ({
         enabled: false,
       },
     }),
+    // Must be last: uploads sourcemaps to Sentry after Vite emits the bundle.
+    sentryEnabled &&
+      sentryVitePlugin({
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        sourcemaps: {
+          // Delete uploaded sourcemaps from the dist so they aren't served publicly.
+          filesToDeleteAfterUpload: ["./dist/**/*.map"],
+        },
+      }),
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -56,7 +76,11 @@ export default defineConfig(() => ({
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
   },
   build: {
-    sourcemap: false,
+    // Only emit sourcemaps when Sentry is configured to upload them — the
+    // plugin then deletes the .map files from dist/ after upload so they
+    // never reach production. With no Sentry env vars, no maps are emitted
+    // at all, eliminating any leak risk.
+    sourcemap: sentryEnabled,
     // Manual chunking — keeps vendor code in separate, long-cacheable bundles
     // so iPads only re-download the small app chunk on every release.
     rollupOptions: {
