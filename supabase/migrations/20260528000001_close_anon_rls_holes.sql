@@ -42,8 +42,24 @@ BEGIN
 END $$;
 
 -- ── 2. Drop the unrate-limited verify_staff_pin(text) overload ───────────────
-REVOKE EXECUTE ON FUNCTION public.verify_staff_pin(text) FROM anon, authenticated;
-DROP FUNCTION IF EXISTS public.verify_staff_pin(text);
+-- Wrapped in a DO block so the migration is idempotent: if the function was
+-- already removed by an earlier hand-applied migration, the REVOKE would error
+-- on a missing function (REVOKE has no IF EXISTS for routines). Skip the
+-- revoke step in that case — there's nothing to revoke anyway.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+      FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'public'
+       AND p.proname = 'verify_staff_pin'
+       AND pg_get_function_identity_arguments(p.oid) = 'pin_input text'
+  ) THEN
+    REVOKE EXECUTE ON FUNCTION public.verify_staff_pin(text) FROM anon, authenticated;
+    DROP FUNCTION public.verify_staff_pin(text);
+  END IF;
+END $$;
 
 -- ── 3. Column-level GRANT for the redemption UPDATE ──────────────────────────
 -- RLS policies are row-level; without a column GRANT, any authenticated user
