@@ -377,6 +377,33 @@ Place core product images in `public/products/` and reference them in `src/data/
 
 ---
 
+## 🗺️ Roadmap
+
+The current release is intentionally **zero-cost**: every component runs on free tiers (Vercel Hobby, Supabase Free, Sentry Developer, Brevo free transactional). The items below are deferred to a future release — most require either a paid tier, a coordinated multi-system deploy, or both.
+
+### Security & data integrity
+
+- **`email_hash` peppered HMAC migration.** The current `email_hash` column is a plain SHA-256 of the lowercased email — strong against casual lookups but reversible via rainbow tables of common emails. A future release switches to `HMAC-SHA256(pepper, email)` with the pepper held in Supabase Vault, and backfills existing rows. Deferred because it requires a single-shot coordinated deploy: Supabase secret + SQL migration + `on-session-created` Edge Function all flipped together, with a fallback path during cutover so dedupe lookups don't break mid-migration.
+- **Mandatory MFA for `consulente_responsabile`.** The SDK plumbing is already in `MfaVerifyForm`; the missing piece is a server-side enforcement check on login.
+
+### Observability (free tier today, paid tier later)
+
+- **Sentry runtime telemetry.** Sourcemap upload is already configured in the build (`@sentry/vite-plugin`); the runtime DSN (`VITE_SENTRY_DSN`) needs to be added in Vercel to actually start capturing in-browser errors. Free tier (Developer) is enough for 4 stores — no cost, just a pending manual step.
+- **Structured logging for Edge Functions.** Logflare or Better Stack drain (~€10/mo) so failures in `verify-pin` / `on-session-created` / `relay-to-sheets` get queryable, retained beyond Supabase's rolling window.
+- **Lighthouse CI + bundle-size budgets.** Fail PRs that regress LCP or grow a chunk past its budget. Deferred until the catalog actually grows — premature on a 4-store pilot.
+
+### Resilience (paid tiers)
+
+- **Automated daily database backups.** Supabase Free retains 7 days of point-in-time recovery; Supabase Pro (€25/mo) extends this and adds nightly snapshots. Deferred until the project goes beyond pilot stage.
+- **Public status page.** A read-only health endpoint (Vercel + Supabase + Brevo) so store staff can self-diagnose outages without calling support.
+
+### Developer experience
+
+- **Tests for the remaining untested hooks.** `useWakeLock`, `useKioskMode`, `useIdleLogout`, `imageProcessing` — none are security-critical, but worth covering before the catalog grows.
+- **Visual regression tests on the swipe interaction.** Playwright + per-viewport screenshots for the quiz cards and result screen.
+
+---
+
 ## 👤 Author & License
 
 **Costanzo Annichini** — Tech Sales & Customer Success @ Webidoo Store
