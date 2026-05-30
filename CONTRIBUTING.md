@@ -27,13 +27,40 @@ The dev server runs on `http://localhost:8080` with HMR.
 
 | Branch prefix | Purpose | CI |
 |---|---|---|
-| `main` | Production. Auto-deploys via Vercel. | ✅ |
+| `main` | Production. Auto-deploys to Vercel on every push. | ✅ |
 | `feat/<topic>` | New feature work | ✅ |
 | `fix/<topic>` | Bug fix | ✅ |
 | `claude/<topic>` | AI-assisted exploratory work | ✅ |
-| `release/<version>` | Release candidate | ✅ |
+| `backup/<label>` | Frozen safety snapshot — never developed on | — |
 
-Open PRs against `main`. Squash-merge is the default.
+Open PRs against `main`. Fast-forward merge is the default for AI-assisted batches that already have a clean commit history; squash-merge for hand-edited feature work.
+
+### Safety snapshot rule
+
+Before any merge into `main`, create a `backup/<label>` branch pointing at the **current tip of `main`**:
+
+```bash
+git fetch origin
+git branch backup/v<version>-pre-merge origin/main
+git push -u origin backup/v<version>-pre-merge
+```
+
+If the merge introduces a regression in production, recovery is one command:
+
+```bash
+git push --force-with-lease origin backup/v<version>-pre-merge:main
+```
+
+(Only ever force-push to `main` for this rollback path. Never for routine work.)
+
+### Tagging releases
+
+Tag `main` after each merge that bumps `package.json`:
+
+```bash
+git tag -a v1.6.3 -m "v1.6.3 — granular error boundaries + security tests"
+git push origin v1.6.3
+```
 
 ## Quality Gates
 
