@@ -65,7 +65,10 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        # The only Playwright project is "ipad-landscape" (iPad Pro 11), which
+        # runs on WebKit — the engine real iPad kiosks use. Installing chromium
+        # here (as it was) meant the suite could never launch its browser in CI.
+        run: npx playwright install --with-deps webkit
 
       - name: Run E2E tests
         run: npm run test:e2e

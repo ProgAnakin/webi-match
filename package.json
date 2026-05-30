@@ -18,7 +18,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install --with-deps chromium",
+    "test:e2e:install": "playwright install --with-deps webkit",
     "cap:init": "npx cap init",
     "cap:add:android": "npx cap add android",
     "cap:add:ios": "npx cap add ios",
