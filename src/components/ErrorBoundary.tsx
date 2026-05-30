@@ -59,7 +59,10 @@ export class ErrorBoundary extends Component<Props, State> {
     const eb = translations[resolveLang()].admin.errorBoundary;
 
     return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background p-8 text-center">
+      <div
+        data-testid="error-boundary"
+        className="fixed inset-0 flex flex-col items-center justify-center bg-background p-8 text-center"
+      >
         <motion.div
           className="max-w-sm w-full space-y-8"
           initial={{ opacity: 0, y: 24 }}
