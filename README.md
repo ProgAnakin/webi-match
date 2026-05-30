@@ -88,7 +88,7 @@ flowchart LR
   end
 
   subgraph Supabase["☁️ Supabase"]
-    DB[(PostgreSQL<br/>RLS · Encrypted PII)]
+    DB[(PostgreSQL<br/>RLS · Role-scoped PII)]
     EF1[Edge Function<br/>on-session-created]
     EF2[Edge Function<br/>verify-pin]
     EF3[Edge Function<br/>relay-to-sheets]
@@ -126,7 +126,7 @@ flowchart LR
 
 1. Customer completes quiz → `quiz_sessions` row inserted
 2. Database webhook fires `on-session-created` Edge Function
-3. Edge Function generates a unique discount code, encrypts PII at rest, builds a multilingual HTML email and dispatches it via Brevo
+3. Edge Function generates a unique discount code, builds a multilingual HTML email and dispatches it via Brevo
 4. The same Edge Function relays the lead to Google Sheets (CRM)
 5. Manager dashboard observes everything in real-time via Supabase Realtime subscriptions
 
@@ -188,7 +188,7 @@ Webi-Match was designed and validated in tech retail, but the model transfers cl
 |---|---|
 | **Authentication** | Supabase Auth · PIN + bcrypt fallback · in-memory IP-based lockout · MFA for stats |
 | **Authorisation** | Row-Level Security on every table · role-based access (`manager` / `consulente_responsabile` / `consulente`) · per-store data isolation |
-| **PII Protection** | AES encryption at rest for `nome`/`cognome` · SHA-256 email hashing for lookups · keys stored as Edge Function secrets |
+| **PII Protection** | Customer `nome`/`cognome`/`email` readable only by authenticated managers (all stores) and consulenti (own store) — no anon access · platform at-rest storage encryption · retention purge of old sessions |
 | **Rate Limiting** | Server-side enforced 1-email-per-hour per address · cannot be bypassed from client |
 | **Injection Defence** | All search inputs escape `%` `_` `\` before PostgREST `.or()` interpolation · `escHtml()` in every email template field |
 | **CORS** | Strict origin allowlist · no wildcard fallback · silent rejection of unexpected origins |
@@ -225,9 +225,9 @@ Key architectural trade-offs are documented in [`docs/adr/`](./docs/adr/):
 |-----|---------|
 | [001](./docs/adr/001-supabase-over-firebase.md) | Supabase (PostgreSQL + RLS + pgcrypto) over Firebase |
 | [002](./docs/adr/002-pwa-over-native.md) | PWA over native iOS app (with Capacitor escape hatch) |
-| [003](./docs/adr/003-pii-encryption-at-rest.md) | PII encryption at the database layer (pgp_sym_encrypt + SHA-256) |
+| [003](./docs/adr/003-pii-encryption-at-rest.md) | PII protection — superseded: access-control over app-layer encryption (keeps search) |
 | [004](./docs/adr/004-swipe-quiz-over-form.md) | Tinder-style swipe quiz over a traditional form |
-| [005](./docs/adr/005-synchronous-pii-encryption.md) | Synchronous PII encryption before email dispatch |
+| [005](./docs/adr/005-synchronous-pii-encryption.md) | Synchronous PII encryption before email dispatch — superseded (see ADR 003) |
 
 ---
 
@@ -282,7 +282,7 @@ src/
 
 supabase/
 ├── functions/
-│   ├── on-session-created/   # Email dispatch · PII encryption · CRM relay · multilingual templates
+│   ├── on-session-created/   # Email dispatch · CRM relay · multilingual templates
 │   ├── verify-pin/           # Staff PIN auth with IP-based lockout
 │   └── relay-to-sheets/      # Google Sheets relay (JWT-authenticated)
 └── migrations/               # Versioned SQL migrations (RLS, encryption, rate limits, RPC functions)
@@ -356,7 +356,7 @@ The CI workflow runs typecheck, lint, test and build on every push to `main`, ev
 | `admin_access_log` | PIN access tracking with IP + user-agent |
 | `app_settings` | Encrypted application secrets (PIN hash) |
 
-Every table is protected by Row-Level Security. Rate limiting is enforced at the database-function level. PII columns are AES-encrypted at rest.
+Every table is protected by Row-Level Security. Rate limiting is enforced at the database-function level. Customer PII in `quiz_sessions` is readable only by authenticated managers/consulenti (scoped by store, no anon access) and is encrypted at rest by the Supabase storage layer.
 
 ---
 
@@ -383,7 +383,7 @@ The current release is intentionally **zero-cost**: every component runs on free
 
 ### Security & data integrity
 
-- **`email_hash` peppered HMAC migration.** The current `email_hash` column is a plain SHA-256 of the lowercased email — strong against casual lookups but reversible via rainbow tables of common emails. A future release switches to `HMAC-SHA256(pepper, email)` with the pepper held in Supabase Vault, and backfills existing rows. Deferred because it requires a single-shot coordinated deploy: Supabase secret + SQL migration + `on-session-created` Edge Function all flipped together, with a fallback path during cutover so dedupe lookups don't break mid-migration.
+- **App-layer PII encryption (optional, deferred by choice).** Customer `email`/`nome`/`cognome` are currently protected by access control (role-scoped RLS) + platform at-rest encryption rather than application-layer AES, because encrypting them would break the dashboard's partial-match search. A future release could encrypt them at rest with a server-side decrypt RPC (key in Supabase Vault) and switch email/name lookups to exact-match HMAC — accepted trade-off: no more partial search on those fields.
 - **Mandatory MFA for `consulente_responsabile`.** The SDK plumbing is already in `MfaVerifyForm`; the missing piece is a server-side enforcement check on login.
 
 ### Observability (free tier today, paid tier later)

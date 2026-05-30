@@ -37,9 +37,6 @@ arrived (including spam folder).
      row in `quiz_sessions` — if `discount_code` is NULL but `email_sent` is
      false, you can manually retrigger by re-firing the webhook (Database →
      Webhooks → `on-session-created` → Send test event with the row payload).
-   - `[on-session-created] pii encrypt failed`: `PII_ENCRYPTION_KEY` secret
-     is set but invalid. Either fix or remove the secret (the function works
-     without it — plaintext fallback with a warning).
    - No log at all for the session: the webhook isn't firing. Continue to
      step 3.
 

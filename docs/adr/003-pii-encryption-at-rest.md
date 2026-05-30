@@ -1,7 +1,21 @@
 # ADR 003 — PII Encryption at the Database Layer
 
 **Date:** 2026-04-29  
-**Status:** Accepted
+**Status:** Superseded (2026-05-30)
+
+> **Superseded.** The `pgp_sym_encrypt` / SHA-256 scheme described below was
+> added but never wired into the read paths: the manager dashboard, stats, CSV
+> export and search always read the plaintext `nome`/`cognome`/`email` columns,
+> so the `*_enc` / `email_hash` columns were dead weight — they duplicated
+> personal data into every DB backup without protecting anything, and the
+> unsalted email hash was itself reversible. Because the dashboard relies on
+> partial-match search over email and name (impossible over ciphertext),
+> app-layer encryption was dropped in favour of **access control**: role-scoped
+> RLS (no anon read; managers all-stores, consulenti own-store), Supabase's
+> platform at-rest encryption, and a retention purge. The dead columns and the
+> `encrypt_session_pii` function were removed in
+> `20260530000001_drop_dead_pii_encryption.sql`. See the README "Roadmap" for
+> the conditions under which real app-layer encryption would be revisited.
 
 ## Context
 

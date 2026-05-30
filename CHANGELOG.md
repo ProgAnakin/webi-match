@@ -6,6 +6,32 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.7.0] — 2026-05-30
+
+### Security / Privacy
+- **Removed non-functional PII-encryption scaffolding and corrected the docs
+  that advertised it.** Audit finding: the `nome_enc`/`cognome_enc` (AES) and
+  `email_hash` (SHA-256) columns plus `encrypt_session_pii()` were written but
+  **never read** — the dashboard, stats, CSV export and search all use the
+  plaintext columns. So PII was stored twice (plaintext + an encrypted/hashed
+  duplicate) and only the plaintext copy was ever used, while the README/ADRs
+  claimed "AES encryption at rest." Because the dashboard needs partial-match
+  search over email/name (impossible over ciphertext), this PII is instead
+  protected by **access control** — role-scoped RLS (no anon read; managers
+  all-stores, consulenti own-store), Supabase platform at-rest encryption, and
+  a retention purge.
+  - Migration `20260530000001_drop_dead_pii_encryption.sql` drops the dead
+    columns and function. Deploy the updated `on-session-created` Edge Function
+    (no longer calls `encrypt_session_pii`) **before** applying it.
+  - README, ADR 003, ADR 005, `.env.example` (`PII_ENCRYPTION_KEY`) and the
+    runbook updated to describe the real posture instead of the removed scheme.
+
+### Changed
+- `on-session-created` no longer references `PII_ENCRYPTION_KEY` or calls the
+  PII-encryption RPC.
+
+---
+
 ## [1.6.4] — 2026-05-30
 
 ### Fixed

@@ -14,7 +14,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const BREVO_KEY        = Deno.env.get("BREVO_API_KEY") ?? "";
 const SUPABASE_URL     = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const PII_KEY          = Deno.env.get("PII_ENCRYPTION_KEY") ?? "";
 const ALLOWED_ORIGIN   = Deno.env.get("ALLOWED_ORIGIN") ?? "";
 const SHEETS_WEBHOOK   = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL") ?? "";
 // Shared secret for the Supabase Database Webhook. When set, the function
@@ -23,11 +22,6 @@ const SHEETS_WEBHOOK   = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL") ?? "";
 const WEBHOOK_SECRET   = Deno.env.get("WEBHOOK_SECRET") ?? "";
 const EMAIL_SENDER     = Deno.env.get("EMAIL_SENDER") ?? "noreply@webidoo.com";
 
-if (!PII_KEY) {
-  // Loud, single-shot warning at cold start so operators notice in the logs
-  // that PII columns will be stored in plaintext.
-  console.warn("[on-session-created] PII_ENCRYPTION_KEY is NOT set — nome/cognome will be stored in plaintext.");
-}
 if (!WEBHOOK_SECRET) {
   console.error("[on-session-created] WEBHOOK_SECRET is NOT set — the function will REJECT every request until it is configured.");
 }
@@ -708,24 +702,10 @@ serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
-  // Encrypt PII at rest — runs only when PII_ENCRYPTION_KEY secret is configured.
-  // nome/cognome → AES-encrypted bytea; email → SHA-256 hash for future lookups.
-  // Awaited (not fire-and-forget): the encryption-at-rest guarantee must hold
-  // BEFORE the email goes out — otherwise a transient encrypt failure leaves
-  // plaintext PII in the database while the customer already received the email.
-  if (PII_KEY) {
-    const { error: encErr } = await supabase.rpc("encrypt_session_pii", {
-      p_session_id: String(record.id),
-      p_nome:       String(record.nome    ?? ""),
-      p_cognome:    String(record.cognome ?? ""),
-      p_email:      String(record.email   ?? ""),
-      p_key:        PII_KEY,
-    });
-    if (encErr) {
-      console.error("[on-session-created] pii encrypt failed — aborting email send:", encErr.message);
-      return new Response(JSON.stringify({ ok: false, error: "encryption failed" }), { status: 500 });
-    }
-  }
+  // Customer PII (nome / cognome / email) is stored in plaintext because the
+  // manager dashboard must search and display it; it is protected by row-level
+  // security (no anon read; managers/consulenti scoped by store), Supabase's
+  // at-rest storage encryption, and a retention purge. See ADR 003.
 
   // Server-side email rate limit — bypass-proof regardless of how the session was created.
   // If this email already received an email in the last hour, save the code to DB

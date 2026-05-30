@@ -1,7 +1,13 @@
 # ADR 005 — Synchronous PII Encryption Before Email Dispatch
 
 **Date:** 2026-05-18
-**Status:** Accepted (supersedes the fire-and-forget pattern in `on-session-created`)
+**Status:** Superseded (2026-05-30) — see ADR 003
+
+> **Superseded.** This ADR refined *when* the `encrypt_session_pii` call ran.
+> That function and its dead encrypted columns were removed on 2026-05-30 (see
+> ADR 003): PII is now protected by access control rather than app-layer
+> encryption, so there is no longer an encryption step to sequence before the
+> email dispatch.
 
 ## Context
 

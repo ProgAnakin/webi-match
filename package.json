@@ -2,7 +2,7 @@
   "name": "webi-match",
   "description": "iPad-first product-discovery kiosk for Webidoo Store — swipe-based quiz, multilingual transactional emails, real-time analytics, multi-store management. Built solo by Costanzo Annichini.",
   "private": true,
-  "version": "1.6.4",
+  "version": "1.7.0",
   "type": "module",
   "engines": {
     "node": ">=20"
