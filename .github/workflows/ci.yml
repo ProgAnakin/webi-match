@@ -44,14 +44,9 @@ jobs:
     name: Playwright E2E
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # TEMPORARILY non-blocking. The job fails in CI for a setup-level reason
-    # (browser install or preview server) that can't be reproduced in the
-    # current dev sandbox — Playwright's Chromium download is blocked there and
-    # the CI logs aren't reachable via API. Re-enable the hard gate (remove
-    # continue-on-error) once the failure is diagnosed from a real CI log /
-    # local Playwright run. The job still runs and reports, it just no longer
-    # blocks unrelated PRs (e.g. dependency updates).
-    continue-on-error: true
+    # Required check — a red Playwright run blocks the PR. The earlier failures
+    # were a wrong browser install (chromium instead of the iPad project's
+    # WebKit), now fixed; the suite is green (8/8).
 
     steps:
       - uses: actions/checkout@v6
