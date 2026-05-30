@@ -1,19 +1,32 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, Page } from "@playwright/test";
 
-// Full kiosk user journey:
+// Full kiosk user journey across the public routes:
 // AttractScreen → WelcomeScreen → QuizScreen → MatchResult → SuccessScreen
+//
+// These run against a preview build wired to PLACEHOLDER Supabase credentials,
+// so the backend is intentionally unreachable. The specs therefore assert on
+// shell rendering and route safety only, and never wait for "networkidle":
+// pages like /stats and /manager open Supabase realtime channels that retry
+// their websocket forever against the dead placeholder host, so the network
+// never goes idle. We wait for the app shell to mount instead.
+
+// Waits for the SPA to mount (the #root div receives content). Deterministic
+// and backend-independent — does not depend on any network request resolving.
+async function waitForAppMount(page: Page) {
+  await expect(page.locator("#root")).not.toBeEmpty({ timeout: 15_000 });
+}
 
 test.describe("Quiz kiosk flow", () => {
   test("loads the attract screen on first visit", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.locator("#root")).not.toBeEmpty();
-    // No JS error boundary visible
-    await expect(page.locator("text=Something went wrong")).not.toBeVisible({ timeout: 3000 }).catch(() => {});
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await waitForAppMount(page);
+    // The render-error boundary must not be showing.
+    await expect(page.getByText("Something went wrong")).toHaveCount(0);
   });
 
   test("welcome screen shows name and email fields after attract click", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForTimeout(800);
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await waitForAppMount(page);
     const attractClickable = page.locator("[data-testid='attract-screen'], .attract-cta").first();
     if (await attractClickable.isVisible().catch(() => false)) {
       await attractClickable.click();
@@ -24,37 +37,43 @@ test.describe("Quiz kiosk flow", () => {
   });
 
   test("manager page requires authentication", async ({ page }) => {
-    await page.goto("/manager");
-    await expect(page.locator("body")).toBeVisible();
-    await expect(page.locator("#root")).not.toBeEmpty();
-    await expect(page.locator("text=Gestione Catalogo")).not.toBeVisible({ timeout: 2000 }).catch(() => {});
+    await page.goto("/manager", { waitUntil: "domcontentloaded" });
+    await waitForAppMount(page);
+    // The authenticated catalog UI must not render without a session.
+    await expect(page.getByText("Gestione Catalogo")).toHaveCount(0);
   });
 
   test("stats page loads without crashing", async ({ page }) => {
-    await page.goto("/stats");
-    await expect(page.locator("#root")).not.toBeEmpty();
-    await page.waitForLoadState("networkidle");
+    await page.goto("/stats", { waitUntil: "domcontentloaded" });
+    await waitForAppMount(page);
   });
 
   test("404 page shows not-found content", async ({ page }) => {
-    await page.goto("/does-not-exist-xyz");
-    await expect(page.locator("#root")).not.toBeEmpty();
-    // Either a 404 message or a redirect back home
-    const is404 = await page.locator("text=404").isVisible().catch(() => false);
-    const isHome = await page.locator("body").isVisible();
-    expect(is404 || isHome).toBeTruthy();
+    await page.goto("/does-not-exist-xyz", { waitUntil: "domcontentloaded" });
+    await waitForAppMount(page);
+    // Either an explicit 404 marker or a graceful redirect home — both fine,
+    // as long as the shell rendered something rather than a blank crash.
+    const is404 = await page.getByText("404").isVisible().catch(() => false);
+    const hasBody = await page.locator("body").isVisible();
+    expect(is404 || hasBody).toBeTruthy();
   });
 
-  test("app has no console errors on load", async ({ page }) => {
+  test("app has no unexpected console errors on load", async ({ page }) => {
     const errors: string[] = [];
     page.on("console", (msg) => {
       if (msg.type() === "error") errors.push(msg.text());
     });
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
-    // Filter out known benign errors (e.g. Supabase connection in test env)
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await waitForAppMount(page);
+    // Filter out errors expected in a backend-less preview: the placeholder
+    // Supabase host can't resolve, so connection / websocket errors are normal.
     const serious = errors.filter(
-      (e) => !e.includes("supabase") && !e.includes("net::ERR") && !e.includes("favicon")
+      (e) =>
+        !e.includes("supabase") &&
+        !e.includes("net::ERR") &&
+        !e.includes("favicon") &&
+        !e.includes("WebSocket") &&
+        !e.includes("Failed to fetch"),
     );
     expect(serious).toHaveLength(0);
   });
@@ -62,15 +81,14 @@ test.describe("Quiz kiosk flow", () => {
 
 test.describe("Manager dashboard — public paths", () => {
   test("reset-password page renders a form", async ({ page }) => {
-    await page.goto("/reset-password");
-    await expect(page.locator("#root")).not.toBeEmpty();
-    await page.waitForLoadState("networkidle");
+    await page.goto("/reset-password", { waitUntil: "domcontentloaded" });
+    await waitForAppMount(page);
   });
 
   test("manager route does not expose data without login", async ({ page }) => {
-    await page.goto("/manager");
-    await page.waitForLoadState("networkidle");
-    // Dashboard sections must NOT be visible without auth
-    await expect(page.locator("text=Sessioni & Codici")).not.toBeVisible({ timeout: 3000 }).catch(() => {});
+    await page.goto("/manager", { waitUntil: "domcontentloaded" });
+    await waitForAppMount(page);
+    // Dashboard data sections must NOT be visible without auth.
+    await expect(page.getByText("Sessioni & Codici")).toHaveCount(0);
   });
 });
