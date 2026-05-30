@@ -6,6 +6,39 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.6.4] — 2026-05-30
+
+### Fixed
+- **E2E suite now actually runs in CI.** The Playwright job had been failing
+  since it was written: `playwright.config.ts` defines a single `ipad-landscape`
+  (iPad Pro 11) project that runs on **WebKit**, but CI and `test:e2e:install`
+  installed **Chromium** only — so the browser could never launch
+  (`Executable doesn't exist at .../webkit-.../pw_run.sh`). Install WebKit in
+  both places. Suite is green 8/8.
+- **E2E specs hardened.** Dropped `networkidle` waits (the `/stats` and
+  `/manager` realtime channels keep the network busy forever against the
+  placeholder backend), added language-independent crash detection via an
+  `error-boundary` testid, and switched the console-error check from a fragile
+  benign-string allowlist to a code-fault denylist (TypeError, ReferenceError,
+  …) that surfaces the offending message.
+- The `Playwright E2E` job is once again a **required gate** (H7) now that it
+  passes for real.
+
+### Changed
+- **Dependencies updated** via Dependabot: production minor/patch group
+  (14 updates incl. `@supabase/supabase-js`, `framer-motion`, Radix, Sentry),
+  dev-dependencies group (11 updates), and GitHub Actions
+  (`checkout` v6, `setup-node` v6, `upload-artifact` v7). Major bumps
+  (react-router-dom v7, lucide-react v1, tailwind-merge v3) deliberately
+  deferred and Dependabot configured to stop auto-raising majors.
+
+### Known issues
+- `npm audit` reports 2 moderate advisories in the esbuild dev-server
+  (GHSA-67mh-4wv8-2f99) — dev-only, no production impact. The fix requires a
+  Vite v8 major upgrade, tracked for a deliberate, coordinated bump.
+
+---
+
 ## [1.6.3] — 2026-05-29
 
 ### Added
