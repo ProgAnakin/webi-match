@@ -28,11 +28,11 @@ updates:
         applies-to: version-updates
         dependency-type: "development"
     ignore:
-      # Major React bumps are coordinated by hand (concurrent-mode / Capacitor
-      # webview compatibility), not auto-PR'd.
-      - dependency-name: "react"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "react-dom"
+      # Block ALL major version bumps by default — majors mean breaking changes
+      # that need code follow-up (codemods, API updates, manual testing). They
+      # are reviewed and applied by hand on a deliberate schedule, never via an
+      # auto-PR that blocks CI. Minor + patch bumps stay automated.
+      - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
   # GitHub Actions used in CI — keep the workflow runners current.
