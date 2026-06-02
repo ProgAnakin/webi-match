@@ -34,9 +34,12 @@ jobs:
         run: npx playwright install --with-deps webkit
 
       - name: Regenerate visual baselines
-        # --update-snapshots writes any missing or mismatched snapshots; the
-        # spec auto-skips if no baselines exist, but with this flag it runs and
-        # creates them. Other E2E specs are excluded to keep this fast.
+        # BOOTSTRAP_VISUAL_BASELINES bypasses the in-spec skip guard that
+        # protects regular CI runs when no baselines exist yet — without it,
+        # the very first invocation would skip every test and write nothing.
+        # --update-snapshots then captures (or overwrites) the PNG baselines.
+        env:
+          BOOTSTRAP_VISUAL_BASELINES: "1"
         run: |
           npx playwright test e2e/visual-regression.spec.ts \
             --update-snapshots \
@@ -48,6 +51,13 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Tolerate a missing snapshots directory: if no baselines were
+          # produced (suite skipped, all routes crashed before screenshotting),
+          # we just exit cleanly rather than failing the workflow.
+          if [ ! -d e2e/visual-regression.spec.ts-snapshots ]; then
+            echo "No snapshots directory was created — nothing to commit."
+            exit 0
+          fi
           git add e2e/visual-regression.spec.ts-snapshots/
           if git diff --staged --quiet; then
             echo "No baseline changes — nothing to commit."

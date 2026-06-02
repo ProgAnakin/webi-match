@@ -25,6 +25,13 @@ import { test, expect, Page } from "@playwright/test";
 const baselinesExist = existsSync(
   resolve(process.cwd(), "e2e/visual-regression.spec.ts-snapshots"),
 );
+// The bootstrap workflow sets BOOTSTRAP_VISUAL_BASELINES=1 alongside
+// --update-snapshots so the suite ACTUALLY runs (and writes the first
+// baselines) on the run that creates them. Without this, the skip below
+// would fire on the very first invocation and the workflow would have
+// nothing to commit.
+const allowBootstrap = process.env.BOOTSTRAP_VISUAL_BASELINES === "1";
+const shouldRun = baselinesExist || allowBootstrap;
 
 // Stable wait that doesn't depend on networkidle (Supabase realtime channels
 // keep the network busy forever against the placeholder backend in CI).
@@ -37,7 +44,7 @@ async function settle(page: Page) {
 
 test.describe("Visual regression", () => {
   test.skip(
-    !baselinesExist,
+    !shouldRun,
     "Baselines not captured yet — run the 'Update Visual Baselines' workflow once, merge its PR, then this suite becomes a real gate.",
   );
 
