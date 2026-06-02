@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/social-preview.png" alt="Webi-Match — iPad-first product discovery kiosk for physical retail" width="100%"/>
+
 # 🎯 Webi-Match
 
 **An iPad-first product discovery kiosk for physical retail**
