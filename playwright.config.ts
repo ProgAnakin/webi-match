@@ -1,7 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // Standalone Playwright config — starts the Vite preview server and runs the
-// kiosk flow specs in /e2e against a Chromium iPad-sized viewport.
+// kiosk flow specs in /e2e against an iPad-sized WebKit viewport (the engine
+// real kiosks use).
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -9,6 +10,19 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? "github" : "list",
+
+  // Visual-regression defaults applied to every toHaveScreenshot() call:
+  //   • animations: "disabled"  — pauses CSS animations and sets prefers-
+  //     reduced-motion so framer-motion respects the steady state. Combined
+  //     with capturing only static-by-design screens, eliminates flake.
+  //   • maxDiffPixelRatio: 0.01 — 1% per-pixel tolerance absorbs font sub-
+  //     pixel and antialiasing noise across runs.
+  expect: {
+    toHaveScreenshot: {
+      animations: "disabled",
+      maxDiffPixelRatio: 0.01,
+    },
+  },
 
   use: {
     baseURL: "http://127.0.0.1:4173",

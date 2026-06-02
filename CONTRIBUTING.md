@@ -81,6 +81,23 @@ npx playwright install   # one-time
 npx playwright test
 ```
 
+### Visual regression
+
+`e2e/visual-regression.spec.ts` pixel-diffs three stable shells (404,
+reset-password, manager-login) against PNG baselines committed under
+`e2e/visual-regression.spec.ts-snapshots/`. The baselines are environment-
+specific (WebKit on Linux/CI), so they must be generated in CI — never
+locally — via the **Update Visual Baselines** workflow:
+
+1. GitHub → Actions → **Update Visual Baselines** → **Run workflow**
+2. The job captures the screenshots in CI and opens a PR with them.
+3. Review the PNGs in the Files tab — they ARE the new expected truth.
+4. Merge.
+
+Until baselines exist, the suite auto-skips, so it never blocks PRs
+before bootstrap. After they exist, any unintended pixel diff fails CI
+and you re-run the workflow only if the change was intentional.
+
 ## Code Style
 
 - **TypeScript everywhere.** No new `.js` / `.jsx` files unless absolutely required.

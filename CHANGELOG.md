@@ -6,6 +6,23 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.7.1] — 2026-05-30
+
+### Added
+- **Visual regression suite** — `e2e/visual-regression.spec.ts` pixel-diffs
+  three stable shells (404, reset-password, manager-login) against PNG
+  baselines committed under `e2e/visual-regression.spec.ts-snapshots/`. Animations
+  disabled and a 1% per-pixel-ratio tolerance keep the suite from flaking. The
+  spec auto-skips when no baselines exist, so it never blocks a PR before the
+  bootstrap workflow has been run.
+- **`Update Visual Baselines` workflow_dispatch action** — manual one-click
+  workflow that regenerates baselines in CI's WebKit/Linux environment (the
+  only environment whose pixels match the gating run) and opens a PR with the
+  updated PNGs for review. Used once to bootstrap, then again whenever a
+  captured screen is intentionally redesigned.
+
+---
+
 ## [1.7.0] — 2026-05-30
 
 ### Security / Privacy

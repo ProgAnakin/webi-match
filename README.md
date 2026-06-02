@@ -400,7 +400,7 @@ The current release is intentionally **zero-cost**: every component runs on free
 ### Developer experience
 
 - **Tests for the remaining untested hooks.** `useWakeLock`, `useKioskMode`, `useIdleLogout`, `imageProcessing` — none are security-critical, but worth covering before the catalog grows.
-- **Visual regression tests on the swipe interaction.** Playwright + per-viewport screenshots for the quiz cards and result screen.
+- **Visual regression for the swipe interaction.** Pixel-diff coverage for the static shells (404, reset-password, manager login) is in place; the dynamic quiz cards and match result are still uncovered because their content varies per run.
 
 ---
 
