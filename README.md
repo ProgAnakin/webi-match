@@ -5,7 +5,8 @@
 **An iPad-first product discovery kiosk for physical retail**
 
 [![CI](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml/badge.svg)](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-75%20unit%20%2B%208%20e2e-22c55e)](./src/__tests__)
+[![Version](https://img.shields.io/badge/version-1.7.1-blue)](./CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-95%20unit%20%2B%2011%20e2e-22c55e)](./src/__tests__)
 [![Languages](https://img.shields.io/badge/i18n-5%20languages-f5831c)](./src/i18n/translations.ts)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
@@ -195,8 +196,8 @@ Webi-Match was designed and validated in tech retail, but the model transfers cl
 | **Webhooks** | DB webhooks gated by valid `store_id` allowlist · unknown stores silently dropped |
 | **Accessibility** | Kiosk-targeted tap targets (≥ 64 px on the PIN keypad and quiz buttons) · `focus-visible:ring-2` rings on interactive elements · `prefers-reduced-motion` respected via Framer Motion `MotionConfig` · informational copy bumped above the `/65` opacity threshold for in-store lighting |
 | **Internationalisation** | 5 fully translated languages, including the transactional emails sent to customers |
-| **Testing** | 75 unit tests (Vitest) · 8 E2E tests (Playwright) · typecheck + lint + build on every push via GitHub Actions |
-| **Observability** | Sentry error tracking + session replay · structured logging in Edge Functions |
+| **Testing** | 95 unit tests (Vitest) · 11 E2E tests (Playwright, incl. visual-regression pixel diffs) · typecheck + lint + build on every push via GitHub Actions |
+| **Observability** | Sentry error tracking + session replay (live) · sourcemaps uploaded on build for readable production stack traces · tagged error logging in Edge Functions |
 | **Performance** | Manual chunk splitting · lazy-loaded admin routes · image auto-resize ≤ 1024px JPEG q=80 · PWA precaching · debounced search |
 | **iPad / Kiosk** | `interactive-widget=resizes-content` prevents URL bar on keyboard · `visualViewport` API for keyboard-aware layouts · iOS splash screens · wake lock · `100dvh` everywhere |
 
@@ -285,7 +286,7 @@ supabase/
 │   ├── on-session-created/   # Email dispatch · CRM relay · multilingual templates
 │   ├── verify-pin/           # Staff PIN auth with IP-based lockout
 │   └── relay-to-sheets/      # Google Sheets relay (JWT-authenticated)
-└── migrations/               # Versioned SQL migrations (RLS, encryption, rate limits, RPC functions)
+└── migrations/               # Versioned SQL migrations (RLS, rate limits, RPC functions)
 ```
 
 ---
@@ -354,7 +355,7 @@ The CI workflow runs typecheck, lint, test and build on every push to `main`, ev
 | `store_roles` | Role-based access mapping (`manager` / `consulente_responsabile` / `consulente`) |
 | `manager_audit_log` | Dashboard action audit trail |
 | `admin_access_log` | PIN access tracking with IP + user-agent |
-| `app_settings` | Encrypted application secrets (PIN hash) |
+| `app_settings` | Hashed application secrets (bcrypt PIN hash) |
 
 Every table is protected by Row-Level Security. Rate limiting is enforced at the database-function level. Customer PII in `quiz_sessions` is readable only by authenticated managers/consulenti (scoped by store, no anon access) and is encrypted at rest by the Supabase storage layer.
 
@@ -388,7 +389,6 @@ The current release is intentionally **zero-cost**: every component runs on free
 
 ### Observability (free tier today, paid tier later)
 
-- **Sentry runtime telemetry.** Sourcemap upload is already configured in the build (`@sentry/vite-plugin`); the runtime DSN (`VITE_SENTRY_DSN`) needs to be added in Vercel to actually start capturing in-browser errors. Free tier (Developer) is enough for 4 stores — no cost, just a pending manual step.
 - **Structured logging for Edge Functions.** Logflare or Better Stack drain (~€10/mo) so failures in `verify-pin` / `on-session-created` / `relay-to-sheets` get queryable, retained beyond Supabase's rolling window.
 - **Lighthouse CI + bundle-size budgets.** Fail PRs that regress LCP or grow a chunk past its budget. Deferred until the catalog actually grows — premature on a 4-store pilot.
 
