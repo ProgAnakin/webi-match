@@ -13,6 +13,7 @@ import { useWakeLock } from "@/hooks/useWakeLock";
 import { useBgMusic } from "@/hooks/useBgMusic";
 import { useKioskMode } from "@/hooks/useKioskMode";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
 import { useLang } from "@/i18n/LanguageContext";
 import { getStoredStoreId } from "@/data/stores";
 import { RESULT_INACTIVITY_TIMEOUT_MS } from "@/config/timings";
@@ -352,6 +353,10 @@ const Index = () => {
   };
 
   useWakeLock();
+  // Lock the document to a fixed, no-scroll viewport while the kiosk route
+  // is mounted — admin routes (/manager, /stats, /consulente) keep their
+  // normal document scroll because they don't call this hook.
+  useLockBodyScroll();
   useBgMusic(screen === "splash",                                          "attract");
   useBgMusic(screen === "welcome",                                         "welcome");
   useBgMusic(screen === "quiz" || screen === "result",                     "quiz");

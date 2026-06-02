@@ -6,6 +6,34 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.7.2] — 2026-06-02
+
+### Changed
+- **Kiosk route locked to a fixed, no-scroll viewport.** New
+  `useLockBodyScroll` hook, mounted only by `pages/Index.tsx`, freezes
+  `<html>` and `<body>` (`overflow: hidden`, `position: fixed`,
+  `height: 100dvh`, `touch-action: none`) for as long as the kiosk is on
+  screen and restores every overridden style on unmount. Result: Safari
+  on iPad never reveals the URL bar from a touch-drag, and the rubber-
+  band overscroll is gone. Admin routes (`/manager`, `/stats`,
+  `/consulente`) intentionally do **not** call the hook because their
+  long lists need document scroll.
+- The existing PWA fullscreen setup (manifest `display: standalone`,
+  `apple-mobile-web-app-capable`, `viewport-fit=cover`) was already in
+  place — this change closes the remaining touch-drag gap in plain
+  Safari and inside the home-screen webapp.
+
+### Added
+- Unit tests for `useLockBodyScroll` covering the lock, the cleanup, and
+  the no-leak guarantee across remounts (+3 tests).
+- New `e2e/framing.spec.ts`: in iPad-landscape WebKit, asserts the
+  kiosk route has no vertical or horizontal overflow, body is `fixed`
+  + `hidden`, and a synthetic touch-drag does not move the document.
+  Includes a counter-test that locks in the admin pages MUST keep their
+  body scrollable.
+
+---
+
 ## [1.7.1] — 2026-05-30
 
 ### Added
