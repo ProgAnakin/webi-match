@@ -285,7 +285,7 @@ const MatchResult = ({
   }, [setPinLockedSeconds]);
 
   return (
-    <div className="relative flex h-dvh flex-col items-center justify-center overflow-hidden px-6 py-6">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center px-6 py-6">
 
       {/* ── Background — cosmic dark + match-reactive glow (no filter:blur, iPad Safari safe) ── */}
       <div

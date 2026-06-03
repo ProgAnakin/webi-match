@@ -36,6 +36,16 @@ export default defineConfig({
       name: "ipad-landscape",
       use: { ...devices["iPad Pro 11 landscape"] },
     },
+    {
+      // iPhone (WebKit / Safari engine) — added for the phone-form-factor
+      // demo. Runs the kiosk smoke + framing specs at 390x844 so iPhone
+      // layout regressions (overflow, overlap, crash) are caught in CI.
+      // Visual-regression is excluded: its PNG baselines are captured at the
+      // iPad viewport and would have no iPhone counterpart to diff against.
+      name: "iphone",
+      use: { ...devices["iPhone 13"] },
+      testIgnore: /visual-regression\.spec\.ts/,
+    },
   ],
 
   webServer: {
