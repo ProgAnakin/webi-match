@@ -376,7 +376,7 @@ const Index = () => {
   const anim = screenAnim[screen];
 
   return (
-    <div className="relative h-dvh overflow-y-auto overflow-x-hidden bg-background">
+    <div className="relative h-dvh overflow-hidden bg-background">
       {/* Offline banner — shown whenever the device loses network */}
       <AnimatePresence>
         {!isOnline && (

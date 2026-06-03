@@ -43,7 +43,7 @@ const SwipeCard = ({ card, totalCards, onSwipe, exitDirection, index = 0 }: Swip
   const cardBorder = "1px solid rgba(255,255,255,0.09)";
 
   return (
-    <div className="relative flex h-full max-h-[600px] w-full max-w-[360px] items-center justify-center">
+    <div className="relative flex h-[600px] w-full max-w-[360px] items-center justify-center">
 
       {/* Ghost stack — two cards peeking below */}
       <div
@@ -175,7 +175,7 @@ const SwipeCard = ({ card, totalCards, onSwipe, exitDirection, index = 0 }: Swip
           <div className="flex flex-1 items-center justify-center">
             <span
               className="select-none"
-              style={{ display: "block", fontSize: "clamp(64px, 13vh, 116px)", lineHeight: 1 }}
+              style={{ display: "block", fontSize: 116, lineHeight: 1 }}
             >
               {card.emoji}
             </span>

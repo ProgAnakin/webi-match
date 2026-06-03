@@ -64,14 +64,13 @@ const QuizScreen = ({ onComplete, cards: cardsProp }: QuizScreenProps) => {
   if (!card) return null;
 
   return (
-    <div className="relative flex h-dvh flex-col px-6">
+    <div className="relative flex h-dvh flex-col items-center justify-center px-6">
       <QuizBackground />
 
       {showTutorial && <SwipeTutorial onDismiss={() => setShowTutorial(false)} />}
 
-      {/* Progress — flows at the top of the column (was absolute; now part of
-          the flex layout so it can never overlap the card on short screens) */}
-      <div className="relative z-10 flex-none pt-[max(1.5rem,env(safe-area-inset-top))]">
+      {/* Progress */}
+      <div className="absolute left-0 right-0 top-0 px-6 pt-8">
         <div className="mx-auto flex max-w-sm flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-foreground">
@@ -106,25 +105,21 @@ const QuizScreen = ({ onComplete, cards: cardsProp }: QuizScreenProps) => {
         </div>
       </div>
 
-      {/* Card area — flex-1 gives SwipeCard a definite height to fill, so the
-          card scales to the available space between progress and buttons on
-          any device (iPad → capped at 600px; iPhone → shrinks to fit) */}
-      <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center py-4">
-        <AnimatePresence custom={exitDirection}>
-          <SwipeCard
-            key={currentIndex}
-            card={card}
-            totalCards={cards.length}
-            onSwipe={handleSwipe}
-            exitDirection={exitDirection}
-            index={currentIndex}
-          />
-        </AnimatePresence>
-      </div>
+      {/* Card */}
+      <AnimatePresence custom={exitDirection}>
+        <SwipeCard
+          key={currentIndex}
+          card={card}
+          totalCards={cards.length}
+          onSwipe={handleSwipe}
+          exitDirection={exitDirection}
+          index={currentIndex}
+        />
+      </AnimatePresence>
 
-      {/* Buttons — flow at the bottom of the column */}
+      {/* Buttons */}
       <div
-        className="relative z-10 mx-auto flex w-full max-w-sm flex-none items-center justify-center gap-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+        className="absolute bottom-10 flex w-full max-w-sm items-center justify-center gap-4 px-5"
         style={{ pointerEvents: transitioning ? "none" : "auto", opacity: transitioning ? 0.4 : 1, transition: "opacity 0.15s" }}
       >
         {/* NO */}

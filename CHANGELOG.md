@@ -6,33 +6,6 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [1.8.0] — 2026-06-02
-
-### Added
-- **iPhone / phone form-factor support.** The kiosk flow, originally
-  iPad-landscape-only, now adapts to phone viewports without breaking
-  layout or animations:
-  - `QuizScreen` rebuilt as a flex column (progress → flex-1 card area →
-    buttons) instead of an absolutely-positioned card. The swipe card now
-    scales to the space between the progress bar and the action buttons,
-    so they can never overlap on a short screen.
-  - `SwipeCard` height is derived from its container (`h-full max-h-[600px]`)
-    instead of a fixed `600px`, and the emoji uses `clamp()` so it shrinks
-    on small screens.
-  - `MatchResult` and `SuccessScreen` switched from `h-dvh … overflow-hidden`
-    to `min-h-dvh`, so content-heavy result screens grow and scroll instead
-    of clipping on a phone.
-  - The kiosk container allows internal vertical scroll when content exceeds
-    the viewport (phones) while the body stays locked (no Safari URL-bar
-    reveal) — best of both: fixed on iPad, reachable on iPhone.
-- **CI now runs the E2E matrix on an iPhone project too** (`iPhone 13`,
-  WebKit) alongside iPad-landscape; visual-regression stays iPad-only.
-- New `e2e/framing` test drives attract → welcome → quiz and asserts the
-  quiz screen fits the viewport with no overflow and no crash — at both
-  iPad and iPhone sizes.
-
----
-
 ## [1.7.2] — 2026-06-02
 
 ### Changed

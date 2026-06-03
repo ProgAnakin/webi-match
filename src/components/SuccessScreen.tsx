@@ -179,7 +179,7 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
   ];
 
   return (
-    <div className="relative flex min-h-dvh flex-col items-center justify-center px-6 py-10">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-10">
 
       <SuccessBackground skip={!!reduceMotion} />
 
