@@ -146,8 +146,8 @@ const QuizScreen = ({ onComplete, cards: cardsProp }: QuizScreenProps) => {
         <motion.button
           onClick={() => { haptic(45); handleSwipe("right"); }}
           className="flex h-16 flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-success/55 bg-success/10 text-success backdrop-blur-sm"
-          style={{ boxShadow: "0 0 20px hsl(145 80% 42% / 0.18), inset 0 0 10px hsl(145 80% 42% / 0.06)" }}
-          whileTap={{ scale: 0.90, boxShadow: "0 0 52px hsl(145 80% 42% / 0.72), inset 0 0 20px hsl(145 80% 42% / 0.32)" }}
+          style={{ boxShadow: "0 0 20px hsl(168 76% 42% / 0.18), inset 0 0 10px hsl(168 76% 42% / 0.06)" }}
+          whileTap={{ scale: 0.90, boxShadow: "0 0 52px hsl(168 76% 42% / 0.72), inset 0 0 20px hsl(168 76% 42% / 0.32)" }}
         >
           <span className="text-base font-black tracking-wide">{t.swipe.yes}</span>
           <ChevronsRight className="h-6 w-6 flex-shrink-0" strokeWidth={2.5} />

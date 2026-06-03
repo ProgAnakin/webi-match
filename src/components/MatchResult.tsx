@@ -315,7 +315,7 @@ const MatchResult = ({
           style={{
             left: "-8%", top: "-10%",
             width: "max(500px, 52vw)", height: "max(500px, 52vw)",
-            background: "radial-gradient(circle closest-side, hsla(27, 92%, 55%, 0.13) 0%, transparent 70%)",
+            background: "radial-gradient(circle closest-side, hsla(217, 91%, 55%, 0.13) 0%, transparent 70%)",
           }}
         />
 
@@ -326,7 +326,7 @@ const MatchResult = ({
           size:  0.9 + (i % 3) * 0.6,
           delay: (i * 0.37) % 8,
           dur:   2.8 + (i % 5) * 0.8,
-          tint:  i % 3 === 0 ? "hsla(27, 92%, 70%, 0.9)" : "hsla(0, 0%, 100%, 0.85)",
+          tint:  i % 3 === 0 ? "hsla(217, 91%, 70%, 0.9)" : "hsla(0, 0%, 100%, 0.85)",
         })).map((s, i) => (
           <motion.div
             key={i}

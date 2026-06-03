@@ -16,7 +16,7 @@ Generates a unique discount code, sends a personalised HTML email via Brevo in t
 |--------|----------|-------------|
 | `BREVO_API_KEY` | ✅ | Brevo (Sendinblue) API key for transactional email |
 | `WEBHOOK_SECRET` | ✅ recommended | Shared secret verified against the `x-webhook-secret` header. Without it the function accepts any caller who knows the URL. Configure the matching header in Supabase Dashboard → Database → Webhooks → on-session-created |
-| `EMAIL_SENDER` | optional | Address used as the Brevo `sender` (DKIM-aligned with the verified domain). Falls back to `noreply@webidoo.com` if unset |
+| `EMAIL_SENDER` | optional | Address used as the Brevo `sender` (DKIM-aligned with the verified domain). Falls back to `noreply@swipey.app` if unset |
 | `PII_ENCRYPTION_KEY` | optional | AES key — if set, encrypts nome/cognome at rest via `pgp_sym_encrypt`. The function logs a warning at cold start when this is missing |
 | `GOOGLE_SHEETS_WEBHOOK_URL` | optional | Apps Script doPost URL — if set, relays session data to a Sheet |
 | `WHITELIST_EMAILS` | optional | Comma-separated emails that bypass the 1 email/hour rate limit |
@@ -51,10 +51,10 @@ Valid `store_id` values: `corso-vercelli`, `5-giornate`, `verona`, `bergamo`. An
 ### Response
 
 ```json
-{ "ok": true, "code": "WEBI-A1B2C3D410", "emailId": "brevo-message-id" }
+{ "ok": true, "code": "SWP-A1B2C3D410", "emailId": "brevo-message-id" }
 ```
 
-Discount code format: `WEBI-` + 4 random hex bytes + 2-digit discount percentage. Example: `WEBI-A1B2C3D410` = 10% discount.
+Discount code format: `SWP-` + 4 random hex bytes + 2-digit discount percentage. Example: `SWP-A1B2C3D410` = 10% discount.
 
 ### Rate limiting
 

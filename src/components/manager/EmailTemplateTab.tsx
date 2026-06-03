@@ -36,43 +36,43 @@ interface EmailTemplate {
 
 const DEFAULTS_BY_LANG: Record<Lang, EmailTemplate> = {
   it: {
-    sender_name: "Webidoo Store",
+    sender_name: "Swipey",
     subject_template: "{{nome}}, il tuo match è {{pct}}% — Codice sconto valido 24h ⏰",
     header_title: "Abbiamo trovato il tuo match!",
     header_subtitle: "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il gadget perfetto per il tuo stile di vita.",
-    footer_store_name: "Webidoo Store",
+    footer_store_name: "Swipey",
   },
   en: {
-    sender_name: "Webidoo Store",
+    sender_name: "Swipey",
     subject_template: "{{nome}}, your match is {{pct}}% — Discount code valid 24h ⏰",
     header_title: "We found your match!",
     header_subtitle: "Our algorithm analysed your answers and selected the perfect gadget for your lifestyle.",
-    footer_store_name: "Webidoo Store",
+    footer_store_name: "Swipey",
   },
   fr: {
-    sender_name: "Webidoo Store",
+    sender_name: "Swipey",
     subject_template: "{{nome}}, votre match est de {{pct}}% — Code de réduction valable 24h ⏰",
     header_title: "Nous avons trouvé votre match !",
     header_subtitle: "Notre algorithme a analysé vos réponses et a sélectionné le gadget parfait pour votre style de vie.",
-    footer_store_name: "Webidoo Store",
+    footer_store_name: "Swipey",
   },
   es: {
-    sender_name: "Webidoo Store",
+    sender_name: "Swipey",
     subject_template: "{{nome}}, tu match es {{pct}}% — Código de descuento válido 24h ⏰",
     header_title: "¡Encontramos tu match!",
     header_subtitle: "Nuestro algoritmo analizó tus respuestas y seleccionó el gadget perfecto para tu estilo de vida.",
-    footer_store_name: "Webidoo Store",
+    footer_store_name: "Swipey",
   },
   pt: {
-    sender_name: "Webidoo Store",
+    sender_name: "Swipey",
     subject_template: "{{nome}}, o seu match é {{pct}}% — Código de desconto válido 24h ⏰",
     header_title: "Encontrámos o seu match!",
     header_subtitle: "O nosso algoritmo analisou as suas respostas e selecionou o gadget perfeito para o seu estilo de vida.",
-    footer_store_name: "Webidoo Store",
+    footer_store_name: "Swipey",
   },
 };
 
-const SAMPLE = { nome: "Marco", pct: "87", product: "Sony WH-1000XM5", price: "€349,00", code: "WEBI-A3F2B187" };
+const SAMPLE = { nome: "Marco", pct: "87", product: "Sony WH-1000XM5", price: "€349,00", code: "SWP-A3F2B187" };
 
 function interpolate(tpl: string): string {
   return tpl.replace(/\{\{nome\}\}/g, SAMPLE.nome).replace(/\{\{pct\}\}/g, SAMPLE.pct);
@@ -95,7 +95,7 @@ const FIELD_META: { key: keyof EmailTemplate; label: string; hint: string; multi
   {
     key: "sender_name",
     label: "Sender name (From: field)",
-    hint: 'Name shown as the sender in the customer\'s email client. E.g. "Webidoo Store".',
+    hint: 'Name shown as the sender in the customer\'s email client. E.g. "Swipey".',
   },
   {
     key: "subject_template",
@@ -118,20 +118,20 @@ const FIELD_META: { key: keyof EmailTemplate; label: string; hint: string; multi
   {
     key: "footer_store_name",
     label: "Consultant name (email footer)",
-    hint: "Shown at the bottom of the email and on the discount code card. E.g. \"Webidoo Store\".",
+    hint: "Shown at the bottom of the email and on the discount code card. E.g. \"Swipey\".",
   },
 ];
 
 function EmailPreview({ form }: { form: EmailTemplate }) {
   return (
     <div className="rounded-2xl border border-border bg-[#0d1228] overflow-hidden text-[#f0f4ff] font-sans">
-      <div className="h-1 w-full bg-gradient-to-r from-[#f5831c] via-[#e8420a] to-[#f5831c]" />
+      <div className="h-1 w-full bg-gradient-to-r from-[#1e88ff] via-[#0ea5e9] to-[#1e88ff]" />
       <div className="bg-[#101628] px-6 py-5 text-center space-y-2">
-        <div className="inline-block rounded-lg bg-gradient-to-r from-[#f5831c] to-[#e8420a] px-4 py-1.5">
-          <span className="text-[11px] font-black tracking-widest text-white uppercase">WEBI·MATCH</span>
+        <div className="inline-block rounded-lg bg-gradient-to-r from-[#1e88ff] to-[#0ea5e9] px-4 py-1.5">
+          <span className="text-[11px] font-black tracking-widest text-white uppercase">SWIPEY</span>
         </div>
         <p className="text-base font-bold leading-snug">
-          Hi <span className="text-[#f5831c]">{SAMPLE.nome}</span>,{" "}
+          Hi <span className="text-[#1e88ff]">{SAMPLE.nome}</span>,{" "}
           <span>{interpolate(form.header_title)}</span>
         </p>
         <p className="text-xs text-[#7a8fbb] leading-relaxed">{interpolate(form.header_subtitle)}</p>
@@ -147,19 +147,19 @@ function EmailPreview({ form }: { form: EmailTemplate }) {
         <p className="text-[9px] font-bold uppercase tracking-widest text-[#7a8fbb] text-center mb-2">── YOUR IDEAL GADGET ──</p>
         <div className="rounded-xl border border-[#2a3a68] bg-[#101628] h-20 flex items-center justify-center text-3xl mb-3">📦</div>
         <p className="text-sm font-black">{SAMPLE.product}</p>
-        <p className="text-lg font-bold text-[#f5831c]">{SAMPLE.price}</p>
+        <p className="text-lg font-bold text-[#1e88ff]">{SAMPLE.price}</p>
       </div>
       <div className="bg-[#151d47] px-6 py-4 border-t border-[#2a3a68] text-center">
         <p className="text-[9px] font-bold uppercase tracking-widest text-[#7a8fbb] mb-2">YOUR DISCOUNT CODE</p>
-        <div className="rounded-xl border-2 border-[#f5831c] overflow-hidden">
-          <div className="bg-gradient-to-r from-[#f5831c] to-[#e8420a] px-4 py-2 flex justify-between">
+        <div className="rounded-xl border-2 border-[#1e88ff] overflow-hidden">
+          <div className="bg-gradient-to-r from-[#1e88ff] to-[#0ea5e9] px-4 py-2 flex justify-between">
             <span className="text-[10px] font-black text-white uppercase">Special Discount</span>
             <span className="text-[9px] text-white/70">{form.footer_store_name}</span>
           </div>
           <div className="bg-[#101628] px-4 py-4">
             <p className="text-2xl font-black font-mono tracking-wider">{SAMPLE.code}</p>
             <div className="flex justify-center gap-2 mt-2">
-              <span className="rounded-full bg-[#f5831c] px-2 py-0.5 text-[9px] font-bold text-white">✓ 24 hours</span>
+              <span className="rounded-full bg-[#1e88ff] px-2 py-0.5 text-[9px] font-bold text-white">✓ 24 hours</span>
               <span className="rounded-full border border-[#2a3a68] px-2 py-0.5 text-[9px] text-[#f0f4ff]">🏪 In store</span>
             </div>
           </div>
@@ -167,7 +167,7 @@ function EmailPreview({ form }: { form: EmailTemplate }) {
       </div>
       <div className="bg-[#101628] px-6 py-4 text-center border-t border-[#2a3a68]">
         <p className="text-xs font-black">{form.footer_store_name}</p>
-        <p className="text-[10px] text-[#7a8fbb]">Powered by Webi-Match</p>
+        <p className="text-[10px] text-[#7a8fbb]">Powered by Swipey</p>
         <p className="text-[9px] text-[#7a8fbb] mt-1">
           Sent to <strong className="text-[#f0f4ff]">{SAMPLE.nome}</strong> · From: {form.sender_name}
         </p>

@@ -251,7 +251,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
             />
 
             <p className="pb-4 text-center text-xs text-muted-foreground">
-              Webi Match · Analytics · Webidoo Store
+              Swipey · Analytics · Swipey
             </p>
           </>
         )}

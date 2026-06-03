@@ -61,7 +61,7 @@ export const useDashboardData = ({ dateFrom, dateTo, filterStore, dateRangeInval
         claimed:     claimedRes.count ?? 0,
       });
     } catch (err) {
-      console.error("[webi-match] funnel counts fetch failed:", err);
+      console.error("[swipey] funnel counts fetch failed:", err);
     }
 
     setLoading(false);

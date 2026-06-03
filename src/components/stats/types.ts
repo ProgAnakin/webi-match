@@ -113,7 +113,7 @@ export function exportCSV(
   const a = document.createElement("a");
   a.href = url;
   const suffix = fromDate && toDate ? `_${fromDate}_to_${toDate}` : "";
-  a.download = `webi-match${suffix}_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `swipey${suffix}_${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

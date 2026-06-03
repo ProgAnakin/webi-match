@@ -24,7 +24,7 @@ const SwipeCard = ({ card, totalCards, onSwipe, exitDirection, index = 0 }: Swip
   const cardShadow   = useTransform(x, [-160, 0, 160], [
     "0 28px 80px hsl(0 84% 60% / 0.50), 0 0 0 1px rgba(255,255,255,0.05) inset",
     "0 28px 90px hsl(228 65% 4% / 0.70), 0 0 0 1px rgba(255,255,255,0.06) inset",
-    "0 28px 80px hsl(145 80% 42% / 0.50), 0 0 0 1px rgba(255,255,255,0.05) inset",
+    "0 28px 80px hsl(168 76% 42% / 0.50), 0 0 0 1px rgba(255,255,255,0.05) inset",
   ]);
 
   const categoryLabel = t.categories[card.tag] ?? card.tag;
@@ -103,7 +103,7 @@ const SwipeCard = ({ card, totalCards, onSwipe, exitDirection, index = 0 }: Swip
           className="flex-shrink-0"
           style={{
             height: 4,
-            background: "linear-gradient(90deg, hsl(27,92%,55%) 0%, hsl(16,100%,50%) 100%)",
+            background: "linear-gradient(90deg, hsl(217, 91%,55%) 0%, hsl(188, 86%,50%) 100%)",
           }}
         />
 
@@ -114,7 +114,7 @@ const SwipeCard = ({ card, totalCards, onSwipe, exitDirection, index = 0 }: Swip
         />
         <motion.div
           className="pointer-events-none absolute inset-0 rounded-[28px]"
-          style={{ background: "hsl(145 80% 42%)", opacity: yesTintOp, zIndex: 25 }}
+          style={{ background: "hsl(168 76% 42%)", opacity: yesTintOp, zIndex: 25 }}
         />
 
         {/* Warm glow beneath orange bar */}
@@ -122,7 +122,7 @@ const SwipeCard = ({ card, totalCards, onSwipe, exitDirection, index = 0 }: Swip
           className="pointer-events-none absolute inset-x-0 top-0"
           style={{
             height: 100,
-            background: "linear-gradient(to bottom, hsla(27,92%,55%,0.11) 0%, transparent 100%)",
+            background: "linear-gradient(to bottom, hsla(217, 91%,55%,0.11) 0%, transparent 100%)",
           }}
         />
 
@@ -144,18 +144,18 @@ const SwipeCard = ({ card, totalCards, onSwipe, exitDirection, index = 0 }: Swip
             <div className="flex items-center gap-2">
               <div
                 className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
-                style={{ background: "hsl(27,92%,58%)", opacity: 0.85 }}
+                style={{ background: "hsl(217, 91%,58%)", opacity: 0.85 }}
               />
               <span
                 className="text-[10px] font-bold uppercase tracking-[0.26em]"
-                style={{ color: "hsla(27,88%,72%,0.82)" }}
+                style={{ color: "hsla(188, 86%,72%,0.82)" }}
               >
                 {categoryLabel}
               </span>
             </div>
             <span
               className="tabular-nums text-[11px] font-semibold"
-              style={{ color: "hsla(27,88%,72%,0.60)" }}
+              style={{ color: "hsla(188, 86%,72%,0.60)" }}
             >
               {stepNum}
               <span style={{ opacity: 0.5 }}>&thinsp;/&thinsp;{stepTotal}</span>

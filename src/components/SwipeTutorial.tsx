@@ -100,7 +100,7 @@ const SwipeTutorial = ({ onDismiss }: { onDismiss: () => void }) => {
               >
                 <motion.div
                   className="flex items-center gap-2 rounded-2xl border-2 border-success/60 bg-success/15 px-5 py-3"
-                  animate={step === "yes" ? { boxShadow: ["0 0 0px hsl(145 80% 42% / 0)", "0 0 24px hsl(145 80% 42% / 0.4)", "0 0 0px hsl(145 80% 42% / 0)"] } : {}}
+                  animate={step === "yes" ? { boxShadow: ["0 0 0px hsl(168 76% 42% / 0)", "0 0 24px hsl(168 76% 42% / 0.4)", "0 0 0px hsl(168 76% 42% / 0)"] } : {}}
                   transition={{ duration: 1.2, repeat: Infinity }}
                 >
                   <span className="text-2xl font-black text-success">{t.swipe.yes}</span>

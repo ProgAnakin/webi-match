@@ -6,43 +6,51 @@
 
 @layer base {
   :root {
-    --background: 230 55% 18%;
+    /* ─── Swipey palette ───────────────────────────────────────────────────
+       Deep navy base · electric blue → cyan primary · mint accent for CTAs.
+       Tech-SaaS direction (think Linear / Stripe / Vercel). All app colour
+       comes from these vars — change here, cascades everywhere.
+       ──────────────────────────────────────────────────────────────────── */
+    --background: 220 55% 8%;
     --foreground: 0 0% 98%;
 
-    --card: 230 50% 22%;
+    --card: 220 45% 14%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 230 50% 22%;
+    --popover: 220 45% 14%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 27 92% 55%;
+    /* Electric blue — used by every `bg-primary` / `text-primary` / `border-primary` */
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 230 45% 26%;
+    --secondary: 220 35% 22%;
     --secondary-foreground: 0 0% 90%;
 
-    --muted: 230 40% 28%;
-    --muted-foreground: 230 20% 60%;
+    --muted: 220 30% 22%;
+    --muted-foreground: 220 15% 65%;
 
-    --accent: 230 65% 35%;
-    --accent-foreground: 0 0% 100%;
+    /* Cyan accent — paired with primary for the brand gradient */
+    --accent: 188 86% 53%;
+    --accent-foreground: 220 55% 8%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 230 40% 28%;
-    --input: 230 40% 28%;
-    --ring: 27 92% 55%;
-    --success: 145 80% 42%;
-    --success-foreground: 0 0% 100%;
+    --border: 220 30% 24%;
+    --input: 220 30% 24%;
+    --ring: 217 91% 60%;
+    /* Success / CTA accent — mint, for "go" actions on the kiosk */
+    --success: 168 76% 52%;
+    --success-foreground: 220 55% 8%;
 
     --radius: 1rem;
 
-    /* Custom tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(27, 92%, 55%), hsl(16, 100%, 50%));
-    --gradient-card: linear-gradient(145deg, hsl(230, 50%, 24%), hsl(230, 55%, 16%));
-    --gradient-success: linear-gradient(135deg, hsl(145, 80%, 45%), hsl(160, 90%, 40%));
-    --shadow-glow: 0 0 40px hsl(27 92% 55% / 0.3);
+    /* Custom tokens — Swipey brand gradient + glow */
+    --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 60%), hsl(188, 86%, 53%));
+    --gradient-card: linear-gradient(145deg, hsl(220, 45%, 16%), hsl(220, 55%, 10%));
+    --gradient-success: linear-gradient(135deg, hsl(168, 76%, 52%), hsl(188, 86%, 53%));
+    --shadow-glow: 0 0 40px hsl(217 91% 60% / 0.35);
     --shadow-card: 0 20px 60px hsl(0 0% 0% / 0.4);
     --font-display: 'Space Grotesk', sans-serif;
 
@@ -55,19 +63,19 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Confetti palette */
-    --confetti-1:  20  86% 52%;   /* orange — primary */
-    --confetti-2:  25  90% 68%;   /* orange light / peach     */
-    --confetti-3:  18  92% 60%;   /* orange-coral             */
-    --confetti-4:  22  95% 72%;   /* pale peach               */
-    --confetti-5:  228 65% 58%;   /* navy (lifted)    */
-    --confetti-6:  224 80% 72%;   /* sky-blue accent          */
-    --confetti-7:  228 55% 78%;   /* periwinkle               */
-    --confetti-8:  38  96% 60%;   /* warm amber               */
-    --confetti-9:  35  92% 50%;   /* deep amber-gold          */
-    --confetti-10: 0   0%  96%;   /* white sparkle            */
-    --confetti-11: 15  88% 45%;   /* dark burnt orange        */
-    --confetti-12: 228 70% 42%;   /* deep navy                */
+    /* Confetti palette — repainted to the Swipey gradient family */
+    --confetti-1:  217 91% 60%;   /* electric blue (primary) */
+    --confetti-2:  202 90% 70%;   /* sky blue */
+    --confetti-3:  188 86% 53%;   /* cyan (accent) */
+    --confetti-4:  175 85% 60%;   /* turquoise */
+    --confetti-5:  168 76% 52%;   /* mint success */
+    --confetti-6:  155 70% 60%;   /* mint light */
+    --confetti-7:  230 80% 72%;   /* periwinkle */
+    --confetti-8:  250 85% 70%;   /* indigo highlight */
+    --confetti-9:  217 91% 75%;   /* electric blue light */
+    --confetti-10: 0   0%  96%;   /* white sparkle */
+    --confetti-11: 188 86% 40%;   /* deep cyan */
+    --confetti-12: 220 70% 35%;   /* deep navy */
   }
 }
 
@@ -216,8 +224,8 @@
 
 /* Logo glow pulse */
 @keyframes at-logo-glow {
-  0%, 100%   { filter: drop-shadow(0 0 18px hsla(27,92%,55%,0.55)); }
-  50%        { filter: drop-shadow(0 0 55px hsla(27,92%,55%,0.95)) drop-shadow(0 0 90px hsla(16,100%,50%,0.4)); }
+  0%, 100%   { filter: drop-shadow(0 0 18px hsla(217,91%,60%,0.55)); }
+  50%        { filter: drop-shadow(0 0 55px hsla(217,91%,60%,0.95)) drop-shadow(0 0 90px hsla(188,86%,53%,0.4)); }
 }
 
 /* Grid layer subtle pulse */

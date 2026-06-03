@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import logo from "@/assets/webidoo-logo.webp";
 import { AttractBackground } from "./AttractBackground";
+import { SwipeyLogo } from "./SwipeyLogo";
 import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";
 
@@ -47,8 +47,8 @@ const LanguageModal = ({ onClose }: { onClose: () => void }) => {
                 aria-pressed={active}
                 className="flex items-center gap-4 rounded-2xl px-5 py-3.5 transition-all duration-200 active:scale-95"
                 style={active ? {
-                  background: "linear-gradient(135deg, hsl(27,92%,55%), hsl(16,100%,48%))",
-                  boxShadow: "0 0 24px hsla(27,92%,55%,0.4), 0 4px 16px rgba(0,0,0,0.3)",
+                  background: "linear-gradient(135deg, hsl(217, 91%,55%), hsl(188, 86%,48%))",
+                  boxShadow: "0 0 24px hsla(217, 91%,55%,0.4), 0 4px 16px rgba(0,0,0,0.3)",
                 } : {
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(255,255,255,0.1)",
@@ -122,31 +122,29 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
         >
           <div style={{
             position: "absolute", inset: "-45%",
-            background: "radial-gradient(circle, hsla(27,92%,55%,0.65) 0%, transparent 70%)",
+            background: "radial-gradient(circle, hsla(217, 91%,55%,0.65) 0%, transparent 70%)",
             filter: "blur(28px)",
             borderRadius: "50%",
           }} />
-          <img
-            src={logo}
-            alt="Webidoo Store"
-            className="relative h-28 w-auto"
+          <div
+            className="relative"
             style={{ animation: "at-logo-glow 3s ease-in-out infinite" }}
-          />
+          >
+            <SwipeyLogo size={112} />
+          </div>
         </motion.div>
 
-        {/* WEBI MATCH — each word flies in from opposite sides */}
+        {/* SWIPEY — each word flies in from opposite sides */}
         <motion.h1
           className="leading-none font-black uppercase"
           style={{ fontSize: "clamp(4rem,13vw,6rem)", letterSpacing: "0.09em" }}
         >
           <motion.span
-            style={{ color: "hsl(27,92%,55%)", display: "inline-block" }}
+            style={{ color: "hsl(217, 91%,55%)", display: "inline-block" }}
             initial={{ opacity: 0, x: -55, rotate: -10 }}
             animate={{ opacity: 1, x: 0, rotate: 0 }}
             transition={{ delay: 0.15, type: "spring", stiffness: 260, damping: 20 }}
-          >
-            WEBI
-          </motion.span>
+          >SWIPEY</motion.span>
           <motion.span
             className="text-white"
             style={{ display: "inline-block" }}
@@ -166,7 +164,7 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
           transition={{ duration: 0.5, delay: 0.48 }}
         >
           <p className="text-xl font-bold text-white/85">{t.splash.headline}</p>
-          <p className="text-base font-semibold" style={{ color: "hsl(27,92%,65%)" }}>
+          <p className="text-base font-semibold" style={{ color: "hsl(217, 91%,65%)" }}>
             {t.splash.sub} ✶
           </p>
         </motion.div>
@@ -199,10 +197,10 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
           transition={{ delay: 0.68, duration: 0.5 }}
         >
           <span>{t.attract.swipes}</span>
-          <span style={{ color: "hsl(27,92%,55%)", fontSize: 18, lineHeight: 1 }}>·</span>
+          <span style={{ color: "hsl(217, 91%,55%)", fontSize: 18, lineHeight: 1 }}>·</span>
           <span>{t.attract.minutes}</span>
-          <span style={{ color: "hsl(27,92%,55%)", fontSize: 18, lineHeight: 1 }}>·</span>
-          <span style={{ color: "hsl(27,92%,65%)" }}>{t.attract.perfect}</span>
+          <span style={{ color: "hsl(217, 91%,55%)", fontSize: 18, lineHeight: 1 }}>·</span>
+          <span style={{ color: "hsl(217, 91%,65%)" }}>{t.attract.perfect}</span>
         </motion.div>
 
         {/* CTA — breathing light glow */}
@@ -215,21 +213,21 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
           {/* Soft halo behind the button that breathes */}
           <motion.div
             className="pointer-events-none absolute -inset-3 rounded-3xl"
-            style={{ background: "radial-gradient(ellipse at 50% 60%, hsla(27,92%,55%,0.45) 0%, transparent 72%)", filter: "blur(12px)" }}
+            style={{ background: "radial-gradient(ellipse at 50% 60%, hsla(217, 91%,55%,0.45) 0%, transparent 72%)", filter: "blur(12px)" }}
             animate={{ opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.button
             className="relative rounded-2xl px-14 py-4 text-lg font-black text-white uppercase tracking-wider"
             style={{
-              background: "linear-gradient(135deg, hsl(27,92%,58%), hsl(16,100%,50%))",
+              background: "linear-gradient(135deg, hsl(217, 91%,58%), hsl(188, 86%,50%))",
               letterSpacing: "0.08em",
             }}
             animate={{
               boxShadow: [
-                "0 0 28px hsla(27,92%,55%,0.38), 0 8px 28px hsla(0,0%,0%,0.38)",
-                "0 0 64px hsla(27,92%,55%,0.80), 0 0 100px hsla(27,92%,55%,0.22), 0 8px 28px hsla(0,0%,0%,0.38)",
-                "0 0 28px hsla(27,92%,55%,0.38), 0 8px 28px hsla(0,0%,0%,0.38)",
+                "0 0 28px hsla(217, 91%,55%,0.38), 0 8px 28px hsla(0,0%,0%,0.38)",
+                "0 0 64px hsla(217, 91%,55%,0.80), 0 0 100px hsla(217, 91%,55%,0.22), 0 8px 28px hsla(0,0%,0%,0.38)",
+                "0 0 28px hsla(217, 91%,55%,0.38), 0 8px 28px hsla(0,0%,0%,0.38)",
               ],
             }}
             transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}

@@ -25,7 +25,7 @@ export const DashboardHeader = ({
   >
     <div>
       <h1 className="text-2xl font-bold text-foreground">📊 Analytics</h1>
-      <p className="text-xs text-muted-foreground">Real-time data · Webidoo Store</p>
+      <p className="text-xs text-muted-foreground">Real-time data · Swipey</p>
     </div>
     <div className="flex flex-wrap gap-2 justify-end">
       <button

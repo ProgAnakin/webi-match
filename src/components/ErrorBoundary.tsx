@@ -34,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("[webi-match] uncaught render error:", error, info.componentStack);
+    console.error("[swipey] uncaught render error:", error, info.componentStack);
   }
 
   // Clear the error when any reset key changes (e.g. the user switches tabs)
@@ -98,7 +98,7 @@ export class ErrorBoundary extends Component<Props, State> {
               transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
             />
             <span className="text-xs text-muted-foreground/60 tracking-widest uppercase">
-              Webi-Match · Webidoo Store
+              Swipey
             </span>
           </div>
 

@@ -1,8 +1,48 @@
 # Changelog
 
-All notable changes to Webi-Match are documented here.
+All notable changes to Swipey are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [2.0.0] — 2026-06-03 — Rebrand to **Swipey**
+
+Independent product identity, fully decoupled from any prior employer
+branding. Everything user-facing has been replaced; runtime behaviour,
+data model, security posture and feature set are unchanged.
+
+### Brand identity
+- **Name:** Webi-Match → **Swipey**. Package, manifest, HTML title,
+  apple-mobile-web-app-title, OG/Twitter cards, every README and ADR.
+- **Palette:** Webidoo orange (`hsl(27,92%,55%)` + `hsl(16,100%,50%)`
+  gradient) → **electric blue → cyan** (`hsl(217,91%,60%)` →
+  `hsl(188,86%,53%)`) on deep navy. Success/CTA accent is now mint
+  (`hsl(168,76%,52%)`). All ~150 colour hardcodes rewritten across the
+  attract / welcome / quiz / result / success / manager screens, the
+  three animated background components, the confetti palette, the
+  shadow-glow utility and the email-template preview. CSS variables in
+  `src/index.css` are the single source of truth and cascade through
+  every `bg-primary` / `text-primary` / `gradient-primary` usage.
+- **Logo:** new `<SwipeyLogo>` inline SVG component (electric-blue → cyan
+  gradient on a stylised "S" with soft glow) replaces the legacy
+  webidoo-logo.webp in the attract / welcome / kiosk-lock screens. The
+  raster asset has been removed.
+- **Social preview:** `docs/social-preview.png` regenerated in the new
+  palette.
+- **Email/contact domains:** `@webidoo.com` → `@swipey.app` (sender
+  fallback, privacy-notice contact). SECURITY.md disclosure email
+  routed to the maintainer's personal address.
+- **Email discount-code prefix:** `WEBI-XXXXXXXXNN` → `SWP-XXXXXXXXNN`
+  (purely cosmetic — same generation algorithm, same DB shape).
+
+### Migration note
+- Existing data referencing the old discount-code prefix (`WEBI-…`) is
+  still valid and redeemable; only newly-issued codes use the `SWP-`
+  prefix.
+- The legacy `src/assets/webidoo-logo.webp` asset has been deleted from
+  the bundle.
+- `src/assets/webidoo-envelope.png` (already orphaned) cleaned up.
 
 ---
 
@@ -181,7 +221,7 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   `/rest/v1/` GETs only, avoiding stale auth tokens (`/auth/v1/*`) and
   non-idempotent RPC writes.
 - **`SECURITY.md`** routes vulnerability reports to the maintainer's
-  personal address (`costanzobruno.annichini@webidoo.com`).
+  personal address (`costanzobruno.annichini@swipey.app`).
 
 ### Added
 - `EMAIL_SENDER` Edge Function secret — the Brevo sender address is now

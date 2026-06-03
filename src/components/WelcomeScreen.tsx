@@ -1,10 +1,10 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
-import logo from "@/assets/webidoo-logo.webp";
 import DiscoveryBackground from "./DiscoveryBackground";
 import AdminPinOverlay from "./AdminPinOverlay";
 import { PrivacyNotice } from "./PrivacyNotice";
+import { SwipeyLogo } from "./SwipeyLogo";
 import { useSound } from "@/hooks/useSound";
 import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";
@@ -362,7 +362,7 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
         <span className="text-[10px] text-muted-foreground/40 select-none">
-          © {new Date().getFullYear()} Webidoo Store · Webi-Match
+          © {new Date().getFullYear()} Swipey · Swipey
         </span>
       </div>
 
@@ -392,15 +392,15 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: "easeOut" }}
       >
-        <motion.img
-          src={logo}
-          alt="Webidoo Store"
-          className="h-24 w-auto"
+        <motion.div
           onClick={handleLogoTap}
+          className="cursor-pointer"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-        />
+        >
+          <SwipeyLogo size={96} />
+        </motion.div>
 
         {/* Subtle dot progress — only shown from the 3rd tap onward so the
             easter-egg stays hidden from customers but new staff can see they
@@ -433,7 +433,7 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <h1 className="mb-1 text-5xl font-bold uppercase tracking-widest">
-            <span className="text-gradient">WEBI</span>
+            <span className="text-gradient">SWIPEY</span>
             <span className="text-foreground"> MATCH</span>
           </h1>
           <p className="text-sm text-muted-foreground">{t.welcome.tagline}</p>
@@ -445,7 +445,7 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
         >
-          <div className="h-1.5 w-8 rounded-full" style={{ background: "hsl(27,92%,55%)" }} />
+          <div className="h-1.5 w-8 rounded-full" style={{ background: "hsl(217, 91%,55%)" }} />
           <div className="h-1 w-5 rounded-full bg-muted-foreground/25" />
           <div className="h-1 w-5 rounded-full bg-muted-foreground/25" />
           <span className="ml-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">

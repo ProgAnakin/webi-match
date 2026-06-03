@@ -29,7 +29,7 @@ const SPARKLES = Array.from({ length: 34 }, (_, i) => ({
   size:  1 + (i % 3) * 0.9,
   delay: (i * 0.43) % 7,
   dur:   2.2 + (i % 5) * 0.6,
-  tint:  i % 3 === 0 ? "hsla(27, 92%, 70%, 0.95)" : "hsla(0, 0%, 100%, 0.9)",
+  tint:  i % 3 === 0 ? "hsla(217, 91%, 70%, 0.95)" : "hsla(0, 0%, 100%, 0.9)",
 }));
 
 // ── Minimal success background — consistent with quiz screen ─────────────────
@@ -46,7 +46,7 @@ const SuccessBackground = ({ skip }: { skip: boolean }) => (
       className="absolute inset-0"
       style={{
         background:
-          "radial-gradient(ellipse 60% 35% at 50% -5%, hsla(27, 92%, 55%, 0.10) 0%, transparent 70%)",
+          "radial-gradient(ellipse 60% 35% at 50% -5%, hsla(217, 91%, 55%, 0.10) 0%, transparent 70%)",
       }}
     />
 
@@ -211,7 +211,7 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
             animate={{ scale: 1, rotate: 0, y: 0 }}
             transition={{ type: "spring", stiffness: 220, damping: 16, delay: 0.15 }}
             style={{
-              filter: "drop-shadow(0 0 28px hsl(27 92% 55% / 0.45)) drop-shadow(0 8px 24px rgba(0,0,0,0.35))",
+              filter: "drop-shadow(0 0 28px hsl(217 91% 60% / 0.45)) drop-shadow(0 8px 24px rgba(0,0,0,0.35))",
             }}
           >
             <EnvelopeIcon />
@@ -306,7 +306,7 @@ const SuccessScreen = ({ email, userName, productName, onRestart }: SuccessScree
 
         <motion.p className="text-[10px] text-muted-foreground/40 select-none"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6 }}>
-          © {new Date().getFullYear()} Webidoo Store · Webi-Match
+          © {new Date().getFullYear()} Swipey · Swipey
         </motion.p>
       </motion.div>
     </div>

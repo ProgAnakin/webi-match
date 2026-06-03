@@ -36,7 +36,7 @@ const ICONS: { x: number; dur: number; delay: string; product: ProductKey; size:
   { x: 88, dur: 11, delay:  "-6s", product: "smartwatch",  size: 42 },
 ];
 
-const ORANGE = "hsla(27,92%,68%,1)";
+const ORANGE = "hsla(217, 91%,68%,1)";
 
 export const AttractBackground = memo(() => (
   <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden" style={{ zIndex: 0 }}>
@@ -60,9 +60,9 @@ export const AttractBackground = memo(() => (
     }} />
 
     {/* Vivid ambient orbs */}
-    <div style={{ position:"absolute", left:"-12%", top:"-10%", width:"max(520px,42vw)", height:"max(520px,42vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,55%,0.9) 0%,transparent 70%)", filter:"blur(max(80px,7vw))", opacity:0.25, animation:"at-orb-a 18s ease-in-out infinite", willChange:"transform" }} />
-    <div style={{ position:"absolute", right:"-14%", top:"5%", width:"max(460px,36vw)", height:"max(460px,36vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(16,100%,50%,0.9) 0%,transparent 70%)", filter:"blur(max(90px,7vw))", opacity:0.20, animation:"at-orb-b 22s ease-in-out infinite", willChange:"transform" }} />
-    <div style={{ position:"absolute", left:"30%", bottom:"-8%", width:"max(380px,32vw)", height:"max(380px,32vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(27,92%,60%,0.9) 0%,transparent 70%)", filter:"blur(max(85px,7vw))", opacity:0.18, animation:"at-orb-c 20s ease-in-out infinite", willChange:"transform" }} />
+    <div style={{ position:"absolute", left:"-12%", top:"-10%", width:"max(520px,42vw)", height:"max(520px,42vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(217, 91%,55%,0.9) 0%,transparent 70%)", filter:"blur(max(80px,7vw))", opacity:0.25, animation:"at-orb-a 18s ease-in-out infinite", willChange:"transform" }} />
+    <div style={{ position:"absolute", right:"-14%", top:"5%", width:"max(460px,36vw)", height:"max(460px,36vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(188, 86%,50%,0.9) 0%,transparent 70%)", filter:"blur(max(90px,7vw))", opacity:0.20, animation:"at-orb-b 22s ease-in-out infinite", willChange:"transform" }} />
+    <div style={{ position:"absolute", left:"30%", bottom:"-8%", width:"max(380px,32vw)", height:"max(380px,32vw)", borderRadius:"50%", background:"radial-gradient(circle,hsla(217, 91%,60%,0.9) 0%,transparent 70%)", filter:"blur(max(85px,7vw))", opacity:0.18, animation:"at-orb-c 20s ease-in-out infinite", willChange:"transform" }} />
 
     {/* Product icons floating upward */}
     {ICONS.map((icon, i) => (

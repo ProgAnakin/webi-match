@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in Webi-Match. This is primarily a personal project authored by Costanzo Annichini, but contributions, bug reports and ideas are welcome.
+Thanks for your interest in Swipey. This is primarily a personal project authored by Costanzo Annichini, but contributions, bug reports and ideas are welcome.
 
 ## Ground Rules
 
@@ -14,7 +14,7 @@ Thanks for your interest in Webi-Match. This is primarily a personal project aut
 
 ```bash
 git clone <repo>
-cd webi-match
+cd swipey
 npm install
 cp .env.example .env
 # Fill in VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY

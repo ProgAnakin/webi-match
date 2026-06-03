@@ -1,6 +1,6 @@
 # Documentation
 
-Reference material for the webi-match codebase.
+Reference material for the swipey codebase.
 
 | Document | What it covers |
 |----------|----------------|

@@ -28,7 +28,7 @@ export const MfaSetupModal = ({ onClose, onEnabled }: MfaSetupModalProps) => {
       const unverified = factors?.totp?.filter((f) => f.status !== "verified") ?? [];
       for (const f of unverified) await supabase.auth.mfa.unenroll({ factorId: f.id });
       const { data, error: enrollErr } = await supabase.auth.mfa.enroll({
-        factorType: "totp", friendlyName: "Webi-Match Manager",
+        factorType: "totp", friendlyName: "Swipey Manager",
       });
       if (enrollErr || !data) { setStep("error"); return; }
       setFactorId(data.id);

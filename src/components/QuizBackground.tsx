@@ -7,7 +7,7 @@ import { memo } from "react";
 interface Star { left: string; top: string; size: number; delay: number; dur: number; tint: string; }
 const STARS: Star[] = Array.from({ length: 46 }, (_, i) => {
   const tint =
-    i % 3 === 0 ? "hsla(27, 92%, 70%, 0.95)" :   // brand orange
+    i % 3 === 0 ? "hsla(217, 91%, 70%, 0.95)" :   // brand orange
                   "hsla(0, 0%, 100%, 0.9)";       // white
   return {
     left:  `${(i * 73 + 5) % 96}%`,
@@ -23,31 +23,31 @@ const STARS: Star[] = Array.from({ length: 46 }, (_, i) => {
 interface Ember { top: number; dur: number; delay: string; w: number; h: number; color: string; anim: string; }
 const EMBERS: Ember[] = [
   // Left wall → travel right
-  { top: 16, dur: 6.2, delay: "-1.5s",  w: 4, h: 4, color: "#fb6b04", anim: "wb-ember-ltr"   },
-  { top: 25, dur: 5.5, delay: "-4.2s",  w: 7, h: 2, color: "#f8a432", anim: "wb-ember-ltr-b" },
-  { top: 36, dur: 7.1, delay: "-7.8s",  w: 3, h: 3, color: "#fcb498", anim: "wb-ember-ltr"   },
-  { top: 47, dur: 5.8, delay: "-2.1s",  w: 5, h: 5, color: "#fb6b04", anim: "wb-ember-ltr-b" },
-  { top: 57, dur: 6.8, delay: "-9.3s",  w: 6, h: 2, color: "#f8a432", anim: "wb-ember-ltr"   },
-  { top: 68, dur: 5.3, delay: "-5.7s",  w: 2, h: 2, color: "#fb6b04", anim: "wb-ember-ltr-b" },
-  { top: 78, dur: 7.4, delay: "-3.6s",  w: 3, h: 3, color: "#fcb498", anim: "wb-ember-ltr"   },
-  { top: 21, dur: 6.0, delay: "-8.0s",  w: 7, h: 2, color: "#fb6b04", anim: "wb-ember-ltr-b" },
-  { top: 42, dur: 7.6, delay: "-0.8s",  w: 2, h: 2, color: "#f8a432", anim: "wb-ember-ltr"   },
-  { top: 62, dur: 5.1, delay: "-6.4s",  w: 4, h: 4, color: "#fcb498", anim: "wb-ember-ltr-b" },
-  { top: 72, dur: 6.7, delay: "-10.2s", w: 5, h: 2, color: "#fb6b04", anim: "wb-ember-ltr"   },
-  { top: 32, dur: 5.9, delay: "-11.5s", w: 6, h: 2, color: "#f8a432", anim: "wb-ember-ltr-b" },
+  { top: 16, dur: 6.2, delay: "-1.5s",  w: 4, h: 4, color: "#22d3ee", anim: "wb-ember-ltr"   },
+  { top: 25, dur: 5.5, delay: "-4.2s",  w: 7, h: 2, color: "#5eead4", anim: "wb-ember-ltr-b" },
+  { top: 36, dur: 7.1, delay: "-7.8s",  w: 3, h: 3, color: "#bae6fd", anim: "wb-ember-ltr"   },
+  { top: 47, dur: 5.8, delay: "-2.1s",  w: 5, h: 5, color: "#22d3ee", anim: "wb-ember-ltr-b" },
+  { top: 57, dur: 6.8, delay: "-9.3s",  w: 6, h: 2, color: "#5eead4", anim: "wb-ember-ltr"   },
+  { top: 68, dur: 5.3, delay: "-5.7s",  w: 2, h: 2, color: "#22d3ee", anim: "wb-ember-ltr-b" },
+  { top: 78, dur: 7.4, delay: "-3.6s",  w: 3, h: 3, color: "#bae6fd", anim: "wb-ember-ltr"   },
+  { top: 21, dur: 6.0, delay: "-8.0s",  w: 7, h: 2, color: "#22d3ee", anim: "wb-ember-ltr-b" },
+  { top: 42, dur: 7.6, delay: "-0.8s",  w: 2, h: 2, color: "#5eead4", anim: "wb-ember-ltr"   },
+  { top: 62, dur: 5.1, delay: "-6.4s",  w: 4, h: 4, color: "#bae6fd", anim: "wb-ember-ltr-b" },
+  { top: 72, dur: 6.7, delay: "-10.2s", w: 5, h: 2, color: "#22d3ee", anim: "wb-ember-ltr"   },
+  { top: 32, dur: 5.9, delay: "-11.5s", w: 6, h: 2, color: "#5eead4", anim: "wb-ember-ltr-b" },
   // Right wall → travel left
-  { top: 18, dur: 6.4, delay: "-3.2s",  w: 3, h: 3, color: "#f8a432", anim: "wb-ember-rtl"   },
-  { top: 28, dur: 5.7, delay: "-7.0s",  w: 6, h: 2, color: "#fb6b04", anim: "wb-ember-rtl-b" },
-  { top: 40, dur: 7.2, delay: "-1.4s",  w: 4, h: 4, color: "#fcb498", anim: "wb-ember-rtl"   },
-  { top: 51, dur: 5.6, delay: "-9.1s",  w: 2, h: 2, color: "#fb6b04", anim: "wb-ember-rtl-b" },
-  { top: 61, dur: 6.9, delay: "-4.5s",  w: 7, h: 2, color: "#f8a432", anim: "wb-ember-rtl"   },
-  { top: 74, dur: 5.2, delay: "-6.8s",  w: 3, h: 3, color: "#fcb498", anim: "wb-ember-rtl-b" },
-  { top: 83, dur: 7.7, delay: "-2.3s",  w: 4, h: 2, color: "#fb6b04", anim: "wb-ember-rtl"   },
-  { top: 23, dur: 6.1, delay: "-8.6s",  w: 2, h: 2, color: "#f8a432", anim: "wb-ember-rtl-b" },
-  { top: 45, dur: 7.5, delay: "-0.5s",  w: 5, h: 5, color: "#fb6b04", anim: "wb-ember-rtl"   },
-  { top: 64, dur: 5.4, delay: "-5.1s",  w: 3, h: 2, color: "#fcb498", anim: "wb-ember-rtl-b" },
-  { top: 76, dur: 6.6, delay: "-10.7s", w: 4, h: 4, color: "#fb6b04", anim: "wb-ember-rtl"   },
-  { top: 35, dur: 5.8, delay: "-12.0s", w: 6, h: 2, color: "#f8a432", anim: "wb-ember-rtl-b" },
+  { top: 18, dur: 6.4, delay: "-3.2s",  w: 3, h: 3, color: "#5eead4", anim: "wb-ember-rtl"   },
+  { top: 28, dur: 5.7, delay: "-7.0s",  w: 6, h: 2, color: "#22d3ee", anim: "wb-ember-rtl-b" },
+  { top: 40, dur: 7.2, delay: "-1.4s",  w: 4, h: 4, color: "#bae6fd", anim: "wb-ember-rtl"   },
+  { top: 51, dur: 5.6, delay: "-9.1s",  w: 2, h: 2, color: "#22d3ee", anim: "wb-ember-rtl-b" },
+  { top: 61, dur: 6.9, delay: "-4.5s",  w: 7, h: 2, color: "#5eead4", anim: "wb-ember-rtl"   },
+  { top: 74, dur: 5.2, delay: "-6.8s",  w: 3, h: 3, color: "#bae6fd", anim: "wb-ember-rtl-b" },
+  { top: 83, dur: 7.7, delay: "-2.3s",  w: 4, h: 2, color: "#22d3ee", anim: "wb-ember-rtl"   },
+  { top: 23, dur: 6.1, delay: "-8.6s",  w: 2, h: 2, color: "#5eead4", anim: "wb-ember-rtl-b" },
+  { top: 45, dur: 7.5, delay: "-0.5s",  w: 5, h: 5, color: "#22d3ee", anim: "wb-ember-rtl"   },
+  { top: 64, dur: 5.4, delay: "-5.1s",  w: 3, h: 2, color: "#bae6fd", anim: "wb-ember-rtl-b" },
+  { top: 76, dur: 6.6, delay: "-10.7s", w: 4, h: 4, color: "#22d3ee", anim: "wb-ember-rtl"   },
+  { top: 35, dur: 5.8, delay: "-12.0s", w: 6, h: 2, color: "#5eead4", anim: "wb-ember-rtl-b" },
 ];
 
 const QuizBackground = memo(() => (

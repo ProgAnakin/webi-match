@@ -54,16 +54,16 @@ function CardPreview({ form, totalCards }: { form: CardForm; totalCards: number 
         className="relative mx-auto w-full max-w-[220px] rounded-[18px] overflow-hidden select-none"
         style={{ background: cardBg, border: "1px solid rgba(255,255,255,0.09)", aspectRatio: "3/5" }}
       >
-        <div style={{ height: 3, background: "linear-gradient(90deg,hsl(27,92%,55%),hsl(16,100%,50%))" }} />
+        <div style={{ height: 3, background: "linear-gradient(90deg,hsl(217, 91%,55%),hsl(188, 86%,50%))" }} />
         <div className="flex flex-col h-full pb-4">
           <div className="flex items-center justify-between px-3 pt-2.5">
             <div className="flex items-center gap-1.5">
-              <div className="h-1 w-1 rounded-full" style={{ background: "hsl(27,92%,58%)", opacity: 0.85 }} />
-              <span className="text-[8px] font-bold uppercase tracking-[0.2em]" style={{ color: "hsla(27,88%,72%,0.82)" }}>
+              <div className="h-1 w-1 rounded-full" style={{ background: "hsl(217, 91%,58%)", opacity: 0.85 }} />
+              <span className="text-[8px] font-bold uppercase tracking-[0.2em]" style={{ color: "hsla(188, 86%,72%,0.82)" }}>
                 {tag}
               </span>
             </div>
-            <span className="tabular-nums text-[8px] font-semibold" style={{ color: "hsla(27,88%,72%,0.60)" }}>
+            <span className="tabular-nums text-[8px] font-semibold" style={{ color: "hsla(188, 86%,72%,0.60)" }}>
               {step}<span style={{ opacity: 0.5 }}>&thinsp;/&thinsp;{total}</span>
             </span>
           </div>

@@ -1,6 +1,6 @@
 # Operational Runbook
 
-Triage guide for the most common incidents on a webi-match deployment. Each
+Triage guide for the most common incidents on a swipey deployment. Each
 section: **symptom → first checks → fix**. If none of the fixes apply, escalate
 with a copy of the relevant Edge Function logs and the affected `quiz_sessions.id`.
 
@@ -24,7 +24,7 @@ arrived (including spam folder).
    - `Errore` / `Error`: usually the wrong sender or DKIM failure. Check the
      sender shown in the log — must match the `EMAIL_SENDER` Edge Function
      secret. If it's something else, the secret is unset (fallback is
-     `noreply@webidoo.com`) or the Edge Function deployment is stale;
+     `noreply@swipey.app`) or the Edge Function deployment is stale;
      redeploy `on-session-created` from the Dashboard.
    - **Nothing logged at all:** the Edge Function never called Brevo. Continue
      to step 2.

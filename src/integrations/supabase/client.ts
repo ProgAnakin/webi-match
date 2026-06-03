@@ -8,7 +8,7 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Fail fast if required env vars are missing — prevents silent runtime errors.
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
   throw new Error(
-    '[webi-match] Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY. '
+    '[swipey] Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY. '
     + 'Check your .env file or Vercel environment variables.',
   );
 }
@@ -20,7 +20,7 @@ if (
   SUPABASE_PUBLISHABLE_KEY.length > 300
 ) {
   throw new Error(
-    '[webi-match] CRITICAL — a service-role key was detected in VITE_SUPABASE_PUBLISHABLE_KEY. '
+    '[swipey] CRITICAL — a service-role key was detected in VITE_SUPABASE_PUBLISHABLE_KEY. '
     + 'Only the anon/publishable key (eyJ…) is safe for the browser.',
   );
 }
