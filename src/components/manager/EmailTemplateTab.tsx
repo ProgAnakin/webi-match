@@ -137,10 +137,10 @@ function EmailPreview({ form }: { form: EmailTemplate }) {
         <p className="text-xs text-[#7a8fbb] leading-relaxed">{interpolate(form.header_subtitle)}</p>
       </div>
       <div className="bg-[#151d47] px-6 py-5 text-center border-t border-[#2a3a68]">
-        <p className="text-5xl font-black text-[#6BCB77]">{SAMPLE.pct}<span className="text-2xl">%</span></p>
+        <p className="text-5xl font-black text-[#5eead4]">{SAMPLE.pct}<span className="text-2xl">%</span></p>
         <p className="text-[9px] font-bold uppercase tracking-widest text-[#7a8fbb] mt-1">Compatibility</p>
-        <div className="mt-2 inline-block rounded-full border border-[#6BCB77]/40 bg-[#6BCB77]/10 px-3 py-1">
-          <span className="text-[10px] font-bold text-[#6BCB77]">GREAT MATCH</span>
+        <div className="mt-2 inline-block rounded-full border border-[#5eead4]/40 bg-[#5eead4]/10 px-3 py-1">
+          <span className="text-[10px] font-bold text-[#5eead4]">GREAT MATCH</span>
         </div>
       </div>
       <div className="bg-[#151d47] px-6 py-4 border-t border-[#2a3a68]">

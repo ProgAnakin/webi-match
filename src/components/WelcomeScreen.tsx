@@ -434,7 +434,6 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
         >
           <h1 className="mb-1 text-5xl font-bold uppercase tracking-widest">
             <span className="text-gradient">SWIPEY</span>
-            <span className="text-foreground"> MATCH</span>
           </h1>
           <p className="text-sm text-muted-foreground">{t.welcome.tagline}</p>
         </motion.div>

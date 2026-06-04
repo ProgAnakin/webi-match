@@ -134,26 +134,23 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
           </div>
         </motion.div>
 
-        {/* SWIPEY — each word flies in from opposite sides */}
+        {/* SWIPEY — single-word brand mark with a spring-in entrance */}
         <motion.h1
           className="leading-none font-black uppercase"
           style={{ fontSize: "clamp(4rem,13vw,6rem)", letterSpacing: "0.09em" }}
         >
           <motion.span
-            style={{ color: "hsl(217, 91%,55%)", display: "inline-block" }}
-            initial={{ opacity: 0, x: -55, rotate: -10 }}
-            animate={{ opacity: 1, x: 0, rotate: 0 }}
-            transition={{ delay: 0.15, type: "spring", stiffness: 260, damping: 20 }}
+            style={{
+              display: "inline-block",
+              background: "linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(188, 86%, 53%) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+            initial={{ opacity: 0, y: -32, scale: 0.85 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.18, type: "spring", stiffness: 260, damping: 22 }}
           >SWIPEY</motion.span>
-          <motion.span
-            className="text-white"
-            style={{ display: "inline-block" }}
-            initial={{ opacity: 0, x: 55, rotate: 10 }}
-            animate={{ opacity: 1, x: 0, rotate: 0 }}
-            transition={{ delay: 0.28, type: "spring", stiffness: 260, damping: 20 }}
-          >
-            {" "}MATCH
-          </motion.span>
         </motion.h1>
 
         {/* Hook subheadline */}
