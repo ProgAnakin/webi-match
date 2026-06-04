@@ -24,7 +24,7 @@ const Manager = () => {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data, error }) => {
       if (error) {
-        console.error("[swipey] getSession failed:", error);
+        console.error("[suaipe] getSession failed:", error);
         navigate("/stats", { replace: true });
         setChecking(false);
         return;
@@ -43,7 +43,7 @@ const Manager = () => {
       }
       setChecking(false);
     }).catch((err) => {
-      console.error("[swipey] auth check threw:", err);
+      console.error("[suaipe] auth check threw:", err);
       navigate("/stats", { replace: true });
       setChecking(false);
     });

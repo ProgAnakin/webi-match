@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you believe you have found a security vulnerability in Swipey, please **do not open a public GitHub issue**. Instead, report it privately so the issue can be triaged and a fix can be coordinated before disclosure.
+If you believe you have found a security vulnerability in Suaipe, please **do not open a public GitHub issue**. Instead, report it privately so the issue can be triaged and a fix can be coordinated before disclosure.
 
 Send a private report by either:
 
@@ -39,7 +39,7 @@ Out of scope:
 
 ## Hardening Already In Place
 
-Swipey was built defensively from day one. The following protections are part of the current codebase:
+Suaipe was built defensively from day one. The following protections are part of the current codebase:
 
 ### Authentication & Authorisation
 - Supabase Auth + bcrypt PIN fallback for staff access
@@ -89,4 +89,4 @@ Swipey was built defensively from day one. The following protections are part of
 
 If a fix requires coordinated disclosure (e.g. a vulnerability impacting customer PII), the maintainer will publish a `GitHub Security Advisory` and credit the reporter (with consent) in the changelog.
 
-Thank you for helping keep Swipey safe.
+Thank you for helping keep Suaipe safe.

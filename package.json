@@ -1,8 +1,8 @@
 {
-  "name": "swipey",
-  "description": "iPad-first product-discovery kiosk for Swipey — swipe-based quiz, multilingual transactional emails, real-time analytics, multi-store management. Built solo by Costanzo Annichini.",
+  "name": "suaipe",
+  "description": "iPad-first product-discovery kiosk for Suaipe — swipe-based quiz, multilingual transactional emails, real-time analytics, multi-store management. Built solo by Costanzo Annichini.",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "module",
   "engines": {
     "node": ">=20"

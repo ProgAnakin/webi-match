@@ -37,14 +37,14 @@ const Consulente = () => {
     try {
       res = await supabase.from("store_roles").select("role").maybeSingle();
     } catch (err) {
-      console.error("[swipey] role lookup threw:", err);
+      console.error("[suaipe] role lookup threw:", err);
       setStep("loaderror");
       return;
     }
     if (res.error) {
       // Network / server failure — NOT a permissions problem. Let the user
       // retry instead of wrongly telling a real consultant they have no access.
-      console.error("[swipey] role lookup failed:", res.error);
+      console.error("[suaipe] role lookup failed:", res.error);
       setStep("loaderror");
       return;
     }
@@ -59,7 +59,7 @@ const Consulente = () => {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data, error }) => {
       if (error) {
-        console.error("[swipey] getSession failed:", error);
+        console.error("[suaipe] getSession failed:", error);
         setStep("login");
         return;
       }
@@ -74,7 +74,7 @@ const Consulente = () => {
         await resolveRole();
       }
     }).catch((err) => {
-      console.error("[swipey] auth check threw:", err);
+      console.error("[suaipe] auth check threw:", err);
       setStep("login");
     });
 

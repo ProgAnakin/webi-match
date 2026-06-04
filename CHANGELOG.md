@@ -1,19 +1,44 @@
 # Changelog
 
-All notable changes to Swipey are documented here.
+All notable changes to Suaipe are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [2.0.0] — 2026-06-03 — Rebrand to **Swipey**
+## [2.0.1] — 2026-06-04 — Promote Suaipe to `main`
+
+`main` was kept on the historical Webi-Match v1.7.2 commit as a safety
+fallback while 2.0.0 was being validated on the `swipey` (now `suaipe`)
+branch. This release fast-forwards `main` to the rebranded code and
+preserves the original production tip on a dedicated `webi-match`
+branch for rollback.
+
+### Topology
+- New branch **`webi-match`** snapshots the pre-rebrand production tip
+  (`dab4d2b`, Webi-Match v1.7.2). Treat it as a read-only safety net.
+- `main` now contains the Suaipe code — Vercel production deploys from
+  this commit.
+- Brand assets, palette, logo, and discount-code prefix (`SUP-`)
+  unchanged from 2.0.0; this release is the promotion event, not a new
+  code change.
+
+### Operator action required (post-merge)
+- Redeploy the `on-session-created` Edge Function from `main` so new
+  emails carry the `SUP-` prefix.
+- Ensure `SENTRY_ORG` / `SENTRY_PROJECT` in Vercel env vars match the
+  Sentry project slug (rename Sentry project to `suaipe` if desired).
+
+---
+
+## [2.0.0] — 2026-06-03 — Rebrand to **Suaipe**
 
 Independent product identity, fully decoupled from any prior employer
 branding. Everything user-facing has been replaced; runtime behaviour,
 data model, security posture and feature set are unchanged.
 
 ### Brand identity
-- **Name:** Webi-Match → **Swipey**. Package, manifest, HTML title,
+- **Name:** Webi-Match → **Suaipe**. Package, manifest, HTML title,
   apple-mobile-web-app-title, OG/Twitter cards, every README and ADR.
 - **Palette:** Webidoo orange (`hsl(27,92%,55%)` + `hsl(16,100%,50%)`
   gradient) → **electric blue → cyan** (`hsl(217,91%,60%)` →
@@ -24,21 +49,21 @@ data model, security posture and feature set are unchanged.
   shadow-glow utility and the email-template preview. CSS variables in
   `src/index.css` are the single source of truth and cascade through
   every `bg-primary` / `text-primary` / `gradient-primary` usage.
-- **Logo:** new `<SwipeyLogo>` inline SVG component (electric-blue → cyan
+- **Logo:** new `<SuaipeLogo>` inline SVG component (electric-blue → cyan
   gradient on a stylised "S" with soft glow) replaces the legacy
   webidoo-logo.webp in the attract / welcome / kiosk-lock screens. The
   raster asset has been removed.
 - **Social preview:** `docs/social-preview.png` regenerated in the new
   palette.
-- **Email/contact domains:** `@webidoo.com` → `@swipey.app` (sender
+- **Email/contact domains:** `@webidoo.com` → `@suaipe.app` (sender
   fallback, privacy-notice contact). SECURITY.md disclosure email
   routed to the maintainer's personal address.
-- **Email discount-code prefix:** `WEBI-XXXXXXXXNN` → `SWP-XXXXXXXXNN`
+- **Email discount-code prefix:** `WEBI-XXXXXXXXNN` → `SUP-XXXXXXXXNN`
   (purely cosmetic — same generation algorithm, same DB shape).
 
 ### Migration note
 - Existing data referencing the old discount-code prefix (`WEBI-…`) is
-  still valid and redeemable; only newly-issued codes use the `SWP-`
+  still valid and redeemable; only newly-issued codes use the `SUP-`
   prefix.
 - The legacy `src/assets/webidoo-logo.webp` asset has been deleted from
   the bundle.
@@ -221,7 +246,7 @@ data model, security posture and feature set are unchanged.
   `/rest/v1/` GETs only, avoiding stale auth tokens (`/auth/v1/*`) and
   non-idempotent RPC writes.
 - **`SECURITY.md`** routes vulnerability reports to the maintainer's
-  personal address (`costanzobruno.annichini@swipey.app`).
+  personal address (`costanzobruno.annichini@suaipe.app`).
 
 ### Added
 - `EMAIL_SENDER` Edge Function secret — the Brevo sender address is now

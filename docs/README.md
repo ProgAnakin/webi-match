@@ -1,6 +1,6 @@
 # Documentation
 
-Reference material for the swipey codebase.
+Reference material for the suaipe codebase.
 
 | Document | What it covers |
 |----------|----------------|

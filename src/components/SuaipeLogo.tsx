@@ -1,27 +1,27 @@
 import { memo } from "react";
-import logoSrc from "@/assets/swipey-logo.png";
+import logoSrc from "@/assets/suaipe-logo.png";
 
-interface SwipeyLogoProps {
+interface SuaipeLogoProps {
   /** Rendered size in px (square — height === width). */
   size?: number;
-  /** When true, renders the "Swipey" wordmark next to the monogram. */
+  /** When true, renders the "Suaipe" wordmark next to the monogram. */
   withWordmark?: boolean;
   className?: string;
 }
 
-// Official Swipey brand mark — glossy 3D "S" in electric-blue, on a
+// Official Suaipe brand mark — glossy 3D "S" in electric-blue, on a
 // transparent background, supplied by the brand owner as a 512×512 PNG
-// (src/assets/swipey-logo.png, already cropped to its visible bbox).
+// (src/assets/suaipe-logo.png, already cropped to its visible bbox).
 // The asset carries its own highlights and depth, so we just render the
 // image; no SVG glow is applied to avoid muddying the gloss.
-export const SwipeyLogo = memo(({ size = 80, withWordmark = false, className = "" }: SwipeyLogoProps) => (
+export const SuaipeLogo = memo(({ size = 80, withWordmark = false, className = "" }: SuaipeLogoProps) => (
   <div
     className={`inline-flex items-center gap-3 ${className}`}
     style={{ height: size }}
   >
     <img
       src={logoSrc}
-      alt="Swipey"
+      alt="Suaipe"
       width={size}
       height={size}
       draggable={false}
@@ -48,10 +48,10 @@ export const SwipeyLogo = memo(({ size = 80, withWordmark = false, className = "
           backgroundClip: "text",
         }}
       >
-        Swipey
+        Suaipe
       </span>
     )}
   </div>
 ));
 
-SwipeyLogo.displayName = "SwipeyLogo";
+SuaipeLogo.displayName = "SuaipeLogo";

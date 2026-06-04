@@ -70,10 +70,10 @@ function trackFunnel(funnelKey: string, eventType: "quiz_started" | "result_show
     event_type: eventType,
     store_id: getStoredStoreId(),
   }).then(({ error }) => {
-    if (error) console.error("[swipey] funnel event failed:", eventType, error);
+    if (error) console.error("[suaipe] funnel event failed:", eventType, error);
   }, (err) => {
     // Network rejection — keep flow alive, just log it.
-    console.error("[swipey] funnel event rejected:", eventType, err);
+    console.error("[suaipe] funnel event rejected:", eventType, err);
   });
 }
 
@@ -202,7 +202,7 @@ const Index = () => {
         .order("sort_order", { ascending: true }),
     ]).then(([settingsRes, customRes, globalRes, cardsRes]) => {
       if (settingsRes.error) {
-        console.error("[swipey] product_settings fetch failed:", settingsRes.error);
+        console.error("[suaipe] product_settings fetch failed:", settingsRes.error);
         if (!cached) setSettingsLoadFailed(true);
       }
 
@@ -221,7 +221,7 @@ const Index = () => {
       // Network rejection (vs. a Supabase error object handled above) would
       // otherwise leave settingsLoaded=false forever and the kiosk stuck on the
       // spinner until the 10 s fallback timeout fires.
-      console.error("[swipey] startup Promise.all rejected:", err);
+      console.error("[suaipe] startup Promise.all rejected:", err);
       if (!cached) setSettingsLoadFailed(true);
       setSettingsLoaded(true);
     });
@@ -282,7 +282,7 @@ const Index = () => {
     // and corrupt per-store analytics. Surface the error so staff fixes it.
     const storeId = getStoredStoreId();
     if (!storeId) {
-      console.error("[swipey] No store_id configured — claim aborted.");
+      console.error("[suaipe] No store_id configured — claim aborted.");
       setClaimError(true);
       return;
     }
@@ -323,7 +323,7 @@ const Index = () => {
       lastError = error;
     }
     if (lastError) {
-      console.error("[swipey] quiz_sessions insert failed:", lastError);
+      console.error("[suaipe] quiz_sessions insert failed:", lastError);
       setClaiming(false);
       setClaimError(true);
       return;

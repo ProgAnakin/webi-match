@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AttractBackground } from "./AttractBackground";
-import { SwipeyLogo } from "./SwipeyLogo";
+import { SuaipeLogo } from "./SuaipeLogo";
 import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";
 
@@ -130,11 +130,11 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
             className="relative"
             style={{ animation: "at-logo-glow 3s ease-in-out infinite" }}
           >
-            <SwipeyLogo size={112} />
+            <SuaipeLogo size={112} />
           </div>
         </motion.div>
 
-        {/* SWIPEY — single-word brand mark with a spring-in entrance */}
+        {/* SUAIPE — single-word brand mark with a spring-in entrance */}
         <motion.h1
           className="leading-none font-black uppercase"
           style={{ fontSize: "clamp(4rem,13vw,6rem)", letterSpacing: "0.09em" }}
@@ -150,7 +150,7 @@ const AttractScreen = ({ onComplete }: AttractScreenProps) => {
             initial={{ opacity: 0, y: -32, scale: 0.85 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.18, type: "spring", stiffness: 260, damping: 22 }}
-          >SWIPEY</motion.span>
+          >SUAIPE</motion.span>
         </motion.h1>
 
         {/* Hook subheadline */}

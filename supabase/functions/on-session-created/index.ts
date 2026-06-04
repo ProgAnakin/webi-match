@@ -20,7 +20,7 @@ const SHEETS_WEBHOOK   = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL") ?? "";
 // rejects requests that don't carry a matching x-webhook-secret header.
 // Leave unset only for local development — production must always set this.
 const WEBHOOK_SECRET   = Deno.env.get("WEBHOOK_SECRET") ?? "";
-const EMAIL_SENDER     = Deno.env.get("EMAIL_SENDER") ?? "noreply@swipey.app";
+const EMAIL_SENDER     = Deno.env.get("EMAIL_SENDER") ?? "noreply@suaipe.app";
 
 if (!WEBHOOK_SECRET) {
   console.error("[on-session-created] WEBHOOK_SECRET is NOT set — the function will REJECT every request until it is configured.");
@@ -41,7 +41,7 @@ const WHITELIST_EMAILS = new Set(
     .map((e) => e.trim().toLowerCase()).filter(Boolean)
 );
 
-// Swipey palette — electric-blue → cyan as the brand axis, mint for success.
+// Suaipe palette — electric-blue → cyan as the brand axis, mint for success.
 // `accent` / `accentDeep` form the brand gradient used wherever the legacy
 // orange/orange-red pair lived (CTA bars, code box, step numbers, barcode).
 const C = {
@@ -84,13 +84,13 @@ function youtubeId(url: string): string | null {
   return m ? m[1] : null;
 }
 
-// Format: SWP-XXXXXXXX05 — last 2 digits encode the discount % for consultant readability.
+// Format: SUP-XXXXXXXX05 — last 2 digits encode the discount % for consultant readability.
 // 4 random bytes (2^32 space) makes enumeration attacks computationally impractical.
 function genDiscountCode(discountPct: number): string {
   const bytes = new Uint8Array(4);
   crypto.getRandomValues(bytes);
   const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
-  return `SWP-${hex}${String(discountPct).padStart(2, "0")}`;
+  return `SUP-${hex}${String(discountPct).padStart(2, "0")}`;
 }
 
 // ⚠ Synced copy — kept in lockstep with src/lib/validators.ts. Tests in
@@ -197,7 +197,7 @@ const EMAIL_I18N: Record<Lang, {
     faqSection: "DOMANDE FREQUENTI",
     imagesNote: "Le immagini non si caricano? Clicca <strong style=\"color:#f0f4ff;\">&ldquo;Mostra immagini&rdquo;</strong> in cima all&rsquo;email per visualizzare il prodotto e il video del consulente.",
     gdpr: "Dati crittografati · Conformità GDPR",
-    receivedNote: "Hai ricevuto questa email perché hai partecipato a Swipey in negozio.",
+    receivedNote: "Hai ricevuto questa email perché hai partecipato a Suaipe in negozio.",
     codeExpiry: "Il codice sconto è valido 24 ore dalla ricezione.",
   },
   en: {
@@ -221,7 +221,7 @@ const EMAIL_I18N: Record<Lang, {
     faqSection: "FREQUENTLY ASKED QUESTIONS",
     imagesNote: "Images not loading? Click <strong style=\"color:#f0f4ff;\">&ldquo;Show images&rdquo;</strong> at the top of the email to display the product and consultant video.",
     gdpr: "Encrypted data · GDPR compliant",
-    receivedNote: "You received this email because you participated in Swipey in store.",
+    receivedNote: "You received this email because you participated in Suaipe in store.",
     codeExpiry: "The discount code is valid for 24 hours from receipt.",
   },
   pt: {
@@ -245,7 +245,7 @@ const EMAIL_I18N: Record<Lang, {
     faqSection: "PERGUNTAS FREQUENTES",
     imagesNote: "Imagens não carregam? Clique em <strong style=\"color:#f0f4ff;\">&ldquo;Mostrar imagens&rdquo;</strong> no topo do email para visualizar o produto e o vídeo do consultor.",
     gdpr: "Dados encriptados · Conformidade GDPR",
-    receivedNote: "Recebeu este email porque participou no Swipey na loja.",
+    receivedNote: "Recebeu este email porque participou no Suaipe na loja.",
     codeExpiry: "O código de desconto é válido por 24 horas após a receção.",
   },
   es: {
@@ -269,7 +269,7 @@ const EMAIL_I18N: Record<Lang, {
     faqSection: "PREGUNTAS FRECUENTES",
     imagesNote: "¿Las imágenes no cargan? Haz clic en <strong style=\"color:#f0f4ff;\">&ldquo;Mostrar imágenes&rdquo;</strong> en la parte superior del email.",
     gdpr: "Datos cifrados · Cumplimiento GDPR",
-    receivedNote: "Recibiste este email porque participaste en Swipey en tienda.",
+    receivedNote: "Recibiste este email porque participaste en Suaipe en tienda.",
     codeExpiry: "El código de descuento es válido 24 horas desde la recepción.",
   },
   fr: {
@@ -293,7 +293,7 @@ const EMAIL_I18N: Record<Lang, {
     faqSection: "FOIRES AUX QUESTIONS",
     imagesNote: "Images non chargées ? Cliquez sur <strong style=\"color:#f0f4ff;\">&ldquo;Afficher les images&rdquo;</strong> en haut de l'email.",
     gdpr: "Données chiffrées · Conformité RGPD",
-    receivedNote: "Vous avez reçu cet email car vous avez participé à Swipey en boutique.",
+    receivedNote: "Vous avez reçu cet email car vous avez participé à Suaipe en boutique.",
     codeExpiry: "Le code de réduction est valable 24 heures après réception.",
   },
 };
@@ -307,7 +307,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
   // email clients sandbox <script>/event handlers, so the XSS surface is minimal.
   const headerTitle    = tpl?.header_title    ?? "Abbiamo trovato il tuo match!";
   const headerSubtitle = tpl?.header_subtitle ?? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il <strong style=\"color:#f0f4ff;\">gadget perfetto per il tuo stile di vita</strong>.";
-  const footerName     = tpl?.footer_store_name ?? "SWIPEY";
+  const footerName     = tpl?.footer_store_name ?? "SUAIPE";
   const nome         = escHtml(String(record.nome    ?? "").trim());
   const cognome      = escHtml(String(record.cognome ?? "").trim());
   const pct          = Number(record.match_percent ?? 0);
@@ -331,7 +331,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <meta name="color-scheme" content="dark"/>
-  <title>Il tuo match Swipey</title>
+  <title>Il tuo match Suaipe</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
     body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
@@ -369,7 +369,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
     <td style="background:${C.cardHeader};padding:36px 40px 32px;text-align:center;">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
         <tr><td style="background:${C.accent};background:linear-gradient(135deg,${C.accent},${C.accentDeep});border-radius:10px;padding:7px 22px;">
-          <span style="font-size:13px;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:#fff;">SWIPEY</span>
+          <span style="font-size:13px;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:#fff;">SUAIPE</span>
         </td></tr>
       </table>
       <h1 style="margin:22px 0 8px;font-size:30px;font-weight:800;color:${C.fg};line-height:1.15;letter-spacing:-0.01em;">
@@ -612,7 +612,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
   <tr>
     <td style="background:${C.cardHeader};padding:24px 32px 28px;text-align:center;border-top:1px solid ${C.border};border-radius:0 0 20px 20px;">
       <p style="margin:0 0 4px;font-size:15px;font-weight:800;color:${C.fg};letter-spacing:0.1em;">${escHtml(footerName)}</p>
-      <p style="margin:0 0 12px;font-size:11px;color:${C.muted};">Powered by Swipey</p>
+      <p style="margin:0 0 12px;font-size:11px;color:${C.muted};">Powered by Suaipe</p>
       ${fullName ? `<p style="margin:0 0 10px;font-size:12px;color:${C.muted};">Inviato a <strong style="color:${C.fg};">${fullName}</strong>${recipientEmail ? ` · ${recipientEmail}` : ""}</p>` : ""}
       <div style="border-top:1px solid ${C.border};margin:12px auto;max-width:200px;"></div>
       <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.8;">
@@ -781,11 +781,11 @@ serve(async (req) => {
     .eq("language", sessionLang)
     .maybeSingle();
   const tpl = {
-    sender_name:       String(tplRow?.sender_name       ?? "Swipey"),
+    sender_name:       String(tplRow?.sender_name       ?? "Suaipe"),
     subject_template:  String(tplRow?.subject_template  ?? "{{nome}}, il tuo match è {{pct}}% — Codice sconto valido 24h ⏰"),
     header_title:      String(tplRow?.header_title      ?? "Abbiamo trovato il tuo match!"),
     header_subtitle:   String(tplRow?.header_subtitle   ?? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il gadget perfetto per il tuo stile di vita."),
-    footer_store_name: String(tplRow?.footer_store_name ?? "Swipey"),
+    footer_store_name: String(tplRow?.footer_store_name ?? "Suaipe"),
   };
 
   const nome     = String(record.nome ?? "").trim();
@@ -802,7 +802,7 @@ serve(async (req) => {
       sender: { name: tpl.sender_name, email: EMAIL_SENDER },
       // Customers should not reply directly. Point Reply-To at a noreply mailbox
       // so the "Reply" button in email clients doesn't send anything to a real inbox.
-      replyTo: { name: "Swipey (no-reply)", email: "noreply@swipey.app" },
+      replyTo: { name: "Suaipe (no-reply)", email: "noreply@suaipe.app" },
       to: [{ email: record.email, name: [nome, String(record.cognome ?? "")].filter(Boolean).join(" ") }],
       subject,
       htmlContent: html,

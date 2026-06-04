@@ -4,7 +4,7 @@ import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import DiscoveryBackground from "./DiscoveryBackground";
 import AdminPinOverlay from "./AdminPinOverlay";
 import { PrivacyNotice } from "./PrivacyNotice";
-import { SwipeyLogo } from "./SwipeyLogo";
+import { SuaipeLogo } from "./SuaipeLogo";
 import { useSound } from "@/hooks/useSound";
 import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";
@@ -362,7 +362,7 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
         <span className="text-[10px] text-muted-foreground/40 select-none">
-          © {new Date().getFullYear()} Swipey · Swipey
+          © {new Date().getFullYear()} Suaipe · Suaipe
         </span>
       </div>
 
@@ -399,7 +399,7 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.1 }}
         >
-          <SwipeyLogo size={96} />
+          <SuaipeLogo size={96} />
         </motion.div>
 
         {/* Subtle dot progress — only shown from the 3rd tap onward so the
@@ -433,7 +433,7 @@ const WelcomeScreen = ({ onStart, settingsLoadFailed = false }: WelcomeScreenPro
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <h1 className="mb-1 text-5xl font-bold uppercase tracking-widest">
-            <span className="text-gradient">SWIPEY</span>
+            <span className="text-gradient">SUAIPE</span>
           </h1>
           <p className="text-sm text-muted-foreground">{t.welcome.tagline}</p>
         </motion.div>

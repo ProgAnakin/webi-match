@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="docs/social-preview.png" alt="Swipey — iPad-first product discovery kiosk for physical retail" width="100%"/>
+<img src="docs/social-preview.png" alt="Suaipe — iPad-first product discovery kiosk for physical retail" width="100%"/>
 
-# 🎯 Swipey
+# 🎯 Suaipe
 
 **An iPad-first product discovery kiosk for physical retail**
 
-[![CI](https://github.com/ProgAnakin/swipey/actions/workflows/ci.yml/badge.svg)](https://github.com/ProgAnakin/swipey/actions/workflows/ci.yml)
+[![CI](https://github.com/ProgAnakin/suaipe/actions/workflows/ci.yml/badge.svg)](https://github.com/ProgAnakin/suaipe/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-1.7.1-blue)](./CHANGELOG.md)
 [![Tests](https://img.shields.io/badge/tests-95%20unit%20%2B%2011%20e2e-22c55e)](./src/__tests__)
 [![Languages](https://img.shields.io/badge/i18n-5%20languages-f5831c)](./src/i18n/translations.ts)
@@ -17,7 +17,7 @@
 
 *Customers swipe through 8 personalised questions — Tinder-style — and receive an instant product recommendation with a tailored discount and a personalised video from a consultant.*
 
-### 🌐 [**Live Demo → swipey.vercel.app**](https://swipey.vercel.app)
+### 🌐 [**Live Demo → suaipe.vercel.app**](https://suaipe.vercel.app)
 
 *Best experienced on iPad (1024×1366) in landscape · Works on any modern browser*
 
@@ -27,11 +27,11 @@
 
 ## Overview
 
-**Swipey** turns idle in-store iPads into a conversion-driving touchpoint. A customer answers eight quick swipe questions, a matching algorithm recommends one product, generates a unique discount code, and delivers a personalised follow-up email in the customer's language. The whole experience runs in under two minutes.
+**Suaipe** turns idle in-store iPads into a conversion-driving touchpoint. A customer answers eight quick swipe questions, a matching algorithm recommends one product, generates a unique discount code, and delivers a personalised follow-up email in the customer's language. The whole experience runs in under two minutes.
 
 **Built for:** physical retail with a curated catalog — tech, beauty, gifts, sporting goods, fragrance — where customers know roughly what they want but get overwhelmed by choice.
 
-**Status:** in production across multiple Swipey locations on iPad.
+**Status:** in production across multiple Suaipe locations on iPad.
 
 ### What it delivers
 
@@ -46,7 +46,7 @@
 
 ## 📸 Demo
 
-> Live deployment running daily across multiple Swipey locations on iPad.
+> Live deployment running daily across multiple Suaipe locations on iPad.
 
 <table align="center">
   <tr>
@@ -170,7 +170,7 @@ flowchart LR
 
 ## 🎯 Use Cases
 
-Swipey was designed and validated in tech retail, but the model transfers cleanly to any curated-catalog category.
+Suaipe was designed and validated in tech retail, but the model transfers cleanly to any curated-catalog category.
 
 | Use case | Where it fits |
 |---|---|
@@ -216,7 +216,7 @@ Swipey was designed and validated in tech retail, but the model transfers cleanl
 | **Search debounce** | 300 ms | Prevents a DB hit on every keystroke |
 | **Animation budget** | ≤ 0.15 s stagger | Capped to prevent jank on 20+ row session lists on iPad |
 
-> Run `npx lighthouse https://swipey.vercel.app --view` to benchmark on your own network.
+> Run `npx lighthouse https://suaipe.vercel.app --view` to benchmark on your own network.
 
 ---
 
@@ -304,8 +304,8 @@ supabase/
 ### Local Setup
 
 ```bash
-git clone https://github.com/ProgAnakin/swipey.git
-cd swipey
+git clone https://github.com/ProgAnakin/suaipe.git
+cd suaipe
 npm install
 cp .env.example .env
 # Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY
@@ -408,9 +408,9 @@ The current release is intentionally **zero-cost**: every component runs on free
 
 ## 👤 Author & License
 
-**Costanzo Annichini** — Tech Sales & Customer Success @ Swipey
+**Costanzo Annichini** — Tech Sales & Customer Success @ Suaipe
 
-Swipey was conceived, designed and built end-to-end as an independent initiative — **outside of formal job duties, on personal time, with no brief from the company**. Architected and shipped solo, from the swipe interaction and matching algorithm to the Supabase backend, security model, multilingual email automation, and the manager + consultant dashboards.
+Suaipe was conceived, designed and built end-to-end as an independent initiative — **outside of formal job duties, on personal time, with no brief from the company**. Architected and shipped solo, from the swipe interaction and matching algorithm to the Supabase backend, security model, multilingual email automation, and the manager + consultant dashboards.
 
 - **GitHub:** [github.com/ProgAnakin](https://github.com/ProgAnakin)
 - **LinkedIn:** [linkedin.com/in/costanzoannichini](https://www.linkedin.com/in/costanzoannichini/)
@@ -419,4 +419,4 @@ Architectural decisions: [`docs/adr/`](./docs/adr/) · Operational triage: [`doc
 
 ### License
 
-Proprietary — © Costanzo Annichini. All rights reserved. Not affiliated with, sponsored by, or representative of any official Swipey product.
+Proprietary — © Costanzo Annichini. All rights reserved. Not affiliated with, sponsored by, or representative of any official Suaipe product.

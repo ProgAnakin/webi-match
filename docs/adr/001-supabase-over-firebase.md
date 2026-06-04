@@ -5,7 +5,7 @@
 
 ## Context
 
-Swipey needs a backend that handles:
+Suaipe needs a backend that handles:
 - Storing quiz sessions with customer PII (name, email, matched product)
 - Row-level authorisation so consultants only see their store's data
 - Server-side logic for email dispatch and PIN authentication

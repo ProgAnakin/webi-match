@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SwipeyLogo } from "./SwipeyLogo";
+import { SuaipeLogo } from "./SuaipeLogo";
 import { useLang } from "@/i18n/LanguageContext";
 import { useLockoutCountdown } from "@/hooks/useLockoutCountdown";
 import { verifyStaffPin } from "@/lib/verifyStaffPin";
@@ -135,7 +135,7 @@ export const KioskLockScreen = ({ onStartQuiz, onDeactivate }: KioskLockScreenPr
       transition={{ duration: 0.4 }}
     >
       <div className="flex flex-col items-center gap-6 px-8 text-center">
-        <SwipeyLogo size={48} />
+        <SuaipeLogo size={48} />
 
         <motion.div
           className="text-7xl"

@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <!-- Electric-blue → cyan brand gradient (matches src/components/SwipeyLogo.tsx) -->
-    <linearGradient id="swipey-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+    <!-- Electric-blue → cyan brand gradient (matches src/components/SuaipeLogo.tsx) -->
+    <linearGradient id="suaipe-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
       <stop offset="0%"   stop-color="hsl(217, 91%, 60%)"/>
       <stop offset="60%"  stop-color="hsl(202, 92%, 55%)"/>
       <stop offset="100%" stop-color="hsl(188, 86%, 53%)"/>
     </linearGradient>
-    <filter id="swipey-glow" x="-30%" y="-30%" width="160%" height="160%">
+    <filter id="suaipe-glow" x="-30%" y="-30%" width="160%" height="160%">
       <feGaussianBlur stdDeviation="1.6" result="b"/>
       <feMerge>
         <feMergeNode in="b"/>
@@ -19,7 +19,7 @@
   <rect width="64" height="64" rx="14" fill="hsl(220, 55%, 8%)"/>
 
   <!-- Stylised "S" — two interlocking swipe arcs -->
-  <g filter="url(#swipey-glow)" stroke="url(#swipey-grad)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+  <g filter="url(#suaipe-glow)" stroke="url(#suaipe-grad)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
     <path d="M48 18 C 40 10, 22 10, 18 22 C 14 32, 26 34, 36 36 C 46 38, 50 42, 46 50 C 42 58, 24 58, 16 50"/>
   </g>
 </svg>

@@ -474,7 +474,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
         )}
 
         <p className="pb-4 text-center text-xs text-muted-foreground">
-          Swipey · Catalog Management · Swipey
+          Suaipe · Catalog Management · Suaipe
         </p>
 
         </>)} {/* end catalogo tab */}

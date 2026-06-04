@@ -5,7 +5,7 @@
 
 ## Context
 
-Swipey is a kiosk experience designed to run on company-owned iPads installed at Swipey locations. The deployment model needs to be:
+Suaipe is a kiosk experience designed to run on company-owned iPads installed at Suaipe locations. The deployment model needs to be:
 
 - **Instant update** — when a bug is fixed or a product is added, all store iPads should reflect the change without manual intervention.
 - **No App Store dependency** — submissions, reviews and enterprise certificates introduce operational overhead that slows product iteration.

@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    /* ─── Swipey palette ───────────────────────────────────────────────────
+    /* ─── Suaipe palette ───────────────────────────────────────────────────
        Deep navy base · electric blue → cyan primary · mint accent for CTAs.
        Tech-SaaS direction (think Linear / Stripe / Vercel). All app colour
        comes from these vars — change here, cascades everywhere.
@@ -46,7 +46,7 @@
 
     --radius: 1rem;
 
-    /* Custom tokens — Swipey brand gradient + glow */
+    /* Custom tokens — Suaipe brand gradient + glow */
     --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 60%), hsl(188, 86%, 53%));
     --gradient-card: linear-gradient(145deg, hsl(220, 45%, 16%), hsl(220, 55%, 10%));
     --gradient-success: linear-gradient(135deg, hsl(168, 76%, 52%), hsl(188, 86%, 53%));
@@ -63,7 +63,7 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Confetti palette — repainted to the Swipey gradient family */
+    /* Confetti palette — repainted to the Suaipe gradient family */
     --confetti-1:  217 91% 60%;   /* electric blue (primary) */
     --confetti-2:  202 90% 70%;   /* sky blue */
     --confetti-3:  188 86% 53%;   /* cyan (accent) */

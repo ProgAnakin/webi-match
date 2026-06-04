@@ -36,43 +36,43 @@ interface EmailTemplate {
 
 const DEFAULTS_BY_LANG: Record<Lang, EmailTemplate> = {
   it: {
-    sender_name: "Swipey",
+    sender_name: "Suaipe",
     subject_template: "{{nome}}, il tuo match è {{pct}}% — Codice sconto valido 24h ⏰",
     header_title: "Abbiamo trovato il tuo match!",
     header_subtitle: "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il gadget perfetto per il tuo stile di vita.",
-    footer_store_name: "Swipey",
+    footer_store_name: "Suaipe",
   },
   en: {
-    sender_name: "Swipey",
+    sender_name: "Suaipe",
     subject_template: "{{nome}}, your match is {{pct}}% — Discount code valid 24h ⏰",
     header_title: "We found your match!",
     header_subtitle: "Our algorithm analysed your answers and selected the perfect gadget for your lifestyle.",
-    footer_store_name: "Swipey",
+    footer_store_name: "Suaipe",
   },
   fr: {
-    sender_name: "Swipey",
+    sender_name: "Suaipe",
     subject_template: "{{nome}}, votre match est de {{pct}}% — Code de réduction valable 24h ⏰",
     header_title: "Nous avons trouvé votre match !",
     header_subtitle: "Notre algorithme a analysé vos réponses et a sélectionné le gadget parfait pour votre style de vie.",
-    footer_store_name: "Swipey",
+    footer_store_name: "Suaipe",
   },
   es: {
-    sender_name: "Swipey",
+    sender_name: "Suaipe",
     subject_template: "{{nome}}, tu match es {{pct}}% — Código de descuento válido 24h ⏰",
     header_title: "¡Encontramos tu match!",
     header_subtitle: "Nuestro algoritmo analizó tus respuestas y seleccionó el gadget perfecto para tu estilo de vida.",
-    footer_store_name: "Swipey",
+    footer_store_name: "Suaipe",
   },
   pt: {
-    sender_name: "Swipey",
+    sender_name: "Suaipe",
     subject_template: "{{nome}}, o seu match é {{pct}}% — Código de desconto válido 24h ⏰",
     header_title: "Encontrámos o seu match!",
     header_subtitle: "O nosso algoritmo analisou as suas respostas e selecionou o gadget perfeito para o seu estilo de vida.",
-    footer_store_name: "Swipey",
+    footer_store_name: "Suaipe",
   },
 };
 
-const SAMPLE = { nome: "Marco", pct: "87", product: "Sony WH-1000XM5", price: "€349,00", code: "SWP-A3F2B187" };
+const SAMPLE = { nome: "Marco", pct: "87", product: "Sony WH-1000XM5", price: "€349,00", code: "SUP-A3F2B187" };
 
 function interpolate(tpl: string): string {
   return tpl.replace(/\{\{nome\}\}/g, SAMPLE.nome).replace(/\{\{pct\}\}/g, SAMPLE.pct);
@@ -95,7 +95,7 @@ const FIELD_META: { key: keyof EmailTemplate; label: string; hint: string; multi
   {
     key: "sender_name",
     label: "Sender name (From: field)",
-    hint: 'Name shown as the sender in the customer\'s email client. E.g. "Swipey".',
+    hint: 'Name shown as the sender in the customer\'s email client. E.g. "Suaipe".',
   },
   {
     key: "subject_template",
@@ -118,7 +118,7 @@ const FIELD_META: { key: keyof EmailTemplate; label: string; hint: string; multi
   {
     key: "footer_store_name",
     label: "Consultant name (email footer)",
-    hint: "Shown at the bottom of the email and on the discount code card. E.g. \"Swipey\".",
+    hint: "Shown at the bottom of the email and on the discount code card. E.g. \"Suaipe\".",
   },
 ];
 
@@ -128,7 +128,7 @@ function EmailPreview({ form }: { form: EmailTemplate }) {
       <div className="h-1 w-full bg-gradient-to-r from-[#1e88ff] via-[#0ea5e9] to-[#1e88ff]" />
       <div className="bg-[#101628] px-6 py-5 text-center space-y-2">
         <div className="inline-block rounded-lg bg-gradient-to-r from-[#1e88ff] to-[#0ea5e9] px-4 py-1.5">
-          <span className="text-[11px] font-black tracking-widest text-white uppercase">SWIPEY</span>
+          <span className="text-[11px] font-black tracking-widest text-white uppercase">SUAIPE</span>
         </div>
         <p className="text-base font-bold leading-snug">
           Hi <span className="text-[#1e88ff]">{SAMPLE.nome}</span>,{" "}
@@ -167,7 +167,7 @@ function EmailPreview({ form }: { form: EmailTemplate }) {
       </div>
       <div className="bg-[#101628] px-6 py-4 text-center border-t border-[#2a3a68]">
         <p className="text-xs font-black">{form.footer_store_name}</p>
-        <p className="text-[10px] text-[#7a8fbb]">Powered by Swipey</p>
+        <p className="text-[10px] text-[#7a8fbb]">Powered by Suaipe</p>
         <p className="text-[9px] text-[#7a8fbb] mt-1">
           Sent to <strong className="text-[#f0f4ff]">{SAMPLE.nome}</strong> · From: {form.sender_name}
         </p>

@@ -211,7 +211,7 @@ const MatchResult = ({
 
   const starCount = Math.floor(product.rating);
 
-  // Match-tier palette — mapped onto the Swipey gradient family
+  // Match-tier palette — mapped onto the Suaipe gradient family
   // (mint success → cyan accent → electric-blue primary → muted indigo).
   // No warm tones: the post-rebrand identity stays cool end-to-end.
   const ringColor = matchPercent >= 90 ? "#5eead4"   // mint (success)
