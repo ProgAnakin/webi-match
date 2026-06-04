@@ -211,15 +211,18 @@ const MatchResult = ({
 
   const starCount = Math.floor(product.rating);
 
-  const ringColor = matchPercent >= 90 ? "#6BCB77"
-    : matchPercent >= 80 ? "#FFD93D"
-    : matchPercent >= 65 ? "#FF8066"
-    : "#4D96FF";
+  // Match-tier palette — mapped onto the Swipey gradient family
+  // (mint success → cyan accent → electric-blue primary → muted indigo).
+  // No warm tones: the post-rebrand identity stays cool end-to-end.
+  const ringColor = matchPercent >= 90 ? "#5eead4"   // mint (success)
+    : matchPercent >= 80 ? "#22d3ee"                  // cyan (accent)
+    : matchPercent >= 65 ? "#3b82f6"                  // electric blue (primary)
+    : "#6366f1";                                       // indigo (muted match)
 
-  const badgeBg = matchPercent >= 90 ? "bg-green-500"
-    : matchPercent >= 80 ? "bg-yellow-400 text-gray-900"
-    : matchPercent >= 65 ? "bg-orange-400 text-gray-900"
-    : "bg-blue-500";
+  const badgeBg = matchPercent >= 90 ? "bg-teal-400 text-slate-900"
+    : matchPercent >= 80 ? "bg-cyan-400 text-slate-900"
+    : matchPercent >= 65 ? "bg-blue-500"
+    : "bg-indigo-500";
 
   // ── Email-tap handler ────────────────────────────────────────────────────────────────────────────
   const handleEmailTap = useCallback(() => {
@@ -603,8 +606,8 @@ const MatchResult = ({
               <span className="flex items-center gap-0.5">
                 {Array.from({ length: 5 }, (_, i) => (
                   <svg key={i} width="14" height="14" viewBox="0 0 24 24"
-                    fill={i < starCount ? "#FFD700" : "none"}
-                    stroke={i < starCount ? "#FFD700" : "hsl(var(--muted-foreground))"}
+                    fill={i < starCount ? "#22d3ee" : "none"}
+                    stroke={i < starCount ? "#22d3ee" : "hsl(var(--muted-foreground))"}
                     strokeWidth="1.5">
                     <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
                   </svg>

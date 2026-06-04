@@ -41,6 +41,9 @@ const WHITELIST_EMAILS = new Set(
     .map((e) => e.trim().toLowerCase()).filter(Boolean)
 );
 
+// Swipey palette — electric-blue → cyan as the brand axis, mint for success.
+// `accent` / `accentDeep` form the brand gradient used wherever the legacy
+// orange/orange-red pair lived (CTA bars, code box, step numbers, barcode).
 const C = {
   bg:         "#0d1228",
   card:       "#151d47",
@@ -49,19 +52,19 @@ const C = {
   border:     "#2a3a68",
   fg:         "#f0f4ff",
   muted:      "#7a8fbb",
-  orange:     "#f5831c",
-  orangeRed:  "#e8420a",
-  green:      "#6BCB77",
-  yellow:     "#FFD93D",
-  coral:      "#FF8066",
-  blue:       "#4D96FF",
+  accent:     "#3b82f6",
+  accentDeep: "#1e40af",
+  mint:       "#5eead4",
+  cyan:       "#22d3ee",
+  blue:       "#3b82f6",
+  indigo:     "#6366f1",
 } as const;
 
 function matchColor(pct: number): string {
-  if (pct >= 90) return C.green;
-  if (pct >= 80) return C.yellow;
-  if (pct >= 65) return C.coral;
-  return C.blue;
+  if (pct >= 90) return C.mint;
+  if (pct >= 80) return C.cyan;
+  if (pct >= 65) return C.blue;
+  return C.indigo;
 }
 
 function matchBadgeLabel(pct: number): string {
@@ -335,7 +338,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
     table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
     img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none;display:block}
     body{margin:0!important;padding:0!important;background-color:${C.bg}}
-    a{color:${C.orange};text-decoration:none}
+    a{color:${C.accent};text-decoration:none}
     @media only screen and (max-width:620px){
       .wrapper{width:100%!important;border-radius:0!important}
       .step-col{display:block!important;width:100%!important;text-align:center!important;
@@ -360,17 +363,17 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
 <table class="wrapper" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
        style="max-width:600px;width:100%;border-radius:20px;border:1px solid ${C.border};box-shadow:0 32px 80px rgba(0,0,0,0.7);">
 
-  <tr><td height="4" style="background:${C.orange};background:linear-gradient(90deg,${C.orange},${C.orangeRed},${C.orange});font-size:0;line-height:0;border-radius:20px 20px 0 0;">&nbsp;</td></tr>
+  <tr><td height="4" style="background:${C.accent};background:linear-gradient(90deg,${C.accent},${C.accentDeep},${C.accent});font-size:0;line-height:0;border-radius:20px 20px 0 0;">&nbsp;</td></tr>
 
   <tr>
     <td style="background:${C.cardHeader};padding:36px 40px 32px;text-align:center;">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
-        <tr><td style="background:${C.orange};background:linear-gradient(135deg,${C.orange},${C.orangeRed});border-radius:10px;padding:7px 22px;">
+        <tr><td style="background:${C.accent};background:linear-gradient(135deg,${C.accent},${C.accentDeep});border-radius:10px;padding:7px 22px;">
           <span style="font-size:13px;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:#fff;">SWIPEY</span>
         </td></tr>
       </table>
       <h1 style="margin:22px 0 8px;font-size:30px;font-weight:800;color:${C.fg};line-height:1.15;letter-spacing:-0.01em;">
-        ${nome ? `Ciao <span style="color:${C.orange};">${nome}</span>,<br/>${headerTitle}` : headerTitle}
+        ${nome ? `Ciao <span style="color:${C.accent};">${nome}</span>,<br/>${headerTitle}` : headerTitle}
       </h1>
       <p style="margin:0;font-size:15px;color:${C.muted};line-height:1.6;">${headerSubtitle}</p>
     </td>
@@ -410,7 +413,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr><td style="padding:20px 32px 28px;">
           <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${C.fg};line-height:1.2;letter-spacing:-0.01em;">${productName}</h2>
-          ${productPrice ? `<p style="margin:0;font-size:26px;font-weight:700;color:${C.orange};line-height:1;">${productPrice}</p>` : ""}
+          ${productPrice ? `<p style="margin:0;font-size:26px;font-weight:700;color:${C.accent};line-height:1;">${productPrice}</p>` : ""}
         </td></tr>
       </table>
     </td>
@@ -420,9 +423,9 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
     <td style="background:${C.card};padding:28px 24px 32px;border-top:1px solid ${C.border};">
       <p style="margin:0 0 16px;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;color:${C.muted};text-align:center;">${i18n.codeSection}</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-             style="border-radius:16px;border:2px solid ${C.orange};box-shadow:0 8px 48px rgba(245,131,28,0.35);">
+             style="border-radius:16px;border:2px solid ${C.accent};box-shadow:0 8px 48px rgba(59,130,246,0.35);">
         <tr>
-          <td style="background:${C.orange};background:linear-gradient(90deg,${C.orange},${C.orangeRed},${C.orange});padding:11px 24px;border-radius:14px 14px 0 0;">
+          <td style="background:${C.accent};background:linear-gradient(90deg,${C.accent},${C.accentDeep},${C.accent});padding:11px 24px;border-radius:14px 14px 0 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td style="font-size:12px;font-weight:800;color:#fff;letter-spacing:0.14em;">${i18n.specialDiscount}</td>
@@ -433,11 +436,11 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         </tr>
         <tr>
           <td style="background:${C.cardHeader};padding:30px 28px 26px;text-align:center;">
-            <p style="margin:0 0 10px;font-size:10px;font-weight:700;color:${C.orange};letter-spacing:0.24em;text-transform:uppercase;">${i18n.insertAtCheckout}</p>
+            <p style="margin:0 0 10px;font-size:10px;font-weight:700;color:${C.accent};letter-spacing:0.24em;text-transform:uppercase;">${i18n.insertAtCheckout}</p>
             <p style="margin:0 0 18px;font-size:38px;font-weight:900;color:${C.fg};font-family:'Courier New',Courier,monospace;letter-spacing:0.06em;line-height:1;white-space:nowrap;">${code}</p>
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
               <tr>
-                <td style="background:${C.orange};border-radius:999px;padding:5px 10px;white-space:nowrap;">
+                <td style="background:${C.accent};border-radius:999px;padding:5px 10px;white-space:nowrap;">
                   <span style="font-size:10px;font-weight:700;color:#fff;display:inline-block;white-space:nowrap;">${i18n.hrs24}</span>
                 </td>
                 <td width="6">&nbsp;</td>
@@ -461,7 +464,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         </tr>
         <tr>
           <td style="background:${C.cardHeader};padding:12px 28px 14px;text-align:center;border-radius:0 0 14px 14px;">
-            ${barcodesvg(C.orange)}
+            ${barcodesvg(C.accent)}
             <p style="margin:5px 0 0;font-size:8px;color:${C.muted};letter-spacing:0.12em;text-transform:uppercase;">${i18n.discountTicket}</p>
           </td>
         </tr>
@@ -475,7 +478,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
         <td width="44" valign="middle" style="width:44px;padding:0;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:16px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">1</td>
+            <td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.accent},${C.accentDeep});text-align:center;vertical-align:middle;font-size:16px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">1</td>
           </tr></table>
         </td>
         <td width="14" style="padding:0;">&nbsp;</td>
@@ -488,7 +491,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
         <td width="44" valign="middle" style="width:44px;padding:0;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:16px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">2</td>
+            <td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.accent},${C.accentDeep});text-align:center;vertical-align:middle;font-size:16px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">2</td>
           </tr></table>
         </td>
         <td width="14" style="padding:0;">&nbsp;</td>
@@ -501,7 +504,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
         <td width="44" valign="middle" style="width:44px;padding:0;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:16px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">3</td>
+            <td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.accent},${C.accentDeep});text-align:center;vertical-align:middle;font-size:16px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">3</td>
           </tr></table>
         </td>
         <td width="14" style="padding:0;">&nbsp;</td>
@@ -525,7 +528,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
           <tr>
             <td style="background:${C.cardHeader};padding:20px;text-align:center;border-radius:${thumbUrl ? "0 0 14px 14px" : "14px"};">
               <table role="presentation" width="52" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
-                <tr><td width="52" height="52" align="center" valign="middle" style="width:52px;height:52px;min-width:52px;border-radius:26px;background:${C.orange};text-align:center;vertical-align:middle;font-size:22px;color:#fff;overflow:hidden;line-height:52px;mso-line-height-rule:exactly;padding-left:4px;">&#9658;</td></tr>
+                <tr><td width="52" height="52" align="center" valign="middle" style="width:52px;height:52px;min-width:52px;border-radius:26px;background:${C.accent};text-align:center;vertical-align:middle;font-size:22px;color:#fff;overflow:hidden;line-height:52px;mso-line-height-rule:exactly;padding-left:4px;">&#9658;</td></tr>
               </table>
               <p style="margin:10px 0 3px;font-size:14px;font-weight:700;color:${C.fg};">Guarda la presentazione del consulente</p>
               <p style="margin:0;font-size:11px;color:${C.muted};">30 secondi per scoprire tutto sul tuo prodotto</p>
@@ -545,7 +548,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
         <tr><td style="padding:${i > 0 ? "14px" : "0"} 0 0;">
           ${i > 0 ? `<div style="border-top:1px solid ${C.border};margin-bottom:14px;"></div>` : ""}
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td width="4" style="background:${C.orange};border-radius:4px;padding:0;font-size:0;line-height:0;">&nbsp;</td>
+            <td width="4" style="background:${C.accent};border-radius:4px;padding:0;font-size:0;line-height:0;">&nbsp;</td>
             <td style="padding:4px 0 4px 14px;">
               <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:${C.fg};line-height:1.4;">${item.q}</p>
               <p style="margin:0;font-size:13px;color:${C.muted};line-height:1.65;">${item.a}</p>
@@ -558,11 +561,11 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
 
   <tr>
     <td style="background:${C.cardAlt};padding:26px 24px;border-top:1px solid ${C.border};">
-      <p style="margin:0 0 18px;font-size:11px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:${C.orange};text-align:center;">${i18n.actionRequired}</p>
+      <p style="margin:0 0 18px;font-size:11px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:${C.accent};text-align:center;">${i18n.actionRequired}</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
         <td width="44" valign="middle" style="width:44px;padding:0;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:20px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">&#8595;</td>
+            <td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.accent},${C.accentDeep});text-align:center;vertical-align:middle;font-size:20px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">&#8595;</td>
           </tr></table>
         </td>
         <td width="14" style="padding:0;">&nbsp;</td>
@@ -575,7 +578,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
         <td width="44" valign="middle" style="width:44px;padding:0;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:11px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">24h</td>
+            <td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.accent},${C.accentDeep});text-align:center;vertical-align:middle;font-size:11px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">24h</td>
           </tr></table>
         </td>
         <td width="14" style="padding:0;">&nbsp;</td>
@@ -588,7 +591,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
         <td width="44" valign="middle" style="width:44px;padding:0;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.orange},${C.orangeRed});text-align:center;vertical-align:middle;font-size:20px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">&#8594;</td>
+            <td width="44" height="44" align="center" valign="middle" style="width:44px;height:44px;min-width:44px;border-radius:22px;background:linear-gradient(135deg,${C.accent},${C.accentDeep});text-align:center;vertical-align:middle;font-size:20px;font-weight:800;color:#fff;overflow:hidden;line-height:44px;mso-line-height-rule:exactly;">&#8594;</td>
           </tr></table>
         </td>
         <td width="14" style="padding:0;">&nbsp;</td>
@@ -615,7 +618,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
       <p style="margin:0;font-size:10px;color:${C.muted};line-height:1.8;">
         ${i18n.gdpr}<br/>
         ${i18n.receivedNote}<br/>
-        <span style="color:${C.orange};">${i18n.codeExpiry}</span>
+        <span style="color:${C.accent};">${i18n.codeExpiry}</span>
       </p>
     </td>
   </tr>
