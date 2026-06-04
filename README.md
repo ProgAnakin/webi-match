@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/social-preview.png" alt="Suaipe — iPad-first product discovery kiosk for physical retail" width="100%"/>
+<img src="docs/socialpreview.png" alt="Suaipe — iPad-first product discovery kiosk for physical retail" width="100%"/>
 
 # 🎯 Suaipe
 
