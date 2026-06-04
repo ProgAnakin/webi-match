@@ -6,10 +6,10 @@
 
 **An iPad-first product discovery kiosk for physical retail**
 
-[![CI](https://github.com/ProgAnakin/suaipe/actions/workflows/ci.yml/badge.svg)](https://github.com/ProgAnakin/suaipe/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-1.7.1-blue)](./CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-95%20unit%20%2B%2011%20e2e-22c55e)](./src/__tests__)
-[![Languages](https://img.shields.io/badge/i18n-5%20languages-f5831c)](./src/i18n/translations.ts)
+[![CI](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml/badge.svg)](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-2.0.1-3b82f6)](./CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-98%20unit-22d3ee)](./src/__tests__)
+[![Languages](https://img.shields.io/badge/i18n-5%20languages-22d3ee)](./src/i18n/translations.ts)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20%2B%20Edge%20Functions-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
@@ -117,9 +117,9 @@ flowchart LR
   iPad -.->|errors + replays| Sentry
   Manager -.->|errors| Sentry
 
-  classDef ipad fill:#f5831c20,stroke:#f5831c,color:#fff
-  classDef supa fill:#3ECF8E20,stroke:#3ECF8E,color:#fff
-  classDef ext fill:#4D96FF20,stroke:#4D96FF,color:#fff
+  classDef ipad fill:#3b82f620,stroke:#3b82f6,color:#fff
+  classDef supa fill:#5eead420,stroke:#5eead4,color:#fff
+  classDef ext fill:#22d3ee20,stroke:#22d3ee,color:#fff
   class A,W,Q,M,S ipad
   class DB,EF1,EF2,EF3,Storage supa
   class Brevo,Sheets,Sentry ext
@@ -304,8 +304,8 @@ supabase/
 ### Local Setup
 
 ```bash
-git clone https://github.com/ProgAnakin/suaipe.git
-cd suaipe
+git clone https://github.com/ProgAnakin/webi-match.git
+cd webi-match
 npm install
 cp .env.example .env
 # Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY
@@ -408,9 +408,9 @@ The current release is intentionally **zero-cost**: every component runs on free
 
 ## 👤 Author & License
 
-**Costanzo Annichini** — Tech Sales & Customer Success @ Suaipe
+**Costanzo Annichini**
 
-Suaipe was conceived, designed and built end-to-end as an independent initiative — **outside of formal job duties, on personal time, with no brief from the company**. Architected and shipped solo, from the swipe interaction and matching algorithm to the Supabase backend, security model, multilingual email automation, and the manager + consultant dashboards.
+Suaipe was conceived, designed and built end-to-end as an independent personal project. Architected and shipped solo — from the swipe interaction and matching algorithm to the Supabase backend, security model, multilingual email automation, and the manager + consultant dashboards.
 
 - **GitHub:** [github.com/ProgAnakin](https://github.com/ProgAnakin)
 - **LinkedIn:** [linkedin.com/in/costanzoannichini](https://www.linkedin.com/in/costanzoannichini/)
@@ -419,4 +419,4 @@ Architectural decisions: [`docs/adr/`](./docs/adr/) · Operational triage: [`doc
 
 ### License
 
-Proprietary — © Costanzo Annichini. All rights reserved. Not affiliated with, sponsored by, or representative of any official Suaipe product.
+Proprietary — © Costanzo Annichini. All rights reserved.
