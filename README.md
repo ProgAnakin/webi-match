@@ -6,7 +6,7 @@
 
 **An iPad-first product discovery kiosk for physical retail**
 
-[![CI](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml/badge.svg)](https://github.com/ProgAnakin/webi-match/actions/workflows/ci.yml)
+[![CI](https://github.com/ProgAnakin/Suaipe/actions/workflows/ci.yml/badge.svg)](https://github.com/ProgAnakin/Suaipe/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-2.0.1-3b82f6)](./CHANGELOG.md)
 [![Tests](https://img.shields.io/badge/tests-98%20unit-22d3ee)](./src/__tests__)
 [![Languages](https://img.shields.io/badge/i18n-5%20languages-22d3ee)](./src/i18n/translations.ts)
@@ -304,8 +304,8 @@ supabase/
 ### Local Setup
 
 ```bash
-git clone https://github.com/ProgAnakin/webi-match.git
-cd webi-match
+git clone https://github.com/ProgAnakin/Suaipe.git
+cd Suaipe
 npm install
 cp .env.example .env
 # Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY
