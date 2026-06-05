@@ -36,39 +36,39 @@ interface EmailTemplate {
 
 const DEFAULTS_BY_LANG: Record<Lang, EmailTemplate> = {
   it: {
-    sender_name: "Suaipe",
+    sender_name: "Suaipe Shop",
     subject_template: "{{nome}}, il tuo match è {{pct}}% — Codice sconto valido 24h ⏰",
     header_title: "Abbiamo trovato il tuo match!",
     header_subtitle: "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il gadget perfetto per il tuo stile di vita.",
-    footer_store_name: "Suaipe",
+    footer_store_name: "Costanzo Annichini",
   },
   en: {
-    sender_name: "Suaipe",
+    sender_name: "Suaipe Shop",
     subject_template: "{{nome}}, your match is {{pct}}% — Discount code valid 24h ⏰",
     header_title: "We found your match!",
     header_subtitle: "Our algorithm analysed your answers and selected the perfect gadget for your lifestyle.",
-    footer_store_name: "Suaipe",
+    footer_store_name: "Costanzo Annichini",
   },
   fr: {
-    sender_name: "Suaipe",
+    sender_name: "Suaipe Shop",
     subject_template: "{{nome}}, votre match est de {{pct}}% — Code de réduction valable 24h ⏰",
     header_title: "Nous avons trouvé votre match !",
     header_subtitle: "Notre algorithme a analysé vos réponses et a sélectionné le gadget parfait pour votre style de vie.",
-    footer_store_name: "Suaipe",
+    footer_store_name: "Costanzo Annichini",
   },
   es: {
-    sender_name: "Suaipe",
+    sender_name: "Suaipe Shop",
     subject_template: "{{nome}}, tu match es {{pct}}% — Código de descuento válido 24h ⏰",
     header_title: "¡Encontramos tu match!",
     header_subtitle: "Nuestro algoritmo analizó tus respuestas y seleccionó el gadget perfecto para tu estilo de vida.",
-    footer_store_name: "Suaipe",
+    footer_store_name: "Costanzo Annichini",
   },
   pt: {
-    sender_name: "Suaipe",
+    sender_name: "Suaipe Shop",
     subject_template: "{{nome}}, o seu match é {{pct}}% — Código de desconto válido 24h ⏰",
     header_title: "Encontrámos o seu match!",
     header_subtitle: "O nosso algoritmo analisou as suas respostas e selecionou o gadget perfeito para o seu estilo de vida.",
-    footer_store_name: "Suaipe",
+    footer_store_name: "Costanzo Annichini",
   },
 };
 
@@ -95,7 +95,7 @@ const FIELD_META: { key: keyof EmailTemplate; label: string; hint: string; multi
   {
     key: "sender_name",
     label: "Sender name (From: field)",
-    hint: 'Name shown as the sender in the customer\'s email client. E.g. "Suaipe".',
+    hint: 'Name shown as the sender in the customer\'s email client. E.g. "Suaipe Shop".',
   },
   {
     key: "subject_template",
@@ -118,7 +118,7 @@ const FIELD_META: { key: keyof EmailTemplate; label: string; hint: string; multi
   {
     key: "footer_store_name",
     label: "Consultant name (email footer)",
-    hint: "Shown at the bottom of the email and on the discount code card. E.g. \"Suaipe\".",
+    hint: "Shown at the bottom of the email and on the discount code card. E.g. \"Costanzo Annichini\".",
   },
 ];
 
