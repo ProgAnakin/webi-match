@@ -62,4 +62,15 @@ describe("getMatchedProduct", () => {
     const { matchPercent } = getMatchedProduct({ 1: true, 4: true, 5: true });
     expect(matchPercent).toBeLessThanOrEqual(98);
   });
+
+  it("falls back to the bundled catalogue when allProducts is empty (no crash)", () => {
+    // A store with no active custom products passes an empty array. The
+    // function must not deref an undefined product — it falls back to the
+    // bundled catalogue instead of crashing the kiosk on the result screen.
+    const { product, matchPercent } = getMatchedProduct({ 1: true }, undefined, []);
+    expect(product).toBeDefined();
+    expect(products.some((p) => p.id === product.id)).toBe(true);
+    expect(matchPercent).toBeGreaterThanOrEqual(45);
+    expect(matchPercent).toBeLessThanOrEqual(98);
+  });
 });
