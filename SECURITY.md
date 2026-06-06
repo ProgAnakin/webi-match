@@ -47,12 +47,14 @@ Suaipe was built defensively from day one. The following protections are part of
 - In-memory IP-based lockout (5 failed attempts → 2-minute lock, 5-minute window)
 - MFA enforced on the stats dashboard
 - Row-Level Security on every table
-- Role-based access via `store_roles` (`manager` / `consulente_responsabile`) — managers see all stores, consultants only their own
+- Role-based access via `store_roles` (`manager` / `consulente_responsabile` / `consulente`) — managers see all stores, store consultants only their own, junior consultants get a read-only training zone
 
 ### PII Protection
-- AES-encrypted `nome` / `cognome` at rest (`pgp_sym_encrypt`)
-- SHA-256 hashed email for deduplication lookups (`email_hash`)
-- Encryption keys stored as Supabase Edge Function secrets, never in code or env files
+- Customer `email` / `nome` / `cognome` are readable only by authenticated staff — managers (all stores) and `consulente_responsabile` (own store). No anonymous access.
+- Access is enforced by Row-Level Security plus column-level GRANTs, scoped to the caller's role and store
+- Encrypted at rest by the Supabase storage layer (platform-level)
+- Stale customer data is removed by the `purge_sessions_older_than` retention RPC
+- Note: app-layer AES encryption was evaluated and intentionally **not** adopted (see [ADR 003](./docs/adr/003-pii-encryption-at-rest.md)) — encrypting these columns would break the dashboard's partial-match search. Access control + at-rest encryption + retention purge were chosen instead.
 
 ### Rate Limiting
 - Server-side 1-email-per-hour cooldown per address (cannot be bypassed from client)

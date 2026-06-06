@@ -61,6 +61,7 @@ export function GuideEditorTab() {
   const [loadingGuide, setLoadingGuide] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -146,23 +147,39 @@ export function GuideEditorTab() {
     setTimeout(() => setSaved(false), 2500);
   };
 
+  // Shared delete core — used by both the editor and the product-picker list.
+  // Managers are allowed to DELETE product_guides under RLS (FOR ALL policy),
+  // so this removes the row for everyone and refreshes the local list.
+  const performDelete = async (id: string): Promise<boolean> => {
+    const { error } = await supabase.from("product_guides").delete().eq("product_id", id);
+    if (error) {
+      toast.error("Error deleting guide.");
+      return false;
+    }
+    setGuideNames((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    toast.success("Guide deleted.");
+    return true;
+  };
+
   const deleteGuide = async () => {
     if (!selected) return;
     if (!window.confirm(`Delete the guide for "${selected.name}"? This cannot be undone.`)) return;
     setSaving(true);
-    const { error } = await supabase.from("product_guides").delete().eq("product_id", selected.id);
+    const ok = await performDelete(selected.id);
     setSaving(false);
-    if (error) {
-      toast.error("Error deleting guide.");
-      return;
-    }
-    setGuideNames((prev) => {
-      const next = { ...prev };
-      delete next[selected.id];
-      return next;
-    });
-    toast.success("Guide deleted.");
-    setSelected(null);
+    if (ok) setSelected(null);
+  };
+
+  // Delete straight from the product list, without opening the editor.
+  const deleteFromList = async (p: ProductRef) => {
+    if (!window.confirm(`Delete the guide for "${p.name}"? This cannot be undone.`)) return;
+    setDeletingId(p.id);
+    await performDelete(p.id);
+    setDeletingId(null);
   };
 
   // ─── Editor view ───────────────────────────────────────────────────────────
@@ -300,25 +317,40 @@ export function GuideEditorTab() {
             const hasGuide = p.id in guideNames;
             const isOrphan = p.source === "orphan";
             return (
-              <button
+              <div
                 key={p.id}
-                onClick={() => openEditor(p)}
-                className="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left transition-colors hover:border-primary/40 active:scale-[0.99]"
+                className="flex w-full items-center gap-2 rounded-xl border border-border bg-card py-3 pl-4 pr-2 transition-colors hover:border-primary/40"
               >
-                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                  isOrphan ? "bg-amber-500/15 text-amber-400"
-                  : hasGuide ? "bg-green-500/15 text-green-400"
-                  : "bg-muted/40 text-muted-foreground"
-                }`}>
-                  <BookOpen className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-foreground">{p.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {isOrphan ? "Guide for a removed product" : hasGuide ? "Guide published" : "No guide yet"}
-                  </p>
-                </div>
-              </button>
+                <button
+                  onClick={() => openEditor(p)}
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left active:scale-[0.99]"
+                >
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                    isOrphan ? "bg-amber-500/15 text-amber-400"
+                    : hasGuide ? "bg-green-500/15 text-green-400"
+                    : "bg-muted/40 text-muted-foreground"
+                  }`}>
+                    <BookOpen className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-foreground">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isOrphan ? "Guide for a removed product" : hasGuide ? "Guide published" : "No guide yet"}
+                    </p>
+                  </div>
+                </button>
+                {(hasGuide || isOrphan) && (
+                  <button
+                    onClick={() => deleteFromList(p)}
+                    disabled={deletingId === p.id}
+                    aria-label={`Delete guide for ${p.name}`}
+                    title="Delete guide"
+                    className="flex shrink-0 items-center justify-center rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-destructive transition-colors hover:bg-destructive/20 active:scale-95 disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             );
           })}
           {filtered.length === 0 && (

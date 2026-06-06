@@ -464,16 +464,6 @@ export type Database = {
         }
         Returns: { valid: boolean; locked_seconds: number }
       }
-      encrypt_session_pii: {
-        Args: {
-          p_session_id: string
-          p_nome: string
-          p_cognome: string
-          p_email: string
-          p_key: string
-        }
-        Returns: undefined
-      }
       mark_code_redeemed: {
         Args: { p_session_id: string }
         Returns: number

@@ -307,7 +307,7 @@ function buildEmail(record: Record<string, unknown>, code: string, faq: Array<{ 
   // email clients sandbox <script>/event handlers, so the XSS surface is minimal.
   const headerTitle    = tpl?.header_title    ?? "Abbiamo trovato il tuo match!";
   const headerSubtitle = tpl?.header_subtitle ?? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il <strong style=\"color:#f0f4ff;\">gadget perfetto per il tuo stile di vita</strong>.";
-  const footerName     = tpl?.footer_store_name ?? "SUAIPE";
+  const footerName     = tpl?.footer_store_name ?? "Costanzo Annichini";
   const nome         = escHtml(String(record.nome    ?? "").trim());
   const cognome      = escHtml(String(record.cognome ?? "").trim());
   const pct          = Number(record.match_percent ?? 0);
@@ -781,11 +781,11 @@ serve(async (req) => {
     .eq("language", sessionLang)
     .maybeSingle();
   const tpl = {
-    sender_name:       String(tplRow?.sender_name       ?? "Suaipe"),
+    sender_name:       String(tplRow?.sender_name       ?? "Suaipe Shop"),
     subject_template:  String(tplRow?.subject_template  ?? "{{nome}}, il tuo match è {{pct}}% — Codice sconto valido 24h ⏰"),
     header_title:      String(tplRow?.header_title      ?? "Abbiamo trovato il tuo match!"),
     header_subtitle:   String(tplRow?.header_subtitle   ?? "Il nostro algoritmo ha analizzato le tue risposte e ha selezionato il gadget perfetto per il tuo stile di vita."),
-    footer_store_name: String(tplRow?.footer_store_name ?? "Suaipe"),
+    footer_store_name: String(tplRow?.footer_store_name ?? "Costanzo Annichini"),
   };
 
   const nome     = String(record.nome ?? "").trim();

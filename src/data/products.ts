@@ -193,7 +193,11 @@ export function getMatchedProduct(
   tagMap?: Record<number, string>,
 ): { product: Product; matchPercent: number } {
   const resolvedTagMap = tagMap ?? STATIC_TAG_MAP;
-  const pool_source = allProducts ?? products;
+  // Fall back to the bundled catalogue when the caller passes an empty array
+  // (e.g. a store that has deactivated/archived every product). Without this,
+  // `pool` ends up empty, `bestProduct` is undefined, and the `bestProduct.tags`
+  // access below throws — crashing the kiosk on the result screen.
+  const pool_source = allProducts && allProducts.length > 0 ? allProducts : products;
   const filtered =
     activeIds && activeIds.size > 0
       ? pool_source.filter((p) => activeIds.has(p.id))
