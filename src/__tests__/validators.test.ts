@@ -3,7 +3,7 @@ import { isValidStoreId, youtubeId, STORE_ID_RE } from "@/lib/validators";
 
 describe("isValidStoreId", () => {
   it("accepts the current production store slugs", () => {
-    for (const id of ["corso-vercelli", "5-giornate", "verona", "bergamo"]) {
+    for (const id of ["rio-de-janeiro", "lisboa", "dublino", "milano"]) {
       expect(isValidStoreId(id)).toBe(true);
     }
   });
@@ -24,7 +24,7 @@ describe("isValidStoreId", () => {
   it("rejects malformed slugs", () => {
     expect(isValidStoreId("")).toBe(false);
     expect(isValidStoreId("a")).toBe(false); // too short (regex requires ≥2)
-    expect(isValidStoreId("Corso-Vercelli")).toBe(false); // uppercase
+    expect(isValidStoreId("Rio-De-Janeiro")).toBe(false); // uppercase
     expect(isValidStoreId("with spaces")).toBe(false);
     expect(isValidStoreId("special!char")).toBe(false);
     expect(isValidStoreId("-leading-hyphen")).toBe(false);
@@ -32,7 +32,7 @@ describe("isValidStoreId", () => {
   });
 
   it("regex is exported and reusable", () => {
-    expect(STORE_ID_RE.test("corso-vercelli")).toBe(true);
+    expect(STORE_ID_RE.test("rio-de-janeiro")).toBe(true);
   });
 });
 

@@ -45,7 +45,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
   const [search, setSearch] = useState("");
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [storeId, setStoreIdState] = useState<string>(
-    () => getStoredStoreId() ?? "corso-vercelli"
+    () => getStoredStoreId() ?? "rio-de-janeiro"
   );
   const [showStoreModal, setShowStoreModal] = useState(false);
   const [bulkSelection, setBulkSelection] = useState<Set<string>>(new Set());

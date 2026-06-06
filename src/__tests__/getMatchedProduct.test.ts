@@ -10,13 +10,12 @@ describe("getMatchedProduct", () => {
   });
 
   it("picks randomly among tied top-scoring products", () => {
-    // Q1=sport, Q3=productivity, Q5=travel — four products tie at score 2
-    const answers = { 1: true, 3: true, 5: true };
+    // Q2=audio, Q5=travel — three products tie at score 2 (audio + travel)
+    const answers = { 2: true, 5: true };
     const tiedIds = new Set([
-      "blnd-blender",
-      "head-hdtw01",
-      "outin-nano",
-      "veho-pebble-mg5",
+      "aurae-pulse-pro",
+      "vibewave-open",
+      "echobox-riff",
     ]);
     const seen = new Set<string>();
     for (let i = 0; i < 80; i++) {
@@ -29,9 +28,9 @@ describe("getMatchedProduct", () => {
   });
 
   it("respects activeIds filter", () => {
-    const activeIds = new Set(["outin-nano"]);
+    const activeIds = new Set(["brevia-gopress"]);
     const { product } = getMatchedProduct({ 5: true, 3: true, 4: true }, activeIds);
-    expect(product.id).toBe("outin-nano");
+    expect(product.id).toBe("brevia-gopress");
   });
 
   it("falls back to full catalogue when activeIds is empty", () => {
@@ -39,16 +38,16 @@ describe("getMatchedProduct", () => {
     expect(products.some((p) => p.id === product.id)).toBe(true);
   });
 
-  it("scores sport+wellness+travel answers toward BLND Blender", () => {
-    // Q1=sport, Q4=wellness, Q5=travel — winning profile for blnd-blender
-    const { product } = getMatchedProduct({ 1: true, 4: true, 5: true });
-    expect(product.id).toBe("blnd-blender");
+  it("scores audio+productivity+travel answers toward Aurae Pulse Pro", () => {
+    // Q2=audio, Q3=productivity, Q5=travel — unique 3/3 profile for aurae-pulse-pro
+    const { product } = getMatchedProduct({ 2: true, 3: true, 5: true });
+    expect(product.id).toBe("aurae-pulse-pro");
   });
 
-  it("scores audio+productivity+style toward Veho ZB-7", () => {
-    // Q2=audio, Q3=productivity, Q7=style — winning profile for veho-zb7
-    const { product } = getMatchedProduct({ 2: true, 3: true, 7: true });
-    expect(product.id).toBe("veho-zb7");
+  it("scores sport+wellness+recovery toward Pulsar Recover X", () => {
+    // Q1=sport, Q4=wellness, Q8=recovery — unique 3/3 profile for pulsar-recover-x
+    const { product } = getMatchedProduct({ 1: true, 4: true, 8: true });
+    expect(product.id).toBe("pulsar-recover-x");
   });
 
   it("returns percent 45 when no tags match (floor clamping)", () => {
@@ -58,8 +57,8 @@ describe("getMatchedProduct", () => {
   });
 
   it("never exceeds 98 (ceiling clamping)", () => {
-    // Perfect 3/3 tag match → raw 100% → clamped to 98
-    const { matchPercent } = getMatchedProduct({ 1: true, 4: true, 5: true });
+    // Perfect 3/3 tag match (audio+productivity+travel → Aurae) → raw 100% → clamped to 98
+    const { matchPercent } = getMatchedProduct({ 2: true, 3: true, 5: true });
     expect(matchPercent).toBeLessThanOrEqual(98);
   });
 
