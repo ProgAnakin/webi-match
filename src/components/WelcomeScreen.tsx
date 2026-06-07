@@ -316,7 +316,7 @@ const StoreBadge = ({ onTap, refreshKey }: { onTap: () => void; refreshKey: numb
       {store ? (
         <span className="font-medium text-foreground">{store.shortName}</span>
       ) : (
-        <span className="font-medium text-amber-500">{t.welcome.noStore}</span>
+        <span className="font-medium text-red-500">{t.welcome.noStore}</span>
       )}
     </button>
   );

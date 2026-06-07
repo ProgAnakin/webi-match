@@ -5,10 +5,10 @@ export interface Store {
 }
 
 export const STORES: Store[] = [
-  { id: "corso-vercelli", name: 'Store "Corso Vercelli"', shortName: "Corso Vercelli" },
-  { id: "5-giornate",     name: 'Store "5 Giornate"',    shortName: "5 Giornate"    },
-  { id: "verona",         name: 'Store "Verona"',         shortName: "Verona"        },
-  { id: "bergamo",        name: 'Store "Bergamo"',        shortName: "Bergamo"       },
+  { id: "rio-de-janeiro", name: "Suaipe Rio de Janeiro", shortName: "Rio de Janeiro" },
+  { id: "lisboa",         name: "Suaipe Lisboa",         shortName: "Lisboa"         },
+  { id: "dublino",        name: "Suaipe Dublino",        shortName: "Dublino"        },
+  { id: "milano",         name: "Suaipe Milano",         shortName: "Milano"         },
 ];
 
 export const STORE_LS_KEY = "wb_store_id";

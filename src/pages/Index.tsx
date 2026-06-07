@@ -103,7 +103,7 @@ const Index = () => {
   const [tagMap, setTagMap] = useState<Record<number, string> | undefined>(undefined);
 
   useEffect(() => {
-    const storeId = getStoredStoreId() ?? "corso-vercelli";
+    const storeId = getStoredStoreId() ?? "rio-de-janeiro";
     const cacheKey = `startup_${storeId}`;
 
     interface StartupSnapshot {

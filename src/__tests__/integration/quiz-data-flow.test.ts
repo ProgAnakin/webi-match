@@ -76,8 +76,8 @@ describe("quiz data flow (end-to-end logic)", () => {
     const cards  = questionsToCards(questions);
     const tagMap = buildTagMap(cards);
 
-    // Sport + travel + wellness profile → BLND Blender with both approaches
-    const answers = { 1: true, 5: true, 4: true } as Record<number, boolean>;
+    // Audio + productivity + travel profile → Aurae Pulse Pro (unique winner) with both approaches
+    const answers = { 2: true, 3: true, 5: true } as Record<number, boolean>;
     const { product: withTagMap } = getMatchedProduct(answers, undefined, undefined, tagMap);
     const { product: withStatic } = getMatchedProduct(answers);
     expect(withTagMap.id).toBe(withStatic.id);
@@ -100,11 +100,11 @@ describe("quiz data flow (end-to-end logic)", () => {
 
     const allActive = new Set(products.map((p) => p.id));
     const { product: allResult }    = getMatchedProduct(answers, allActive, products, tagMap);
-    const singleActive = new Set(["veho-zb7"]);
+    const singleActive = new Set(["pulsar-recover-x"]);
     const { product: singleResult } = getMatchedProduct(answers, singleActive, products, tagMap);
 
     expect(allResult).toBeDefined();
-    expect(singleResult.id).toBe("veho-zb7");
+    expect(singleResult.id).toBe("pulsar-recover-x");
   });
 
   it("match percent is clamped between 45 and 98", () => {
@@ -120,7 +120,7 @@ describe("quiz data flow (end-to-end logic)", () => {
 
     // Perfect match — ceiling clamp
     const { matchPercent: high } = getMatchedProduct(
-      { 1: true, 4: true, 5: true },
+      { 2: true, 3: true, 5: true },
       undefined, undefined, tagMap,
     );
     expect(high).toBeLessThanOrEqual(98);
