@@ -25,12 +25,12 @@ export interface Product {
 // DB table (see CLAUDE.md gotcha #1). Keep this array in sync with the
 // 20260606000001_suaipe_catalog_reset.sql migration and with the matcher tests.
 // Fictional Suaipe-brand gadgets: real product categories, invented brand names
-// so each one can get its own AI-generated image (/products/<id>.png) and video.
+// so each one can get its own branded image (/products/<id>.svg) and video.
 export const products: Product[] = [
   {
     id: "aurae-pulse-pro",
     name: "Aurae Pulse Pro",
-    image: "/products/aurae-pulse-pro.png",
+    image: "/products/aurae-pulse-pro.svg",
     price: "€89,00",
     rating: 4.7,
     description: "Auricolari true wireless con cancellazione attiva del rumore adattiva, driver dinamici da 11mm e modalità trasparenza. Audio nitido per musica e chiamate, fino a 30 ore con la custodia e ricarica rapida USB-C.",
@@ -45,7 +45,7 @@ export const products: Product[] = [
   {
     id: "lunaring-halo",
     name: "Lunaring Halo – Anello Smart",
-    image: "/products/lunaring-halo.png",
+    image: "/products/lunaring-halo.svg",
     price: "€99,00",
     rating: 4.6,
     description: "Anello smart in titanio con monitoraggio 24/7 di frequenza cardiaca, SpO2, temperatura cutanea e fasi del sonno. Calcola un punteggio di recupero giornaliero, resistente all'acqua 10 ATM e fino a 6 giorni di autonomia.",
@@ -60,7 +60,7 @@ export const products: Product[] = [
   {
     id: "brevia-gopress",
     name: "Brevia GoPress – Espresso Portatile",
-    image: "/products/brevia-gopress.png",
+    image: "/products/brevia-gopress.svg",
     price: "€119,00",
     rating: 4.8,
     description: "Macchina da espresso portatile con 20 bar di pressione e riscaldamento dell'acqua integrato in meno di 3 minuti. Compatibile con capsule e caffè macinato, batteria da 7.800mAh per più tazze lontano da casa.",
@@ -75,7 +75,7 @@ export const products: Product[] = [
   {
     id: "vibewave-open",
     name: "Vibewave Open – Auricolari Open-Ear",
-    image: "/products/vibewave-open.png",
+    image: "/products/vibewave-open.svg",
     price: "€79,00",
     rating: 4.6,
     description: "Auricolari open-ear a conduzione che lasciano le orecchie libere, con 32GB di memoria interna e certificazione IPX8. Trasmettono musica e podcast restando consapevole dell'ambiente: ideali per corsa, bici e nuoto.",
@@ -90,7 +90,7 @@ export const products: Product[] = [
   {
     id: "pulsar-recover-x",
     name: "Pulsar Recover X – Pistola Massaggiante",
-    image: "/products/pulsar-recover-x.png",
+    image: "/products/pulsar-recover-x.svg",
     price: "€99,00",
     rating: 4.7,
     description: "Pistola massaggiante percussiva con motore brushless silenzioso, 5 livelli di intensità e 4 testine intercambiabili. Allevia le tensioni muscolari, migliora la circolazione e accelera il recupero post-allenamento.",
@@ -105,7 +105,7 @@ export const products: Product[] = [
   {
     id: "voltik-snapcell",
     name: "Voltik SnapCell – Power Bank Magnetico",
-    image: "/products/voltik-snapcell.png",
+    image: "/products/voltik-snapcell.svg",
     price: "€54,00",
     rating: 4.6,
     description: "Power bank magnetico ultrasottile da 5.000mAh con ricarica wireless istantanea e porta USB-C PD da 20W. Si aggancia al telefono e ricarica mentre lo usi, con indicatore LED di carica residua.",
@@ -120,7 +120,7 @@ export const products: Product[] = [
   {
     id: "aeris-glow",
     name: "Aeris Glow – Asciugacapelli ad Alta Velocità",
-    image: "/products/aeris-glow.png",
+    image: "/products/aeris-glow.svg",
     price: "€89,00",
     rating: 4.8,
     description: "Asciugacapelli ad alta velocità con motore brushless da 110.000 RPM e ioni negativi per ridurre il crespo. Controllo intelligente della temperatura anti-danno, ultraleggero e silenzioso, con 3 accessori magnetici.",
@@ -135,7 +135,7 @@ export const products: Product[] = [
   {
     id: "echobox-riff",
     name: "Echobox Riff – Speaker Bluetooth Retrò",
-    image: "/products/echobox-riff.png",
+    image: "/products/echobox-riff.svg",
     price: "€64,00",
     rating: 4.5,
     description: "Cassa Bluetooth portatile in metallo con design retrò, radio FM integrata e suono stereo ricco. Resistente agli urti, abbinamento rapido e fino a 10 ore di riproduzione: musica di carattere ovunque.",
@@ -150,7 +150,7 @@ export const products: Product[] = [
   {
     id: "nimbus-sip",
     name: "Nimbus Sip – Borraccia Smart",
-    image: "/products/nimbus-sip.png",
+    image: "/products/nimbus-sip.svg",
     price: "€45,00",
     rating: 4.4,
     description: "Borraccia smart termica in acciaio con promemoria luminoso di idratazione e tracciamento dei sorsi via app. Mantiene le bevande fredde 24 ore o calde 12, con tappo a tenuta e sensore touch sul fondo.",
@@ -165,7 +165,7 @@ export const products: Product[] = [
   {
     id: "lumio-air",
     name: "Lumio Air – Mini Proiettore Portatile",
-    image: "/products/lumio-air.png",
+    image: "/products/lumio-air.svg",
     price: "€149,00",
     rating: 4.5,
     description: "Mini proiettore portatile Full HD con messa a fuoco automatica, correzione trapezoidale e sistema smart con app di streaming integrate. Batteria interna e altoparlanti, proietta fino a 120\" ovunque.",

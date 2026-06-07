@@ -47,7 +47,7 @@ SELECT
   store.v,
   prod.name,
   prod.price,
-  '/products/' || prod.id || '.png',
+  '/products/' || prod.id || '.svg',
   'SUP-' || upper(substr(md5(random()::text || g::text), 1, 8)) || lpad(disc.v::text, 2, '0'),
   disc.v,
   red.v,                                                             -- ~32% codes redeemed
