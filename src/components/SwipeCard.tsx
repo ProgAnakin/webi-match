@@ -171,14 +171,24 @@ const SwipeCard = ({ card, totalCards, onSwipe, exitDirection, index = 0 }: Swip
             }}
           />
 
-          {/* Emoji */}
-          <div className="flex flex-1 items-center justify-center">
-            <span
-              className="select-none"
-              style={{ display: "block", fontSize: 116, lineHeight: 1 }}
-            >
-              {card.emoji}
-            </span>
+          {/* Emoji — or a custom image when the card has one */}
+          <div className="flex flex-1 items-center justify-center px-6">
+            {card.image_url ? (
+              <img
+                src={card.image_url}
+                alt=""
+                draggable={false}
+                className="select-none object-contain"
+                style={{ maxHeight: 168, maxWidth: "82%" }}
+              />
+            ) : (
+              <span
+                className="select-none"
+                style={{ display: "block", fontSize: 116, lineHeight: 1 }}
+              >
+                {card.emoji}
+              </span>
+            )}
           </div>
 
           {/* Thin divider */}

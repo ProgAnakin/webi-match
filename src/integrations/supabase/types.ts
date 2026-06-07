@@ -135,6 +135,7 @@ export type Database = {
         Row: {
           id: number
           emoji: string
+          image_url: string | null
           tag: string
           sort_order: number
           active: boolean
@@ -149,6 +150,7 @@ export type Database = {
         Insert: {
           id?: number
           emoji?: string
+          image_url?: string | null
           tag: string
           sort_order?: number
           active?: boolean
@@ -163,6 +165,7 @@ export type Database = {
         Update: {
           id?: number
           emoji?: string
+          image_url?: string | null
           tag?: string
           sort_order?: number
           active?: boolean

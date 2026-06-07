@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Eye, EyeOff, Globe, GripVertical, Pencil, Plus, RotateCcw, X } from "lucide-react";
+import { Eye, EyeOff, Globe, GripVertical, ImagePlus, Pencil, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -17,11 +17,17 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { supabase } from "@/integrations/supabase/client";
+import { resizeImagePng } from "@/lib/imageProcessing";
 import { toast } from "sonner";
 import type { QuizCard } from "@/data/quiz-cards";
 
+// Recommended source size for card images — square, transparent PNG. We resize
+// to this on upload, so larger uploads are fine; this is just the sweet spot.
+const CARD_IMAGE_PX = 600;
+
 const EMPTY_FORM = {
   emoji: "❓",
+  image_url: "" as string,
   tag: "",
   text_it: "",
   text_en: "" as string,
@@ -68,8 +74,12 @@ function CardPreview({ form, totalCards }: { form: CardForm; totalCards: number 
             </span>
           </div>
           <div className="mx-3 mt-1.5" style={{ height: 1, background: "linear-gradient(to right,transparent,rgba(255,255,255,0.08),transparent)" }} />
-          <div className="flex flex-1 items-center justify-center">
-            <span style={{ fontSize: 52, lineHeight: 1 }}>{emoji}</span>
+          <div className="flex flex-1 items-center justify-center px-3">
+            {form.image_url ? (
+              <img src={form.image_url} alt="" className="object-contain" style={{ maxHeight: 80, maxWidth: "85%" }} />
+            ) : (
+              <span style={{ fontSize: 52, lineHeight: 1 }}>{emoji}</span>
+            )}
           </div>
           <div className="mx-3" style={{ height: 1, background: "linear-gradient(to right,transparent,rgba(255,255,255,0.08),transparent)" }} />
           <div className="px-4 pt-2 text-center">
@@ -168,8 +178,12 @@ function SortableCard({
         onClick={(e) => e.stopPropagation()}
       />
 
-      {/* Emoji */}
-      <div className="shrink-0 w-10 text-center text-2xl select-none">{card.emoji}</div>
+      {/* Emoji — or the custom image when set */}
+      <div className="shrink-0 w-10 h-10 flex items-center justify-center text-2xl select-none">
+        {card.image_url
+          ? <img src={card.image_url} alt="" className="max-h-9 max-w-full object-contain" />
+          : card.emoji}
+      </div>
 
       {/* Info */}
       <div className="min-w-0 flex-1">
@@ -229,6 +243,7 @@ export function QuizCardsTab() {
   const [form, setForm] = useState<CardForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [showTranslateInfo, setShowTranslateInfo] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -244,7 +259,7 @@ export function QuizCardsTab() {
     setLoadError(null);
     const { data, error } = await supabase
       .from("quiz_cards")
-      .select("id, emoji, tag, sort_order, active, text_it, text_en, text_pt, text_es, text_fr")
+      .select("id, emoji, image_url, tag, sort_order, active, text_it, text_en, text_pt, text_es, text_fr")
       .order("sort_order", { ascending: true });
     if (error) {
       setLoadError(error.message);
@@ -267,6 +282,7 @@ export function QuizCardsTab() {
     setEditingId(card.id);
     setForm({
       emoji: card.emoji,
+      image_url: card.image_url ?? "",
       tag: card.tag,
       text_it: card.text_it,
       text_en: card.text_en ?? "",
@@ -285,6 +301,29 @@ export function QuizCardsTab() {
     setFormError(null);
   };
 
+  // Upload a custom card image. Stored as a transparent PNG in the same
+  // `product-images` bucket the catalog uses. A timestamped filename gives a
+  // fresh URL on every upload, sidestepping CDN/browser caching of replacements.
+  const uploadCardImage = async (rawFile: File) => {
+    if (rawFile.size > 5 * 1024 * 1024) { setFormError("Image too large — maximum 5 MB."); return; }
+    if (!["image/png", "image/webp", "image/jpeg"].includes(rawFile.type)) {
+      setFormError("Unsupported format — use PNG (with transparency), WebP or JPEG.");
+      return;
+    }
+    setUploadingImage(true);
+    setFormError(null);
+    const file = await resizeImagePng(rawFile, CARD_IMAGE_PX);
+    const targetId = editingId ?? "new";
+    const path = `quiz-cards/${targetId}-${Date.now()}.png`;
+    const { error } = await supabase.storage
+      .from("product-images")
+      .upload(path, file, { upsert: true, contentType: "image/png" });
+    if (error) { setFormError("Image upload error: " + error.message); setUploadingImage(false); return; }
+    const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);
+    setForm((f) => ({ ...f, image_url: urlData.publicUrl }));
+    setUploadingImage(false);
+  };
+
   const saveCard = async () => {
     if (!form.emoji.trim()) { setFormError("Emoji is required."); return; }
     if (!form.tag.trim()) { setFormError("Category tag is required."); return; }
@@ -298,6 +337,7 @@ export function QuizCardsTab() {
 
     const payload = {
       emoji: form.emoji.trim(),
+      image_url: form.image_url.trim() || null,
       tag: slug,
       text_it: form.text_it.trim(),
       text_en: form.text_en.trim() || null,
@@ -455,6 +495,48 @@ export function QuizCardsTab() {
                 <p className="mt-1 text-[10px] text-muted-foreground/60">
                   The tag will appear automatically in the products form.
                 </p>
+              </div>
+
+              {/* Optional custom image — replaces the emoji on the card */}
+              <div className="col-span-2 rounded-xl border border-border/50 bg-muted/10 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-[10px] font-medium text-muted-foreground">
+                    Card image <span className="font-normal">(optional — replaces the emoji)</span>
+                  </label>
+                  {form.image_url && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, image_url: "" }))}
+                      className="flex items-center gap-1 text-[10px] text-destructive hover:underline"
+                    >
+                      <Trash2 className="h-3 w-3" /> Remove
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="shrink-0 h-16 w-16 rounded-lg border border-border bg-muted/30 flex items-center justify-center overflow-hidden">
+                    {form.image_url
+                      ? <img src={form.image_url} alt="" className="max-h-full max-w-full object-contain" />
+                      : <span className="text-2xl">{form.emoji.trim() || "❓"}</span>}
+                  </div>
+                  <div className="min-w-0">
+                    <label className="inline-flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-medium text-primary active:scale-95 cursor-pointer">
+                      <ImagePlus className="h-3.5 w-3.5" />
+                      {uploadingImage ? "Uploading…" : form.image_url ? "Replace image" : "Upload image"}
+                      <input
+                        type="file"
+                        accept="image/png,image/webp,image/jpeg"
+                        disabled={uploadingImage}
+                        onChange={(e) => e.target.files?.[0] && uploadCardImage(e.target.files[0])}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="mt-1.5 text-[10px] text-muted-foreground/60 leading-relaxed">
+                      Square PNG with a transparent background, ~{CARD_IMAGE_PX}×{CARD_IMAGE_PX}px.
+                      It replaces the emoji on the card; the emoji stays as a fallback.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="col-span-2">
