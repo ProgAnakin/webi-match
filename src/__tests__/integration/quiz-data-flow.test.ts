@@ -31,7 +31,7 @@ describe("buildTagMap", () => {
 
   it("handles custom cards with new tags", () => {
     const custom: QuizCard[] = [
-      { id: 99, emoji: "☕", tag: "coffee", sort_order: 0, active: true,
+      { id: 99, emoji: "☕", image_url: null, tag: "coffee", sort_order: 0, active: true,
         text_it: "Ami il caffè?", text_en: null, text_pt: null, text_es: null, text_fr: null },
     ];
     const tagMap = buildTagMap(custom);
@@ -42,7 +42,7 @@ describe("buildTagMap", () => {
 // ── resolveCardText ────────────────────────────────────────────────────────
 describe("resolveCardText", () => {
   const card: QuizCard = {
-    id: 1, emoji: "🏋️", tag: "sport", sort_order: 0, active: true,
+    id: 1, emoji: "🏋️", image_url: null, tag: "sport", sort_order: 0, active: true,
     text_it: "Testo italiano",
     text_en: "English text",
     text_pt: null,

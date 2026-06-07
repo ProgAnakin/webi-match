@@ -75,19 +75,19 @@ export const ManagerHeader = ({
             onClick={onBulkDeactivate}
             className="flex items-center gap-1 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-400 active:scale-95"
           >
-            <PowerOff className="h-3 w-3" /> Deactivate {bulkSelectionSize}
+            <PowerOff className="h-3 w-3" /> Deactivate
           </button>
           <button
             onClick={onBulkActivate}
             className="flex items-center gap-1 rounded-xl border border-green-500/40 bg-green-500/10 px-3 py-2 text-xs text-green-400 active:scale-95"
           >
-            <Power className="h-3 w-3" /> Activate {bulkSelectionSize}
+            <Power className="h-3 w-3" /> Activate
           </button>
           <button
             onClick={onOpenSendModal}
             className="flex items-center gap-1 rounded-xl border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-xs text-sky-400 active:scale-95"
           >
-            <MapPin className="h-3 w-3" /> Send to store {bulkSelectionSize}
+            <MapPin className="h-3 w-3" /> Send to store
           </button>
           <button
             onClick={onClearBulkSelection}

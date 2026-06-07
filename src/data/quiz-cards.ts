@@ -3,6 +3,8 @@ import type { Question } from "@/data/questions";
 export interface QuizCard {
   id: number;
   emoji: string;
+  /** Optional custom image shown in place of the emoji (null → emoji is used). */
+  image_url: string | null;
   tag: string;
   sort_order: number;
   active: boolean;
@@ -25,6 +27,7 @@ export function questionsToCards(questions: Question[]): QuizCard[] {
   return questions.map((q) => ({
     id: q.id,
     emoji: q.emoji,
+    image_url: null,
     tag: q.category,
     sort_order: q.id,
     active: true,

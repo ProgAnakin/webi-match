@@ -197,7 +197,7 @@ const Index = () => {
         .select("product_id, hidden"),
       supabase
         .from("quiz_cards")
-        .select("id, emoji, tag, sort_order, active, text_it, text_en, text_pt, text_es, text_fr")
+        .select("id, emoji, image_url, tag, sort_order, active, text_it, text_en, text_pt, text_es, text_fr")
         .eq("active", true)
         .order("sort_order", { ascending: true }),
     ]).then(([settingsRes, customRes, globalRes, cardsRes]) => {
