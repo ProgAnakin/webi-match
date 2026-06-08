@@ -41,6 +41,7 @@ export interface AuditLogEntry {
   new_active: boolean | null;
   store_id: string | null;
   user_id: string | null;
+  user_email: string | null;
 }
 
 // ── Formatters & validators ──────────────────────────────────────────────────
