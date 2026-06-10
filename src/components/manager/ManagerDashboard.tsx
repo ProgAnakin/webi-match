@@ -233,6 +233,7 @@ export const ManagerDashboard = ({ onLogout }: ManagerDashboardProps) => {
           catalogSize={catalogProducts.length}
           activeCount={activeCount}
           bulkSelectionSize={bulkSelection.size}
+          showCatalogActions={activeTab === "catalogo"}
           onOpenStoreModal={() => setShowStoreModal(true)}
           onBulkActivate={() => requestBulkToggle(true)}
           onBulkDeactivate={() => requestBulkToggle(false)}
