@@ -8,7 +8,7 @@
 
 [![CI](https://github.com/ProgAnakin/Suaipe/actions/workflows/ci.yml/badge.svg)](https://github.com/ProgAnakin/Suaipe/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-2.0.1-3b82f6)](./CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-98%20unit-22d3ee)](./src/__tests__)
+[![Tests](https://img.shields.io/badge/tests-127%20unit-22d3ee)](./src/__tests__)
 [![Languages](https://img.shields.io/badge/i18n-5%20languages-22d3ee)](./src/i18n/translations.ts)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
@@ -401,8 +401,16 @@ The current release is intentionally **zero-cost**: every component runs on free
 
 ### Developer experience
 
-- **Tests for the remaining untested hooks.** `useWakeLock`, `useKioskMode`, `useIdleLogout`, `imageProcessing` — none are security-critical, but worth covering before the catalog grows.
+- **Tests for the remaining untested hooks.** `useIdleLogout`, `useBgMusic`, `useSound`, `useDevicePerformance`, `useViewportKeyboard` — none are security-critical, but worth covering before the catalog grows.
 - **Visual regression for the swipe interaction.** Pixel-diff coverage for the static shells (404, reset-password, manager login) is in place; the dynamic quiz cards and match result are still uncovered because their content varies per run.
+
+---
+
+<div align="center">
+
+<img src="docs/assets/suaipe-logo-animated.svg" alt="Suaipe — swipe · match · convert" width="700"/>
+
+</div>
 
 ---
 

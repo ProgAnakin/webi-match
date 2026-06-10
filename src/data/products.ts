@@ -25,7 +25,7 @@ export interface Product {
 // DB table (see CLAUDE.md gotcha #1). Keep this array in sync with the
 // 20260606000001_suaipe_catalog_reset.sql migration and with the matcher tests.
 // Fictional Suaipe-brand gadgets: real product categories, invented brand names
-// so each one can get its own AI-generated image (/products/<id>.png) and video.
+// so each one can get its own branded image (/products/<id>.png) and video.
 export const products: Product[] = [
   {
     id: "aurae-pulse-pro",

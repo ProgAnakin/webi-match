@@ -98,12 +98,11 @@ Roles: `manager` / `consulente_responsabile` / `consulente`. RPCs are
 6. **PII is protected by access control, NOT app-layer encryption.** AES/email-hash
    scaffolding was removed in migration `20260530000001` (see ADR 003). `email/nome/
    cognome` are plaintext, readable only by role-scoped authenticated staff.
-   (`src/integrations/supabase/types.ts` still lists a dead `encrypt_session_pii`
-   RPC — stale generated type; regenerate types when convenient.)
 7. **i18n**: 5 languages (it/en/pt/es/fr); **Italian is authoritative/fallback**.
    `src/i18n/translations.ts`. Quiz cards + email templates are also per-language in the DB.
-8. **Store ids** (`src/data/stores.ts` + the edge-fn allowlist): `corso-vercelli`,
-   `5-giornate`, `verona`, `bergamo`. Selected store persists in `localStorage.wb_store_id`.
+8. **Store ids** (`src/data/stores.ts`; the edge fn validates the slug shape, not a
+   fixed list): `rio-de-janeiro`, `lisboa`, `dublino`, `milano`. Selected store
+   persists in `localStorage.wb_store_id`.
 9. **Security headers / CSP** live in `vercel.json` (strict; scripts `'self'` only).
 
 ## Dev commands
@@ -112,7 +111,7 @@ Roles: `manager` / `consulente_responsabile` / `consulente`. RPCs are
 npm run dev         # Vite dev server (http://localhost:8080)
 npm run typecheck   # tsc --noEmit (tsconfig.app.json)
 npm run lint        # eslint
-npm test            # vitest (98 unit tests)
+npm test            # vitest (127 unit tests)
 npm run test:e2e    # Playwright (WebKit / iPad project)
 npm run build       # production build (needs VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY)
 ```
